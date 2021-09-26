@@ -28,7 +28,7 @@ import java.util.List;
 import javax.net.ssl.HttpsURLConnection;
 
 /**
- * Sends the report to the bugbattle dashboard.
+ * Sends the report to the gleap dashboard.
  */
 class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
     private static final String UPLOAD_IMAGE_BACKEND_URL_POSTFIX = "/uploads/sdk";

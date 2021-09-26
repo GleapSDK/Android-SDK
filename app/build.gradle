@@ -3,7 +3,7 @@ apply plugin: 'com.android.application'
 android {
     compileSdkVersion 30
     defaultConfig {
-        applicationId "gleap.io.bugbattle_android_sdk"
+        applicationId "gleap.io.gleap_android_sdk"
         minSdkVersion 21
         targetSdkVersion 30
         versionCode 1

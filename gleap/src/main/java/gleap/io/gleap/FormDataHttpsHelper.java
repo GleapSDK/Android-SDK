@@ -33,7 +33,7 @@ class FormDataHttpsHelper {
      * This constructor initializes a new HTTPS POST request with content type
      * is set to multipart/form-data
      *
-     * @param requestURL bugbattle url
+     * @param requestURL gleap url
      * @param apiToken token for the project
      */
     public FormDataHttpsHelper(String requestURL, String apiToken)

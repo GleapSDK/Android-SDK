@@ -13,7 +13,7 @@ interface iGleap {
     /**
      * Manually start the bug reporting workflow. This is used, when you use the activation method "NONE".
      *
-     * @throws GleapNotInitialisedException thrown when BugBattle is not initialised
+     * @throws GleapNotInitialisedException thrown when Gleap is not initialised
      */
     void startBugReporting() throws GleapNotInitialisedException;
 
@@ -34,13 +34,13 @@ interface iGleap {
     void sendSilentBugReport(String email, String description, Gleap.SEVERITY severity);
 
     /**
-     * Configure Bugbattle
+     * Configure Gleap
      */
     /**
-     * Sets the API url to your internal Bugbattle server. Please make sure that the server is reachable within the network
+     * Sets the API url to your internal Gleap server. Please make sure that the server is reachable within the network
      * If you use a http url pls add android:usesCleartextTraffic="true" to your main activity to allow cleartext traffic
      *
-     * @param apiUrl url of the internal Bugbattle server
+     * @param apiUrl url of the internal Gleap server
      */
     void setApiUrl(String apiUrl);
 
@@ -53,13 +53,13 @@ interface iGleap {
 
 
     /**
-     * Set the main color of the bugbattle flow.
+     * Set the main color of the Gleap flow.
      * @param color this color is used to adapt ui. Use Hex format
      */
     void setColor(String color);
 
     /**
-     * Set the language for the BugBattle Report Flow. Otherwise the default language is used.
+     * Set the language for the Gleap Report Flow. Otherwise the default language is used.
      * Supported Languages "en", "es", "fr", "it", "de", "nl", "cz"
      *
      * @param language ISO Country Code eg. "cz," "en", "de", "es", "nl"
@@ -98,14 +98,14 @@ interface iGleap {
      */
 
     /**
-     * This is called, when the bugbattle flow is started
+     * This is called, when the Gleap flow is started
      *
      * @param bugWillBeSentCallback is called when BB is opened
      */
     void setBugWillBeSentCallback(BugWillBeSentCallback bugWillBeSentCallback);
 
     /**
-     * This method is triggered, when the bugbattle flow is closed
+     * This method is triggered, when the Gleap flow is closed
      *
      * @param gleapSentCallback this callback is called when the flow is called
      */
@@ -156,10 +156,10 @@ interface iGleap {
     void registerCustomAction(CustomActionCallback customAction);
 
     /**
-     * Enables or disables the powered by Bugbattle logo.
+     * Enables or disables the powered by Gleap logo.
      *
-     * @param enable Enablesor disable the powered by Bugbattle logo.
-     * @author BugBattle
+     * @param enable Enablesor disable the powered by Gleap logo.
+     * @author Gleap
      */
     void enablePoweredByGleap(boolean enable);
 
@@ -167,7 +167,7 @@ interface iGleap {
      * Sets the main logo url.
      *
      * @param logoUrl The main logo url.
-     * @author BugBattle
+     * @author Gleap
      */
     void setLogoUrl(String logoUrl);
 
@@ -175,7 +175,7 @@ interface iGleap {
      * Logs a custom event
      *
      * @param name Name of the event
-     * @author BugBattle
+     * @author Gleap
      */
     void logEvent(String name);
 
@@ -184,7 +184,7 @@ interface iGleap {
      *
      * @param name Name of the event
      * @param data Data passed with the event.
-     * @author BugBattle
+     * @author Gleap
      */
     void logEvent(String name, JSONObject data);
 

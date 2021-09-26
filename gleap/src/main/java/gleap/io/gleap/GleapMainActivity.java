@@ -181,7 +181,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         }
 
         @JavascriptInterface
-        public void closeBugBattle(String object){
+        public void closeGleap(String object){
             this.mContext.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -197,7 +197,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 @Override
                 public void run() {
                     String image = "data:image/png;base64," + ScreenshotUtil.bitmapToBase64(GleapBug.getInstance().getScreenshot());
-                    webView.evaluateJavascript("BugBattle.default.setScreenshot('" + image + "', true)", null);
+                    webView.evaluateJavascript("Gleap.default.setScreenshot('" + image + "', true)", null);
                 }
             });
         }
