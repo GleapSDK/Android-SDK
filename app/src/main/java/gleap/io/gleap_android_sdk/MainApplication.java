@@ -1,15 +1,9 @@
-package gleap.io.bugbattle_android_sdk;
+package gleap.io.gleap_android_sdk;
 
 import android.app.Application;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import gleap.io.gleap.Gleap;
-import gleap.io.gleap.BugWillBeSentCallback;
-import gleap.io.gleap.CustomActionCallback;
 import gleap.io.gleap.GleapUserSession;
-import gleap.io.gleap.RequestType;
 
 public class MainApplication extends Application {
 

@@ -1,4 +1,4 @@
-package gleap.io.bugbattle_android_sdk;
+package gleap.io.gleap_android_sdk;
 
 import android.os.Bundle;
 import android.view.View;
