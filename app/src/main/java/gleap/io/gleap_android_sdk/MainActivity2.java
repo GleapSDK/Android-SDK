@@ -28,7 +28,7 @@ public class MainActivity2 extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 try {
-                    Gleap.getInstance().startBugReporting();
+                    Gleap.getInstance().startFeedbackFlow();
 
                 } catch (GleapNotInitialisedException e) {
                     e.printStackTrace();

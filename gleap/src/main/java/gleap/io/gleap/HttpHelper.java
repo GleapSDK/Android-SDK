@@ -106,7 +106,7 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
     @RequiresApi(api = Build.VERSION_CODES.O)
     private Integer postFeedback(GleapBug bbBug) throws JSONException, IOException, ParseException {
         JSONObject responseUploadImage = uploadImage(bbBug.getScreenshot());
-        URL url = new URL(bbConfig.getApiUrl() + REPORT_BUG_URL_POSTFIX);
+        URL url = new URL(bbConfig.getApiUrl() + REPORT_BUG_URL_POSTFIX );
         HttpURLConnection conn;
         if (bbConfig.getApiUrl().contains("https")) {
             conn = (HttpsURLConnection) url.openConnection();
@@ -118,6 +118,12 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
         conn.setRequestProperty("Accept", "application/json");
         conn.setRequestProperty("Content-Type", "application/json");
         conn.setRequestMethod("POST");
+        UserSession userSession =  UserSessionController.getInstance().getUserSession();
+
+        if(userSession.getType().equals("GUEST")){
+            conn.setRequestProperty("gleap-id", userSession.getId());
+            conn.setRequestProperty("gleap-hash", userSession.getHash());
+        }
 
         JSONObject body = new JSONObject();
         body.put("screenshotUrl", responseUploadImage.get("fileUrl"));

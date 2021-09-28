@@ -36,6 +36,14 @@ public class UserSessionController {
         return userSession;
     }
 
+    public void clearUserSession() {
+
+    }
+
+    public void setUserSession(GleapUserSession  gleapUserSession) {
+        this.gleapUserSession = gleapUserSession;
+    }
+
     public void mergeUserSession(String id, String hash, String type) {
         userSession.setHash(hash);
         userSession.setId(id);

@@ -12,7 +12,8 @@ class GleapConfig {
     private static GleapConfig instance;
 
     //bb config
-    private String apiUrl = "https://api.bugbattle.io";
+    private String apiUrl = "https://api.gleap.dev";
+    private String widgetUrl = "https://widget.gleap.dev";
     private String sdkKey = "";
     private GleapSentCallback gleapSentCallback;
     private BugWillBeSentCallback bugWillBeSentCallback;
@@ -50,15 +51,10 @@ class GleapConfig {
      */
     public void initConfig(JSONObject config) {
         try {
-            this.color = config.getString("color");
             this.enableConsoleLogs = config.getBoolean("enableConsoleLogs");
             this.enableReplays = config.getBoolean("enableReplays");
             this.activationMethodShake = config.getBoolean("activationMethodShake");
             this.activationMethodScreenshotGesture = config.getBoolean("activationMethodScreenshotGesture");
-            if (!poweredByForced) {
-                this.showPoweredBy = !config.getBoolean("hideBugBattleLogo");
-            }
-            this.logoUrl = config.getString("logo");
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -187,5 +183,9 @@ class GleapConfig {
     public void setShowPoweredBy(boolean showPoweredBy) {
         this.poweredByForced = true;
         this.showPoweredBy = showPoweredBy;
+    }
+
+    public String getWidgetUrl() {
+        return widgetUrl;
     }
 }

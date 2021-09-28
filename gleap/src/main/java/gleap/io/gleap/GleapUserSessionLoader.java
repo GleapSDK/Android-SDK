@@ -13,12 +13,11 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.text.ParseException;
 
 import javax.net.ssl.HttpsURLConnection;
 
 public class GleapUserSessionLoader  extends AsyncTask<Void, Void, Integer> {
-    private static final String httpsUrl = "https://api.gleap.dev/sessions/start/";
+    private static final String httpsUrl = GleapConfig.getInstance().getApiUrl() + "/sessions/start/";
 
     @Override
     protected Integer doInBackground(Void... voids) {

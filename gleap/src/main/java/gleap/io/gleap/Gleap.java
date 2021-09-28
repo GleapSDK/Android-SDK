@@ -77,7 +77,14 @@ public class Gleap implements iGleap {
         new GleapListener();
     }
 
-    public static void initialize(String sdkKey, GleapUserSession userSession,Application application) {
+    /**
+     * Auto-configures the Gleap SDK from the remote config.
+     * @author Gleap
+     *
+     * @param sdkKey The SDK key, which can be found on dashboard.gleap.io
+     * @param userSession The GleapSession for the current user.
+     */
+    public static void initialize(String sdkKey, GleapUserSession userSession, Application application) {
         Gleap.application = application;
         GleapConfig.getInstance().setSdkKey(sdkKey);
         UserSessionController userSessionController = UserSessionController.initialize(application);
@@ -91,28 +98,13 @@ public class Gleap implements iGleap {
      * @throws GleapNotInitialisedException thrown when Gleap is not initialised
      */
     @Override
-    public void startBugReporting() throws GleapNotInitialisedException {
+    public void startFeedbackFlow() throws GleapNotInitialisedException {
         if (instance != null) {
             try {
                 screenshotTaker.takeScreenshot();
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        } else {
-            throw new GleapNotInitialisedException("Gleap is not initialised");
-        }
-    }
-
-    /**
-     * Starts the bug reporting with a custom screenshot attached.
-     *
-     * @param screenshot the image will be used instead of the current
-     */
-    @Override
-    public void startBugReporting(Bitmap screenshot) throws GleapNotInitialisedException {
-        if (instance != null) {
-            GleapBug.getInstance().setScreenshot(screenshot);
-            screenshotTaker.openScreenshot(screenshot);
         } else {
             throw new GleapNotInitialisedException("Gleap is not initialised");
         }
@@ -131,6 +123,28 @@ public class Gleap implements iGleap {
     }
 
     /**
+     * Updates a session's user data.
+     * @author Gleap
+     *
+     * @param gleapUserSession The updated user data.
+     */
+    @Override
+    public void updateUserSession(GleapUserSession gleapUserSession) {
+        UserSessionController.getInstance().setUserSession(gleapUserSession);
+        new GleapUserSessionLoader().execute();
+    }
+
+    /**
+     * Clears a user session.
+     * @author Gleap
+     */
+    @Override
+    public void clearUserSession() {
+        UserSessionController.getInstance().setUserSession(null);
+        new GleapUserSessionLoader().execute();
+    }
+
+    /**
      * Sets the API url to your internal Gleap server. Please make sure that the server is reachable within the network
      * If you use a http url pls add android:usesCleartextTraffic="true" to your main activity to allow cleartext traffic
      *
@@ -142,23 +156,14 @@ public class Gleap implements iGleap {
     }
 
     /**
-     * Set/Prefill the email address for the user.
+     * Sets a custom widget url.
+     * @author Gleap
      *
-     * @param email address, which is fileld in.
+     * @param widgetUrl The custom widget url.
      */
     @Override
-    public void setCustomerEmail(String email) {
-        GleapBug.getInstance().setEmail(email);
-    }
+    public void setWidgetUrl(String widgetUrl) {
 
-    /**
-     * Set the main color of the Gleap flow.
-     *
-     * @param color this color is used to adapt ui. Use Hex format
-     */
-    @Override
-    public void setColor(String color) {
-        GleapConfig.getInstance().setColor(color);
     }
 
     /**
@@ -170,15 +175,6 @@ public class Gleap implements iGleap {
     @Override
     public void setLanguage(String language) {
         GleapConfig.getInstance().setLanguage(language);
-    }
-
-    /**
-     * Enable Replay function for BB
-     * Use with care, check performance on phone
-     */
-    @Override
-    public void enableReplays(boolean enable) {
-        GleapConfig.getInstance().setEnableReplays(enable);
     }
 
     /**
@@ -211,7 +207,7 @@ public class Gleap implements iGleap {
      * @param data Data, which is added
      */
     @Override
-    public void attachData(JSONObject data) {
+    public void attachCustomData(JSONObject data) {
         GleapBug.getInstance().setCustomData(data);
     }
 
@@ -353,29 +349,6 @@ public class Gleap implements iGleap {
     }
 
     /**
-     * Enables or disables the powered by Gleap logo.
-     *
-     * @param enable Enablesor disable the powered by Gleap logo.
-     * @author Gleap
-     */
-    @Override
-    public void enablePoweredByGleap(boolean enable) {
-        GleapConfig.getInstance().setShowPoweredBy(enable);
-    }
-
-    /**
-     * Sets the main logo url.
-     *
-     * @param logoUrl The main logo url.
-     * @author Gleap
-     */
-    @Override
-    public void setLogoUrl(String logoUrl) {
-        GleapConfig.getInstance().setLogoUrl(logoUrl);
-    }
-
-
-    /**
      * Logs a custom event
      *
      * @param name Name of the event
@@ -399,15 +372,11 @@ public class Gleap implements iGleap {
     }
 
     /**
-     * In order to pre-fill the customer's name,
-     * we recommend using the following method.
-     * This welcomes the user with his name and simplifies the feedback reporting,
-     * *
-     *
-     * @param name name of the customer
+     * Enable Replay function for BB
+     * Use with care, check performance on phone
      */
-    @Override
-    public void setCustomerName(String name) {
-        GleapBug.getInstance().setCustomerName(name);
+    private void enableReplays(boolean enable) {
+        GleapConfig.getInstance().setEnableReplays(enable);
     }
+
 }

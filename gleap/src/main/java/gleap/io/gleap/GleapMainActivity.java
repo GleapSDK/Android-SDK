@@ -32,11 +32,9 @@ import org.json.JSONObject;
 
 import java.util.Locale;
 
-import gleap.io.gleap.R;
-
 public class GleapMainActivity extends AppCompatActivity implements OnHttpResponseListener {
     private WebView webView;
-    private String url = "https://widget.bugbattle.io/appwidgetv5/" + GleapConfig.getInstance().getSdkKey();
+    private String url = GleapConfig.getInstance().getWidgetUrl() + "/appwidget/" + GleapConfig.getInstance().getSdkKey();
     private boolean isWebViewLoaded = true;
 
     @Override
@@ -82,10 +80,10 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         settings.setDisplayZoomControls(false);
         settings.setSupportZoom(true);
         settings.setDefaultTextEncodingName("utf-8");
-        webView.setWebViewClient(new BugBattleWebViewClient());
+        webView.setWebViewClient(new GleapWebViewClient());
         webView.setBackgroundColor(Color.TRANSPARENT);
-        webView.addJavascriptInterface(new BugBattleJSBridge(this), "BugBattleJSBridge");
-        webView.setWebChromeClient(new BugBattleWebChromeClient());
+        webView.addJavascriptInterface(new GleapJSBridge(this), "GleapJSBridge");
+        webView.setWebChromeClient(new GleapWebChromeClient());
         webView.loadUrl(url);
         settings.setUseWideViewPort(true);
         settings.setLoadWithOverviewMode(true);
@@ -96,7 +94,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         if (httpResponse == 201) {
             GleapDetectorUtil.resumeAllDetectors();
             GleapBug.getInstance().setDisabled(false);
-            webView.evaluateJavascript("BugBattle.default.getInstance().showSuccessAndClose()",null);
+            webView.evaluateJavascript("Gleap.default.getInstance().showSuccessAndClose()",null);
             //TODO: CB Web Frontend
         } else {
             GleapDetectorUtil.resumeAllDetectors();
@@ -105,10 +103,10 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         }
     }
 
-    private class BugBattleWebViewClient extends WebViewClient {
+    private class GleapWebViewClient extends WebViewClient {
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, String url) {
-            if (!url.contains("https://widget.bugbattle.io/")) {
+            if (!url.contains(GleapConfig.getInstance().getWidgetUrl())) {
                 Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
                 startActivity(browserIntent);
                 return true;
@@ -122,9 +120,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         }
 
         public void onPageFinished(WebView view, String url) {
-            if (isWebViewLoaded) {
-                webView.setVisibility(View.VISIBLE);
-            }
+
         }
 
         public void onReceivedError(WebView view, int errorCode,
@@ -153,7 +149,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         }
     }
 
-    private class BugBattleWebChromeClient extends WebChromeClient {
+    private class GleapWebChromeClient extends WebChromeClient {
         @Override
         public boolean onJsAlert(WebView view, String url, String message, final JsResult result) {
             return true;
@@ -173,10 +169,10 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
     }
 
-    private class BugBattleJSBridge {
+    private class GleapJSBridge {
         private final AppCompatActivity mContext;
 
-        public BugBattleJSBridge(AppCompatActivity c) {
+        public GleapJSBridge(AppCompatActivity c) {
             mContext = c;
         }
 
@@ -187,6 +183,16 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 public void run() {
                     GleapDetectorUtil.resumeAllDetectors();
                     finish();
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void sessionReady(String object) {
+            this.mContext.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    webView.setVisibility(View.VISIBLE);
                 }
             });
         }
@@ -239,11 +245,15 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     GleapBug gleapBug = GleapBug.getInstance();
                     try {
                         JSONObject jsonObject = new JSONObject(object);
-                        String base64String = jsonObject.get("screenshot").toString();
-                        String base64Image = base64String.split(",")[1];
-                        byte[] decodedString = Base64.decode(base64Image, Base64.DEFAULT);
-                        Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
-                        gleapBug.setScreenshot(decodedByte);
+                        if(jsonObject.has("screenshot")) {
+                            String base64String = jsonObject.get("screenshot").toString();
+                            if(!base64String.equals("null")) {
+                                String base64Image = base64String.split(",")[1];
+                                byte[] decodedString = Base64.decode(base64Image, Base64.DEFAULT);
+                                Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+                                gleapBug.setScreenshot(decodedByte);
+                            }
+                        }
                         gleapBug.setData(jsonObject);
 
                     } catch (JSONException e) {

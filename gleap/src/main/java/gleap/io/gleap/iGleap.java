@@ -15,14 +15,7 @@ interface iGleap {
      *
      * @throws GleapNotInitialisedException thrown when Gleap is not initialised
      */
-    void startBugReporting() throws GleapNotInitialisedException;
-
-    /**
-     * Starts the bug reporting with a custom screenshot attached.
-     *
-     * @param screenshot the image will be used instead of the current
-     */
-    void startBugReporting(Bitmap screenshot) throws GleapNotInitialisedException;
+    void startFeedbackFlow() throws GleapNotInitialisedException;
 
     /**
      * Send a silent bugreport in the background. Useful for automated ui tests.
@@ -32,6 +25,20 @@ interface iGleap {
      * @param severity    Severity of the bug "LOW", "MIDDLE", "HIGH"
      */
     void sendSilentBugReport(String email, String description, Gleap.SEVERITY severity);
+
+    /**
+     * Updates a session's user data.
+     * @author Gleap
+     *
+     * @param gleapUserSession The updated user data.
+     */
+    void updateUserSession(GleapUserSession gleapUserSession);
+
+    /**
+     * Clears a user session.
+     * @author Gleap
+     */
+    void clearUserSession();
 
     /**
      * Configure Gleap
@@ -45,18 +52,12 @@ interface iGleap {
     void setApiUrl(String apiUrl);
 
     /**
-     * Set/Prefill the email address for the user.
+     * Sets a custom widget url.
+     * @author Gleap
      *
-     * @param email address, which is fileld in.
+     * @param widgetUrl The custom widget url.
      */
-    void setCustomerEmail(String email);
-
-
-    /**
-     * Set the main color of the Gleap flow.
-     * @param color this color is used to adapt ui. Use Hex format
-     */
-    void setColor(String color);
+    void setWidgetUrl(String widgetUrl);
 
     /**
      * Set the language for the Gleap Report Flow. Otherwise the default language is used.
@@ -65,12 +66,6 @@ interface iGleap {
      * @param language ISO Country Code eg. "cz," "en", "de", "es", "nl"
      */
     void setLanguage(String language);
-
-    /**
-     * Enable Replay function for BB
-     * Use with care, check performance on phone
-     */
-    void enableReplays(boolean enable) throws GleapNotInitialisedException;
 
     /**
      * Set Application Type
@@ -85,12 +80,35 @@ interface iGleap {
     @Deprecated
     void appendCustomData(JSONObject customData);
 
+    /**
+     * Attaches custom data, which can be viewed in the Gleap dashboard. New data will be merged with existing custom data.
+     * @author Gleap
+     *
+     * @param customData The data to attach to a bug report.
+     */
+    void attachCustomData(JSONObject customData);
+
+    /**
+     * Attach one key value pair to existing custom data.
+     * @author Gleap
+     *
+     * @param value The value you want to add
+     * @param key The key of the attribute
+     */
     void setCustomData(String key, String value);
 
-    void attachData(JSONObject data);
-
+    /**
+     * Removes one key from existing custom data.
+     * @author Gleap
+     *
+     * @param key The key of the attribute
+     */
     void removeCustomDataForKey(String key);
 
+    /**
+     * Clears all custom data.
+     * @author Gleap
+     */
     void clearCustomData();
 
     /**
@@ -120,20 +138,6 @@ interface iGleap {
     void setBitmapCallback(GetBitmapCallback getBitmapCallback);
 
     /**
-     * Enables the privacy policy check.
-     *
-     * @param enable Enable the privacy policy.
-     */
-    void enablePrivacyPolicy(boolean enable);
-
-    /**
-     * Sets a custom privacy policy url.
-     *
-     * @param privacyUrl The URL pointing to your privacy policy.
-     */
-    void setPrivacyPolicyUrl(String privacyUrl);
-
-    /**
      * Network
      */
     /**
@@ -155,21 +159,6 @@ interface iGleap {
      */
     void registerCustomAction(CustomActionCallback customAction);
 
-    /**
-     * Enables or disables the powered by Gleap logo.
-     *
-     * @param enable Enablesor disable the powered by Gleap logo.
-     * @author Gleap
-     */
-    void enablePoweredByGleap(boolean enable);
-
-    /**
-     * Sets the main logo url.
-     *
-     * @param logoUrl The main logo url.
-     * @author Gleap
-     */
-    void setLogoUrl(String logoUrl);
 
     /**
      * Logs a custom event
@@ -188,12 +177,4 @@ interface iGleap {
      */
     void logEvent(String name, JSONObject data);
 
-    /**
-     * In order to pre-fill the customer's name,
-     * we recommend using the following method.
-     * This welcomes the user with his name and simplifies the feedback reporting,
-     * *
-     * @param name name of the customer
-     */
-    void setCustomerName(String name);
 }
