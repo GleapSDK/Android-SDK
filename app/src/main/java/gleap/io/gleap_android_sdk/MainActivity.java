@@ -10,8 +10,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import gleap.io.gleap.Gleap;
-import gleap.io.gleap.GleapNotInitialisedException;
+import io.gleap.Gleap;
 
 
 public class MainActivity extends AppCompatActivity {

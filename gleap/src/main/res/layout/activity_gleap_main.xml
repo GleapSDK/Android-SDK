@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#00000000"
-    tools:context="gleap.io.gleap.GleapMainActivity">
+    tools:context="gleap.io.gleap.gleap.io.GleapMainActivity">
 
         <ProgressBar
             android:id="@+id/bb_progressBar"

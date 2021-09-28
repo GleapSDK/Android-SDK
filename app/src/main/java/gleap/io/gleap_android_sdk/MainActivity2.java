@@ -7,8 +7,8 @@ import android.widget.Button;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
-import gleap.io.gleap.Gleap;
-import gleap.io.gleap.GleapNotInitialisedException;
+import io.gleap.Gleap;
+import io.gleap.GleapNotInitialisedException;
 
 public class MainActivity2 extends AppCompatActivity {
 
