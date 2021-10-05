@@ -88,8 +88,6 @@ class PhoneMeta {
                 bundleID = packageInfo.packageName;
             } catch (PackageManager.NameNotFoundException e) {
                 e.printStackTrace();
-                //    buildVersionNumber = Integer.toString(BuildConfig.VERSION_CODE);
-                //   releaseVersionNumber = BuildConfig.VERSION_NAME;
                 bundleID = context.getPackageName();
 
             }

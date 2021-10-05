@@ -30,9 +30,6 @@ class GleapConfig {
     private boolean activationMethodScreenshotGesture = false;
     private String language = "en";
     private CustomActionCallback customAction;
-    private String logoUrl;
-    private boolean showPoweredBy = true;
-    private boolean poweredByForced = false;
 
     private GleapConfig() {
     }
@@ -78,10 +75,6 @@ class GleapConfig {
 
     public String getColor() {
         return color;
-    }
-
-    public void setColor(String color) {
-        this.color = color;
     }
 
     public String getLanguage() {
@@ -152,37 +145,12 @@ class GleapConfig {
         return customAction;
     }
 
-    public String getPrivacyPolicyUrl() {
-        return privacyPolicyUrl;
-    }
-
     public void setPrivacyPolicyUrl(String privacyPolicyUrl) {
         this.privacyPolicyUrl = privacyPolicyUrl;
     }
 
-    public boolean isPrivacyPolicyEnabled() {
-        return isPrivacyPolicyEnabled;
-    }
-
     public void setPrivacyPolicyEnabled(boolean privacyPolicyEnabled) {
         isPrivacyPolicyEnabled = privacyPolicyEnabled;
-    }
-
-    public String getLogoUrl() {
-        return logoUrl;
-    }
-
-    public boolean isShowPoweredBy() {
-        return showPoweredBy;
-    }
-
-    public void setLogoUrl(String logoUrl) {
-        this.logoUrl = logoUrl;
-    }
-
-    public void setShowPoweredBy(boolean showPoweredBy) {
-        this.poweredByForced = true;
-        this.showPoweredBy = showPoweredBy;
     }
 
     public String getWidgetUrl() {

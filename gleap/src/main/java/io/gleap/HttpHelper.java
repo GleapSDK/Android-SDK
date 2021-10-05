@@ -37,15 +37,13 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
     private static final String UPLOAD_FILES_MULTI_BACKEND_URL_POSTFIX = "/uploads/attachments";
     private static final String REPORT_BUG_URL_POSTFIX = "/bugs";
     private final Context context;
-    private boolean isSilentBugReport = false;
     GleapConfig bbConfig = GleapConfig.getInstance();
 
     private final OnHttpResponseListener listener;
 
-    public HttpHelper(OnHttpResponseListener listener, Context context, boolean isSilentBugReport) {
+    public HttpHelper(OnHttpResponseListener listener, Context context) {
         this.listener = listener;
         this.context = context;
-        this.isSilentBugReport = isSilentBugReport;
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
@@ -70,7 +68,7 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
 
     @Override
     protected void onPostExecute(Integer result) {
-        if (GleapConfig.getInstance().getBugSentCallback() != null && !isSilentBugReport) {
+        if (GleapConfig.getInstance().getBugSentCallback() != null) {
             GleapConfig.getInstance().getBugSentCallback().close();
         }
         try {
@@ -145,20 +143,12 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
         conn.setRequestProperty("gleap-id", userSession.getId());
         conn.setRequestProperty("gleap-hash", userSession.getHash());
 
+
         JSONObject body = new JSONObject();
         body.put("screenshotUrl", responseUploadImage.get("fileUrl"));
         body.put("replay", generateFrames());
         body.put("attachments", generateAttachments());
         body.put("description", bbBug.getDescription());
-        String email = "";
-        if (bbBug.getSilentBugreportEmail() != null && !bbBug.getSilentBugreportEmail().equals("")) {
-            email = bbBug.getSilentBugreportEmail();
-        }
-        if (bbBug.getEmail() != null) {
-            email = bbBug.getEmail();
-        }
-
-        body.put("reportedBy", email);
 
         body.put("networkLogs", bbBug.getNetworklogs());
         body.put("customEventLog", bbBug.getCustomEventLog());
@@ -183,8 +173,6 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
             byte[] input = body.toString().getBytes(StandardCharsets.UTF_8);
             os.write(input, 0, input.length);
         }
-
-        bbBug.setSeverity("MEDIUM");
 
         return conn.getResponseCode();
     }

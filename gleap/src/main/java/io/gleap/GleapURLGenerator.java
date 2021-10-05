@@ -9,26 +9,13 @@ public class GleapURLGenerator {
         String postfixUrl = "";
         try {
             if (config.getLanguage() != null) {
-                if (postfixUrl.length() > 0) {
-                    postfixUrl += "&lang=" + URLEncoder.encode(config.getLanguage(), "utf-8");
-                } else {
-                    postfixUrl += "?lang=" + URLEncoder.encode(config.getLanguage(), "utf-8");
-                }
+                postfixUrl += "?lang=" + URLEncoder.encode(config.getLanguage(), "utf-8");
             }
 
             UserSessionController userSessionController = UserSessionController.getInstance();
-            UserSession  userSession = userSessionController.getUserSession();
-            if (postfixUrl.length() > 0) {
-                postfixUrl += "&sessionId=" + userSession.getId();
-            } else {
-                postfixUrl += "?sessionId=" + userSession.getId();
-            }
-
-            if (postfixUrl.length() > 0) {
-                postfixUrl += "&sessionHash=" + userSession.getHash();
-            } else {
-                postfixUrl += "?sessionHash=" + userSession.getHash();
-            }
+            UserSession userSession = userSessionController.getUserSession();
+            postfixUrl += "&sessionId=" + userSession.getId();
+            postfixUrl += "&sessionHash=" + userSession.getHash();
         } catch (Exception ex) {
             ex.printStackTrace();
         }

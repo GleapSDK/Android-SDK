@@ -16,7 +16,7 @@ import java.nio.charset.StandardCharsets;
 
 import javax.net.ssl.HttpsURLConnection;
 
-public class GleapUserSessionLoader  extends AsyncTask<Void, Void, Integer> {
+public class GleapUserSessionLoader extends AsyncTask<Void, Void, Integer> {
     private static final String httpsUrl = GleapConfig.getInstance().getApiUrl() + "/sessions";
 
     @Override
@@ -33,18 +33,18 @@ public class GleapUserSessionLoader  extends AsyncTask<Void, Void, Integer> {
             UserSession userSession = UserSessionController.getInstance().getUserSession();
             GleapUserSession gleapUserSession = UserSessionController.getInstance().getGleapUserSession();
 
-            if(userSession.getType().equals("GUEST")){
+            if (userSession.getType().equals("GUEST")) {
                 conn.setRequestProperty("Guest-Id", userSession.getId());
                 conn.setRequestProperty("Guest-Hash", userSession.getHash());
-            } else if(userSession.getType().equals("USER")) {
-                if(gleapUserSession != null && gleapUserSession.getUserHash() == null && gleapUserSession.getUserId() == null) {
+            } else if (userSession.getType().equals("USER")) {
+                if (gleapUserSession != null && gleapUserSession.getUserHash() == null && gleapUserSession.getUserId() == null) {
                     conn.setRequestProperty("User-Hash", userSession.getHash());
                     conn.setRequestProperty("User-Id", userSession.getId());
                 }
             }
 
             JSONObject jsonObject = new JSONObject();
-            if(gleapUserSession != null) {
+            if (gleapUserSession != null) {
                 if (gleapUserSession.getUserHash() != null) {
                     conn.setRequestProperty("User-Hash", gleapUserSession.getUserHash());
                 }
@@ -55,7 +55,7 @@ public class GleapUserSessionLoader  extends AsyncTask<Void, Void, Integer> {
 
                     jsonObject.put("email", gleapUserSession.getEmail());
                     jsonObject.put("name", gleapUserSession.getName());
-                }catch (Exception ex){
+                } catch (Exception ex) {
 
                 }
             }
@@ -65,7 +65,7 @@ public class GleapUserSessionLoader  extends AsyncTask<Void, Void, Integer> {
                 os.write(input, 0, input.length);
             }
 
-            try(BufferedReader br = new BufferedReader(
+            try (BufferedReader br = new BufferedReader(
                     new InputStreamReader(conn.getInputStream(), "utf-8"))) {
                 JSONObject result = null;
                 String input;
@@ -77,29 +77,28 @@ public class GleapUserSessionLoader  extends AsyncTask<Void, Void, Integer> {
                 String hash = null;
                 String type = null;
 
-                if(result.has("id")) {
-                    id = result.getString("id");
-                }
+                if (result != null) {
+                    if (result.has("id")) {
+                        id = result.getString("id");
+                    }
 
-                if(result.has("hash")) {
-                    hash = result.getString("hash");
-                }
+                    if (result.has("hash")) {
+                        hash = result.getString("hash");
+                    }
 
-                if(result.has("type")) {
-                    type = result.getString("type");
-                }
+                    if (result.has("type")) {
+                        type = result.getString("type");
+                    }
 
-                if(id != null && hash != null && type != null) {
-                    UserSessionController.getInstance().mergeUserSession(id, hash, type);
+                    if (id != null && hash != null && type != null) {
+                        UserSessionController.getInstance().mergeUserSession(id, hash, type);
+                    }
                 }
-
 
             } catch (JSONException e) {
                 e.printStackTrace();
             }
 
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }

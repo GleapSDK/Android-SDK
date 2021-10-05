@@ -5,7 +5,6 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import android.graphics.PorterDuff;
 import android.net.Uri;
 import android.net.http.SslError;
 import android.os.Bundle;
@@ -22,7 +21,6 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.ProgressBar;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -39,32 +37,31 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
     private String url = GleapConfig.getInstance().getWidgetUrl() + "/appwidget/" + GleapConfig.getInstance().getSdkKey();
 
     @Override
+    public void onBackPressed() {
+        GleapDetectorUtil.resumeAllDetectors();
+        super.onBackPressed();
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         this.requestWindowFeature(Window.FEATURE_NO_TITLE);
         try {
-            getSupportActionBar().hide();
+            if(getSupportActionBar() != null) {
+                getSupportActionBar().hide();
+            }
         } catch (Exception ex) {
             ex.printStackTrace();
         }
         super.onCreate(savedInstanceState);
 
-        String postfixUrl = "";
         GleapBug.getInstance().setLanguage(Locale.getDefault().getLanguage());
 
         url += GleapURLGenerator.generateURL();
 
         setContentView(R.layout.activity_gleap_main);
-        webView = findViewById(R.id.bb_webview);
+        webView = findViewById(R.id.gleap_webview);
         webView.setVisibility(View.INVISIBLE);
 
-        try {
-            int color = Color.parseColor("#" + GleapConfig.getInstance().getColor().replace("#", ""));
-            ((ProgressBar) findViewById(R.id.bb_progressBar))
-                    .getIndeterminateDrawable()
-                    .setColorFilter(color, PorterDuff.Mode.SRC_IN);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
         initBrowser();
     }
 
@@ -96,10 +93,8 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
             GleapDetectorUtil.resumeAllDetectors();
             GleapBug.getInstance().setDisabled(false);
             webView.evaluateJavascript("Gleap.getInstance().showSuccessAndClose()",null);
-            //TODO: CB Web Frontend
         } else {
             GleapDetectorUtil.resumeAllDetectors();
-            //TODO: CB Web Frontend
             finish();
         }
     }
@@ -118,10 +113,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         @Override
         public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
             handler.cancel();
-        }
-
-        public void onPageFinished(WebView view, String url) {
-
         }
 
         public void onReceivedError(WebView view, int errorCode,
@@ -253,15 +244,10 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
-                    new HttpHelper(GleapMainActivity.this, getApplicationContext(), false).execute(gleapBug);
+                    new HttpHelper(GleapMainActivity.this, getApplicationContext()).execute(gleapBug);
 
                 }
             });
-        }
-
-        @JavascriptInterface
-        public void injectScreenshot(String base64) {
-            System.out.println(base64);
         }
     }
 }

@@ -316,7 +316,7 @@ public class Gleap implements iGleap {
      * Severity of the bug. Can be used in the silent bug report.
      */
     public enum SEVERITY {
-        LOW, MIDDLE, HIGH
+        LOW, MEDIUM, HIGH
     }
 
     public static class GleapListener implements OnHttpResponseListener {

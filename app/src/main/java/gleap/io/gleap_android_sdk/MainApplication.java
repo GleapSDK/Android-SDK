@@ -1,14 +1,12 @@
 package gleap.io.gleap_android_sdk;
 
 import android.app.Application;
-import android.os.Environment;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 
 import io.gleap.Gleap;
-import io.gleap.GleapUserSession;
 
 public class MainApplication extends Application {
 
@@ -27,6 +25,6 @@ public class MainApplication extends Application {
         }
 
 
-        Gleap.getInstance().addAttachment(fileDirectory);
+      //  Gleap.getInstance().addAttachment(fileDirectory);
     }
 }

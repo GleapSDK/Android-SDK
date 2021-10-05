@@ -130,7 +130,7 @@ class ScreenshotUtil {
 
     private static Field getFieldForName(String name, Object obj) throws NullPointerException {
         Class currentClass = obj.getClass();
-        while (currentClass != Object.class) {
+        while (currentClass != Object.class && currentClass != null) {
             for (Field field : currentClass.getDeclaredFields()) {
                 if (name.equals(field.getName())) {
                     return field;

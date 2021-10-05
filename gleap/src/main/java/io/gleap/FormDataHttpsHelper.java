@@ -81,10 +81,7 @@ class FormDataHttpsHelper {
             BufferedInputStream buf = new BufferedInputStream(new FileInputStream(uploadFile));
             buf.read(bytes, 0, bytes.length);
             buf.close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
         } catch (IOException e) {
-
             e.printStackTrace();
         }
         request.write(bytes);
