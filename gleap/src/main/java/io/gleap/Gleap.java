@@ -5,6 +5,7 @@ import android.app.Application;
 
 import org.json.JSONObject;
 
+import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -127,7 +128,7 @@ public class Gleap implements iGleap {
      * @param gleapUserSession The updated user data.
      */
     @Override
-    public void updateUserSession(GleapUserSession gleapUserSession) {
+    public void identifyUser(GleapUserSession gleapUserSession) {
         UserSessionController.getInstance().setUserSession(gleapUserSession);
         new GleapUserSessionLoader().execute();
     }
@@ -137,7 +138,7 @@ public class Gleap implements iGleap {
      * @author Gleap
      */
     @Override
-    public void clearUserSession() {
+    public void clearIdentity() {
         UserSessionController.getInstance().setUserSession(null);
         new GleapUserSessionLoader().execute();
     }
@@ -367,6 +368,27 @@ public class Gleap implements iGleap {
     @Override
     public void logEvent(String name, JSONObject data) {
         GleapBug.getInstance().logEvent(name, data);
+    }
+
+    /**
+     * Attaches a file to the bug report
+     *
+     * @param attachment The file to attach to the bug report
+     * @author Gleap
+     */
+    @Override
+    public void addAttachment(File attachment) {
+        GleapFileHelper.getInstance().addAttachment(attachment);
+    }
+
+    /**
+     * Removes all attachments
+     *
+     * @author Gleap
+     */
+    @Override
+    public void removeAllAttachments() {
+        GleapFileHelper.getInstance().clearAttachments();
     }
 
     /**

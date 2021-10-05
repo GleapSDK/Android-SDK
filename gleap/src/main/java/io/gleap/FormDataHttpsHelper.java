@@ -52,6 +52,9 @@ class FormDataHttpsHelper {
         httpConn.setRequestProperty("Connection", "Keep-Alive");
         httpConn.setRequestProperty("Cache-Control", "no-cache");
         httpConn.setRequestProperty("api-token", apiToken);
+        UserSession userSession = UserSessionController.getInstance().getUserSession();
+        httpConn.setRequestProperty("gleap-id", userSession.getId());
+        httpConn.setRequestProperty("gleap-hash", userSession.getHash());
         httpConn.setRequestProperty(
                 "Content-Type", "multipart/form-data;boundary=" + this.boundary);
 
@@ -81,6 +84,7 @@ class FormDataHttpsHelper {
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
+
             e.printStackTrace();
         }
         request.write(bytes);

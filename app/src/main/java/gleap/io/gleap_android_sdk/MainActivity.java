@@ -11,6 +11,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import io.gleap.Gleap;
+import io.gleap.GleapNotInitialisedException;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -18,23 +19,14 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Button button = findViewById(R.id.button3);
-
-        JSONObject jsonObject = new JSONObject();
-
-        try {
-            jsonObject.put("hey", "you");
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        Gleap.getInstance().logEvent("JSON", jsonObject);
-
-        button.setOnClickListener(new View.OnClickListener() {
+        findViewById(R.id.button3).setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(MainActivity.this, MainActivity2.class);
-                startActivity(intent);
+            public void onClick(View view) {
+                try {
+                    Gleap.getInstance().startFeedbackFlow();
+                } catch (GleapNotInitialisedException e) {
+                    e.printStackTrace();
+                }
             }
         });
     }

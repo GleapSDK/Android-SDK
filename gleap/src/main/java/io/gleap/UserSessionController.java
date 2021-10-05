@@ -36,7 +36,8 @@ public class UserSessionController {
     }
 
     public void clearUserSession() {
-
+        SharedPreferences sharedPreferences = application.getSharedPreferences("usersession", MODE_PRIVATE);
+        sharedPreferences.edit().clear().apply();
     }
 
     public void setUserSession(GleapUserSession  gleapUserSession) {
@@ -48,9 +49,9 @@ public class UserSessionController {
         userSession.setId(id);
         userSession.setType(type);
         SharedPreferences sharedPreferences = application.getSharedPreferences("usersession", MODE_PRIVATE);
-        sharedPreferences.edit().putString("hash", hash).commit();
-        sharedPreferences.edit().putString("id", id).commit();
-        sharedPreferences.edit().putString("type", type).commit();
+        sharedPreferences.edit().putString("hash", hash).apply();
+        sharedPreferences.edit().putString("id", id).apply();
+        sharedPreferences.edit().putString("type", type).apply();
     }
 
     public void setGleapUserSession(GleapUserSession gleapUserSession){
@@ -58,6 +59,12 @@ public class UserSessionController {
     }
 
     public GleapUserSession getGleapUserSession() {
+        SharedPreferences sharedPreferences = application.getSharedPreferences("usersession", MODE_PRIVATE);
+
+        String id = sharedPreferences.getString("id", "");
+        String type = sharedPreferences.getString("type", "");
+        String hash = sharedPreferences.getString("hash", "");
+        userSession = new UserSession(id, type, hash);
         return gleapUserSession;
     }
 }

@@ -20,6 +20,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.text.ParseException;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -33,6 +34,7 @@ import javax.net.ssl.HttpsURLConnection;
 class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
     private static final String UPLOAD_IMAGE_BACKEND_URL_POSTFIX = "/uploads/sdk";
     private static final String UPLOAD_IMAGE_MULTI_BACKEND_URL_POSTFIX = "/uploads/sdksteps";
+    private static final String UPLOAD_FILES_MULTI_BACKEND_URL_POSTFIX = "/uploads/attachments";
     private static final String REPORT_BUG_URL_POSTFIX = "/bugs";
     private final Context context;
     private boolean isSilentBugReport = false;
@@ -79,7 +81,9 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
-    private JSONObject uploadImage (Bitmap image) throws IOException, JSONException {
+    private JSONObject uploadImage(Bitmap image) throws IOException, JSONException {
+        String postfixUrl = "";
+        UserSession userSession = UserSessionController.getInstance().getUserSession();
         FormDataHttpsHelper multipart = new FormDataHttpsHelper(bbConfig.getApiUrl() + UPLOAD_IMAGE_BACKEND_URL_POSTFIX, bbConfig.getSdkKey());
         File file = bitmapToFile(image);
         if (file != null) {
@@ -90,9 +94,27 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
-    private JSONObject uploadImages (Bitmap[] images) throws IOException, JSONException {
+    private JSONObject uploadFiles(File[] files) throws IOException, JSONException {
+        FormDataHttpsHelper multipart = new FormDataHttpsHelper(bbConfig.getApiUrl() + UPLOAD_FILES_MULTI_BACKEND_URL_POSTFIX, bbConfig.getSdkKey());
+        for (File file : files) {
+            if (file != null) {
+                try {
+                    if(file.length() > 0) {
+                        multipart.addFilePart(file);
+                    }
+                } catch (IOException exception) {
+                    exception.printStackTrace();
+                }
+            }
+        }
+        String response = multipart.finishAndUpload();
+        return new JSONObject(response);
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    private JSONObject uploadImages(Bitmap[] images) throws IOException, JSONException {
         FormDataHttpsHelper multipart = new FormDataHttpsHelper(bbConfig.getApiUrl() + UPLOAD_IMAGE_MULTI_BACKEND_URL_POSTFIX, bbConfig.getSdkKey());
-        for(Bitmap bitmap : images) {
+        for (Bitmap bitmap : images) {
             File file = bitmapToFile(bitmap);
             if (file != null) {
                 multipart.addFilePart(file);
@@ -106,7 +128,7 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
     @RequiresApi(api = Build.VERSION_CODES.O)
     private Integer postFeedback(GleapBug bbBug) throws JSONException, IOException, ParseException {
         JSONObject responseUploadImage = uploadImage(bbBug.getScreenshot());
-        URL url = new URL(bbConfig.getApiUrl() + REPORT_BUG_URL_POSTFIX );
+        URL url = new URL(bbConfig.getApiUrl() + REPORT_BUG_URL_POSTFIX);
         HttpURLConnection conn;
         if (bbConfig.getApiUrl().contains("https")) {
             conn = (HttpsURLConnection) url.openConnection();
@@ -118,7 +140,7 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
         conn.setRequestProperty("Accept", "application/json");
         conn.setRequestProperty("Content-Type", "application/json");
         conn.setRequestMethod("POST");
-        UserSession userSession =  UserSessionController.getInstance().getUserSession();
+        UserSession userSession = UserSessionController.getInstance().getUserSession();
 
         conn.setRequestProperty("gleap-id", userSession.getId());
         conn.setRequestProperty("gleap-hash", userSession.getHash());
@@ -126,6 +148,7 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
         JSONObject body = new JSONObject();
         body.put("screenshotUrl", responseUploadImage.get("fileUrl"));
         body.put("replay", generateFrames());
+        body.put("attachments", generateAttachments());
         body.put("description", bbBug.getDescription());
         String email = "";
         if (bbBug.getSilentBugreportEmail() != null && !bbBug.getSilentBugreportEmail().equals("")) {
@@ -202,6 +225,22 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
         JSONArray frames = generateReplayImageUrls();
         replay.put("frames", frames);
         return replay;
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    private JSONArray generateAttachments() throws IOException, JSONException {
+        JSONArray result = new JSONArray();
+        JSONObject obj = uploadFiles(GleapFileHelper.getInstance().getAttachments());
+        JSONArray fileUrls = (JSONArray) obj.get("fileUrls");
+        for (int i = 0; i < fileUrls.length(); i++) {
+            File currentFile = GleapFileHelper.getInstance().getAttachments()[i];
+            JSONObject entry = new JSONObject();
+            entry.put("url", fileUrls.get(i));
+            entry.put("name", currentFile.getName());
+            entry.put("type", Files.probeContentType(currentFile.toPath()));
+            result.put(entry);
+        }
+        return result;
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)

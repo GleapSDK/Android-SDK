@@ -69,10 +69,10 @@ class PhoneMeta {
 
         String applicationType = "Native";
         if (GleapBug.getInstance().getApplicationtype() == APPLICATIONTYPE.FLUTTER) {
-            applicationType = "Flutter";
+            applicationType = "Flutter/Android";
         }
         if (GleapBug.getInstance().getApplicationtype() == APPLICATIONTYPE.REACTNATIVE) {
-            applicationType = "ReactNative";
+            applicationType = "ReactNative/Android";
         }
         obj.put("applicationType", applicationType);
         return obj;

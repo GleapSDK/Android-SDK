@@ -37,7 +37,6 @@ import gleap.io.gleap.R;
 public class GleapMainActivity extends AppCompatActivity implements OnHttpResponseListener {
     private WebView webView;
     private String url = GleapConfig.getInstance().getWidgetUrl() + "/appwidget/" + GleapConfig.getInstance().getSdkKey();
-    private boolean isWebViewLoaded = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -96,7 +95,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         if (httpResponse == 201) {
             GleapDetectorUtil.resumeAllDetectors();
             GleapBug.getInstance().setDisabled(false);
-            webView.evaluateJavascript("Gleap.default.getInstance().showSuccessAndClose()",null);
+            webView.evaluateJavascript("Gleap.getInstance().showSuccessAndClose()",null);
             //TODO: CB Web Frontend
         } else {
             GleapDetectorUtil.resumeAllDetectors();
@@ -127,20 +126,17 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
         public void onReceivedError(WebView view, int errorCode,
                                     String description, String failingUrl) {
-            isWebViewLoaded = false;
             webView.setVisibility(View.GONE);
 
             AlertDialog alertDialog = new AlertDialog.Builder(GleapMainActivity.this).setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialogInterface, int i) {
-                    isWebViewLoaded = true;
                     finish();
                 }
             }).create();
 
             alertDialog.setTitle(getString(R.string.gleap_alert_no_internet_title));
             alertDialog.setMessage(getString(R.string.gleap_alert_no_internet_subtitle));
-
 
             alertDialog.show();
         }
@@ -167,8 +163,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                                   final JsPromptResult result) {
             return true;
         }
-
-
     }
 
     private class GleapJSBridge {
@@ -205,7 +199,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 @Override
                 public void run() {
                     String image = "data:image/png;base64," + ScreenshotUtil.bitmapToBase64(GleapBug.getInstance().getScreenshot());
-                    webView.evaluateJavascript("Gleap.default.setScreenshot('" + image + "', true)", null);
+                    webView.evaluateJavascript("Gleap.setScreenshot('" + image + "', true)", null);
                 }
             });
         }
@@ -213,7 +207,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
         @JavascriptInterface
         public void customActionCalled(String object) {
-
             try {
                 JSONObject jsonObject = new JSONObject(object);
                 String method = jsonObject.getString("name");
@@ -222,7 +215,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
             } catch (JSONException e) {
                 e.printStackTrace();
             }
-
         }
 
         @JavascriptInterface

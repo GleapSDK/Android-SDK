@@ -53,20 +53,22 @@ class ReplaysDetector extends GleapDetector {
                     String screenName = "MainActivity";
                     ViewGroup viewGroup = (ViewGroup) ((ViewGroup) activity
                             .findViewById(android.R.id.content)).getChildAt(0);
-                    viewGroup.setOnTouchListener(new View.OnTouchListener() {
-                        @Override
-                        public boolean onTouch(View v, MotionEvent event) {
-                            if (replay != null) {
-                                if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                                    replay.addInteractionToCurrentReplay(new Interaction(event.getX(), event.getY(), new Date(), INTERACTIONTYPE.TD));
+                    if(viewGroup != null) {
+                        viewGroup.setOnTouchListener(new View.OnTouchListener() {
+                            @Override
+                            public boolean onTouch(View v, MotionEvent event) {
+                                if (replay != null) {
+                                    if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                                        replay.addInteractionToCurrentReplay(new Interaction(event.getX(), event.getY(), new Date(), INTERACTIONTYPE.TD));
+                                    }
+                                    if (event.getAction() == MotionEvent.ACTION_UP) {
+                                        replay.addInteractionToCurrentReplay(new Interaction(event.getX(), event.getY(), new Date(), INTERACTIONTYPE.TU));
+                                    }
                                 }
-                                if (event.getAction() == MotionEvent.ACTION_UP) {
-                                    replay.addInteractionToCurrentReplay(new Interaction(event.getX(), event.getY(), new Date(), INTERACTIONTYPE.TU));
-                                }
+                                return true;
                             }
-                            return true;
-                        }
-                    });
+                        });
+                    }
                     screenName = activity.getClass().getSimpleName();
                     replay.addScreenshot(bitmap, screenName);
                 }

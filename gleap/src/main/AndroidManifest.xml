@@ -6,7 +6,7 @@
 
     <application>
         <activity
-            android:name="gleap.io.gleap.gleap.io.GleapMainActivity"
+            android:name="io.gleap.GleapMainActivity"
             android:theme="@style/AppTheme.TranslucentBG" />
     </application>
 

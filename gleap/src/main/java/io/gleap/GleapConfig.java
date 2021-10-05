@@ -12,8 +12,8 @@ class GleapConfig {
     private static GleapConfig instance;
 
     //bb config
-    private String apiUrl = "https://api.gleap.dev";
-    private String widgetUrl = "https://widget.gleap.dev";
+    private String apiUrl = "https://api.gleap.io";
+    private String widgetUrl = "https://widget.gleap.io";
     private String sdkKey = "";
     private GleapSentCallback gleapSentCallback;
     private BugWillBeSentCallback bugWillBeSentCallback;

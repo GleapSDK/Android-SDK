@@ -17,11 +17,13 @@ import java.nio.charset.StandardCharsets;
 import javax.net.ssl.HttpsURLConnection;
 
 public class GleapUserSessionLoader  extends AsyncTask<Void, Void, Integer> {
-    private static final String httpsUrl = GleapConfig.getInstance().getApiUrl() + "/sessions/start/";
+    private static final String httpsUrl = GleapConfig.getInstance().getApiUrl() + "/sessions";
 
     @Override
     protected Integer doInBackground(Void... voids) {
         try {
+            UserSessionController.getInstance().clearUserSession();
+
             URL url = new URL(httpsUrl);
             HttpURLConnection conn = (HttpsURLConnection) url.openConnection();
             conn.setRequestProperty("Api-Token", GleapConfig.getInstance().getSdkKey());
@@ -29,12 +31,18 @@ public class GleapUserSessionLoader  extends AsyncTask<Void, Void, Integer> {
             conn.setRequestProperty("Content-Type", "application/json");
             conn.setRequestMethod("POST");
             UserSession userSession = UserSessionController.getInstance().getUserSession();
+            GleapUserSession gleapUserSession = UserSessionController.getInstance().getGleapUserSession();
+
             if(userSession.getType().equals("GUEST")){
                 conn.setRequestProperty("Guest-Id", userSession.getId());
                 conn.setRequestProperty("Guest-Hash", userSession.getHash());
+            } else if(userSession.getType().equals("USER")) {
+                if(gleapUserSession != null && gleapUserSession.getUserHash() == null && gleapUserSession.getUserId() == null) {
+                    conn.setRequestProperty("User-Hash", userSession.getHash());
+                    conn.setRequestProperty("User-Id", userSession.getId());
+                }
             }
 
-            GleapUserSession gleapUserSession = UserSessionController.getInstance().getGleapUserSession();
             JSONObject jsonObject = new JSONObject();
             if(gleapUserSession != null) {
                 if (gleapUserSession.getUserHash() != null) {

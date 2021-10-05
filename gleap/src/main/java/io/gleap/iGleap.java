@@ -2,6 +2,8 @@ package io.gleap;
 
 import org.json.JSONObject;
 
+import java.io.File;
+
 interface iGleap {
 
     /**
@@ -26,17 +28,18 @@ interface iGleap {
 
     /**
      * Updates a session's user data.
-     * @author Gleap
      *
      * @param gleapUserSession The updated user data.
+     * @author Gleap
      */
-    void updateUserSession(GleapUserSession gleapUserSession);
+    void identifyUser(GleapUserSession gleapUserSession);
 
     /**
      * Clears a user session.
+     *
      * @author Gleap
      */
-    void clearUserSession();
+    void clearIdentity();
 
     /**
      * Configure Gleap
@@ -51,9 +54,9 @@ interface iGleap {
 
     /**
      * Sets a custom widget url.
-     * @author Gleap
      *
      * @param widgetUrl The custom widget url.
+     * @author Gleap
      */
     void setWidgetUrl(String widgetUrl);
 
@@ -80,31 +83,32 @@ interface iGleap {
 
     /**
      * Attaches custom data, which can be viewed in the Gleap dashboard. New data will be merged with existing custom data.
-     * @author Gleap
      *
      * @param customData The data to attach to a bug report.
+     * @author Gleap
      */
     void attachCustomData(JSONObject customData);
 
     /**
      * Attach one key value pair to existing custom data.
-     * @author Gleap
      *
      * @param value The value you want to add
-     * @param key The key of the attribute
+     * @param key   The key of the attribute
+     * @author Gleap
      */
     void setCustomData(String key, String value);
 
     /**
      * Removes one key from existing custom data.
-     * @author Gleap
      *
      * @param key The key of the attribute
+     * @author Gleap
      */
     void removeCustomDataForKey(String key);
 
     /**
      * Clears all custom data.
+     *
      * @author Gleap
      */
     void clearCustomData();
@@ -175,4 +179,18 @@ interface iGleap {
      */
     void logEvent(String name, JSONObject data);
 
+    /**
+     * Attaches a file to the bug report
+     *
+     * @param file The file to attach to the bug report
+     * @author Gleap
+     */
+    void addAttachment(File file);
+
+    /**
+     * Removes all attachments
+     *
+     * @author Gleap
+     */
+    void removeAllAttachments();
 }
