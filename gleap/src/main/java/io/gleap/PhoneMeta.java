@@ -67,14 +67,14 @@ class PhoneMeta {
         obj.put("preferredUserLocale", getLocale());
         obj.put("sdkVersion", sdkVersion);
 
-        String applicationType = "Native";
+        String applicationType = "Android";
         if (GleapBug.getInstance().getApplicationtype() == APPLICATIONTYPE.FLUTTER) {
             applicationType = "Flutter/Android";
         }
         if (GleapBug.getInstance().getApplicationtype() == APPLICATIONTYPE.REACTNATIVE) {
             applicationType = "ReactNative/Android";
         }
-        obj.put("applicationType", applicationType);
+        obj.put("sdkType", applicationType);
         return obj;
     }
 
