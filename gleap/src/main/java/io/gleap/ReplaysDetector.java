@@ -8,6 +8,8 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.core.graphics.BitmapCompat;
+
 import java.util.Date;
 
 class ReplaysDetector extends GleapDetector {
@@ -48,7 +50,7 @@ class ReplaysDetector extends GleapDetector {
         public void run() {
             Activity activity = ActivityUtil.getCurrentActivity();
             if (activity != null) {
-                Bitmap bitmap = ScreenshotUtil.takeScreenshot(0.4f);
+                Bitmap bitmap = ScreenshotUtil.takeScreenshot(0.08f);
                 if (bitmap != null) {
                     String screenName = "MainActivity";
                     ViewGroup viewGroup = (ViewGroup) ((ViewGroup) activity

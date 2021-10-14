@@ -12,7 +12,6 @@ import android.graphics.Bitmap;
  */
 class ScreenshotTaker {
     private final GleapBug gleapBug;
-
     public ScreenshotTaker() {
         gleapBug = GleapBug.getInstance();
     }
@@ -21,13 +20,18 @@ class ScreenshotTaker {
      * Take a screenshot of the current view and opens it in the editor
      */
     public void takeScreenshot() {
-        GleapDetectorUtil.stopAllDetectors();
-        if (GleapConfig.getInstance().getBugWillBeSentCallback() != null) {
-            GleapConfig.getInstance().getBugWillBeSentCallback().flowInvoced();
-        }
-        Bitmap bitmap = ScreenshotUtil.takeScreenshot();
-        if (bitmap != null) {
-            openScreenshot(bitmap);
+        try {
+            GleapDetectorUtil.stopAllDetectors();
+            if (GleapConfig.getInstance().getBugWillBeSentCallback() != null) {
+                GleapConfig.getInstance().getBugWillBeSentCallback().flowInvoced();
+            }
+            Bitmap bitmap = ScreenshotUtil.takeScreenshot();
+            if (bitmap != null) {
+                openScreenshot(bitmap);
+            }
+        }catch (GleapSessionNotInitialisedException exception) {
+            GleapDetectorUtil.resumeAllDetectors();
+            System.err.println("Gleap: Gleap Session not initialized.");
         }
     }
 

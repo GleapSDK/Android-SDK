@@ -7,7 +7,8 @@ import android.content.SharedPreferences;
 
 public class UserSessionController {
     private static UserSessionController instance;
-    private GleapUserSession gleapUserSession;
+    private GleapUser gleapUser;
+    private boolean isSessionLoaded = false;
     private UserSession userSession;
     private Application application;
 
@@ -15,9 +16,10 @@ public class UserSessionController {
         this.application = application;
         SharedPreferences sharedPreferences = application.getSharedPreferences("usersession", MODE_PRIVATE);
         String id = sharedPreferences.getString("id", "");
-        String type = sharedPreferences.getString("type", "");
         String hash = sharedPreferences.getString("hash", "");
-        userSession = new UserSession(id, type, hash);
+        if(!id.equals("") && !hash.equals("")) {
+            userSession = new UserSession(id, hash);
+        }
     }
 
     public static UserSessionController initialize(Application application) {
@@ -31,40 +33,44 @@ public class UserSessionController {
         return instance;
     }
 
+    public void clearUserSession() {
+        SharedPreferences sharedPreferences = application.getSharedPreferences("usersession", MODE_PRIVATE);
+        sharedPreferences.edit().clear().apply();
+        this.gleapUser = null;
+        this.userSession = null;
+        this.isSessionLoaded = false;
+    }
+
+
+    public void mergeUserSession(String id, String hash) {
+        if(userSession == null){
+            userSession = new UserSession(id, hash);
+        }else {
+            userSession.setHash(hash);
+            userSession.setId(id);
+        }
+        SharedPreferences sharedPreferences = application.getSharedPreferences("usersession", MODE_PRIVATE);
+        sharedPreferences.edit().putString("hash", hash).apply();
+        sharedPreferences.edit().putString("id", id).apply();
+    }
+
     public UserSession getUserSession() {
         return userSession;
     }
 
-    public void clearUserSession() {
-        SharedPreferences sharedPreferences = application.getSharedPreferences("usersession", MODE_PRIVATE);
-        sharedPreferences.edit().clear().apply();
+    public void setGleapUserSession(GleapUser gleapUser){
+        this.gleapUser = gleapUser;
     }
 
-    public void setUserSession(GleapUserSession  gleapUserSession) {
-        this.gleapUserSession = gleapUserSession;
+    public GleapUser getGleapUserSession() {
+        return gleapUser;
     }
 
-    public void mergeUserSession(String id, String hash, String type) {
-        userSession.setHash(hash);
-        userSession.setId(id);
-        userSession.setType(type);
-        SharedPreferences sharedPreferences = application.getSharedPreferences("usersession", MODE_PRIVATE);
-        sharedPreferences.edit().putString("hash", hash).apply();
-        sharedPreferences.edit().putString("id", id).apply();
-        sharedPreferences.edit().putString("type", type).apply();
+    public boolean isSessionLoaded() {
+        return isSessionLoaded;
     }
 
-    public void setGleapUserSession(GleapUserSession gleapUserSession){
-        this.gleapUserSession = gleapUserSession;
-    }
-
-    public GleapUserSession getGleapUserSession() {
-        SharedPreferences sharedPreferences = application.getSharedPreferences("usersession", MODE_PRIVATE);
-
-        String id = sharedPreferences.getString("id", "");
-        String type = sharedPreferences.getString("type", "");
-        String hash = sharedPreferences.getString("hash", "");
-        userSession = new UserSession(id, type, hash);
-        return gleapUserSession;
+    public void setSessionLoaded(boolean sessionLoaded) {
+        isSessionLoaded = sessionLoaded;
     }
 }

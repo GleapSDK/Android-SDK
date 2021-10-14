@@ -2,29 +2,55 @@ package gleap.io.gleap_android_sdk;
 
 import android.app.Application;
 
+import org.json.JSONObject;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 
+import io.gleap.ConfigLoadedCallback;
+import io.gleap.CustomActionCallback;
+import io.gleap.FeedbackSentCallback;
+import io.gleap.FeedbackWillBeSentCallback;
 import io.gleap.Gleap;
+import io.gleap.GleapNotInitialisedException;
+import io.gleap.GleapUser;
+import io.gleap.GleapUserProperties;
 
 public class MainApplication extends Application {
 
     @Override
     public void onCreate() {
         super.onCreate();
-       // GleapUserSession gleapUserSession = new GleapUserSession("12", "3ec01e9f99aa53258626cd85bde0d3af859004f904c2ab30725de2720196526e", "Niklas", "n@a.at");
-        Gleap.initialize("UkzcTBCsX5nmsu2cV5hEcENkNuAT838O",this);
-        File fileDirectory = new File(this.getCacheDir(), "/NewTextFile.json");
+        Gleap.initialize("ogWhNhuiZcGWrva5nlDS8l7a78OfaLlV",  this);
+        GleapUserProperties userProperties = new GleapUserProperties("12");
+        GleapUser gleapUserWithId = new GleapUser("12");
+        GleapUser gleapUserWithIdAndProps = new GleapUser("12", userProperties);
         try {
-            FileWriter fileWriter = new FileWriter(fileDirectory);
-            fileWriter.write("HEY YOU");
-            fileWriter.close();
-        } catch (IOException e) {
+            Gleap.getInstance().startFeedbackFlow();
+        } catch (GleapNotInitialisedException e) {
             e.printStackTrace();
         }
+        Gleap.getInstance().setFeedbackSentCallback(new FeedbackSentCallback() {
+            @Override
+            public void close() {
+                // Feedback got sent
+            }
+        });
 
+        Gleap.getInstance().setConfigLoadedCallback(new ConfigLoadedCallback() {
+            @Override
+            public void configLoaded(JSONObject jsonObject) {
+                // Loaded Gleap config
+            }
+        });
 
-      //  Gleap.getInstance().addAttachment(fileDirectory);
+        Gleap.getInstance().setFeedbackWillBeSentCallback(new FeedbackWillBeSentCallback() {
+            @Override
+            public void flowInvoced() {
+                // The feedback will be sent
+            }
+        });
+
     }
 }

@@ -10,7 +10,6 @@ class Networklog {
     private final JSONObject request;
     private JSONObject response;
     private final int status;
-    private final boolean success = true;
     private int duration = 0;
     private final Date date;
 
@@ -39,7 +38,7 @@ class Networklog {
             object.put("status", status);
             object.put("url", url);
             object.put("duration", duration);
-            object.put("success", success);
+            object.put("success", true);
             if (request != null) {
                 object.put("request", request);
             }

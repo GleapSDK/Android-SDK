@@ -2,7 +2,7 @@ package io.gleap;
 
 import java.net.URLEncoder;
 
-public class GleapURLGenerator {
+class GleapURLGenerator {
     public static String generateURL() {
         GleapBug bug = GleapBug.getInstance();
         GleapConfig config = GleapConfig.getInstance();
@@ -14,8 +14,8 @@ public class GleapURLGenerator {
 
             UserSessionController userSessionController = UserSessionController.getInstance();
             UserSession userSession = userSessionController.getUserSession();
-            postfixUrl += "&sessionId=" + userSession.getId();
-            postfixUrl += "&sessionHash=" + userSession.getHash();
+            postfixUrl += "&gleapId=" + userSession.getId();
+            postfixUrl += "&gleapHash=" + userSession.getHash();
         } catch (Exception ex) {
             ex.printStackTrace();
         }

@@ -2,13 +2,11 @@ package io.gleap;
 
 class UserSession {
     private String id;
-    private String type;
     private String hash;
 
 
-    public  UserSession(String id, String type, String hash){
+    public  UserSession(String id, String hash){
         this.id = id;
-        this.type = type;
         this.hash = hash;
     }
 
@@ -18,14 +16,6 @@ class UserSession {
 
     public void setId(String id) {
         this.id = id;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
     }
 
     public String getHash() {

@@ -49,8 +49,6 @@ public class Gleap implements iGleap {
         }
     }
 
-
-
     /**
      * Get an instance of Gleap
      *
@@ -77,60 +75,61 @@ public class Gleap implements iGleap {
     }
 
     /**
-     * Auto-configures the Gleap SDK from the remote config.
-     * @author Gleap
-     *
-     * @param sdkKey The SDK key, which can be found on dashboard.gleap.io
-     * @param userSession The GleapSession for the current user.
-     */
-    public static void initialize(String sdkKey, GleapUserSession userSession, Application application) {
-        Gleap.application = application;
-        GleapConfig.getInstance().setSdkKey(sdkKey);
-        UserSessionController userSessionController = UserSessionController.initialize(application);
-        userSessionController.setGleapUserSession(userSession);
-        new GleapListener();
-    }
-
-    /**
      * Manually start the bug reporting workflow. This is used, when you use the activation method "NONE".
      *
      * @throws GleapNotInitialisedException thrown when Gleap is not initialised
      */
     @Override
     public void startFeedbackFlow() throws GleapNotInitialisedException {
-        if (instance != null) {
-            try {
-                screenshotTaker.takeScreenshot();
-            } catch (Exception e) {
-                e.printStackTrace();
+        if(!GleapDetectorUtil.isIsRunning()) {
+            if (instance != null) {
+                try {
+                    screenshotTaker.takeScreenshot();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            } else {
+                throw new GleapNotInitialisedException("Gleap is not initialised");
             }
-        } else {
-            throw new GleapNotInitialisedException("Gleap is not initialised");
         }
     }
 
     /**
      * Send a silent bugreport in the background. Useful for automated ui tests.
      *
-     * @param email       who sent the bug report
      * @param description description of the bug
      * @param severity    Severity of the bug "LOW", "MIDDLE", "HIGH"
      */
     @Override
-    public void sendSilentBugReport(String email, String description, SEVERITY severity) {
-        SilentBugReportUtil.createSilentBugReport(application, email, description, severity.name());
+    public void sendSilentBugReport( String description, SEVERITY severity) {
+        SilentBugReportUtil.createSilentBugReport(application, description, severity.name());
     }
 
     /**
      * Updates a session's user data.
      * @author Gleap
      *
-     * @param gleapUserSession The updated user data.
+     * @param id Id of the user.
      */
     @Override
-    public void identifyUser(GleapUserSession gleapUserSession) {
-        UserSessionController.getInstance().setUserSession(gleapUserSession);
-        new GleapUserSessionLoader().execute();
+    public void identifyUser(String id) {
+        GleapUser gleapUser = new GleapUser(id);
+        UserSessionController.getInstance().setGleapUserSession(gleapUser);
+        new GleapIdentifyService().execute();
+    }
+
+    /**
+     * Updates a session's user data.
+     * @author Gleap
+     *
+     * @param id Id of the user.
+     * @param gleapUserProperties The updated user data.
+     */
+    @Override
+    public void identifyUser(String id, GleapUserProperties gleapUserProperties) {
+        GleapUser gleapUser = new GleapUser(id,gleapUserProperties);
+        UserSessionController.getInstance().setGleapUserSession(gleapUser);
+        new GleapIdentifyService().execute();
     }
 
     /**
@@ -139,8 +138,8 @@ public class Gleap implements iGleap {
      */
     @Override
     public void clearIdentity() {
-        UserSessionController.getInstance().setUserSession(null);
-        new GleapUserSessionLoader().execute();
+        UserSessionController.getInstance().clearUserSession();
+      //  new GleapUserSessionLoader().execute();
     }
 
     /**
@@ -162,7 +161,7 @@ public class Gleap implements iGleap {
      */
     @Override
     public void setWidgetUrl(String widgetUrl) {
-
+        GleapConfig.getInstance().setWidgetUrl(widgetUrl);
     }
 
     /**
@@ -232,21 +231,21 @@ public class Gleap implements iGleap {
     /**
      * This is called, when the Gleap flow is started
      *
-     * @param bugWillBeSentCallback is called when BB is opened
+     * @param feedbackWillBeSentCallback is called when BB is opened
      */
     @Override
-    public void setBugWillBeSentCallback(BugWillBeSentCallback bugWillBeSentCallback) {
-        GleapConfig.getInstance().setBugWillBeSentCallback(bugWillBeSentCallback);
+    public void setFeedbackWillBeSentCallback(FeedbackWillBeSentCallback feedbackWillBeSentCallback) {
+        GleapConfig.getInstance().setBugWillBeSentCallback(feedbackWillBeSentCallback);
     }
 
     /**
      * This method is triggered, when the Gleap flow is closed
      *
-     * @param gleapSentCallback this callback is called when the flow is called
+     * @param feedbackSentCallback this callback is called when the flow is called
      */
     @Override
-    public void setBugSentCallback(GleapSentCallback gleapSentCallback) {
-        GleapConfig.getInstance().setBugSentCallback(gleapSentCallback);
+    public void setFeedbackSentCallback(FeedbackSentCallback feedbackSentCallback) {
+        GleapConfig.getInstance().setBugSentCallback(feedbackSentCallback);
     }
 
     /**
@@ -259,6 +258,16 @@ public class Gleap implements iGleap {
     public void setBitmapCallback(GetBitmapCallback getBitmapCallback) {
         GleapConfig.getInstance().setGetBitmapCallback(getBitmapCallback);
     }
+
+    /**
+     * This is called, when the config is received from the server;
+     * @param configLoadedCallback callback which is called
+     */
+    @Override
+    public void setConfigLoadedCallback(ConfigLoadedCallback configLoadedCallback){
+        GleapConfig.getInstance().setConfigLoadedCallback(configLoadedCallback);
+    }
+
 
     /**
      * Log network traffic by logging it manually.
@@ -292,24 +301,6 @@ public class Gleap implements iGleap {
     @Override
     public void setApplicationType(APPLICATIONTYPE applicationType) {
         GleapBug.getInstance().setApplicationtype(applicationType);
-    }
-
-    /**
-     * Enables the privacy policy check.
-     *
-     * @param enable Enable the privacy policy.
-     */
-    public void enablePrivacyPolicy(boolean enable) {
-        GleapConfig.getInstance().setPrivacyPolicyEnabled(enable);
-    }
-
-    /**
-     * Sets a custom privacy policy url.
-     *
-     * @param privacyUrl The URL pointing to your privacy policy.
-     */
-    public void setPrivacyPolicyUrl(String privacyUrl) {
-        GleapConfig.getInstance().setPrivacyPolicyUrl(privacyUrl);
     }
 
     /**

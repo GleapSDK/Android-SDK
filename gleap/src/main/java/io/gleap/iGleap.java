@@ -20,19 +20,27 @@ interface iGleap {
     /**
      * Send a silent bugreport in the background. Useful for automated ui tests.
      *
-     * @param email       who sent the bug report
      * @param description description of the bug
      * @param severity    Severity of the bug "LOW", "MIDDLE", "HIGH"
      */
-    void sendSilentBugReport(String email, String description, Gleap.SEVERITY severity);
+    void sendSilentBugReport(String description, Gleap.SEVERITY severity);
 
     /**
      * Updates a session's user data.
      *
-     * @param gleapUserSession The updated user data.
+     * @param id The updated user data.
      * @author Gleap
      */
-    void identifyUser(GleapUserSession gleapUserSession);
+    void identifyUser(String id);
+
+
+    /**
+     * Updates a session's user data.
+     *
+     * @param gleapUserProperties The updated user data.
+     * @author Gleap
+     */
+    void identifyUser(String id, GleapUserProperties gleapUserProperties);
 
     /**
      * Clears a user session.
@@ -71,7 +79,7 @@ interface iGleap {
     /**
      * Set Application Type
      *
-     * @param applicationType "Android", "RN", "Flutter"
+     * @param applicationType "Android", "ReactNative", "Flutter"
      */
     void setApplicationType(APPLICATIONTYPE applicationType);
 
@@ -120,16 +128,16 @@ interface iGleap {
     /**
      * This is called, when the Gleap flow is started
      *
-     * @param bugWillBeSentCallback is called when BB is opened
+     * @param feedbackWillBeSentCallback is called when BB is opened
      */
-    void setBugWillBeSentCallback(BugWillBeSentCallback bugWillBeSentCallback);
+    void setFeedbackWillBeSentCallback(FeedbackWillBeSentCallback feedbackWillBeSentCallback);
 
     /**
      * This method is triggered, when the Gleap flow is closed
      *
-     * @param gleapSentCallback this callback is called when the flow is called
+     * @param feedbackSentCallback this callback is called when the flow is called
      */
-    void setBugSentCallback(GleapSentCallback gleapSentCallback);
+    void setFeedbackSentCallback(FeedbackSentCallback feedbackSentCallback);
 
     /**
      * Customize the way, the Bitmap is generated. If this is overritten,
@@ -138,6 +146,12 @@ interface iGleap {
      * @param getBitmapCallback get the Bitmap
      */
     void setBitmapCallback(GetBitmapCallback getBitmapCallback);
+
+    /**
+     * This is called, when the config is received from the server;
+     * @param configLoadedCallback callback which is called
+     */
+    void setConfigLoadedCallback(ConfigLoadedCallback configLoadedCallback);
 
     /**
      * Network
@@ -155,7 +169,7 @@ interface iGleap {
     void logNetwork(String urlConnection, RequestType requestType, int status, int duration, JSONObject request, JSONObject response);
 
     /**
-     * Register a custom function, which can be called from the bug report flow
+     * Register a custom function, which can be called from the feedback report flow
      *
      * @param customAction implement the callback
      */
@@ -180,9 +194,9 @@ interface iGleap {
     void logEvent(String name, JSONObject data);
 
     /**
-     * Attaches a file to the bug report
+     * Attaches a file to the feedback
      *
-     * @param file The file to attach to the bug report
+     * @param file The file to attach to the feedback report
      * @author Gleap
      */
     void addAttachment(File file);

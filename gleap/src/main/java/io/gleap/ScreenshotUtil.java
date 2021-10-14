@@ -2,6 +2,7 @@ package io.gleap;
 
 import android.app.Activity;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Rect;
@@ -9,6 +10,7 @@ import android.util.Base64;
 import android.view.View;
 import android.view.WindowManager;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -20,7 +22,10 @@ import static android.graphics.Bitmap.Config.ARGB_8888;
 import static android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND;
 
 class ScreenshotUtil {
-    public static Bitmap takeScreenshot() {
+    public static Bitmap takeScreenshot() throws GleapSessionNotInitialisedException {
+        if(!UserSessionController.getInstance().isSessionLoaded()){
+            throw new GleapSessionNotInitialisedException();
+        }
         Bitmap bitmap;
         if (GleapConfig.getInstance().getGetBitmapCallback() != null) {
             bitmap = GleapConfig.getInstance().getGetBitmapCallback().getBitmap();
@@ -34,7 +39,6 @@ class ScreenshotUtil {
     }
 
     public static Bitmap takeScreenshot(float downScale) {
-        GleapBug gleapBug = GleapBug.getInstance();
         Bitmap bitmap;
         if (GleapConfig.getInstance().getGetBitmapCallback() != null) {
             bitmap = GleapConfig.getInstance().getGetBitmapCallback().getBitmap();
@@ -108,9 +112,12 @@ class ScreenshotUtil {
         } else {
             matrix.postScale(0.5f, 0.5f);
         }
-
-        return Bitmap.createBitmap(
+        Bitmap bitmap = Bitmap.createBitmap(
                 bm, 0, 0, width, height, matrix, false);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.PNG, 0, out);
+        Bitmap decoded = BitmapFactory.decodeStream(new ByteArrayInputStream(out.toByteArray()));
+        return decoded;
     }
 
     private static Bitmap getResizedBitmap(Bitmap bm, float downScale) {
@@ -118,14 +125,17 @@ class ScreenshotUtil {
         int width = bm.getWidth();
         int height = bm.getHeight();
         Matrix matrix = new Matrix();
-        Activity activity = ActivityUtil.getCurrentActivity();
         if (isPortrait(bm)) {
             matrix.postScale(downScale, downScale);
         } else {
             matrix.postScale(downScale - 0.2f, downScale - 0.2f);
         }
-        return Bitmap.createBitmap(
+        Bitmap bitmap = Bitmap.createBitmap(
                 bm, 0, 0, width, height, matrix, false);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.PNG, 40, out);
+        Bitmap decoded = BitmapFactory.decodeStream(new ByteArrayInputStream(out.toByteArray()));
+        return decoded;
     }
 
     private static Field getFieldForName(String name, Object obj) throws NullPointerException {

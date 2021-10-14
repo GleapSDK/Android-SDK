@@ -15,21 +15,19 @@ class GleapConfig {
     private String apiUrl = "https://api.gleap.io";
     private String widgetUrl = "https://widget.gleap.io";
     private String sdkKey = "";
-    private GleapSentCallback gleapSentCallback;
-    private BugWillBeSentCallback bugWillBeSentCallback;
+    private ConfigLoadedCallback configLoadedCallback;
+    private FeedbackSentCallback feedbackSentCallback;
+    private FeedbackWillBeSentCallback feedbackWillBeSentCallback;
+    private CustomActionCallback customAction;
     private GetBitmapCallback getBitmapCallback;
     private List<GleapDetector> gestureDetectors;
-    private String privacyPolicyUrl = "";
-    private boolean isPrivacyPolicyEnabled = false;
 
     //user config
-    private String color = "#0693E3";
     private boolean enableConsoleLogs = true;
     private boolean enableReplays = false;
     private boolean activationMethodShake = false;
     private boolean activationMethodScreenshotGesture = false;
     private String language = "en";
-    private CustomActionCallback customAction;
 
     private GleapConfig() {
     }
@@ -73,8 +71,8 @@ class GleapConfig {
         this.apiUrl = apiUrl;
     }
 
-    public String getColor() {
-        return color;
+    public void setWidgetUrl(String widgetUrl) {
+        this.widgetUrl = widgetUrl;
     }
 
     public String getLanguage() {
@@ -85,20 +83,20 @@ class GleapConfig {
         this.language = language;
     }
 
-    public GleapSentCallback getBugSentCallback() {
-        return gleapSentCallback;
+    public FeedbackSentCallback getBugSentCallback() {
+        return feedbackSentCallback;
     }
 
-    public void setBugSentCallback(GleapSentCallback gleapSentCallback) {
-        this.gleapSentCallback = gleapSentCallback;
+    public void setBugSentCallback(FeedbackSentCallback feedbackSentCallback) {
+        this.feedbackSentCallback = feedbackSentCallback;
     }
 
-    public BugWillBeSentCallback getBugWillBeSentCallback() {
-        return bugWillBeSentCallback;
+    public FeedbackWillBeSentCallback getBugWillBeSentCallback() {
+        return feedbackWillBeSentCallback;
     }
 
-    public void setBugWillBeSentCallback(BugWillBeSentCallback bugWillBeSentCallback) {
-        this.bugWillBeSentCallback = bugWillBeSentCallback;
+    public void setBugWillBeSentCallback(FeedbackWillBeSentCallback feedbackWillBeSentCallback) {
+        this.feedbackWillBeSentCallback = feedbackWillBeSentCallback;
     }
 
     public GetBitmapCallback getGetBitmapCallback() {
@@ -145,15 +143,15 @@ class GleapConfig {
         return customAction;
     }
 
-    public void setPrivacyPolicyUrl(String privacyPolicyUrl) {
-        this.privacyPolicyUrl = privacyPolicyUrl;
-    }
-
-    public void setPrivacyPolicyEnabled(boolean privacyPolicyEnabled) {
-        isPrivacyPolicyEnabled = privacyPolicyEnabled;
-    }
-
     public String getWidgetUrl() {
         return widgetUrl;
+    }
+
+    public ConfigLoadedCallback getConfigLoadedCallback() {
+        return configLoadedCallback;
+    }
+
+    public void setConfigLoadedCallback(ConfigLoadedCallback configLoadedCallback) {
+        this.configLoadedCallback = configLoadedCallback;
     }
 }

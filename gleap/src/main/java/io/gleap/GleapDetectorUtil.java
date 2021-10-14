@@ -7,14 +7,17 @@ import java.util.LinkedList;
 import java.util.List;
 
 class GleapDetectorUtil {
+    private static boolean isRunning = false;
 
     public static void resumeAllDetectors() {
+        isRunning = false;
         for (GleapDetector detector : GleapConfig.getInstance().getGestureDetectors()) {
             detector.resume();
         }
     }
 
     public static void stopAllDetectors() {
+        isRunning = true;
         for (GleapDetector detector : GleapConfig.getInstance().getGestureDetectors()) {
             detector.pause();
         }
@@ -46,5 +49,9 @@ class GleapDetectorUtil {
             }
         }
         return detectorList;
+    }
+
+    public static boolean isIsRunning() {
+        return isRunning;
     }
 }

@@ -23,6 +23,7 @@ class GleapBug {
     private Application application;
     //bug specific data
     private APPLICATIONTYPE applicationtype = APPLICATIONTYPE.NATIVE;
+    private String type = "";
     private final Date startUpDate = new Date();
     private boolean isDisabled = false;
     private String language = "";
@@ -56,6 +57,14 @@ class GleapBug {
         return instance;
     }
 
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
     public void setPhoneMeta(PhoneMeta phoneMeta) {
         this.phoneMeta = phoneMeta;
     }
@@ -75,22 +84,6 @@ class GleapBug {
 
     public JSONArray getLogs() throws ParseException {
         return logReader.readLog();
-    }
-
-    public String getEmail() {
-        return userEmail;
-    }
-
-    public void setEmail(String userEmail) {
-        this.userEmail = userEmail;
-    }
-
-    public void setCustomerName(String name){
-        this.userName = name;
-    }
-
-    public String getCustomerName() {
-        return userName;
     }
 
     public JSONObject getCustomData() {
@@ -190,15 +183,6 @@ class GleapBug {
 
     public JSONObject getData() {
         return this.data;
-    }
-
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
     }
 
     public String getSilentBugreportEmail() {

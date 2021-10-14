@@ -89,11 +89,6 @@ class FormDataHttpsHelper {
 
     }
 
-
-    public void addMultipleFiles(File[] uploadFiles) {
-
-    }
-
     /**
      * Completes the request and receives response from the server.
      *
@@ -103,7 +98,6 @@ class FormDataHttpsHelper {
     public String finishAndUpload() throws IOException {
         String response;
         request.writeBytes(this.twoHyphens + this.boundary + this.twoHyphens + this.crlf);
-
 
         request.flush();
         request.close();

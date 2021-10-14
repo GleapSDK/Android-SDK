@@ -6,6 +6,7 @@ import android.os.AsyncTask;
 import android.os.Build;
 
 import androidx.annotation.RequiresApi;
+import androidx.core.graphics.BitmapCompat;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -124,8 +125,8 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
 
 
     @RequiresApi(api = Build.VERSION_CODES.O)
-    private Integer postFeedback(GleapBug bbBug) throws JSONException, IOException, ParseException {
-        JSONObject responseUploadImage = uploadImage(bbBug.getScreenshot());
+    private Integer postFeedback(GleapBug gleapBug) throws JSONException, IOException, ParseException {
+        JSONObject responseUploadImage = uploadImage(gleapBug.getScreenshot());
         URL url = new URL(bbConfig.getApiUrl() + REPORT_BUG_URL_POSTFIX);
         HttpURLConnection conn;
         if (bbConfig.getApiUrl().contains("https")) {
@@ -147,26 +148,22 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
         JSONObject body = new JSONObject();
         body.put("screenshotUrl", responseUploadImage.get("fileUrl"));
         body.put("replay", generateFrames());
+        body.put("type", gleapBug.getType());
         body.put("attachments", generateAttachments());
-        body.put("description", bbBug.getDescription());
-
-        body.put("networkLogs", bbBug.getNetworklogs());
-        body.put("customEventLog", bbBug.getCustomEventLog());
-        PhoneMeta phoneMeta = bbBug.getPhoneMeta();
+        body.put("formData", gleapBug.getData());
+        body.put("networkLogs", gleapBug.getNetworklogs());
+        body.put("customEventLog", gleapBug.getCustomEventLog());
+        PhoneMeta phoneMeta = gleapBug.getPhoneMeta();
 
         if (phoneMeta != null) {
             body.put("metaData", phoneMeta.getJSONObj());
         }
 
-        body.put("customData", bbBug.getCustomData());
-        body.put("priority", bbBug.getSeverity());
+        body.put("customData", gleapBug.getCustomData());
+        body.put("priority", gleapBug.getSeverity());
 
         if (GleapConfig.getInstance().isEnableConsoleLogs()) {
-            body.put("consoleLog", bbBug.getLogs());
-        }
-
-        if (bbBug.getData() != null) {
-            body = concatJSONS(body, bbBug.getData());
+            body.put("consoleLog", gleapBug.getLogs());
         }
 
         try (OutputStream os = conn.getOutputStream()) {

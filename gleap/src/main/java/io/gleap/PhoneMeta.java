@@ -66,6 +66,11 @@ class PhoneMeta {
         obj.put("networkStatus", getNetworkStatus());
         obj.put("preferredUserLocale", getLocale());
         obj.put("sdkVersion", sdkVersion);
+        if (BuildConfig.BUILD_TYPE.equals("debug")){
+            obj.put("buildMode", "DEBUG");
+        }else {
+            obj.put("buildMode", "RELEASE");
+        }
 
         String applicationType = "Android";
         if (GleapBug.getInstance().getApplicationtype() == APPLICATIONTYPE.FLUTTER) {

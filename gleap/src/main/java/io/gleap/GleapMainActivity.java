@@ -68,7 +68,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
     private void initBrowser() {
         WebSettings settings = webView.getSettings();
-        settings.setJavaScriptEnabled(true);
         settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
@@ -239,7 +238,11 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                                 gleapBug.setScreenshot(decodedByte);
                             }
                         }
-                        gleapBug.setData(jsonObject);
+                        gleapBug.setType(jsonObject.getString("type"));
+                        if(jsonObject.has("formData")) {
+                            JSONObject formData = jsonObject.getJSONObject("formData");
+                            gleapBug.setData(formData);
+                        }
 
                     } catch (JSONException e) {
                         e.printStackTrace();

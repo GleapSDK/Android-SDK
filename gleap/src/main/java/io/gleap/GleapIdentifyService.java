@@ -1,6 +1,5 @@
 package io.gleap;
 
-import android.annotation.SuppressLint;
 import android.os.AsyncTask;
 
 import org.json.JSONException;
@@ -11,32 +10,57 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
 import javax.net.ssl.HttpsURLConnection;
 
-class GleapUserSessionLoader extends AsyncTask<Void, Void, Integer> {
-    private static final String httpsUrl = GleapConfig.getInstance().getApiUrl() + "/sessions";
-
-    @SuppressLint("WrongThread")
+public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
+    private static final String httpsUrl = GleapConfig.getInstance().getApiUrl() + "/sessions/identify";
+    public boolean isLoaded = false;
     @Override
     protected Integer doInBackground(Void... voids) {
+        UserSession userSession = UserSessionController.getInstance().getUserSession();
+        if(userSession == null && !isLoaded && UserSessionController.getInstance().isSessionLoaded()) {
+            return 200;
+        }
         try {
+            GleapUser gleapUser = UserSessionController.getInstance().getGleapUserSession();
+
             URL url = new URL(httpsUrl);
             HttpURLConnection conn = (HttpsURLConnection) url.openConnection();
             conn.setRequestProperty("Api-Token", GleapConfig.getInstance().getSdkKey());
             conn.setRequestProperty("Accept", "application/json");
             conn.setRequestProperty("Content-Type", "application/json");
             conn.setRequestMethod("POST");
-            UserSession userSession = UserSessionController.getInstance().getUserSession();
 
             if (userSession != null && userSession.getId() != null && !userSession.getId().equals("")) {
                 conn.setRequestProperty("Gleap-Id", userSession.getId());
             }
-            if(userSession != null && userSession.getHash() != null && !userSession.getHash().equals("")) {
+
+            if (userSession != null && userSession.getHash() != null && !userSession.getHash().equals("")) {
                 conn.setRequestProperty("Gleap-Hash", userSession.getHash());
+            }
+
+            JSONObject jsonObject = new JSONObject();
+            if (gleapUser != null) {
+                try {
+                    if (gleapUser.getUserId() != null) {
+                        jsonObject.put("userId", gleapUser.getUserId());
+                    }
+
+                    if (gleapUser.getGleapUserProperties() != null) {
+                        jsonObject.put("email", gleapUser.getGleapUserProperties().getEmail());
+                        jsonObject.put("name", gleapUser.getGleapUserProperties().getName());
+                    }
+                } catch (Exception ex) {
+
+                }
+            }
+
+            try (OutputStream os = conn.getOutputStream()) {
+                byte[] input = jsonObject.toString().getBytes(StandardCharsets.UTF_8);
+                os.write(input, 0, input.length);
             }
 
             try (BufferedReader br = new BufferedReader(
@@ -62,12 +86,10 @@ class GleapUserSessionLoader extends AsyncTask<Void, Void, Integer> {
 
                     if (id != null && hash != null) {
                         UserSessionController.getInstance().mergeUserSession(id, hash);
-                        UserSessionController.getInstance().setSessionLoaded(true);
-                    }
-                    if(UserSessionController.getInstance().getGleapUserSession() != null) {
-                     //   new GleapIdentifyService().execute();
+                        isLoaded = true;
                     }
                 }
+
             } catch (JSONException e) {
                 e.printStackTrace();
             }
