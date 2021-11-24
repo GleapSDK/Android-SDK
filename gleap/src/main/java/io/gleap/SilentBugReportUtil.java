@@ -20,6 +20,7 @@ class SilentBugReportUtil {
             model.setType("BUG");
             model.setData(obj);
             model.setSeverity(severity);
+            model.setSilent(true);
             if (bitmap != null) {
                 model.setScreenshot(bitmap);
                 try {

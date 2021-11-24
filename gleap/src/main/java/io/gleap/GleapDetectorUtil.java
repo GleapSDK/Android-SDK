@@ -31,16 +31,6 @@ class GleapDetectorUtil {
                 detector.initialize();
                 detectorList.add(detector);
             }
-            if (activationMethod == GleapActivationMethod.THREE_FINGER_DOUBLE_TAB) {
-                TouchGestureDetector touchGestureDetector;
-                if (activity != null) {
-                    touchGestureDetector = new TouchGestureDetector(application, activity);
-                } else {
-                    touchGestureDetector = new TouchGestureDetector(application);
-                }
-                touchGestureDetector.initialize();
-                detectorList.add(touchGestureDetector);
-            }
             if (activationMethod == GleapActivationMethod.SCREENSHOT) {
                 ScreenshotGestureDetector screenshotGestureDetector;
                 screenshotGestureDetector = new ScreenshotGestureDetector(application);

@@ -168,6 +168,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 @Override
                 public void run() {
                     GleapDetectorUtil.resumeAllDetectors();
+                    GleapConfig.getInstance().setAction(null);
                     finish();
                 }
             });
@@ -193,7 +194,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 }
             });
         }
-
 
         @JavascriptInterface
         public void customActionCalled(String object) {
@@ -238,10 +238,14 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                                 gleapBug.setScreenshot(decodedByte);
                             }
                         }
+
                         gleapBug.setType(jsonObject.getString("type"));
                         if(jsonObject.has("formData")) {
                             JSONObject formData = jsonObject.getJSONObject("formData");
                             gleapBug.setData(formData);
+                        }
+                        if(jsonObject.has("excludeData")) {
+                            GleapConfig.getInstance().setStripModel(jsonObject.getJSONObject("excludeData"));
                         }
 
                     } catch (JSONException e) {

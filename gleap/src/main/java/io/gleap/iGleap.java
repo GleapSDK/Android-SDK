@@ -4,11 +4,23 @@ import org.json.JSONObject;
 
 import java.io.File;
 
+import javax.net.ssl.HttpsURLConnection;
+
 interface iGleap {
+
+
 
     /**
      * Invoke Bug Reporting
      */
+
+    /**
+     * Manually shows the feedback menu or default feedback flow. This is used, when you use the activation method "NONE".
+     * @author Gleap
+     * @throws GleapNotInitialisedException thrown when Gleap is not initialised
+     *
+     */
+    void open()  throws GleapNotInitialisedException;
 
     /**
      * Manually start the bug reporting workflow. This is used, when you use the activation method "NONE".
@@ -16,6 +28,15 @@ interface iGleap {
      * @throws GleapNotInitialisedException thrown when Gleap is not initialised
      */
     void startFeedbackFlow() throws GleapNotInitialisedException;
+
+    /**
+     * Manually start the bug reporting workflow. This is used, when you use the activation method "NONE".
+     *
+     * @param feedbackFlow declares what you want to start. For example start directly a bugreport or a user rating.
+     *                     use e.g. bugreporting, featurerequests, rating, contact
+     * @throws GleapNotInitialisedException thrown when Gleap is not initialised
+     */
+    void startFeedbackFlow(String feedbackFlow) throws GleapNotInitialisedException;
 
     /**
      * Send a silent bugreport in the background. Useful for automated ui tests.
@@ -167,6 +188,25 @@ interface iGleap {
      * @param response      Response of the call. You can add just the information you want and need.
      */
     void logNetwork(String urlConnection, RequestType requestType, int status, int duration, JSONObject request, JSONObject response);
+
+
+    /**
+     * Log network traffic by logging it manually.
+     *
+     * @param urlConnection UrlHttpConnection
+     * @param request       Add the data you want. e.g the body sent in the request
+     * @param response      Response of the call. You can add just the information you want and need.
+     */
+     void logNetwork(HttpsURLConnection urlConnection, JSONObject request, JSONObject response);
+
+    /**
+     * Log network traffic by logging it manually.
+     *
+     * @param urlConnection UrlHttpConnection
+     * @param request       Add the data you want. e.g the body sent in the request
+     * @param response      Response of the call. You can add just the information you want and need.
+     */
+     void logNetwork(HttpsURLConnection urlConnection, String request, String response);
 
     /**
      * Register a custom function, which can be called from the feedback report flow

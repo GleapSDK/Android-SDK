@@ -15,12 +15,19 @@ class GleapConfig {
     private String apiUrl = "https://api.gleap.io";
     private String widgetUrl = "https://widget.gleap.io";
     private String sdkKey = "";
+    private String feedbackFlow ="";
+
+    private GleapAction action;
+
+    private JSONObject stripModel = new JSONObject();
+
     private ConfigLoadedCallback configLoadedCallback;
     private FeedbackSentCallback feedbackSentCallback;
     private FeedbackWillBeSentCallback feedbackWillBeSentCallback;
     private CustomActionCallback customAction;
     private GetBitmapCallback getBitmapCallback;
     private List<GleapDetector> gestureDetectors;
+    private int interval = 5;
 
     //user config
     private boolean enableConsoleLogs = true;
@@ -28,6 +35,11 @@ class GleapConfig {
     private boolean activationMethodShake = false;
     private boolean activationMethodScreenshotGesture = false;
     private String language = "en";
+
+    //Streamedevent
+    private int maxEventLength = 500;
+    private int resceduleEventStreamDurationShort = 1500;
+    private int resceduleEventStreamDurationLong = 3000;
 
     private GleapConfig() {
     }
@@ -48,6 +60,9 @@ class GleapConfig {
         try {
             this.enableConsoleLogs = config.getBoolean("enableConsoleLogs");
             this.enableReplays = config.getBoolean("enableReplays");
+            if(config.has("replaysInterval")){
+                this.interval = config.getInt("replaysInterval");
+            }
             this.activationMethodShake = config.getBoolean("activationMethodShake");
             this.activationMethodScreenshotGesture = config.getBoolean("activationMethodScreenshotGesture");
         } catch (JSONException e) {
@@ -83,7 +98,7 @@ class GleapConfig {
         this.language = language;
     }
 
-    public FeedbackSentCallback getBugSentCallback() {
+    public FeedbackSentCallback getFeedbackSentCallback() {
         return feedbackSentCallback;
     }
 
@@ -153,5 +168,45 @@ class GleapConfig {
 
     public void setConfigLoadedCallback(ConfigLoadedCallback configLoadedCallback) {
         this.configLoadedCallback = configLoadedCallback;
+    }
+
+    public int getInterval() {
+        return interval;
+    }
+
+    public String getFeedbackFlow() {
+        return feedbackFlow;
+    }
+
+    public void setFeedbackFlow(String feedbackFlow) {
+        this.feedbackFlow = feedbackFlow;
+    }
+
+    public JSONObject getStripModel() {
+        return stripModel;
+    }
+
+    public void setStripModel(JSONObject stripModel) {
+        this.stripModel = stripModel;
+    }
+
+    public GleapAction getAction() {
+        return action;
+    }
+
+    public void setAction(GleapAction action) {
+        this.action = action;
+    }
+
+    public int getMaxEventLength() {
+        return maxEventLength;
+    }
+
+    public int getResceduleEventStreamDurationShort() {
+        return resceduleEventStreamDurationShort;
+    }
+
+    public int getResceduleEventStreamDurationLong() {
+        return resceduleEventStreamDurationLong;
     }
 }

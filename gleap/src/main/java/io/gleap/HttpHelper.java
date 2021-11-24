@@ -6,7 +6,6 @@ import android.os.AsyncTask;
 import android.os.Build;
 
 import androidx.annotation.RequiresApi;
-import androidx.core.graphics.BitmapCompat;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -64,14 +63,17 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
             e.printStackTrace();
         }
 
+        GleapConfig.getInstance().setAction(null);
+
         return httpResult;
     }
 
     @Override
     protected void onPostExecute(Integer result) {
-        if (GleapConfig.getInstance().getBugSentCallback() != null) {
-            GleapConfig.getInstance().getBugSentCallback().close();
+        if (GleapConfig.getInstance().getFeedbackSentCallback() != null && !GleapBug.getInstance().isSilent()) {
+            GleapConfig.getInstance().getFeedbackSentCallback().close();
         }
+        GleapBug.getInstance().setSilent(false);
         try {
             listener.onTaskComplete(result);
         } catch (GleapAlreadyInitialisedException e) {
@@ -98,7 +100,7 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
         for (File file : files) {
             if (file != null) {
                 try {
-                    if(file.length() > 0) {
+                    if (file.length() > 0) {
                         multipart.addFilePart(file);
                     }
                 } catch (IOException exception) {
@@ -126,7 +128,14 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     private Integer postFeedback(GleapBug gleapBug) throws JSONException, IOException, ParseException {
-        JSONObject responseUploadImage = uploadImage(gleapBug.getScreenshot());
+        JSONObject config = GleapConfig.getInstance().getStripModel();
+        boolean stripImages = false;
+
+        if (config.has("screenshot")) {
+            stripImages = config.getBoolean("screenshot");
+        }
+
+
         URL url = new URL(bbConfig.getApiUrl() + REPORT_BUG_URL_POSTFIX);
         HttpURLConnection conn;
         if (bbConfig.getApiUrl().contains("https")) {
@@ -144,15 +153,26 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
         conn.setRequestProperty("gleap-id", userSession.getId());
         conn.setRequestProperty("gleap-hash", userSession.getHash());
 
-
         JSONObject body = new JSONObject();
-        body.put("screenshotUrl", responseUploadImage.get("fileUrl"));
-        body.put("replay", generateFrames());
+
+        if(GleapConfig.getInstance().getAction() != null && GleapConfig.getInstance().getAction().getOutbound() != null) {
+            body.put("outbound", GleapConfig.getInstance().getAction().getOutbound());
+        }
+
+        if (!stripImages) {
+            JSONObject responseUploadImage = uploadImage(gleapBug.getScreenshot());
+            body.put("screenshotUrl", responseUploadImage.get("fileUrl"));
+            body.put("replay", generateFrames());
+        }
         body.put("type", gleapBug.getType());
-        body.put("attachments", generateAttachments());
+        if(config.has("attachments") && !config.getBoolean("attachments") || !config.has("attachments")) {
+            body.put("attachments", generateAttachments());
+        }
         body.put("formData", gleapBug.getData());
         body.put("networkLogs", gleapBug.getNetworklogs());
         body.put("customEventLog", gleapBug.getCustomEventLog());
+        body.put("isSilent", gleapBug.isSilent() ? "true" : "false");
+
         PhoneMeta phoneMeta = gleapBug.getPhoneMeta();
 
         if (phoneMeta != null) {
@@ -164,6 +184,13 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
 
         if (GleapConfig.getInstance().isEnableConsoleLogs()) {
             body.put("consoleLog", gleapBug.getLogs());
+        }
+
+        for (Iterator<String> it = config.keys(); it.hasNext(); ) {
+            String key = it.next();
+            if (config.getBoolean(key)) {
+                body.remove(key);
+            }
         }
 
         try (OutputStream os = conn.getOutputStream()) {
@@ -236,7 +263,7 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
 
         for (ScreenshotReplay replay : replays) {
             if (replay != null) {
-                bitmapList.add(replay.getScreenshot());
+                bitmapList.add(ScreenshotUtil.getResizedBitmap(replay.getScreenshot(), 0.3f));
             }
         }
 

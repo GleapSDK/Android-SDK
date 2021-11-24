@@ -2,6 +2,7 @@ package io.gleap;
 
 import android.annotation.SuppressLint;
 import android.os.AsyncTask;
+import android.os.Handler;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -51,7 +52,7 @@ class GleapUserSessionLoader extends AsyncTask<Void, Void, Integer> {
                 String hash = null;
 
                 if (result != null) {
-                    if (result.has("gleapId")) {
+                     if (result.has("gleapId")) {
                         id = result.getString("gleapId");
                     }
 
@@ -64,8 +65,9 @@ class GleapUserSessionLoader extends AsyncTask<Void, Void, Integer> {
                         UserSessionController.getInstance().mergeUserSession(id, hash);
                         UserSessionController.getInstance().setSessionLoaded(true);
                     }
+
                     if(UserSessionController.getInstance().getGleapUserSession() != null) {
-                     //   new GleapIdentifyService().execute();
+                        new GleapIdentifyService().execute();
                     }
                 }
             } catch (JSONException e) {

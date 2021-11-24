@@ -37,7 +37,9 @@ class Networklog {
             object.put("type", requestType.name());
             object.put("status", status);
             object.put("url", url);
-            object.put("duration", duration);
+            if (duration >= 0) {
+                object.put("duration", duration);
+            }
             object.put("success", true);
             if (request != null) {
                 object.put("request", request);

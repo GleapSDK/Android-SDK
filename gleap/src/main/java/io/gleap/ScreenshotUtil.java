@@ -120,7 +120,7 @@ class ScreenshotUtil {
         return decoded;
     }
 
-    private static Bitmap getResizedBitmap(Bitmap bm, float downScale) {
+    public static Bitmap getResizedBitmap(Bitmap bm, float downScale) {
 
         int width = bm.getWidth();
         int height = bm.getHeight();

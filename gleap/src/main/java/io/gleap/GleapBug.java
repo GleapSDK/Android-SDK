@@ -21,6 +21,7 @@ import static io.gleap.DateUtil.dateToString;
 class GleapBug {
     private static GleapBug instance;
     private Application application;
+    private boolean isSilent = false;
     //bug specific data
     private APPLICATIONTYPE applicationtype = APPLICATIONTYPE.NATIVE;
     private String type = "";
@@ -47,7 +48,12 @@ class GleapBug {
     private GleapBug() {
         logReader = new LogReader();
         customData = new JSONObject();
-        replay = new Replay(30, 1000);
+        if(60 % GleapConfig.getInstance().getInterval() == 0) {
+            replay = new Replay(60 / GleapConfig.getInstance().getInterval(), 1000 * GleapConfig.getInstance().getInterval());
+        }else {
+            replay = new Replay(12, 5);
+        }
+
     }
 
     public static GleapBug getInstance() {
@@ -226,5 +232,13 @@ class GleapBug {
 
     public JSONArray getCustomEventLog() {
         return customEventLog;
+    }
+
+    public boolean isSilent() {
+        return isSilent;
+    }
+
+    public void setSilent(boolean silent) {
+        isSilent = silent;
     }
 }
