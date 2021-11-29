@@ -72,8 +72,10 @@ class GleapHttpInterceptor {
 
     public static void log(HttpsURLConnection httpsURLConnection, JSONObject requestBody, JSONObject responseBody) {
         JSONObject headers = generateJSONFromMap(httpsURLConnection.getHeaderFields());
+        JSONObject request = new JSONObject();
         try {
-            responseBody.put("headers", headers);
+            request.put("body", requestBody);
+            request.put("headers", headers);
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -87,7 +89,7 @@ class GleapHttpInterceptor {
             if(headers.has("X-Android-Received-Millis")) {
                 to =  new BigDecimal(httpsURLConnection.getHeaderFields().get("X-Android-Received-Millis").get(0));
             }
-            Networklog networklog = new Networklog(httpsURLConnection.getURL().toString(), mapStringToRequestType(httpsURLConnection), httpsURLConnection.getResponseCode(), to.subtract(from).intValue(), requestBody, responseBody);
+            Networklog networklog = new Networklog(httpsURLConnection.getURL().toString(), mapStringToRequestType(httpsURLConnection), httpsURLConnection.getResponseCode(), to.subtract(from).intValue(), request, responseBody);
             GleapBug.getInstance().addRequest(networklog);
         } catch (IOException exception) {
             exception.printStackTrace();

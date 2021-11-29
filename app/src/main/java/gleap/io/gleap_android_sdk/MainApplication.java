@@ -1,6 +1,7 @@
 package gleap.io.gleap_android_sdk;
 
 import android.app.Application;
+import android.os.AsyncTask;
 
 import org.json.JSONObject;
 
@@ -22,15 +23,15 @@ public class MainApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        Gleap.initialize("ogWhNhuiZcGWrva5nlDS8l7a78OfaLlV",  this);
-        GleapUserProperties userProperties = new GleapUserProperties("12");
+        Gleap.initialize("7qnF4SaW8daomwcBLdXAd8ahlIYJtxos",  this);
+        GleapUserProperties userProperties = new GleapUserProperties("12", "niklas@gmail.com");
         GleapUser gleapUserWithId = new GleapUser("12");
         GleapUser gleapUserWithIdAndProps = new GleapUser("12", userProperties);
-        try {
-            Gleap.getInstance().startFeedbackFlow();
-        } catch (GleapNotInitialisedException e) {
-            e.printStackTrace();
-        }
+        File file = new File("/data/data/gleap.io.gleap_android_sdk/cache/file1057025163966562657.png");
+        Gleap.getInstance().addAttachment(file);
+
+        Gleap.getInstance().identifyUser("12", userProperties);
+
         Gleap.getInstance().setFeedbackSentCallback(new FeedbackSentCallback() {
             @Override
             public void close() {
@@ -51,6 +52,8 @@ public class MainApplication extends Application {
                 // The feedback will be sent
             }
         });
+
+        new HttpCall().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
 
     }
 }
