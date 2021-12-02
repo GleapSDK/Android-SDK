@@ -25,6 +25,7 @@ public class HttpCall extends AsyncTask {
             URL url = new URL("https://613750b8eac1410017c18290.mockapi.io/key/1");
             conn = (HttpURLConnection) url.openConnection();
             conn.setRequestProperty("Accept", "application/json");
+            conn.setRequestProperty("username", "YO IM PRIAT");
             conn.setRequestProperty("Content-Type", "application/json");
             conn.setRequestMethod("GET");
 
@@ -49,7 +50,7 @@ public class HttpCall extends AsyncTask {
                 e.printStackTrace();
             }
             Gleap.getInstance().logNetwork((HttpsURLConnection) conn, requestBody, result);
-            Gleap.getInstance().logNetwork((HttpsURLConnection) conn, requestBody.toString(), result.toString());
+            Gleap.getInstance().logNetwork((HttpsURLConnection) conn, "THIS IS HOW WE ROLL", result.toString());
 
         } catch(Exception e) {
             e.printStackTrace();

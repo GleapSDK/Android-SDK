@@ -1,5 +1,7 @@
 package io.gleap;
 
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Date;
@@ -42,6 +44,10 @@ class Networklog {
             }
             object.put("success", true);
             if (request != null) {
+                JSONObject obj = request.getJSONObject("headers");
+                stripObject(obj);
+                JSONObject re = request.getJSONObject("body");
+                stripObject(re);
                 object.put("request", request);
             }
             if (response != null) {
@@ -51,5 +57,17 @@ class Networklog {
 
         }
         return object;
+    }
+
+    private void stripObject(JSONObject object){
+        JSONArray stripWords = GleapConfig.getInstance().getNetworkLogPropsToIgnore();
+        for (int i = 0; i < stripWords.length(); i++) {
+            try {
+                String key = stripWords.getString(i);
+                object.remove(key);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

@@ -1,8 +1,10 @@
 package io.gleap;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -35,6 +37,7 @@ class GleapConfig {
     private boolean activationMethodShake = false;
     private boolean activationMethodScreenshotGesture = false;
     private String language = "en";
+    private JSONArray networkLogPropsToIgnore;
 
     //Streamedevent
     private int maxEventLength = 500;
@@ -65,6 +68,7 @@ class GleapConfig {
             }
             this.activationMethodShake = config.getBoolean("activationMethodShake");
             this.activationMethodScreenshotGesture = config.getBoolean("activationMethodScreenshotGesture");
+            this.networkLogPropsToIgnore  = config.getJSONArray("networkLogPropsToIgnore");
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -208,5 +212,9 @@ class GleapConfig {
 
     public int getResceduleEventStreamDurationLong() {
         return resceduleEventStreamDurationLong;
+    }
+
+    public JSONArray getNetworkLogPropsToIgnore() {
+        return networkLogPropsToIgnore;
     }
 }
