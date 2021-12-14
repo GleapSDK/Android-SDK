@@ -8,7 +8,7 @@ import java.util.Date;
 /**
  * Add steps to add more detailed steps, beside the already collected data.
  */
-class StepsToReproduce {
+class  StepsToReproduce {
     private static StepsToReproduce instance;
     private final JSONArray steps = new JSONArray();
 

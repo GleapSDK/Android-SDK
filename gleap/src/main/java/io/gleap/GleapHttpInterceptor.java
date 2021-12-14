@@ -74,7 +74,7 @@ class GleapHttpInterceptor {
         JSONObject headers = generateJSONFromMap(httpsURLConnection.getHeaderFields());
         JSONObject request = new JSONObject();
         try {
-            request.put("body", requestBody);
+            request.put("payload", requestBody);
             request.put("headers", headers);
         } catch (JSONException e) {
             e.printStackTrace();

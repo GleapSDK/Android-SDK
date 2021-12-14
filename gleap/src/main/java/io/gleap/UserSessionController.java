@@ -39,6 +39,7 @@ public class UserSessionController {
         this.gleapUser = null;
         this.userSession = null;
         this.isSessionLoaded = false;
+
     }
 
 

@@ -71,10 +71,12 @@ class GleapUserSessionLoader extends AsyncTask<Void, Void, Integer> {
                     }
                 }
             } catch (JSONException e) {
+                UserSessionController.getInstance().setSessionLoaded(true);
                 e.printStackTrace();
             }
 
         } catch (IOException e) {
+            UserSessionController.getInstance().setSessionLoaded(true);
             e.printStackTrace();
         }
         return 200;

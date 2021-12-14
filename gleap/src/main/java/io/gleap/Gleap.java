@@ -180,7 +180,7 @@ public class Gleap implements iGleap {
     @Override
     public void clearIdentity() {
         UserSessionController.getInstance().clearUserSession();
-        //  new GleapUserSessionLoader().execute();
+        new GleapUserSessionLoader().execute();
     }
 
     /**

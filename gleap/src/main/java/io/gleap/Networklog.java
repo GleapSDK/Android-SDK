@@ -44,17 +44,31 @@ class Networklog {
             }
             object.put("success", true);
             if (request != null) {
-                JSONObject obj = request.getJSONObject("headers");
-                stripObject(obj);
-                JSONObject re = request.getJSONObject("body");
-                stripObject(re);
-                object.put("request", request);
+                if(request.has("headers") && request.has("payload")) {
+                    if(isJSONValid(request.getString("headers"))) {
+                        String objString = request.getString("headers");
+                        JSONObject obj = new JSONObject(objString);
+                        stripObject(obj);
+                        request.put("headers", obj);
+                    }
+                    if(isJSONValid(request.getString("payload"))) {
+                        String reStr = request.getString("payload");
+                        JSONObject re = new JSONObject(reStr);
+                        stripObject(re);
+                        request.put("payload", re);
+                    }
+
+                    object.put("request", request);
+                }else {
+                    stripObject(request);
+                    object.put("request", request);
+                }
             }
             if (response != null) {
                 object.put("response", response);
             }
         } catch (Exception err) {
-
+    err.printStackTrace();
         }
         return object;
     }
@@ -69,5 +83,20 @@ class Networklog {
                 e.printStackTrace();
             }
         }
+    }
+
+    private boolean isJSONValid(String test) {
+        try {
+            new JSONObject(test);
+        } catch (JSONException ex) {
+            // edited, to include @Arthur's comment
+            // e.g. in case JSONArray is valid as well...
+            try {
+                new JSONArray(test);
+            } catch (JSONException ex1) {
+                return false;
+            }
+        }
+        return true;
     }
 }
