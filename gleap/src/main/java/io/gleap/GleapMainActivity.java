@@ -2,6 +2,7 @@ package io.gleap;
 
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -15,6 +16,7 @@ import android.webkit.JavascriptInterface;
 import android.webkit.JsPromptResult;
 import android.webkit.JsResult;
 import android.webkit.SslErrorHandler;
+import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
@@ -24,6 +26,8 @@ import android.webkit.WebViewClient;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -35,6 +39,7 @@ import gleap.io.gleap.R;
 public class GleapMainActivity extends AppCompatActivity implements OnHttpResponseListener {
     private WebView webView;
     private String url = GleapConfig.getInstance().getWidgetUrl() + "/appwidget/" + GleapConfig.getInstance().getSdkKey();
+    private ValueCallback<Uri[]> mUploadMessage;
 
     @Override
     public void onBackPressed() {
@@ -137,7 +142,53 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         }
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
+
+        // manejo de seleccion de archivo
+        super.onActivityResult(requestCode, resultCode, intent);
+        if (requestCode == 1) {
+
+            if (null == mUploadMessage || intent == null || resultCode != RESULT_OK) {
+                return;
+            }
+
+            Uri[] result = null;
+            String dataString = intent.getDataString();
+
+            if (dataString != null) {
+                result = new Uri[]{Uri.parse(dataString)};
+            }
+
+            mUploadMessage.onReceiveValue(result);
+            mUploadMessage = null;
+        }
+    }
+
+
+
     private class GleapWebChromeClient extends WebChromeClient {
+
+        // maneja la accion de seleccionar archivos
+        @Override
+        public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
+
+            // asegurar que no existan callbacks
+            if (mUploadMessage != null) {
+                mUploadMessage.onReceiveValue(null);
+            }
+
+            mUploadMessage = filePathCallback;
+
+            Intent i = new Intent(Intent.ACTION_GET_CONTENT);
+            i.addCategory(Intent.CATEGORY_OPENABLE);
+            i.setType("*/*"); // set MIME type to filter
+
+            ActivityUtil.getCurrentActivity().startActivityForResult(Intent.createChooser(i, "File Chooser"),1);
+
+            return true;
+        }
+
         @Override
         public boolean onJsAlert(WebView view, String url, String message, final JsResult result) {
             return true;

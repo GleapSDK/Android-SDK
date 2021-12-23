@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 
+import java.util.concurrent.ExecutionException;
+
 
 /**
  * Takes a screenshot of the current view
@@ -25,17 +27,26 @@ class ScreenshotTaker {
             if (GleapConfig.getInstance().getBugWillBeSentCallback() != null) {
                 GleapConfig.getInstance().getBugWillBeSentCallback().flowInvoced();
             }
-            Bitmap bitmap = ScreenshotUtil.takeScreenshot();
-            if (bitmap != null) {
-                openScreenshot(bitmap);
-            }
+           ScreenshotUtil.takeScreenshot(new ScreenshotUtil.GetImageCallback() {
+                @Override
+                public void getImage(Bitmap bitmap) {
+                    if (bitmap != null) {
+                        openScreenshot(bitmap);
+                    }
+                }
+            });
+
         }catch (GleapSessionNotInitialisedException exception) {
             GleapDetectorUtil.resumeAllDetectors();
             System.err.println("Gleap: Gleap Session not initialized.");
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
         }
     }
 
-    public void openScreenshot(Bitmap imageFile) {
+    public void  openScreenshot(Bitmap imageFile) {
         try {
             Activity activity = ActivityUtil.getCurrentActivity();
             if (activity != null) {

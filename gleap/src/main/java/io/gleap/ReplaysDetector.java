@@ -11,6 +11,7 @@ import android.view.ViewGroup;
 import androidx.core.graphics.BitmapCompat;
 
 import java.util.Date;
+import java.util.concurrent.ExecutionException;
 
 class ReplaysDetector extends GleapDetector {
     private Replay replay;
@@ -52,39 +53,41 @@ class ReplaysDetector extends GleapDetector {
                 try {
                     Activity activity = ActivityUtil.getCurrentActivity();
                     if (activity != null) {
-                        Bitmap bitmap = null;
-
-                        bitmap = ScreenshotUtil.takeScreenshot();
-
-                        if (bitmap != null) {
-                            String screenName = "MainActivity";
-                            ViewGroup viewGroup = (ViewGroup) ((ViewGroup) activity
-                                    .findViewById(android.R.id.content)).getChildAt(0);
-                            if (viewGroup != null) {
-                                viewGroup.setOnTouchListener(new View.OnTouchListener() {
-                                    @Override
-                                    public boolean onTouch(View v, MotionEvent event) {
-                                        if (replay != null) {
-                                            if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                                                replay.addInteractionToCurrentReplay(new Interaction(event.getX(), event.getY(), new Date(), INTERACTIONTYPE.TD));
+                        ScreenshotUtil.takeScreenshot(new ScreenshotUtil.GetImageCallback() {
+                            @Override
+                            public void getImage(Bitmap bitmap) {
+                                if (bitmap != null) {
+                                    String screenName = "MainActivity";
+                                    ViewGroup viewGroup = (ViewGroup) ((ViewGroup) activity
+                                            .findViewById(android.R.id.content)).getChildAt(0);
+                                    if (viewGroup != null) {
+                                        viewGroup.setOnTouchListener(new View.OnTouchListener() {
+                                            @Override
+                                            public boolean onTouch(View v, MotionEvent event) {
+                                                if (replay != null) {
+                                                    if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                                                        replay.addInteractionToCurrentReplay(new Interaction(event.getX(), event.getY(), new Date(), INTERACTIONTYPE.TD));
+                                                    }
+                                                    if (event.getAction() == MotionEvent.ACTION_UP) {
+                                                        replay.addInteractionToCurrentReplay(new Interaction(event.getX(), event.getY(), new Date(), INTERACTIONTYPE.TU));
+                                                    }
+                                                }
+                                                return true;
                                             }
-                                            if (event.getAction() == MotionEvent.ACTION_UP) {
-                                                replay.addInteractionToCurrentReplay(new Interaction(event.getX(), event.getY(), new Date(), INTERACTIONTYPE.TU));
-                                            }
-                                        }
-                                        return true;
+                                        });
                                     }
-                                });
+                                    screenName = activity.getClass().getSimpleName();
+                                    replay.addScreenshot(bitmap, screenName);
+                                }
                             }
-                            screenName = activity.getClass().getSimpleName();
-                            replay.addScreenshot(bitmap, screenName);
-
-                        }
-
-
+                        });
                     }
                 } catch (GleapSessionNotInitialisedException gleapSessionNotInitialisedException) {
                     gleapSessionNotInitialisedException.printStackTrace();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
                 }
             }
             handler.postDelayed(this, replay.getInterval());
