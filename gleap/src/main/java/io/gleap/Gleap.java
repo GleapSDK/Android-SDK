@@ -108,17 +108,24 @@ public class Gleap implements iGleap {
      */
     @Override
     public void startFeedbackFlow() throws GleapNotInitialisedException {
-        if (!GleapDetectorUtil.isIsRunning() && UserSessionController.getInstance().isSessionLoaded()) {
-            if (instance != null) {
-                try {
-                    screenshotTaker.takeScreenshot();
-                } catch (Exception e) {
-                    e.printStackTrace();
+        Handler mainHandler = new Handler(Looper.getMainLooper());
+        Runnable gleapRunnable = new Runnable() {
+            @Override 
+            public void run() {
+                if (!GleapDetectorUtil.isIsRunning() && UserSessionController.getInstance().isSessionLoaded()) {
+                    if (Gleap.getInstance().instance != null) {
+                        try {
+                            Gleap.getInstance().screenshotTaker.takeScreenshot();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    } else {
+                        throw new GleapNotInitialisedException("Gleap is not initialised");
+                    }
                 }
-            } else {
-                throw new GleapNotInitialisedException("Gleap is not initialised");
             }
-        }
+        };
+        mainHandler.post(gleapRunnable);
     }
 
     /**
