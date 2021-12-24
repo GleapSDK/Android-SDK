@@ -113,7 +113,7 @@ public class Gleap implements iGleap {
             @Override 
             public void run() {
                 if (!GleapDetectorUtil.isIsRunning() && UserSessionController.getInstance().isSessionLoaded()) {
-                    if (Gleap.getInstance().instance != null) {
+                    if (Gleap.getInstance() != null) {
                         try {
                             Gleap.getInstance().screenshotTaker.takeScreenshot();
                         } catch (Exception e) {
