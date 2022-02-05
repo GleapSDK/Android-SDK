@@ -68,7 +68,9 @@ class GleapConfig {
             }
             this.activationMethodShake = config.getBoolean("activationMethodShake");
             this.activationMethodScreenshotGesture = config.getBoolean("activationMethodScreenshotGesture");
-            this.networkLogPropsToIgnore  = config.getJSONArray("networkLogPropsToIgnore");
+            if (config.has("networkLogPropsToIgnore")) {
+                this.networkLogPropsToIgnore  = config.getJSONArray("networkLogPropsToIgnore");
+            }
         } catch (JSONException e) {
             e.printStackTrace();
         }
