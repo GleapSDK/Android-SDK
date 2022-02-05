@@ -63,11 +63,11 @@ class GleapConfig {
         try {
             this.enableConsoleLogs = config.getBoolean("enableConsoleLogs");
             this.enableReplays = config.getBoolean("enableReplays");
+            this.activationMethodShake = config.getBoolean("activationMethodShake");
+            this.activationMethodScreenshotGesture = config.getBoolean("activationMethodScreenshotGesture");
             if(config.has("replaysInterval")){
                 this.interval = config.getInt("replaysInterval");
             }
-            this.activationMethodShake = config.getBoolean("activationMethodShake");
-            this.activationMethodScreenshotGesture = config.getBoolean("activationMethodScreenshotGesture");
             if (config.has("networkLogPropsToIgnore")) {
                 this.networkLogPropsToIgnore  = config.getJSONArray("networkLogPropsToIgnore");
             }
