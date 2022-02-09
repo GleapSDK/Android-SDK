@@ -22,6 +22,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.text.ParseException;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -83,14 +84,14 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     private JSONObject uploadImage(Bitmap image) throws IOException, JSONException {
-        String postfixUrl = "";
-        UserSession userSession = UserSessionController.getInstance().getUserSession();
         FormDataHttpsHelper multipart = new FormDataHttpsHelper(bbConfig.getApiUrl() + UPLOAD_IMAGE_BACKEND_URL_POSTFIX, bbConfig.getSdkKey());
         File file = bitmapToFile(image);
         if (file != null) {
             multipart.addFilePart(file);
         }
+        System.out.println(new Date());
         String response = multipart.finishAndUpload();
+        System.out.println(new Date());
         return new JSONObject(response);
     }
 
@@ -158,13 +159,13 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
         if(GleapConfig.getInstance().getAction() != null && GleapConfig.getInstance().getAction().getOutbound() != null) {
             body.put("outbound", GleapConfig.getInstance().getAction().getOutbound());
         }
-
         if (!stripImages) {
             JSONObject responseUploadImage = uploadImage(gleapBug.getScreenshot());
             body.put("screenshotUrl", responseUploadImage.get("fileUrl"));
             body.put("replay", generateFrames());
         }
         body.put("type", gleapBug.getType());
+
         if(config.has("attachments") && !config.getBoolean("attachments") || !config.has("attachments")) {
             body.put("attachments", generateAttachments());
         }
@@ -181,11 +182,11 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
 
         body.put("customData", gleapBug.getCustomData());
         body.put("priority", gleapBug.getSeverity());
-
+        System.out.println("CON"  + new Date());
         if (GleapConfig.getInstance().isEnableConsoleLogs()) {
-            body.put("consoleLog", gleapBug.getLogs());
+             body.put("consoleLog", gleapBug.getLogs());
         }
-
+        System.out.println("CON"  + new Date());
         for (Iterator<String> it = config.keys(); it.hasNext(); ) {
             String key = it.next();
             if (config.getBoolean(key)) {

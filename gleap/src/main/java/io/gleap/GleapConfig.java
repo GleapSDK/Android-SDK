@@ -61,10 +61,18 @@ class GleapConfig {
      */
     public void initConfig(JSONObject config) {
         try {
-            this.enableConsoleLogs = config.getBoolean("enableConsoleLogs");
-            this.enableReplays = config.getBoolean("enableReplays");
-            this.activationMethodShake = config.getBoolean("activationMethodShake");
-            this.activationMethodScreenshotGesture = config.getBoolean("activationMethodScreenshotGesture");
+            if(config.has("enableConsoleLogs")) {
+                this.enableConsoleLogs = config.getBoolean("enableConsoleLogs");
+            }
+            if(config.has("enableReplays")) {
+                this.enableReplays = config.getBoolean("enableReplays");
+            }
+            if(config.has("activationMethodShake")) {
+                this.activationMethodShake = config.getBoolean("activationMethodShake");
+            }
+            if(config.has("activationMethodScreenshotGesture")) {
+                this.activationMethodScreenshotGesture = config.getBoolean("activationMethodScreenshotGesture");
+            }
             if(config.has("replaysInterval")){
                 this.interval = config.getInt("replaysInterval");
             }

@@ -45,4 +45,11 @@ class DateUtil {
         df.setTimeZone(tz);
         return df.format(date);
     }
+
+    public static String dateToStringDate(Date date) {
+        TimeZone tz = TimeZone.getTimeZone("UTC");
+        DateFormat df = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()); // Quoted "Z" to indicate UTC, no timezone offset
+        df.setTimeZone(tz);
+        return df.format(date);
+    }
 }

@@ -3,6 +3,7 @@ package io.gleap;
 import android.app.Activity;
 import android.app.Application;
 import android.os.Handler;
+import android.os.Looper;
 
 import org.json.JSONObject;
 
@@ -111,16 +112,16 @@ public class Gleap implements iGleap {
         Handler mainHandler = new Handler(Looper.getMainLooper());
         Runnable gleapRunnable = new Runnable() {
             @Override 
-            public void run() {
+            public void run() throws RuntimeException{
                 if (!GleapDetectorUtil.isIsRunning() && UserSessionController.getInstance().isSessionLoaded()) {
                     if (Gleap.getInstance() != null) {
                         try {
-                            Gleap.getInstance().screenshotTaker.takeScreenshot();
+                            screenshotTaker.takeScreenshot();
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
                     } else {
-                        throw new GleapNotInitialisedException("Gleap is not initialised");
+                        throw new RuntimeException("Gleap is not initialised");
                     }
                 }
             }

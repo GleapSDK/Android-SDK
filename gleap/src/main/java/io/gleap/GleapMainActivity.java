@@ -65,7 +65,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
         setContentView(R.layout.activity_gleap_main);
         webView = findViewById(R.id.gleap_webview);
-        webView.setVisibility(View.INVISIBLE);
+        webView.setVisibility(View.VISIBLE);
 
         initBrowser();
     }
@@ -73,7 +73,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
     private void initBrowser() {
         WebSettings settings = webView.getSettings();
-        settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setLoadWithOverviewMode(true);

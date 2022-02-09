@@ -293,7 +293,6 @@ class ScreenshotUtil {
                         bitmap, new PixelCopy.OnPixelCopyFinishedListener() {
                             @Override
                             public void onPixelCopyFinished(int copyResult) {
-                                System.out.println(copyResult);
                                 if(copyResult == PixelCopy.SUCCESS) {
                                     imageTaken.invoke(bitmap);
                                 }

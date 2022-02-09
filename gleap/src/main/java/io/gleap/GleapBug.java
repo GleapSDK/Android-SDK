@@ -29,10 +29,7 @@ class GleapBug {
     private boolean isDisabled = false;
     private String language = "";
     private String severity = "MEDIUM";
-    private String userEmail;
-    private String userName;
     private String silentBugreportEmail;
-    private String description;
     private Bitmap screenshot;
     private Replay replay;
     private JSONObject customData;

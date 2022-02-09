@@ -13,20 +13,6 @@ buildscript {
 }
 
 android {
-    signingConfigs {
-        debug {
-            storeFile file('/Users/niklasfessler/Dev/keystores/keystores/GleapAPK')
-            storePassword KEYSTORE_PW
-            keyPassword KEYSTORE_PW
-            keyAlias KEYSTORE_ALIAS
-        }
-        release {
-            storeFile file('/Users/niklasfessler/Dev/keystores/keystores/GleapAPK')
-            storePassword KEYSTORE_PW
-            keyAlias KEYSTORE_ALIAS
-            keyPassword KEYSTORE_PW
-        }
-    }
     lintOptions {
         abortOnError false
     }
@@ -35,8 +21,8 @@ android {
     defaultConfig {
         minSdkVersion 21
         targetSdkVersion 31
-        versionCode 600305
-        versionName "6.3.5"
+        versionCode 600313
+        versionName "6.3.13"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
     }

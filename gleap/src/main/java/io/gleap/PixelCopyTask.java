@@ -52,7 +52,6 @@ public class PixelCopyTask implements Callable<String> {
                         bitmap, new PixelCopy.OnPixelCopyFinishedListener() {
                             @Override
                             public void onPixelCopyFinished(int copyResult) {
-                                System.out.println(copyResult);
                                 imageTaken.invoke(bitmap);
                             }
                         },
