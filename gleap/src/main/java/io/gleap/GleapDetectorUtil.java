@@ -23,7 +23,7 @@ class GleapDetectorUtil {
         }
     }
 
-    public static List<GleapDetector> initDetectors(Application application, Activity activity, GleapActivationMethod[] activationMethods) {
+    public static List<GleapDetector> initDetectors(Application application, GleapActivationMethod[] activationMethods) {
         List<GleapDetector> detectorList = new LinkedList<>();
         for (GleapActivationMethod activationMethod : activationMethods) {
             if (activationMethod == GleapActivationMethod.SHAKE) {

@@ -17,8 +17,8 @@ import javax.net.ssl.HttpsURLConnection;
 public class Gleap implements iGleap {
     private static Gleap instance;
     private static ScreenshotTaker screenshotTaker;
-    private static Activity activity;
     private static Application application;
+    private static boolean isInitialized = false;
 
     private Gleap() {
     }
@@ -41,7 +41,7 @@ public class Gleap implements iGleap {
             Gleap.getInstance().enableReplays(GleapConfig.getInstance().isEnableReplays());
 
             //start activation methods
-            List<GleapDetector> detectorList = GleapDetectorUtil.initDetectors(application, activity, activationMethods);
+            List<GleapDetector> detectorList = GleapDetectorUtil.initDetectors(application, activationMethods);
 
             if (GleapConfig.getInstance().isEnableReplays()) {
                 ReplaysDetector replaysDetector = new ReplaysDetector(application);
@@ -77,8 +77,11 @@ public class Gleap implements iGleap {
     public static void initialize(String sdkKey, Application application) {
         Gleap.application = application;
         GleapConfig.getInstance().setSdkKey(sdkKey);
-        UserSessionController.initialize(application);
-        new GleapListener();
+        if(!isInitialized) {
+            isInitialized = true;
+            UserSessionController.initialize(application);
+            new GleapListener();
+        }
     }
 
     /**
@@ -111,7 +114,7 @@ public class Gleap implements iGleap {
     public void startFeedbackFlow() throws GleapNotInitialisedException {
         Handler mainHandler = new Handler(Looper.getMainLooper());
         Runnable gleapRunnable = new Runnable() {
-            @Override 
+            @Override
             public void run() throws RuntimeException{
                 if (!GleapDetectorUtil.isIsRunning() && UserSessionController.getInstance().isSessionLoaded()) {
                     if (Gleap.getInstance() != null) {
