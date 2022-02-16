@@ -38,6 +38,7 @@ class GleapConfig {
     private boolean activationMethodScreenshotGesture = false;
     private String language = "en";
     private JSONArray networkLogPropsToIgnore;
+    private JSONObject plainConfig;
 
     //Streamedevent
     private int maxEventLength = 500;
@@ -60,6 +61,9 @@ class GleapConfig {
      * @param config response from the server with all the configuration data in it
      */
     public void initConfig(JSONObject config) {
+        if(config != null) {
+            this.plainConfig = config;
+        }
         try {
             if(config.has("enableConsoleLogs")) {
                 this.enableConsoleLogs = config.getBoolean("enableConsoleLogs");
@@ -226,5 +230,9 @@ class GleapConfig {
 
     public JSONArray getNetworkLogPropsToIgnore() {
         return networkLogPropsToIgnore;
+    }
+
+    public JSONObject getPlainConfig() {
+        return plainConfig;
     }
 }

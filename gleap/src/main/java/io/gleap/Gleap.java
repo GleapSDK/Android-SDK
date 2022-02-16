@@ -81,6 +81,10 @@ public class Gleap implements iGleap {
             isInitialized = true;
             UserSessionController.initialize(application);
             new GleapListener();
+        }else {
+            if(GleapConfig.getInstance().getConfigLoadedCallback() != null && GleapConfig.getInstance().getPlainConfig() != null) {
+                GleapConfig.getInstance().getConfigLoadedCallback().configLoaded(GleapConfig.getInstance().getPlainConfig());
+            }
         }
     }
 
@@ -405,7 +409,7 @@ public class Gleap implements iGleap {
                     } catch (GleapNotInitialisedException ex) {
                     }
                 }
-            }, 2000);   //5 seconds
+            }, 2000);   //2 seconds
         }
 
         @Override

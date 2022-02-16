@@ -211,6 +211,7 @@ class GleapBug {
             event.put("name", name);
             event.put("data", data);
             customEventLog.put(event);
+            GleapEventService.getInstance().addEvent(event);
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -222,6 +223,7 @@ class GleapBug {
             event.put("date", dateToString(new Date()));
             event.put("name", name);
             customEventLog.put(event);
+            GleapEventService.getInstance().addEvent(event);
         } catch (Exception ex) {
             ex.printStackTrace();
         }

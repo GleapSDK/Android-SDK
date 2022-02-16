@@ -126,6 +126,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 @Override
                 public void onClick(DialogInterface dialogInterface, int i) {
                     finish();
+                    GleapDetectorUtil.resumeAllDetectors();
                 }
             }).create();
 
@@ -133,6 +134,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
             alertDialog.setMessage(getString(R.string.gleap_alert_no_internet_subtitle));
 
             alertDialog.show();
+
         }
 
         @Override

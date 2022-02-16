@@ -17,32 +17,38 @@ class ScreenshotTaker {
     public ScreenshotTaker() {
         gleapBug = GleapBug.getInstance();
     }
-
+    private boolean alreadyTakingScreenshot = false;
     /**
      * Take a screenshot of the current view and opens it in the editor
      */
     public void takeScreenshot() {
         try {
-            GleapDetectorUtil.stopAllDetectors();
-            if (GleapConfig.getInstance().getBugWillBeSentCallback() != null) {
-                GleapConfig.getInstance().getBugWillBeSentCallback().flowInvoced();
-            }
-           ScreenshotUtil.takeScreenshot(new ScreenshotUtil.GetImageCallback() {
-                @Override
-                public void getImage(Bitmap bitmap) {
-                    if (bitmap != null) {
-                        openScreenshot(bitmap);
-                    }
+            if(!alreadyTakingScreenshot) {
+                alreadyTakingScreenshot = true;
+                GleapDetectorUtil.stopAllDetectors();
+                if (GleapConfig.getInstance().getBugWillBeSentCallback() != null) {
+                    GleapConfig.getInstance().getBugWillBeSentCallback().flowInvoced();
                 }
-            });
-
+                ScreenshotUtil.takeScreenshot(new ScreenshotUtil.GetImageCallback() {
+                    @Override
+                    public void getImage(Bitmap bitmap) {
+                        if (bitmap != null) {
+                            openScreenshot(bitmap);
+                            alreadyTakingScreenshot = false;
+                        }
+                    }
+                });
+            }
         }catch (GleapSessionNotInitialisedException exception) {
             GleapDetectorUtil.resumeAllDetectors();
             System.err.println("Gleap: Gleap Session not initialized.");
+            alreadyTakingScreenshot = false;
         } catch (InterruptedException e) {
             e.printStackTrace();
+            alreadyTakingScreenshot = false;
         } catch (ExecutionException e) {
             e.printStackTrace();
+            alreadyTakingScreenshot = false;
         }
     }
 

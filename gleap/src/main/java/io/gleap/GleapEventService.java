@@ -15,7 +15,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -25,10 +24,10 @@ import javax.net.ssl.HttpsURLConnection;
 
 class GleapEventService {
     private static GleapEventService instance;
-    private final int CHECK_PAGE_INTERVAL = 1000;
+    private final int CHECK_PAGE_INTERVAL = 5000;
     private int time = GleapConfig.getInstance().getResceduleEventStreamDurationShort();
     private String currentPage = "";
-    private ArrayList<JSONObject> arrayList = new ArrayList<>();
+    private ArrayList<JSONObject> eventsToBeSent = new ArrayList<>();
 
     private GleapEventService(){
         sendInitialMessage();
@@ -70,7 +69,7 @@ class GleapEventService {
 
                 @Override
                 public void run() {
-                    if (arrayList.size() > 0 && UserSessionController.getInstance().isSessionLoaded()) {
+                    if (eventsToBeSent.size() > 0 && UserSessionController.getInstance().isSessionLoaded()) {
                         time = GleapConfig.getInstance().getResceduleEventStreamDurationLong();
                         new EventHttpHelper().execute();
 
@@ -82,6 +81,10 @@ class GleapEventService {
             }, time); // 1 second delay (takes millis)
         }
     }
+    public void addEvent(JSONObject event) {
+        eventsToBeSent.add(event);
+    }
+
 
     public void checkPage() {
         final Handler h = new Handler();
@@ -97,11 +100,10 @@ class GleapEventService {
                     try {
                         object.put("page", activity.getClass().getSimpleName());
                         Gleap.getInstance().logEvent("pageView", object);
-                        if(arrayList.size() == GleapConfig.getInstance().getMaxEventLength()){
-                            arrayList = shiftArray(arrayList);
+                        if(eventsToBeSent.size() == GleapConfig.getInstance().getMaxEventLength()){
+                            eventsToBeSent = shiftArray(eventsToBeSent);
                         }
 
-                        arrayList.add(generateEvent(object));
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
@@ -154,10 +156,10 @@ class GleapEventService {
             conn.setRequestProperty("Content-Type", "application/json");
             conn.setRequestMethod("POST");
             UserSession userSession = UserSessionController.getInstance().getUserSession();
-
-            conn.setRequestProperty("gleap-id", userSession.getId());
-            conn.setRequestProperty("gleap-hash", userSession.getHash());
-
+            if(userSession != null) {
+                conn.setRequestProperty("gleap-id", userSession.getId());
+                conn.setRequestProperty("gleap-hash", userSession.getHash());
+            }
             JSONArray jsonArray = new JSONArray();
             JSONObject event = new JSONObject();
             event.put("date", dateToString(new Date()));
@@ -199,6 +201,7 @@ class GleapEventService {
         }
     }
 
+
     private class EventHttpHelper extends AsyncTask{
 
         @Override
@@ -206,7 +209,7 @@ class GleapEventService {
             try {
                 int status = postEvent();
                 if(status == 200){
-                    arrayList = new ArrayList<>();
+                    eventsToBeSent = new ArrayList<>();
                 }
             }catch (IOException | JSONException exception){
                 exception.printStackTrace();
@@ -227,14 +230,15 @@ class GleapEventService {
             conn.setRequestProperty("Accept", "application/json");
             conn.setRequestProperty("Content-Type", "application/json");
             conn.setRequestMethod("POST");
+
             UserSession userSession = UserSessionController.getInstance().getUserSession();
-
-            conn.setRequestProperty("gleap-id", userSession.getId());
-            conn.setRequestProperty("gleap-hash", userSession.getHash());
-
+            if(userSession != null) {
+                conn.setRequestProperty("gleap-id", userSession.getId());
+                conn.setRequestProperty("gleap-hash", userSession.getHash());
+            }
 
             JSONObject body = new JSONObject();
-            body.put("events", arrayToJSONArray(arrayList));
+            body.put("events", arrayToJSONArray(eventsToBeSent));
 
             try (OutputStream os = conn.getOutputStream()) {
                 byte[] input = body.toString().getBytes(StandardCharsets.UTF_8);
