@@ -66,6 +66,7 @@ class ScreenshotTaker {
                     editor.putString("descriptionEditText", ""); // Storing the description
                     editor.apply();
                     Intent intent = new Intent(ActivityUtil.getCurrentActivity(), GleapMainActivity.class);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
                     gleapBug.setScreenshot(imageFile);
                     activity.startActivity(intent);
                 }

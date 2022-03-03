@@ -11,7 +11,7 @@ import android.hardware.SensorManager;
  * Detects the shake gesture of the phone
  */
 class ShakeGestureDetector extends GleapDetector implements SensorEventListener {
-    private static final float SHAKE_THRESHOLD_GRAVITY = 2.5F;
+    private static final float SHAKE_THRESHOLD_GRAVITY = 8.0F;
     private static final int SHAKE_SLOP_TIME_MS = 600;
     private static final int SHAKE_COUNT_RESET_TIME_MS = 3000;
     private long mShakeTimestamp;

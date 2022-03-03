@@ -29,15 +29,15 @@ class GleapEventService {
     private String currentPage = "";
     private ArrayList<JSONObject> eventsToBeSent = new ArrayList<>();
 
-    private GleapEventService(){
+    private GleapEventService() {
         sendInitialMessage();
-        if(GleapBug.getInstance().getApplicationtype() == APPLICATIONTYPE.NATIVE ) {
+        if (GleapBug.getInstance().getApplicationtype() == APPLICATIONTYPE.NATIVE) {
             checkPage();
         }
     }
 
-    public static GleapEventService getInstance(){
-        if(instance == null){
+    public static GleapEventService getInstance() {
+        if (instance == null) {
             instance = new GleapEventService();
         }
         return instance;
@@ -56,31 +56,28 @@ class GleapEventService {
                 } else {
                     h.postDelayed(this, time);
                 }
-
             }
         }, time); // 1 second delay (takes millis)
     }
 
     public void start() {
-        if(GleapBug.getInstance().getApplicationtype() == APPLICATIONTYPE.NATIVE ) {
-            final Handler h = new Handler();
-            h.postDelayed(new Runnable() {
-                private long time = 0;
+        final Handler h = new Handler();
+        h.postDelayed(new Runnable() {
+            private long time = 0;
 
-                @Override
-                public void run() {
-                    if (eventsToBeSent.size() > 0 && UserSessionController.getInstance().isSessionLoaded()) {
-                        time = GleapConfig.getInstance().getResceduleEventStreamDurationLong();
-                        new EventHttpHelper().execute();
-
-                    } else {
-                        time = GleapConfig.getInstance().getResceduleEventStreamDurationShort();
-                    }
-                    h.postDelayed(this, time);
+            @Override
+            public void run() {
+                if (eventsToBeSent.size() > 0 && UserSessionController.getInstance().isSessionLoaded()) {
+                    time = GleapConfig.getInstance().getResceduleEventStreamDurationLong();
+                    new EventHttpHelper().execute();
+                } else {
+                    time = GleapConfig.getInstance().getResceduleEventStreamDurationShort();
                 }
-            }, time); // 1 second delay (takes millis)
-        }
+                h.postDelayed(this, time);
+            }
+        }, time); // 1 second delay (takes millis)
     }
+
     public void addEvent(JSONObject event) {
         eventsToBeSent.add(event);
     }
@@ -88,19 +85,17 @@ class GleapEventService {
 
     public void checkPage() {
         final Handler h = new Handler();
-        h.postDelayed(new Runnable()
-        {
+        h.postDelayed(new Runnable() {
             @Override
-            public void run()
-            {
+            public void run() {
                 Activity activity = ActivityUtil.getCurrentActivity();
-                if(activity != null && !currentPage.equals(activity.getClass().getSimpleName()) && !activity.getClass().getSimpleName().contains("Gleap")){
+                if (activity != null && !currentPage.equals(activity.getClass().getSimpleName()) && !activity.getClass().getSimpleName().contains("Gleap")) {
                     currentPage = activity.getClass().getSimpleName();
                     JSONObject object = new JSONObject();
                     try {
                         object.put("page", activity.getClass().getSimpleName());
                         Gleap.getInstance().logEvent("pageView", object);
-                        if(eventsToBeSent.size() == GleapConfig.getInstance().getMaxEventLength()){
+                        if (eventsToBeSent.size() == GleapConfig.getInstance().getMaxEventLength()) {
                             eventsToBeSent = shiftArray(eventsToBeSent);
                         }
 
@@ -122,7 +117,7 @@ class GleapEventService {
         return event;
     }
 
-    private ArrayList<JSONObject> shiftArray(ArrayList<JSONObject> arrayList){
+    private ArrayList<JSONObject> shiftArray(ArrayList<JSONObject> arrayList) {
         ArrayList<JSONObject> tmp = new ArrayList<>();
         for (int i = 1; i < arrayList.size() - 1; i++) {
             tmp.add(arrayList.get(i));
@@ -130,13 +125,13 @@ class GleapEventService {
         return tmp;
     }
 
-    private class InitialEventHttpHelper extends AsyncTask{
+    private class InitialEventHttpHelper extends AsyncTask {
 
         @Override
         protected Object doInBackground(Object[] objects) {
             try {
                 int status = postEvent();
-            }catch (IOException | JSONException exception){
+            } catch (IOException | JSONException exception) {
                 exception.printStackTrace();
             }
             return null;
@@ -156,7 +151,7 @@ class GleapEventService {
             conn.setRequestProperty("Content-Type", "application/json");
             conn.setRequestMethod("POST");
             UserSession userSession = UserSessionController.getInstance().getUserSession();
-            if(userSession != null) {
+            if (userSession != null) {
                 conn.setRequestProperty("gleap-id", userSession.getId());
                 conn.setRequestProperty("gleap-hash", userSession.getHash());
             }
@@ -182,7 +177,7 @@ class GleapEventService {
                 }
 
                 if (result != null) {
-                    if(result.has("actionType") && result.has("outbound")) {
+                    if (result.has("actionType") && result.has("outbound")) {
                         GleapConfig.getInstance().setAction(new GleapAction(result.getString("actionType"), result.getString("outbound")));
                         try {
                             Gleap.getInstance().startFeedbackFlow(GleapConfig.getInstance().getAction().getActionType());
@@ -202,16 +197,16 @@ class GleapEventService {
     }
 
 
-    private class EventHttpHelper extends AsyncTask{
+    private class EventHttpHelper extends AsyncTask {
 
         @Override
         protected Object doInBackground(Object[] objects) {
             try {
                 int status = postEvent();
-                if(status == 200){
+                if (status == 200) {
                     eventsToBeSent = new ArrayList<>();
                 }
-            }catch (IOException | JSONException exception){
+            } catch (IOException | JSONException exception) {
                 exception.printStackTrace();
             }
             return null;
@@ -232,7 +227,7 @@ class GleapEventService {
             conn.setRequestMethod("POST");
 
             UserSession userSession = UserSessionController.getInstance().getUserSession();
-            if(userSession != null) {
+            if (userSession != null) {
                 conn.setRequestProperty("gleap-id", userSession.getId());
                 conn.setRequestProperty("gleap-hash", userSession.getHash());
             }
@@ -254,13 +249,13 @@ class GleapEventService {
                 }
 
                 if (result != null) {
-                        if(result.has("actionType") && result.has("outbound")) {
-                            GleapConfig.getInstance().setAction(new GleapAction(result.getString("actionType"), result.getString("outbound")));
-                            try {
-                                Gleap.getInstance().startFeedbackFlow(GleapConfig.getInstance().getAction().getActionType());
-                            } catch (GleapNotInitialisedException e) {
-                                e.printStackTrace();
-                            }
+                    if (result.has("actionType") && result.has("outbound")) {
+                        GleapConfig.getInstance().setAction(new GleapAction(result.getString("actionType"), result.getString("outbound")));
+                        try {
+                            Gleap.getInstance().startFeedbackFlow(GleapConfig.getInstance().getAction().getActionType());
+                        } catch (GleapNotInitialisedException e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
             } catch (JSONException e) {
@@ -270,7 +265,7 @@ class GleapEventService {
             return conn.getResponseCode();
         }
 
-        private JSONArray arrayToJSONArray(ArrayList<JSONObject> arrayList){
+        private JSONArray arrayToJSONArray(ArrayList<JSONObject> arrayList) {
             JSONArray result = new JSONArray();
             for (JSONObject jsonObject :
                     arrayList) {
