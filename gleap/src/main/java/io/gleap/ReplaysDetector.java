@@ -46,6 +46,11 @@ class ReplaysDetector extends GleapDetector {
         handler.removeCallbacks(runnableCode);
     }
 
+    @Override
+    public void unregister() {
+        handler.removeCallbacks(runnableCode);
+    }
+
     private final Runnable runnableCode = new Runnable() {
         @Override
         public void run() {

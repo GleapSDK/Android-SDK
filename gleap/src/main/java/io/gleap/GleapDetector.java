@@ -30,6 +30,8 @@ abstract class GleapDetector {
 
     public abstract void pause();
 
+    public abstract void unregister();
+
     public void takeScreenshot() {
         screenshotTaker.takeScreenshot();
     }

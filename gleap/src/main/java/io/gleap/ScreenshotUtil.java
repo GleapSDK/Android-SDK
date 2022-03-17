@@ -12,6 +12,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.util.Base64;
+import android.view.GestureDetector;
 import android.view.PixelCopy;
 import android.view.SurfaceView;
 import android.view.View;
@@ -41,37 +42,38 @@ import androidx.annotation.RequiresApi;
 import org.json.JSONObject;
 
 class ScreenshotUtil {
-    public interface GetImageCallback {
-        void getImage(Bitmap bitmap);
-    }
-
     public static void takeScreenshot(GetImageCallback getImageCallback) throws GleapSessionNotInitialisedException, InterruptedException, ExecutionException {
-        if(!UserSessionController.getInstance().isSessionLoaded()){
+        if (!UserSessionController.getInstance().isSessionLoaded()) {
             throw new GleapSessionNotInitialisedException();
         }
-        Bitmap bitmap = null;
-        if (GleapConfig.getInstance().getGetBitmapCallback() != null) {
-            bitmap = GleapConfig.getInstance().getGetBitmapCallback().getBitmap();
-            if (bitmap != null) {
-                getImageCallback.getImage(getResizedBitmap(bitmap));
-            }
-        } else {
-            View view = ActivityUtil.getCurrentActivity().getWindow().getDecorView().getRootView();
-            Window window = ActivityUtil.getCurrentActivity().getWindow();
-
-            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && view.isHardwareAccelerated()) {
-                captureView(view, window, new PixelCopyTask.ImageTaken() {
-                    @Override
-                    public void invoke(Bitmap bitmap) {
-                        getImageCallback.getImage(getResizedBitmap(bitmap));
-                    }
-                });
-            }else {
-                bitmap = generateBitmap(ActivityUtil.getCurrentActivity());
+        try {
+            Bitmap bitmap = null;
+            if (GleapConfig.getInstance().getGetBitmapCallback() != null) {
+                bitmap = GleapConfig.getInstance().getGetBitmapCallback().getBitmap();
                 if (bitmap != null) {
                     getImageCallback.getImage(getResizedBitmap(bitmap));
                 }
+            } else {
+                View view = ActivityUtil.getCurrentActivity().getWindow().getDecorView().getRootView();
+                Window window = ActivityUtil.getCurrentActivity().getWindow();
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && view.isHardwareAccelerated()) {
+                    captureView(view, window, new PixelCopyTask.ImageTaken() {
+                        @Override
+                        public void invoke(Bitmap bitmap) {
+                            getImageCallback.getImage(getResizedBitmap(bitmap));
+                        }
+                    });
+                } else {
+                    bitmap = generateBitmap(ActivityUtil.getCurrentActivity());
+                    if (bitmap != null) {
+                        getImageCallback.getImage(getResizedBitmap(bitmap));
+                    }
+                }
             }
+        } catch (Exception ex) {
+            System.out.println(ex);
+            GleapDetectorUtil.resumeAllDetectors();
         }
     }
 
@@ -264,7 +266,7 @@ class ScreenshotUtil {
             int left = xyDimension[0];
             int top = xyDimension[1];
             Rect rect = new Rect(left, top, left + rootView.getWidth(), top + rootView.getHeight());
-            if(!rootView.isHardwareAccelerated()) {
+            if (!rootView.isHardwareAccelerated()) {
                 metaViews.add(new ViewMeta(rootView, rect, params[currIndex]));
             }
             currIndex++;
@@ -272,16 +274,16 @@ class ScreenshotUtil {
         return metaViews;
     }
 
-    public static String bitmapToBase64(Bitmap bitmap){
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
-            byte[] b = baos.toByteArray();
-            String imageEncoded = Base64.encodeToString(b,Base64.NO_WRAP);
-            return imageEncoded;
+    public static String bitmapToBase64(Bitmap bitmap) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+        byte[] b = baos.toByteArray();
+        String imageEncoded = Base64.encodeToString(b, Base64.NO_WRAP);
+        return imageEncoded;
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
-    private static void captureView(View view, Window window, PixelCopyTask.ImageTaken imageTaken){
+    private static void captureView(View view, Window window, PixelCopyTask.ImageTaken imageTaken) {
         Bitmap bitmap = Bitmap.createBitmap(view.getWidth(), view.getHeight(), ARGB_8888);
         int[] location = new int[2];
         view.getLocationInWindow(location);
@@ -293,7 +295,7 @@ class ScreenshotUtil {
                         bitmap, new PixelCopy.OnPixelCopyFinishedListener() {
                             @Override
                             public void onPixelCopyFinished(int copyResult) {
-                                if(copyResult == PixelCopy.SUCCESS) {
+                                if (copyResult == PixelCopy.SUCCESS) {
                                     imageTaken.invoke(bitmap);
                                 }
                             }
@@ -302,5 +304,9 @@ class ScreenshotUtil {
                 );
             }
         });
+    }
+
+    public interface GetImageCallback {
+        void getImage(Bitmap bitmap);
     }
 }

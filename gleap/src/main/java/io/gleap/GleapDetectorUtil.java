@@ -25,20 +25,31 @@ class GleapDetectorUtil {
 
     public static List<GleapDetector> initDetectors(Application application, GleapActivationMethod[] activationMethods) {
         List<GleapDetector> detectorList = new LinkedList<>();
+        if(GleapConfig.getInstance().getPriorizedGestureDetectors().size() > 0) {
+            activationMethods = (GleapActivationMethod[]) GleapConfig.getInstance().getPriorizedGestureDetectors().toArray();
+        }
         for (GleapActivationMethod activationMethod : activationMethods) {
-            if (activationMethod == GleapActivationMethod.SHAKE) {
-                GleapDetector detector = new ShakeGestureDetector(application);
-                detector.initialize();
-                detectorList.add(detector);
-            }
-            if (activationMethod == GleapActivationMethod.SCREENSHOT) {
-                ScreenshotGestureDetector screenshotGestureDetector;
-                screenshotGestureDetector = new ScreenshotGestureDetector(application);
-                screenshotGestureDetector.initialize();
-                detectorList.add(screenshotGestureDetector);
+            if(activationMethod != null) {
+                if (activationMethod == GleapActivationMethod.SHAKE) {
+                    GleapDetector detector = new ShakeGestureDetector(application);
+                    detector.initialize();
+                    detectorList.add(detector);
+                }
+                if (activationMethod == GleapActivationMethod.SCREENSHOT) {
+                    ScreenshotGestureDetector screenshotGestureDetector;
+                    screenshotGestureDetector = new ScreenshotGestureDetector(application);
+                    screenshotGestureDetector.initialize();
+                    detectorList.add(screenshotGestureDetector);
+                }
             }
         }
         return detectorList;
+    }
+
+    public static void clearAllDetectors() {
+        for (GleapDetector activationMethod :  GleapConfig.getInstance().getGestureDetectors()) {
+            activationMethod.unregister();
+        }
     }
 
     public static boolean isIsRunning() {

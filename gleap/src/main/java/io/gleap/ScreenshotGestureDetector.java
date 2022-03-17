@@ -27,6 +27,11 @@ class ScreenshotGestureDetector extends GleapDetector {
         application.getContentResolver().unregisterContentObserver(contentObserver);
     }
 
+    @Override
+    public void unregister() {
+        application.getContentResolver().unregisterContentObserver(contentObserver);
+    }
+
     private void startBugReporting() {
         this.takeScreenshot();
     }

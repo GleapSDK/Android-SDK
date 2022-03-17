@@ -3,6 +3,7 @@ package io.gleap;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.util.List;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -247,4 +248,12 @@ interface iGleap {
      * @author Gleap
      */
     void removeAllAttachments();
+
+    /**
+     * Set the activation Methods manually
+     * @param activationMethods set of activation methods
+     */
+    void setActivationMethods(GleapActivationMethod[] activationMethods);
 }
+
+

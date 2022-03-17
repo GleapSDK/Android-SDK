@@ -8,7 +8,9 @@ import android.os.Looper;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.lang.reflect.Array;
 import java.net.HttpURLConnection;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -475,6 +477,15 @@ public class Gleap implements iGleap {
     @Override
     public void removeAllAttachments() {
         GleapFileHelper.getInstance().clearAttachments();
+    }
+
+    @Override
+    public void setActivationMethods(GleapActivationMethod[] activationMethods) {
+        GleapConfig.getInstance().setPriorizedGestureDetectors(Arrays.asList(activationMethods));
+        GleapDetectorUtil.clearAllDetectors();
+        List<GleapDetector> detectorList = GleapDetectorUtil.initDetectors(application, activationMethods);
+        GleapConfig.getInstance().setGestureDetectors(detectorList);
+        GleapDetectorUtil.resumeAllDetectors();
     }
 
     /**

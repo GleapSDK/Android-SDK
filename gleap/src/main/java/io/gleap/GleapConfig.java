@@ -5,6 +5,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -28,7 +29,8 @@ class GleapConfig {
     private FeedbackWillBeSentCallback feedbackWillBeSentCallback;
     private CustomActionCallback customAction;
     private GetBitmapCallback getBitmapCallback;
-    private List<GleapDetector> gestureDetectors;
+    private List<GleapDetector> gestureDetectors = new LinkedList<>();
+    private List<GleapActivationMethod> priorizedGestureDetectors = new LinkedList<>();
     private int interval = 5;
 
     //user config
@@ -146,6 +148,14 @@ class GleapConfig {
 
     public void setGestureDetectors(List<GleapDetector> gestureDetectors) {
         this.gestureDetectors = gestureDetectors;
+    }
+
+    public List<GleapActivationMethod> getPriorizedGestureDetectors() {
+        return priorizedGestureDetectors;
+    }
+
+    public void setPriorizedGestureDetectors(List<GleapActivationMethod> priorizedGestureDetectors) {
+        this.priorizedGestureDetectors = priorizedGestureDetectors;
     }
 
     public boolean isActivationMethodShake() {
