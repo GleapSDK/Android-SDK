@@ -38,6 +38,8 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
     private static final String UPLOAD_FILES_MULTI_BACKEND_URL_POSTFIX = "/uploads/attachments";
     private static final String REPORT_BUG_URL_POSTFIX = "/bugs";
     private final Context context;
+    private static JSONObject sentCallbackData;
+
     GleapConfig bbConfig = GleapConfig.getInstance();
 
     private final OnHttpResponseListener listener;
@@ -74,6 +76,15 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
         if (GleapConfig.getInstance().getFeedbackSentCallback() != null && !GleapBug.getInstance().isSilent()) {
             GleapConfig.getInstance().getFeedbackSentCallback().close();
         }
+
+        if (GleapConfig.getInstance().getFeedbackSentWithDataCallback() != null && !GleapBug.getInstance().isSilent()) {
+           if(sentCallbackData != null) {
+               GleapConfig.getInstance().getFeedbackSentWithDataCallback().close(sentCallbackData);
+           }
+        }
+
+        sentCallbackData = null;
+
         GleapBug.getInstance().setSilent(false);
         try {
             listener.onTaskComplete(result);
@@ -169,7 +180,17 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
         if(config.has("attachments") && !config.getBoolean("attachments") || !config.has("attachments")) {
             body.put("attachments", generateAttachments());
         }
-        body.put("formData", gleapBug.getData());
+
+        JSONObject formData = gleapBug.getData();
+
+        //prepare data for sent
+        JSONObject callBackData = new JSONObject();
+        callBackData.put("type", gleapBug.getType());
+        callBackData.put("formadata", formData);
+
+        sentCallbackData = callBackData;
+
+        body.put("formData", formData);
         body.put("networkLogs", gleapBug.getNetworklogs());
         body.put("customEventLog", gleapBug.getCustomEventLog());
         body.put("isSilent", gleapBug.isSilent() ? "true" : "false");

@@ -179,6 +179,7 @@ class GleapEventService {
                 if (result != null) {
                     if (result.has("actionType") && result.has("outbound")) {
                         GleapConfig.getInstance().setAction(new GleapAction(result.getString("actionType"), result.getString("outbound")));
+
                         try {
                             Gleap.getInstance().startFeedbackFlow(GleapConfig.getInstance().getAction().getActionType());
                         } catch (GleapNotInitialisedException e) {

@@ -252,7 +252,9 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
             try {
                 JSONObject jsonObject = new JSONObject(object);
                 String method = jsonObject.getString("name");
-                GleapConfig.getInstance().getCustomActions().invoke(method);
+                if(GleapConfig.getInstance().getCustomActions() != null) {
+                    GleapConfig.getInstance().getCustomActions().invoke(method);
+                }
                 finish();
             } catch (JSONException e) {
                 e.printStackTrace();

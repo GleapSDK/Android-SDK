@@ -26,6 +26,7 @@ class GleapConfig {
 
     private ConfigLoadedCallback configLoadedCallback;
     private FeedbackSentCallback feedbackSentCallback;
+    private FeedbackSentWithDataCallback feedbackSentWithDataCallback;
     private FeedbackWillBeSentCallback feedbackWillBeSentCallback;
     private CustomActionCallback customAction;
     private GetBitmapCallback getBitmapCallback;
@@ -122,8 +123,16 @@ class GleapConfig {
         return feedbackSentCallback;
     }
 
-    public void setBugSentCallback(FeedbackSentCallback feedbackSentCallback) {
+    public void setFeedbackSentCallback(FeedbackSentCallback feedbackSentCallback) {
         this.feedbackSentCallback = feedbackSentCallback;
+    }
+
+    public FeedbackSentWithDataCallback getFeedbackSentWithDataCallback() {
+        return feedbackSentWithDataCallback;
+    }
+
+    public void setFeedbackSentWithDataCallback(FeedbackSentWithDataCallback feedbackSentWithDataCallback) {
+        this.feedbackSentWithDataCallback = feedbackSentWithDataCallback;
     }
 
     public FeedbackWillBeSentCallback getBugWillBeSentCallback() {

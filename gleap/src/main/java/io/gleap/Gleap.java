@@ -1,6 +1,5 @@
 package io.gleap;
 
-import android.app.Activity;
 import android.app.Application;
 import android.os.Handler;
 import android.os.Looper;
@@ -8,8 +7,6 @@ import android.os.Looper;
 import org.json.JSONObject;
 
 import java.io.File;
-import java.lang.reflect.Array;
-import java.net.HttpURLConnection;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -303,7 +300,12 @@ public class Gleap implements iGleap {
      */
     @Override
     public void setFeedbackSentCallback(FeedbackSentCallback feedbackSentCallback) {
-        GleapConfig.getInstance().setBugSentCallback(feedbackSentCallback);
+        GleapConfig.getInstance().setFeedbackSentCallback(feedbackSentCallback);
+    }
+
+    @Override
+    public void setFeedbackSentWithDataCallback(FeedbackSentWithDataCallback feedbackSentCallback) {
+        GleapConfig.getInstance().setFeedbackSentWithDataCallback(feedbackSentCallback);
     }
 
     /**

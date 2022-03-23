@@ -162,6 +162,13 @@ interface iGleap {
     void setFeedbackSentCallback(FeedbackSentCallback feedbackSentCallback);
 
     /**
+     * This method is triggered, when the Gleap flow is closed and receive the request data.
+     *
+     * @param feedbackSentCallback this callback is called when the flow is called
+     */
+    void setFeedbackSentWithDataCallback(FeedbackSentWithDataCallback feedbackSentCallback);
+
+    /**
      * Customize the way, the Bitmap is generated. If this is overritten,
      * only the custom way is used
      *
