@@ -48,6 +48,15 @@ interface iGleap {
     void sendSilentBugReport(String description, Gleap.SEVERITY severity);
 
     /**
+     * Send a silent bugreport in the background. Useful for automated ui tests.
+     *
+     * @param description description of the bug
+     * @param severity    Severity of the bug "LOW", "MIDDLE", "HIGH"
+     * @param type Type of the bug: E.g. EXCEPTION
+     */
+    public void sendSilentBugReport(String description, Gleap.SEVERITY severity, String type);
+
+    /**
      * Updates a session's user data.
      *
      * @param id The updated user data.

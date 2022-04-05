@@ -9,7 +9,7 @@ import org.json.JSONObject;
 import java.util.concurrent.ExecutionException;
 
 class SilentBugReportUtil {
-    public static void createSilentBugReport(Context context, String description, String severity) {
+    public static void createSilentBugReport(Context context, String description, String severity, String type) {
         try {
             GleapBug model = GleapBug.getInstance();
             ScreenshotUtil.takeScreenshot(new ScreenshotUtil.GetImageCallback() {
@@ -21,7 +21,7 @@ class SilentBugReportUtil {
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
-                    model.setType("BUG");
+                    model.setType(type);
                     model.setData(obj);
                     model.setSeverity(severity);
                     model.setSilent(true);
@@ -43,6 +43,10 @@ class SilentBugReportUtil {
         } catch (ExecutionException e) {
             e.printStackTrace();
         }
+    }
+
+    public static void createSilentBugReport(Context context, String description, String severity) {
+      createSilentBugReport(context, description, severity, "BUG");
     }
 
 }

@@ -74,7 +74,6 @@ class PhoneMeta {
         obj.put("networkStatus", getNetworkStatus());
         obj.put("preferredUserLocale", getLocale());
         obj.put("sdkVersion", sdkVersion);
-
         obj.put("batterySaveMode", getBatterySaveMode());
         obj.put("batteryLevel", getBatteryLevel());
         obj.put("phoneChargingStatus", getBatteryState());

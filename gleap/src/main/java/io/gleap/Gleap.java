@@ -160,6 +160,18 @@ public class Gleap implements iGleap {
     }
 
     /**
+     * Send a silent bugreport in the background. Useful for automated ui tests.
+     *
+     * @param description description of the bug
+     * @param severity    Severity of the bug "LOW", "MIDDLE", "HIGH"
+     * @param type Type of the bug: E.g. BUG
+     */
+    @Override
+    public void sendSilentBugReport(String description, SEVERITY severity, String type) {
+        SilentBugReportUtil.createSilentBugReport(application, description, severity.name(), type);
+    }
+
+    /**
      * Updates a session's user data.
      *
      * @param id Id of the user.
@@ -396,7 +408,7 @@ public class Gleap implements iGleap {
     public enum SEVERITY {
         LOW, MEDIUM, HIGH
     }
-
+    
     public static class GleapListener implements OnHttpResponseListener {
 
         public GleapListener() {
