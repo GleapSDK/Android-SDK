@@ -28,6 +28,7 @@ class GleapConfig {
     private FeedbackSentCallback feedbackSentCallback;
     private FeedbackSentWithDataCallback feedbackSentWithDataCallback;
     private FeedbackWillBeSentCallback feedbackWillBeSentCallback;
+    private GetActivityCallback getActivityCallback;
     private CustomActionCallback customAction;
     private GetBitmapCallback getBitmapCallback;
     private List<GleapDetector> gestureDetectors = new LinkedList<>();
@@ -253,5 +254,13 @@ class GleapConfig {
 
     public JSONObject getPlainConfig() {
         return plainConfig;
+    }
+
+    public GetActivityCallback getGetActivityCallback() {
+        return getActivityCallback;
+    }
+
+    public void setGetActivityCallback(GetActivityCallback getActivityCallback) {
+        this.getActivityCallback = getActivityCallback;
     }
 }

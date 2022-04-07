@@ -7,6 +7,10 @@ import java.util.Map;
 
 class ActivityUtil {
     public static Activity getCurrentActivity() {
+        GetActivityCallback activityCallback =  GleapConfig.getInstance().getGetActivityCallback();
+        if(activityCallback != null) {
+            return activityCallback.getActivity();
+        }
         try {
             Class activityThreadClass = Class.forName("android.app.ActivityThread");
             Object activityThread = activityThreadClass.getMethod("currentActivityThread").invoke(null);
@@ -29,6 +33,7 @@ class ActivityUtil {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
         return null;
     }
 }

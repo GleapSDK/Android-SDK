@@ -1,5 +1,6 @@
 package gleap.io.gleap_android_sdk;
 
+import android.app.Activity;
 import android.app.ActivityManager;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -10,10 +11,14 @@ import android.view.View;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import org.json.JSONObject;
+
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
+import io.gleap.GetActivityCallback;
 import io.gleap.Gleap;
+import io.gleap.GleapActivationMethod;
 import io.gleap.GleapNotInitialisedException;
 
 
@@ -23,15 +28,18 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        Gleap.getInstance().setGetActivityCallback(new GetActivityCallback() {
+            @Override
+            public Activity getActivity() {
+                return MainActivity.this;
+            }
+        });
+
         findViewById(R.id.button3).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 // Gleap.getInstance().sendSilentBugReport("HEY", Gleap.SEVERITY.LOW);
-                try {
-                    Gleap.getInstance().startFeedbackFlow();
-                } catch (GleapNotInitialisedException e) {
-                    e.printStackTrace();
-                }
+            Gleap.getInstance().sendSilentBugReport("This is ninja", Gleap.SEVERITY.LOW, "NINJA");
             }
         });
     }

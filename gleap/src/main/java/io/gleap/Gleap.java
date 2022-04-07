@@ -510,4 +510,12 @@ public class Gleap implements iGleap {
         GleapConfig.getInstance().setEnableReplays(enable);
     }
 
+    /**
+     * Pass the current activity manually (Internal usage!)
+     * @param getActivityCallback get the current activity
+     */
+    public void setGetActivityCallback(GetActivityCallback getActivityCallback) {
+        GleapConfig.getInstance().setGetActivityCallback(getActivityCallback);
+    }
+
 }

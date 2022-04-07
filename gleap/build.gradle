@@ -22,7 +22,7 @@ android {
         minSdkVersion 21
         targetSdkVersion 31
         versionCode 600411
-        versionName "6.4.11"
+        versionName "6.4.11-HOTFIX"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
     }
