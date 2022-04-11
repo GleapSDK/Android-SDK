@@ -21,8 +21,8 @@ android {
     defaultConfig {
         minSdkVersion 21
         targetSdkVersion 31
-        versionCode 600411
-        versionName "6.4.11-HOTFIX"
+        versionCode 600412
+        versionName "6.4.12"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
     }

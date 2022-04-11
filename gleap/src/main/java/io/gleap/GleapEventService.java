@@ -50,7 +50,7 @@ class GleapEventService {
 
             @Override
             public void run() {
-                if (UserSessionController.getInstance().isSessionLoaded()) {
+                if (UserSessionController.getInstance() != null && UserSessionController.getInstance().isSessionLoaded()) {
                     new InitialEventHttpHelper().execute();
 
                 } else {
@@ -67,7 +67,7 @@ class GleapEventService {
 
             @Override
             public void run() {
-                if (eventsToBeSent.size() > 0 && UserSessionController.getInstance().isSessionLoaded()) {
+                if (eventsToBeSent.size() > 0 && UserSessionController.getInstance() != null && UserSessionController.getInstance().isSessionLoaded()) {
                     time = GleapConfig.getInstance().getResceduleEventStreamDurationLong();
                     new EventHttpHelper().execute();
                 } else {
