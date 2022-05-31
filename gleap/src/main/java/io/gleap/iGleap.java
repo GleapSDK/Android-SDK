@@ -3,9 +3,14 @@ package io.gleap;
 import org.json.JSONObject;
 
 import java.io.File;
-import java.util.List;
 
 import javax.net.ssl.HttpsURLConnection;
+
+import io.gleap.callbacks.ConfigLoadedCallback;
+import io.gleap.callbacks.CustomActionCallback;
+import io.gleap.callbacks.FeedbackSentCallback;
+import io.gleap.callbacks.FeedbackWillBeSentCallback;
+import io.gleap.callbacks.GetBitmapCallback;
 
 interface iGleap {
 
@@ -38,6 +43,8 @@ interface iGleap {
      * @throws GleapNotInitialisedException thrown when Gleap is not initialised
      */
     void startFeedbackFlow(String feedbackFlow) throws GleapNotInitialisedException;
+    void startFeedbackFlow(Boolean showBackButton) throws GleapNotInitialisedException;
+    void startFeedbackFlow(String feedbackFlow, Boolean showBackButton) throws GleapNotInitialisedException;
 
     /**
      * Send a silent bugreport in the background. Useful for automated ui tests.
@@ -46,15 +53,10 @@ interface iGleap {
      * @param severity    Severity of the bug "LOW", "MIDDLE", "HIGH"
      */
     void sendSilentBugReport(String description, Gleap.SEVERITY severity);
+    void sendSilentBugReport(String description, Gleap.SEVERITY severity, JSONObject excludeData);
+    void sendSilentBugReport(String description, Gleap.SEVERITY severity, FeedbackSentCallback feedbackSentCallback);
+    void sendSilentBugReport(String description, Gleap.SEVERITY severity, JSONObject excludeData, FeedbackSentCallback feedbackSentCallback);
 
-    /**
-     * Send a silent bugreport in the background. Useful for automated ui tests.
-     *
-     * @param description description of the bug
-     * @param severity    Severity of the bug "LOW", "MIDDLE", "HIGH"
-     * @param type Type of the bug: E.g. EXCEPTION
-     */
-    public void sendSilentBugReport(String description, Gleap.SEVERITY severity, String type);
 
     /**
      * Updates a session's user data.
@@ -74,51 +76,22 @@ interface iGleap {
     void identifyUser(String id, GleapUserProperties gleapUserProperties);
 
     /**
+     * Updates a session's user data.
+     *
+     * @param id id of the user
+     * @param gleapUserProperties The updated user data.
+     * @param hash to verify the user
+     * @author Gleap
+     */
+    void identifyUser(String id, GleapUserProperties gleapUserProperties, String hash);
+
+
+    /**
      * Clears a user session.
      *
      * @author Gleap
      */
     void clearIdentity();
-
-    /**
-     * Configure Gleap
-     */
-    /**
-     * Sets the API url to your internal Gleap server. Please make sure that the server is reachable within the network
-     * If you use a http url pls add android:usesCleartextTraffic="true" to your main activity to allow cleartext traffic
-     *
-     * @param apiUrl url of the internal Gleap server
-     */
-    void setApiUrl(String apiUrl);
-
-    /**
-     * Sets a custom widget url.
-     *
-     * @param widgetUrl The custom widget url.
-     * @author Gleap
-     */
-    void setWidgetUrl(String widgetUrl);
-
-    /**
-     * Set the language for the Gleap Report Flow. Otherwise the default language is used.
-     * Supported Languages "en", "es", "fr", "it", "de", "nl", "cz"
-     *
-     * @param language ISO Country Code eg. "cz," "en", "de", "es", "nl"
-     */
-    void setLanguage(String language);
-
-    /**
-     * Set Application Type
-     *
-     * @param applicationType "Android", "ReactNative", "Flutter"
-     */
-    void setApplicationType(APPLICATIONTYPE applicationType);
-
-    /**
-     * Custom Data
-     */
-    @Deprecated
-    void appendCustomData(JSONObject customData);
 
     /**
      * Attaches custom data, which can be viewed in the Gleap dashboard. New data will be merged with existing custom data.
@@ -153,6 +126,94 @@ interface iGleap {
     void clearCustomData();
 
     /**
+     * Sets the API token
+     * @param token set the custom api token
+     */
+    void setApiToken(String token);
+
+    /**
+     * Configure Gleap
+     */
+    /**
+     * Sets the API url to your internal Gleap server. Please make sure that the server is reachable within the network
+     * If you use a http url pls add android:usesCleartextTraffic="true" to your main activity to allow cleartext traffic
+     *
+     * @param apiUrl url of the internal Gleap server
+     */
+    void setApiUrl(String apiUrl);
+
+    /**
+     * Sets a custom widget url.
+     *
+     * @param widgetUrl The custom widget url.
+     * @author Gleap
+     */
+    void setWidgetUrl(String widgetUrl);
+
+    /**
+     * Disables the console logging. This must be called BEFORE initializing the SDK.
+     */
+    void disableConsoleLog();
+
+    /**
+     * Enables the debug console logging. This must be called BEFORE initializing the SDK.
+     */
+    void enableDebugConsoleLog();
+
+    /**
+     * Set the language for the Gleap Report Flow. Otherwise the default language is used.
+     * Supported Languages "en", "es", "fr", "it", "de", "nl", "cz"
+     *
+     * @param language ISO Country Code eg. "cz," "en", "de", "es", "nl"
+     */
+    void setLanguage(String language);
+
+    /**
+     * Logs a custom event
+     *
+     * @param name Name of the event
+     * @author Gleap
+     */
+    void logEvent(String name);
+
+    /**
+     * Logs a custom event with data
+     *
+     * @param name Name of the event
+     * @param data Data passed with the event.
+     * @author Gleap
+     */
+    void logEvent(String name, JSONObject data);
+
+    /**
+     * Attaches a file to the feedback
+     *
+     * @param file The file to attach to the feedback report
+     * @author Gleap
+     */
+    void addAttachment(File file);
+
+    /**
+     * Removes all attachments
+     *
+     * @author Gleap
+     */
+    void removeAllAttachments();
+
+    /**
+     * Set Application Type
+     *
+     * @param applicationType "Android", "ReactNative", "Flutter"
+     */
+    void setApplicationType(APPLICATIONTYPE applicationType);
+
+    /**
+     * Custom Data
+     */
+    @Deprecated
+    void appendCustomData(JSONObject customData);
+
+    /**
      * Callbacks
      */
 
@@ -169,13 +230,6 @@ interface iGleap {
      * @param feedbackSentCallback this callback is called when the flow is called
      */
     void setFeedbackSentCallback(FeedbackSentCallback feedbackSentCallback);
-
-    /**
-     * This method is triggered, when the Gleap flow is closed and receive the request data.
-     *
-     * @param feedbackSentCallback this callback is called when the flow is called
-     */
-    void setFeedbackSentWithDataCallback(FeedbackSentWithDataCallback feedbackSentCallback);
 
     /**
      * Customize the way, the Bitmap is generated. If this is overritten,
@@ -231,39 +285,6 @@ interface iGleap {
      * @param customAction implement the callback
      */
     void registerCustomAction(CustomActionCallback customAction);
-
-
-    /**
-     * Logs a custom event
-     *
-     * @param name Name of the event
-     * @author Gleap
-     */
-    void logEvent(String name);
-
-    /**
-     * Logs a custom event with data
-     *
-     * @param name Name of the event
-     * @param data Data passed with the event.
-     * @author Gleap
-     */
-    void logEvent(String name, JSONObject data);
-
-    /**
-     * Attaches a file to the feedback
-     *
-     * @param file The file to attach to the feedback report
-     * @author Gleap
-     */
-    void addAttachment(File file);
-
-    /**
-     * Removes all attachments
-     *
-     * @author Gleap
-     */
-    void removeAllAttachments();
 
     /**
      * Set the activation Methods manually

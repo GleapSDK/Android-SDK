@@ -17,7 +17,7 @@ import javax.net.ssl.HttpsURLConnection;
  * Loads the configuration from the server.
  */
 class ConfigLoader extends AsyncTask<GleapBug, Void, Integer> {
-    private final String httpsUrl = GleapConfig.getInstance().getWidgetUrl() + "/appwidget/" + GleapConfig.getInstance().getSdkKey() + "/config?s=android";
+    private final String httpsUrl = GleapConfig.getInstance().getWidgetUrl() + "/widget/" + GleapConfig.getInstance().getSdkKey() + "/config";
     private final OnHttpResponseListener listener;
 
     public ConfigLoader(OnHttpResponseListener listener) {
@@ -41,8 +41,6 @@ class ConfigLoader extends AsyncTask<GleapBug, Void, Integer> {
             HttpsURLConnection con = (HttpsURLConnection) url.openConnection();
             con.connect();
             readResponse(con);
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }

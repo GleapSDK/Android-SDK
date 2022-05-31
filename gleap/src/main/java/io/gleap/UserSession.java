@@ -4,7 +4,6 @@ class UserSession {
     private String id;
     private String hash;
 
-
     public  UserSession(String id, String hash){
         this.id = id;
         this.hash = hash;

@@ -14,10 +14,13 @@ class GleapURLGenerator {
 
             UserSessionController userSessionController = UserSessionController.getInstance();
             UserSession userSession = userSessionController.getUserSession();
-            postfixUrl += "&gleapId=" + userSession.getId();
-            postfixUrl += "&gleapHash=" + userSession.getHash();
+            if (userSession != null) {
+                postfixUrl += "&gleapId=" + userSession.getId();
+                postfixUrl += "&gleapHash=" + userSession.getHash();
+            }
+
             String feedBackFlow = GleapConfig.getInstance().getFeedbackFlow();
-            if(!feedBackFlow.equals("")) {
+            if (!feedBackFlow.equals("")) {
                 postfixUrl += "&startFlow=" + feedBackFlow;
                 GleapConfig.getInstance().setFeedbackFlow("");
             }

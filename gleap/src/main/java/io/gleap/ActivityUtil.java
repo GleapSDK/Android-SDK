@@ -5,6 +5,8 @@ import android.app.Activity;
 import java.lang.reflect.Field;
 import java.util.Map;
 
+import io.gleap.callbacks.GetActivityCallback;
+
 class ActivityUtil {
     public static Activity getCurrentActivity() {
         GetActivityCallback activityCallback =  GleapConfig.getInstance().getGetActivityCallback();

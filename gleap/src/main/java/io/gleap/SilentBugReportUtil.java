@@ -6,10 +6,20 @@ import android.graphics.Bitmap;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.Iterator;
 import java.util.concurrent.ExecutionException;
 
+import io.gleap.callbacks.FeedbackSentCallback;
+
 class SilentBugReportUtil {
-    public static void createSilentBugReport(Context context, String description, String severity, String type) {
+    public static void createSilentBugReport(Context context, String description, String severity, String type, JSONObject excludeData) {
+        if(excludeData == null || excludeData.length() == 0) {
+            excludeData = new JSONObject();
+            try{
+                excludeData.put("screenshot", true);
+            }catch (Exception ex){}
+        }
+        GleapConfig.getInstance().setStripModel(excludeData);
         try {
             GleapBug model = GleapBug.getInstance();
             ScreenshotUtil.takeScreenshot(new ScreenshotUtil.GetImageCallback() {
@@ -25,8 +35,12 @@ class SilentBugReportUtil {
                     model.setData(obj);
                     model.setSeverity(severity);
                     model.setSilent(true);
+
+
                     if (bitmap != null) {
                         model.setScreenshot(bitmap);
+
+
                         try {
                             new HttpHelper(new SilentBugReportHTTPListener(), context).execute(model);
                         } catch (Exception e) {
@@ -46,7 +60,13 @@ class SilentBugReportUtil {
     }
 
     public static void createSilentBugReport(Context context, String description, String severity) {
-      createSilentBugReport(context, description, severity, "BUG");
+      createSilentBugReport(context, description, severity, "CRASH", null);
     }
 
+    public static void createSilentBugReport(Context context, String description, String severity, JSONObject excludeData, FeedbackSentCallback feedbackSentCallback) {
+        if(feedbackSentCallback != null) {
+            GleapConfig.getInstance().setFeedbackSentCallback(feedbackSentCallback);
+        }
+        createSilentBugReport(context, description, severity, "CRASH", excludeData);
+    }
 }

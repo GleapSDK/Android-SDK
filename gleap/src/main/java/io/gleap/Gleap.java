@@ -13,6 +13,13 @@ import java.util.List;
 
 import javax.net.ssl.HttpsURLConnection;
 
+import io.gleap.callbacks.ConfigLoadedCallback;
+import io.gleap.callbacks.CustomActionCallback;
+import io.gleap.callbacks.FeedbackSentCallback;
+import io.gleap.callbacks.FeedbackWillBeSentCallback;
+import io.gleap.callbacks.GetActivityCallback;
+import io.gleap.callbacks.GetBitmapCallback;
+
 public class Gleap implements iGleap {
     private static Gleap instance;
     private static ScreenshotTaker screenshotTaker;
@@ -115,13 +122,39 @@ public class Gleap implements iGleap {
      */
     @Override
     public void startFeedbackFlow() throws GleapNotInitialisedException {
+        startFeedbackFlow("", false);
+    }
+
+    @Override
+    public void startFeedbackFlow(String feedbackFlow) throws GleapNotInitialisedException {
+        startFeedbackFlow(feedbackFlow, false);
+    }
+
+    @Override
+    public void startFeedbackFlow(Boolean showBackButton) throws GleapNotInitialisedException {
+        startFeedbackFlow("", showBackButton);
+    }
+
+    @Override
+    public void startFeedbackFlow(String feedbackFlow, Boolean showBackButton) throws GleapNotInitialisedException {
         Handler mainHandler = new Handler(Looper.getMainLooper());
         Runnable gleapRunnable = new Runnable() {
             @Override
             public void run() throws RuntimeException{
-                if (!GleapDetectorUtil.isIsRunning() && UserSessionController.getInstance().isSessionLoaded()) {
+                if (!GleapDetectorUtil.isIsRunning() && UserSessionController.getInstance() != null && UserSessionController.getInstance().isSessionLoaded()) {
                     if (Gleap.getInstance() != null) {
                         try {
+                            JSONObject message = new JSONObject();
+                            message.put("name", "start-feedbackflow");
+
+                            JSONObject data = new JSONObject();
+                            if(!feedbackFlow.equals("")) {
+                                data.put("flow", feedbackFlow);
+                            }
+
+                            data.put("hideBackButton", !showBackButton);
+                            message.put("data", data);
+                            GleapActionQueueHandler.getInstance().addActionMessage(message);
                             screenshotTaker.takeScreenshot();
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -135,6 +168,26 @@ public class Gleap implements iGleap {
         mainHandler.post(gleapRunnable);
     }
 
+    @Override
+    public void sendSilentBugReport(String description, SEVERITY severity) {
+        SilentBugReportUtil.createSilentBugReport(application, description, severity.name(), new JSONObject(), null);
+    }
+
+    @Override
+    public void sendSilentBugReport(String description, SEVERITY severity, JSONObject excludeData) {
+        SilentBugReportUtil.createSilentBugReport(application, description, severity.name(), excludeData, null);
+    }
+
+    @Override
+    public void sendSilentBugReport(String description, SEVERITY severity, JSONObject excludeData , FeedbackSentCallback feedbackSentCallback) {
+        SilentBugReportUtil.createSilentBugReport(application, description, severity.name(), excludeData, feedbackSentCallback);
+    }
+
+    @Override
+    public void sendSilentBugReport(String description, SEVERITY severity,  FeedbackSentCallback feedbackSentCallback) {
+        SilentBugReportUtil.createSilentBugReport(application, description, severity.name(), null, feedbackSentCallback);
+    }
+
     /**
      * Manually start the bug reporting workflow. This is used, when you use the activation method "NONE".
      *
@@ -142,11 +195,11 @@ public class Gleap implements iGleap {
      *                     use e.g. bugreporting, featurerequests, rating, contact
      * @throws GleapNotInitialisedException thrown when Gleap is not initialised
      */
-    @Override
+  /*  @Override
     public void startFeedbackFlow(String feedbackFlow) throws GleapNotInitialisedException {
         GleapConfig.getInstance().setFeedbackFlow(feedbackFlow);
         startFeedbackFlow();
-    }
+    }*/
 
     /**
      * Send a silent bugreport in the background. Useful for automated ui tests.
@@ -154,10 +207,10 @@ public class Gleap implements iGleap {
      * @param description description of the bug
      * @param severity    Severity of the bug "LOW", "MIDDLE", "HIGH"
      */
-    @Override
+ /*   @Override
     public void sendSilentBugReport(String description, SEVERITY severity) {
         SilentBugReportUtil.createSilentBugReport(application, description, severity.name());
-    }
+    }*/
 
     /**
      * Send a silent bugreport in the background. Useful for automated ui tests.
@@ -166,10 +219,10 @@ public class Gleap implements iGleap {
      * @param severity    Severity of the bug "LOW", "MIDDLE", "HIGH"
      * @param type Type of the bug: E.g. BUG
      */
-    @Override
+  /*  @Override
     public void sendSilentBugReport(String description, SEVERITY severity, String type) {
         SilentBugReportUtil.createSilentBugReport(application, description, severity.name(), type);
-    }
+    }*/
 
     /**
      * Updates a session's user data.
@@ -196,6 +249,11 @@ public class Gleap implements iGleap {
         GleapUser gleapUser = new GleapUser(id, gleapUserProperties);
         UserSessionController.getInstance().setGleapUserSession(gleapUser);
         new GleapIdentifyService().execute();
+    }
+
+    @Override
+    public void identifyUser(String id, GleapUserProperties gleapUserProperties, String hash) {
+
     }
 
     /**
@@ -229,6 +287,16 @@ public class Gleap implements iGleap {
     @Override
     public void setWidgetUrl(String widgetUrl) {
         GleapConfig.getInstance().setWidgetUrl(widgetUrl);
+    }
+
+    @Override
+    public void disableConsoleLog() {
+
+    }
+
+    @Override
+    public void enableDebugConsoleLog() {
+
     }
 
     /**
@@ -295,6 +363,11 @@ public class Gleap implements iGleap {
         GleapBug.getInstance().clearCustomData();
     }
 
+    @Override
+    public void setApiToken(String token) {
+
+    }
+
     /**
      * This is called, when the Gleap flow is started
      *
@@ -302,7 +375,7 @@ public class Gleap implements iGleap {
      */
     @Override
     public void setFeedbackWillBeSentCallback(FeedbackWillBeSentCallback feedbackWillBeSentCallback) {
-        GleapConfig.getInstance().setBugWillBeSentCallback(feedbackWillBeSentCallback);
+        GleapConfig.getInstance().setFeedbackWillBeSentCallback(feedbackWillBeSentCallback);
     }
 
     /**
@@ -315,10 +388,6 @@ public class Gleap implements iGleap {
         GleapConfig.getInstance().setFeedbackSentCallback(feedbackSentCallback);
     }
 
-    @Override
-    public void setFeedbackSentWithDataCallback(FeedbackSentWithDataCallback feedbackSentCallback) {
-        GleapConfig.getInstance().setFeedbackSentWithDataCallback(feedbackSentCallback);
-    }
 
     /**
      * Customize the way, the Bitmap is generated. If this is overritten,

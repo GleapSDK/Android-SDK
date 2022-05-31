@@ -26,8 +26,8 @@ class ScreenshotTaker {
             if(!alreadyTakingScreenshot) {
                 alreadyTakingScreenshot = true;
                 GleapDetectorUtil.stopAllDetectors();
-                if (GleapConfig.getInstance().getBugWillBeSentCallback() != null) {
-                    GleapConfig.getInstance().getBugWillBeSentCallback().flowInvoced();
+                if (GleapConfig.getInstance().getFeedbackWillBeSentCallback() != null) {
+                    GleapConfig.getInstance().getFeedbackWillBeSentCallback().invoke("");
                 }
                 ScreenshotUtil.takeScreenshot(new ScreenshotUtil.GetImageCallback() {
                     @Override
@@ -52,7 +52,7 @@ class ScreenshotTaker {
         }
     }
 
-    public void  openScreenshot(Bitmap imageFile) {
+    public void openScreenshot(Bitmap imageFile) {
         try {
             Activity activity = ActivityUtil.getCurrentActivity();
             if (activity != null) {
@@ -68,6 +68,10 @@ class ScreenshotTaker {
                     Intent intent = new Intent(ActivityUtil.getCurrentActivity(), GleapMainActivity.class);
                     intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
                     gleapBug.setScreenshot(imageFile);
+
+                    if(GleapConfig.getInstance().getWidgetOpenedCallback() != null) {
+                        GleapConfig.getInstance().getWidgetOpenedCallback().invoke();
+                    }
                     activity.startActivity(intent);
                 }
             }

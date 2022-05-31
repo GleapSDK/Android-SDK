@@ -36,7 +36,7 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
     private static final String UPLOAD_IMAGE_BACKEND_URL_POSTFIX = "/uploads/sdk";
     private static final String UPLOAD_IMAGE_MULTI_BACKEND_URL_POSTFIX = "/uploads/sdksteps";
     private static final String UPLOAD_FILES_MULTI_BACKEND_URL_POSTFIX = "/uploads/attachments";
-    private static final String REPORT_BUG_URL_POSTFIX = "/bugs";
+    private static final String REPORT_BUG_URL_POSTFIX = "/bugs/v2";
     private final Context context;
     private static JSONObject sentCallbackData;
 
@@ -74,13 +74,11 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
     @Override
     protected void onPostExecute(Integer result) {
         if (GleapConfig.getInstance().getFeedbackSentCallback() != null && !GleapBug.getInstance().isSilent()) {
-            GleapConfig.getInstance().getFeedbackSentCallback().close();
-        }
-
-        if (GleapConfig.getInstance().getFeedbackSentWithDataCallback() != null && !GleapBug.getInstance().isSilent()) {
-           if(sentCallbackData != null) {
-               GleapConfig.getInstance().getFeedbackSentWithDataCallback().close(sentCallbackData);
-           }
+            if(sentCallbackData != null) {
+                GleapConfig.getInstance().getFeedbackSentCallback().invoke(sentCallbackData.toString());
+            }else {
+                GleapConfig.getInstance().getFeedbackSentCallback().invoke("");
+            }
         }
 
         sentCallbackData = null;
@@ -100,9 +98,7 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
         if (file != null) {
             multipart.addFilePart(file);
         }
-        System.out.println(new Date());
         String response = multipart.finishAndUpload();
-        System.out.println(new Date());
         return new JSONObject(response);
     }
 
@@ -170,11 +166,16 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
         if(GleapConfig.getInstance().getAction() != null && GleapConfig.getInstance().getAction().getOutbound() != null) {
             body.put("outbound", GleapConfig.getInstance().getAction().getOutbound());
         }
+
+        body.put("outbound", gleapBug.getOutboubdId());
+        body.put("spamToken", gleapBug.getSpamToken());
+
         if (!stripImages) {
             JSONObject responseUploadImage = uploadImage(gleapBug.getScreenshot());
             body.put("screenshotUrl", responseUploadImage.get("fileUrl"));
             body.put("replay", generateFrames());
         }
+
         body.put("type", gleapBug.getType());
 
         if(config.has("attachments") && !config.getBoolean("attachments") || !config.has("attachments")) {
@@ -203,11 +204,11 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
 
         body.put("customData", gleapBug.getCustomData());
         body.put("priority", gleapBug.getSeverity());
-        System.out.println("CON"  + new Date());
+
         if (GleapConfig.getInstance().isEnableConsoleLogs()) {
              body.put("consoleLog", gleapBug.getLogs());
         }
-        System.out.println("CON"  + new Date());
+
         for (Iterator<String> it = config.keys(); it.hasNext(); ) {
             String key = it.next();
             if (config.getBoolean(key)) {

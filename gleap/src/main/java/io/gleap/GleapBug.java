@@ -34,6 +34,9 @@ class GleapBug {
     private Replay replay;
     private JSONObject customData;
     private JSONObject data;
+    private String spamToken;
+    private String outboubdId;
+
     private @Nullable
     PhoneMeta phoneMeta;
     private final LogReader logReader;
@@ -239,5 +242,21 @@ class GleapBug {
 
     public void setSilent(boolean silent) {
         isSilent = silent;
+    }
+
+    public String getSpamToken() {
+        return spamToken;
+    }
+
+    public void setSpamToken(String spamToken) {
+        this.spamToken = spamToken;
+    }
+
+    public String getOutboubdId() {
+        return outboubdId;
+    }
+
+    public void setOutboubdId(String outboubdId) {
+        this.outboubdId = outboubdId;
     }
 }
