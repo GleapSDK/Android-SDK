@@ -28,7 +28,7 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
             GleapUser gleapUser = UserSessionController.getInstance().getGleapUserSession();
 
             URL url = new URL(httpsUrl);
-            HttpURLConnection conn = (HttpsURLConnection) url.openConnection();
+            HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
             conn.setRequestProperty("Api-Token", GleapConfig.getInstance().getSdkKey());
             conn.setRequestProperty("Accept", "application/json");
             conn.setRequestProperty("Content-Type", "application/json");
@@ -52,6 +52,7 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                     if (gleapUser.getGleapUserProperties() != null) {
                         jsonObject.put("email", gleapUser.getGleapUserProperties().getEmail());
                         jsonObject.put("name", gleapUser.getGleapUserProperties().getName());
+                        jsonObject.put("userHash", gleapUser.getGleapUserProperties().getHash());
                     }
                 } catch (Exception ex) {
 
@@ -96,8 +97,8 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
             }
 
         } catch (IOException e) {
-            UserSessionController.getInstance().clearUserSession();
-            e.printStackTrace();
+            UserSessionController.getInstance().clearUser();
+            isLoaded = true;
         }
         return 200;
     }

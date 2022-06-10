@@ -35,6 +35,9 @@ class Networklog {
     public JSONObject toJSON() {
         JSONObject object = new JSONObject();
         try {
+            if(!checkUrl(url)) {
+                return null;
+            }
             object.put("date", DateUtil.dateToString(date));
             object.put("type", requestType.name());
             object.put("status", status);
@@ -83,6 +86,18 @@ class Networklog {
                 e.printStackTrace();
             }
         }
+    }
+
+    private boolean checkUrl(String url) {
+        JSONArray jsonArray = GleapConfig.getInstance().getBlackList();
+        for(int i = 0; i < jsonArray.length(); i++) {
+            try {
+                if (url.contains(jsonArray.getString(i))) {
+                    return false;
+                }
+            }catch (Exception ex){}
+        }
+        return true;
     }
 
     private boolean isJSONValid(String test) {

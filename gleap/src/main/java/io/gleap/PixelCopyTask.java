@@ -6,6 +6,7 @@ import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.os.Build;
 import android.os.Handler;
+import android.os.Looper;
 import android.view.PixelCopy;
 import android.view.View;
 import android.view.Window;
@@ -55,7 +56,7 @@ public class PixelCopyTask implements Callable<String> {
                                 imageTaken.invoke(bitmap);
                             }
                         },
-                        new Handler()
+                        new Handler(Looper.getMainLooper())
                 );
             }
         });

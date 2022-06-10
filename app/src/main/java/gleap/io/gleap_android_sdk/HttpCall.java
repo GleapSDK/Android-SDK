@@ -49,6 +49,7 @@ public class HttpCall extends AsyncTask {
             } catch (JSONException e) {
                 e.printStackTrace();
             }
+            Gleap.getInstance().logNetwork(null, (String) null,null);
             Gleap.getInstance().logNetwork((HttpsURLConnection) conn, requestBody, result);
             Gleap.getInstance().logNetwork((HttpsURLConnection) conn, "THIS IS HOW WE ROLL", result.toString());
 

@@ -60,6 +60,10 @@ class PhoneMeta {
      * @throws JSONException cant create JSON Object
      */
     public JSONObject getJSONObj() throws JSONException {
+        if (getCurrentActivity() != null) {
+            lastScreenName = getCurrentActivity().getClass().getSimpleName();
+        }
+
         JSONObject obj = new JSONObject();
         obj.put("sessionDuration", calculateDuration());
         obj.put("releaseVersionNumber", releaseVersionNumber);
@@ -115,9 +119,7 @@ class PhoneMeta {
 
             }
         }
-        if (getCurrentActivity() != null) {
-            lastScreenName = getCurrentActivity().getClass().getSimpleName();
-        }
+
         deviceModel = Build.MODEL;
         deviceName = Build.DEVICE;
         systemName = "Android";
@@ -168,9 +170,14 @@ class PhoneMeta {
         long runtimeTotal = runtime.totalMemory();
         long runtimeFree = runtime.freeMemory();
         long runtimeUsed = runtimeTotal - runtimeFree;
-        double result = Double.parseDouble(String.format("%02d", runtimeUsed  / (1024 * 1024)));
-        return result;
+        try {
+            double result = Double.parseDouble(String.format("%02d", runtimeUsed / (1024 * 1024)));
+            return result;
+        } catch (Exception ex) {
 
+        }
+
+        return 0;
     }
 
     private double getRamTotal() {
@@ -181,9 +188,13 @@ class PhoneMeta {
 
         // Fetching the data from the ActivityManager
         actManager.getMemoryInfo(memInfo);
-        double result = Double.parseDouble(String.format("%02d", memInfo.totalMem / (1024 * 1024)));
-        return result;
+        try {
+            double result = Double.parseDouble(String.format("%02d", memInfo.totalMem / (1024 * 1024)));
+            return result;
+        } catch (Exception ex) {
 
+        }
+        return 0;
     }
 
     private String getBatteryState() {
@@ -192,20 +203,20 @@ class PhoneMeta {
         Intent batteryStatus = context.registerReceiver(null, ifilter);
         int status = batteryStatus.getIntExtra(BatteryManager.EXTRA_STATUS, -1);
 
-        if(status == BatteryManager.BATTERY_STATUS_CHARGING){
+        if (status == BatteryManager.BATTERY_STATUS_CHARGING) {
             result = "Charging";
             int chargePlug = batteryStatus.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1);
             boolean usbCharge = chargePlug == BatteryManager.BATTERY_PLUGGED_USB;
             boolean acCharge = chargePlug == BatteryManager.BATTERY_PLUGGED_AC;
 
-            if(usbCharge) {
+            if (usbCharge) {
                 result += " (USB)";
             }
 
-            if(acCharge) {
+            if (acCharge) {
                 result += " (AC)";
             }
-        } else if(status == BatteryManager.BATTERY_STATUS_FULL){
+        } else if (status == BatteryManager.BATTERY_STATUS_FULL) {
             result = "Full";
         }
         return result;
@@ -221,7 +232,7 @@ class PhoneMeta {
 
     public double getTotalInternalMemorySize() {
         double totalSize = new File(context.getFilesDir().getAbsoluteFile().toString()).getTotalSpace() / 1024.0 / 1024.0 / 1024.0;
-       return totalSize;
+        return totalSize;
     }
 
     public String getLocale() {

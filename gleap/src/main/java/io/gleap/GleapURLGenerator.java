@@ -12,11 +12,14 @@ class GleapURLGenerator {
                 postfixUrl += "?lang=" + URLEncoder.encode(config.getLanguage(), "utf-8");
             }
 
+
             UserSessionController userSessionController = UserSessionController.getInstance();
-            UserSession userSession = userSessionController.getUserSession();
-            if (userSession != null) {
-                postfixUrl += "&gleapId=" + userSession.getId();
-                postfixUrl += "&gleapHash=" + userSession.getHash();
+            if(userSessionController != null) {
+                UserSession userSession = userSessionController.getUserSession();
+                if (userSession != null) {
+                    postfixUrl += "&gleapId=" + userSession.getId();
+                    postfixUrl += "&gleapHash=" + userSession.getHash();
+                }
             }
 
             String feedBackFlow = GleapConfig.getInstance().getFeedbackFlow();

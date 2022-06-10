@@ -8,7 +8,6 @@ buildscript {
     }
     dependencies {
         classpath 'com.github.dcendents:android-maven-gradle-plugin:2.1'
-
     }
 }
 
@@ -21,8 +20,8 @@ android {
     defaultConfig {
         minSdkVersion 21
         targetSdkVersion 31
-        versionCode 600413
-        versionName "6.4.13"
+        versionCode 70013
+        versionName "7.0.13"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
     }

@@ -12,14 +12,16 @@ import java.util.concurrent.ExecutionException;
 import io.gleap.callbacks.FeedbackSentCallback;
 
 class SilentBugReportUtil {
-    public static void createSilentBugReport(Context context, String description, String severity, String type, JSONObject excludeData) {
-        if(excludeData == null || excludeData.length() == 0) {
+    public static void createSilentBugReport(Context context, String description, Gleap.SEVERITY severity, String type, JSONObject excludeData) {
+        if (excludeData == null || excludeData.length() == 0) {
             excludeData = new JSONObject();
-            try{
+            try {
                 excludeData.put("screenshot", true);
-            }catch (Exception ex){}
+                excludeData.put("replay", true);
+            } catch (Exception ex) {
+            }
         }
-        GleapConfig.getInstance().setStripModel(excludeData);
+        GleapConfig.getInstance().setCrashStripModel(excludeData);
         try {
             GleapBug model = GleapBug.getInstance();
             ScreenshotUtil.takeScreenshot(new ScreenshotUtil.GetImageCallback() {
@@ -33,7 +35,11 @@ class SilentBugReportUtil {
                     }
                     model.setType(type);
                     model.setData(obj);
-                    model.setSeverity(severity);
+                    if (severity != null) {
+                        model.setSeverity(severity.name());
+                    } else {
+                        model.setSeverity(Gleap.SEVERITY.LOW.name());
+                    }
                     model.setSilent(true);
 
 
@@ -50,7 +56,7 @@ class SilentBugReportUtil {
                 }
             });
 
-        }catch (GleapSessionNotInitialisedException gleapSessionNotInitialisedException) {
+        } catch (GleapSessionNotInitialisedException gleapSessionNotInitialisedException) {
             System.err.println("Gleap: Gleap Session not initialized.");
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -59,14 +65,18 @@ class SilentBugReportUtil {
         }
     }
 
-    public static void createSilentBugReport(Context context, String description, String severity) {
-      createSilentBugReport(context, description, severity, "CRASH", null);
+    public static void createSilentBugReport(Context context, String description, Gleap.SEVERITY severity) {
+        createSilentBugReport(context, description, severity, "CRASH", null);
     }
 
-    public static void createSilentBugReport(Context context, String description, String severity, JSONObject excludeData, FeedbackSentCallback feedbackSentCallback) {
-        if(feedbackSentCallback != null) {
-            GleapConfig.getInstance().setFeedbackSentCallback(feedbackSentCallback);
+    public static void createSilentBugReport(Context context, String description, Gleap.SEVERITY severity, JSONObject excludeData, FeedbackSentCallback feedbackSentCallback) {
+        if (!GleapDetectorUtil.isIsRunning() && UserSessionController.getInstance() != null &&
+                UserSessionController.getInstance().isSessionLoaded() && Gleap.getInstance() != null) {
+            if (feedbackSentCallback != null) {
+                GleapConfig.getInstance().setCrashFeedbackSentCallback(feedbackSentCallback);
+            }
+
+            createSilentBugReport(context, description, severity, "CRASH", excludeData);
         }
-        createSilentBugReport(context, description, severity, "CRASH", excludeData);
     }
 }

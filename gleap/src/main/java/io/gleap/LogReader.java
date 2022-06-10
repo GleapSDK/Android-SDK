@@ -19,12 +19,26 @@ import static io.gleap.DateUtil.formatDate;
  * Read the log of the application.
  */
 class LogReader {
+    private static LogReader instance;
+    private JSONArray logs = new JSONArray();
+
+
+    private LogReader() {
+    }
+
+    public static LogReader getInstance() {
+        if (instance == null) {
+            instance = new LogReader();
+        }
+        return instance;
+    }
+
     /**
      * Reads the stacktrace, formats the string
      *
      * @return {@link JSONArray} formatted log
      */
-    public JSONArray readLog(){
+    public JSONArray readLog() {
         try {
 
             int id = android.os.Process.myPid();
@@ -41,27 +55,28 @@ class LogReader {
                 if (mt.lookingAt()) {
                     String[] splittedLine = line.split(" ");
                     String formattedDate = formatDate(splittedLine[1], splittedLine[0]);
-                        JSONObject object = new JSONObject();
-                        object.put("date", formattedDate);
-                        object.put("priority", getConsoleLineType(splittedLine[4]));
-                        String logText = "";
-                        try{
-                            logText = line.substring(line.indexOf(splittedLine[5])+splittedLine[5].length());
-                        }catch (Exception ex){
-                            StringBuilder text = new StringBuilder();
-                            for (int i = 5; i < splittedLine.length; i++) {
-                                text.append(splittedLine[i]).append(" ");
-                            }
-                            logText = text.toString();
-
+                    JSONObject object = new JSONObject();
+                    object.put("date", formattedDate);
+                    object.put("priority", getConsoleLineType(splittedLine[4]));
+                    String logText = "";
+                    try {
+                        logText = line.substring(line.indexOf(splittedLine[5]) + splittedLine[5].length());
+                    } catch (Exception ex) {
+                        StringBuilder text = new StringBuilder();
+                        for (int i = 5; i < splittedLine.length; i++) {
+                            text.append(splittedLine[i]).append(" ");
                         }
-                        object.put("log", logText);
+                        logText = text.toString();
 
-                        log.put(object);
+                    }
+                    object.put("log", logText);
+
+                    log.put(object);
                 }
             }
 
-            return log;
+            this.logs = log;
+            return this.logs;
         } catch (IOException e) {
             return null;
         } catch (JSONException e) {
@@ -78,5 +93,9 @@ class LogReader {
             return "WARNING";
         }
         return "INFO";
+    }
+
+    public JSONArray getLogs() {
+        return this.readLog();
     }
 }

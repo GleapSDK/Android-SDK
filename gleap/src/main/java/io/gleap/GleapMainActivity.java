@@ -7,7 +7,10 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.net.Uri;
 import android.net.http.SslError;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Base64;
 import android.view.View;
 import android.view.Window;
@@ -63,7 +66,24 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
         setContentView(R.layout.activity_gleap_main);
         webView = findViewById(R.id.gleap_webview);
+        Handler handler = new Handler(Looper.getMainLooper());
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (webView.getVisibility() == View.INVISIBLE) {
+                    finish();
+                }
+            }
+        }, 15000);
 
+        GleapConfig.getInstance().setCallCloseCallback(new CallCloseCallback() {
+            @Override
+            public void invoke() {
+                GleapDetectorUtil.resumeAllDetectors();
+                GleapBug.getInstance().setDisabled(false);
+                GleapMainActivity.this.finish();
+            }
+        });
 
         initBrowser();
     }
@@ -84,6 +104,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         webView.addJavascriptInterface(new GleapJSBridge(this), "GleapJSBridge");
         webView.setWebChromeClient(new GleapWebChromeClient());
         webView.loadUrl(url);
+        webView.setVisibility(View.INVISIBLE);
         settings.setUseWideViewPort(true);
         settings.setLoadWithOverviewMode(true);
     }
@@ -91,17 +112,19 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
     @Override
     public void onTaskComplete(int httpResponse) {
         if (httpResponse == 201) {
-            GleapDetectorUtil.resumeAllDetectors();
-            GleapBug.getInstance().setDisabled(false);
+
             try {
                 sendMessage(generateGleapMessage("feedback-sent", null));
+                GleapDetectorUtil.resumeAllDetectors();
+                GleapBug.getInstance().setDisabled(false);
             } catch (Exception ex) {
             }
         } else {
             try {
                 JSONObject message = new JSONObject();
                 message.put("data", "Something went wrong, please try again.");
-                sendMessage(generateGleapMessage("feedback-sending-failed", message));
+                message.put("name", "feedback-sending-failed");
+                sendMessage(message.toString());
             } catch (Exception ex) {
             }
         }
@@ -110,7 +133,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
     private class GleapWebViewClient extends WebViewClient {
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, String url) {
-            if (!url.contains(GleapConfig.getInstance().getWidgetUrl())) {
+            if (!url.contains(GleapConfig.getInstance().getiFrameUrl())) {
                 Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
                 startActivity(browserIntent);
                 return true;
@@ -133,15 +156,18 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     if (GleapConfig.getInstance().getWidgetClosedCallback() != null) {
                         GleapConfig.getInstance().getWidgetClosedCallback().invoke();
                     }
-                    finish();
                     GleapDetectorUtil.resumeAllDetectors();
+                    finish();
+
                 }
             }).create();
 
             alertDialog.setTitle(getString(R.string.gleap_alert_no_internet_title));
             alertDialog.setMessage(getString(R.string.gleap_alert_no_internet_subtitle));
-
-            alertDialog.show();
+            try {
+                alertDialog.show();
+            } catch (Exception ex) {
+            }
 
         }
 
@@ -231,8 +257,19 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                             case "ping":
                                 sendConfigUpdate();
                                 sendSessionUpdate();
+                                sendPrefillData();
                                 sendScreenshotUpdate();
                                 sendPendingActions();
+                                Handler handler = new Handler();
+                                handler.postDelayed(new Runnable() {
+                                    @Override
+                                    public void run() {
+
+
+                                        webView.setVisibility(View.VISIBLE);
+                                    }
+                                }, 500);
+
                                 break;
                             case "cleanup-drawings":
                                 GleapBug.getInstance().setScreenshot(null);
@@ -265,10 +302,11 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
         private void customActionCalled(JSONObject object) {
             try {
-                JSONObject data = object.getJSONObject("data");
-                String method = data.getString("name");
+                String data = object.getString("data");
+
                 if (GleapConfig.getInstance().getCustomActions() != null) {
-                    GleapConfig.getInstance().getCustomActions().invoke(method);
+
+                    GleapConfig.getInstance().getCustomActions().invoke(data);
                 }
                 finish();
             } catch (JSONException e) {
@@ -297,10 +335,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                         GleapConfig.getInstance().getFeedbackFlowStartedCallback().invoke(eventData.toString());
                     }
                 }
-
-
             } catch (Exception ex) {
-
             }
         }
 
@@ -309,7 +344,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
             for (JSONObject action :
                     queue) {
                 try {
-                    if(action.has("data")) {
+                    if (action.has("data")) {
                         JSONObject data = action.getJSONObject("data");
                         data.put("actionOutboundId", GleapBug.getInstance().getOutboubdId());
                     }
@@ -390,6 +425,18 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
                 sendMessage(generateGleapMessage("config-update", data));
             } catch (Exception err) {
+            }
+        }
+
+        private void sendPrefillData() {
+            try {
+                JSONObject data = PrefillHelper.getInstancen().getPreFillData();
+
+                if (data != null) {
+                    String message = generateGleapMessage("prefill-form-data", data);
+                    sendMessage(message);
+                }
+            } catch (Exception err) {
                 err.printStackTrace();
             }
         }
@@ -457,7 +504,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
      * @param message
      */
     private void sendMessage(String message) {
-        System.out.println(message);
         webView.evaluateJavascript("sendMessage(" + message + ");", null);
     }
 

@@ -5,6 +5,7 @@ import static io.gleap.DateUtil.dateToString;
 import android.app.Activity;
 import android.os.AsyncTask;
 import android.os.Handler;
+import android.os.Looper;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -44,15 +45,18 @@ class GleapEventService {
     }
 
     public void sendInitialMessage() {
-        final Handler h = new Handler();
+        final Handler h = new Handler(Looper.getMainLooper());
         h.postDelayed(new Runnable() {
             private long time = 0;
 
             @Override
             public void run() {
                 if (UserSessionController.getInstance() != null && UserSessionController.getInstance().isSessionLoaded()) {
-                    new InitialEventHttpHelper().execute();
-
+                    try {
+                        try {
+                            new InitialEventHttpHelper().execute();
+                        }catch (Exception ex){}
+                    }catch (Exception ex){}
                 } else {
                     h.postDelayed(this, time);
                 }
@@ -61,7 +65,7 @@ class GleapEventService {
     }
 
     public void start() {
-        final Handler h = new Handler();
+        final Handler h = new Handler(Looper.getMainLooper());
         h.postDelayed(new Runnable() {
             private long time = 0;
 
@@ -84,7 +88,7 @@ class GleapEventService {
 
 
     public void checkPage() {
-        final Handler h = new Handler();
+        final Handler h = new Handler(Looper.getMainLooper());
         h.postDelayed(new Runnable() {
             @Override
             public void run() {
@@ -106,7 +110,7 @@ class GleapEventService {
                 }
                 h.postDelayed(this, CHECK_PAGE_INTERVAL);
             }
-        }, this.CHECK_PAGE_INTERVAL);
+        }, 1);
     }
 
     private JSONObject generateEvent(JSONObject obj) throws JSONException {
@@ -132,7 +136,7 @@ class GleapEventService {
             try {
                 int status = postEvent();
             } catch (IOException | JSONException exception) {
-                exception.printStackTrace();
+            //    exception.printStackTrace();
             }
             return null;
         }
@@ -152,8 +156,8 @@ class GleapEventService {
             conn.setRequestMethod("POST");
             UserSession userSession = UserSessionController.getInstance().getUserSession();
             if (userSession != null) {
-                conn.setRequestProperty("gleap-id", userSession.getId());
-                conn.setRequestProperty("gleap-hash", userSession.getHash());
+               // conn.setRequestProperty("gleap-id", userSession.getId());
+               // conn.setRequestProperty("gleap-hash", userSession.getHash());
             }
             JSONArray jsonArray = new JSONArray();
             JSONObject event = new JSONObject();
@@ -207,8 +211,7 @@ class GleapEventService {
                 if (status == 200) {
                     eventsToBeSent = new ArrayList<>();
                 }
-            } catch (IOException | JSONException exception) {
-                exception.printStackTrace();
+            } catch (Exception exception) {
             }
             return null;
         }
@@ -259,8 +262,7 @@ class GleapEventService {
                         }
                     }
                 }
-            } catch (JSONException e) {
-                e.printStackTrace();
+            } catch (Exception e) {
             }
 
             return conn.getResponseCode();

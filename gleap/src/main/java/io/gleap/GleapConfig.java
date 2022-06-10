@@ -6,6 +6,7 @@ import org.json.JSONObject;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 
 import io.gleap.callbacks.ConfigLoadedCallback;
 import io.gleap.callbacks.CustomActionCallback;
@@ -16,6 +17,7 @@ import io.gleap.callbacks.FeedbackSentCallback;
 import io.gleap.callbacks.FeedbackWillBeSentCallback;
 import io.gleap.callbacks.GetActivityCallback;
 import io.gleap.callbacks.GetBitmapCallback;
+import io.gleap.callbacks.InitializationDoneCallback;
 import io.gleap.callbacks.WidgetClosedCallback;
 import io.gleap.callbacks.WidgetOpenedCallback;
 
@@ -27,7 +29,6 @@ class GleapConfig {
 
     //bb config
     private String apiUrl = "https://api.gleap.io";
-    private String widgetUrl = "https://widget.gleap.io";
     private String iFrameUrl = "https://frame.gleap.io/app.html";
     private String sdkKey = "";
     private String feedbackFlow ="";
@@ -35,18 +36,22 @@ class GleapConfig {
     private GleapAction action;
 
     private JSONObject stripModel = new JSONObject();
+    private JSONObject crashStripModel = new JSONObject();
 
     private ConfigLoadedCallback configLoadedCallback;
     private FeedbackSentCallback feedbackSentCallback;
+    private FeedbackSentCallback crashFeedbackSentCallback;
     private FeedbackWillBeSentCallback feedbackWillBeSentCallback;
     private FeedbackFlowStartedCallback feedbackFlowStartedCallback;
     private FeedbackFlowClosedCallback feedbackFlowClosedCallback;
     private FeedbackSendingFailedCallback feedbackSendingFailedCallback;
+    private CallCloseCallback callCloseCallback;
     private WidgetOpenedCallback widgetOpenedCallback;
     private WidgetClosedCallback widgetClosedCallback;
     private GetActivityCallback getActivityCallback;
     private CustomActionCallback customAction;
     private GetBitmapCallback getBitmapCallback;
+    private InitializationDoneCallback initializationDoneCallback;
     private List<GleapDetector> gestureDetectors = new LinkedList<>();
     private List<GleapActivationMethod> priorizedGestureDetectors = new LinkedList<>();
     private int interval = 5;
@@ -58,6 +63,7 @@ class GleapConfig {
     private boolean activationMethodScreenshotGesture = false;
     private String language = "en";
     private JSONArray networkLogPropsToIgnore;
+    private JSONArray blackList = new JSONArray();
     private JSONObject plainConfig;
 
     //Streamedevent
@@ -66,6 +72,7 @@ class GleapConfig {
     private int resceduleEventStreamDurationLong = 3000;
 
     private GleapConfig() {
+        this.language = Locale.getDefault().toLanguageTag();
     }
 
     public static GleapConfig getInstance() {
@@ -122,6 +129,14 @@ class GleapConfig {
             if (flowConfigs.has("networkLogPropsToIgnore")) {
                 this.networkLogPropsToIgnore  = flowConfigs.getJSONArray("networkLogPropsToIgnore");
             }
+            if(flowConfigs.has("replaysInterval")) {
+                this.interval = flowConfigs.getInt("replaysInterval");
+                GleapBug.getInstance().setReplay(new Replay(60 / this.interval, 1000 * this.interval));
+            }
+
+            if(flowConfigs.has("networkLogBlacklist")) {
+                this.blackList = flowConfigs.getJSONArray("networkLogBlacklist");
+            }
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -141,10 +156,6 @@ class GleapConfig {
 
     public void setApiUrl(String apiUrl) {
         this.apiUrl = apiUrl;
-    }
-
-    public void setWidgetUrl(String widgetUrl) {
-        this.widgetUrl = widgetUrl;
     }
 
     public String getLanguage() {
@@ -247,6 +258,10 @@ class GleapConfig {
         return enableConsoleLogs;
     }
 
+    public void setEnableConsoleLogs(boolean enableConsoleLogs) {
+        this.enableConsoleLogs = enableConsoleLogs;
+    }
+
     public boolean isEnableReplays() {
         return enableReplays;
     }
@@ -261,10 +276,6 @@ class GleapConfig {
 
     public CustomActionCallback getCustomActions() {
         return customAction;
-    }
-
-    public String getWidgetUrl() {
-        return widgetUrl;
     }
 
     public ConfigLoadedCallback getConfigLoadedCallback() {
@@ -333,5 +344,50 @@ class GleapConfig {
 
     public String getiFrameUrl() {
         return iFrameUrl;
+    }
+
+    public void setiFrameUrl(String iFrameUrl) {
+        this.iFrameUrl = iFrameUrl;
+    }
+
+    public void setInterval(int interval) {
+        this.interval = interval;
+    }
+
+    public FeedbackSentCallback getCrashFeedbackSentCallback() {
+        return crashFeedbackSentCallback;
+    }
+
+    public void setCrashFeedbackSentCallback(FeedbackSentCallback crashFeedbackSentCallback) {
+        this.crashFeedbackSentCallback = crashFeedbackSentCallback;
+    }
+
+    public JSONObject getCrashStripModel() {
+        return crashStripModel;
+    }
+
+    public void setCrashStripModel(JSONObject crashStripModel) {
+        this.crashStripModel = crashStripModel;
+    }
+
+    public JSONArray getBlackList() {
+        return blackList;
+    }
+
+
+    public CallCloseCallback getCallCloseCallback() {
+        return callCloseCallback;
+    }
+
+    public void setCallCloseCallback(CallCloseCallback callCloseCallback) {
+        this.callCloseCallback = callCloseCallback;
+    }
+
+    public InitializationDoneCallback getInitializationDoneCallback() {
+        return initializationDoneCallback;
+    }
+
+    public void setInitializationDoneCallback(InitializationDoneCallback initializationDoneCallback) {
+        this.initializationDoneCallback = initializationDoneCallback;
     }
 }

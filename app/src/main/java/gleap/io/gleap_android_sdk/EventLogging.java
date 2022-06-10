@@ -1,0 +1,67 @@
+package gleap.io.gleap_android_sdk;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.view.View;
+
+import org.json.JSONObject;
+
+import io.gleap.Gleap;
+
+public class EventLogging extends AppCompatActivity {
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_event_logging);
+
+        findViewById(R.id.bck_event).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                finish();
+            }
+        });
+
+        findViewById(R.id.event).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Gleap.getInstance().logEvent("HEY");
+            }
+        });
+
+        findViewById(R.id.event2).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                JSONObject jsonObject = new JSONObject();
+                try{
+                    jsonObject.put("This is ", "an event log");
+                }catch (Exception ex) {
+
+                }
+                Gleap.getInstance().logEvent("THIS IS AN EVENT", jsonObject);
+            }
+        });
+
+        findViewById(R.id.event_error).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Gleap.getInstance().logEvent(null);
+            }
+        });
+
+        findViewById(R.id.event_error2).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Gleap.getInstance().logEvent(null, null);
+            }
+        });
+
+        findViewById(R.id.event_send).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Gleap.getInstance().sendSilentCrashReport("Gleap Event log" + (int)Math.floor(Math.random() * 1000) , Gleap.SEVERITY.LOW);
+            }
+        });
+    }
+}
