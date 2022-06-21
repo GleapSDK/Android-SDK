@@ -321,6 +321,30 @@ interface iGleap {
      *
      */
     void close();
+
+    /**
+     * Logs a message to the Gleap activity log
+     * @author Gleap
+     *
+     * @param msg The logged message
+     */
+    void log(String msg);
+
+    /**
+     * Logs a message to the Gleap activity log
+     * @author Gleap
+     *
+     * @param msg The logged message
+     * @param gleapLogLevel loglevel INFO, WARNING, ERROR
+     */
+    void log(String msg, GleapLogLevel gleapLogLevel);
+
+    /**
+     * Disables the console logging. This must be called BEFORE initializing the SDK.
+     * @author Gleap
+     *
+     */
+    void disableConsoleLog();
 }
 
 

@@ -222,7 +222,7 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
         body.put("customData", gleapBug.getCustomData());
         body.put("priority", gleapBug.getSeverity());
 
-        if (GleapConfig.getInstance().isEnableConsoleLogs()) {
+        if (GleapConfig.getInstance().isEnableConsoleLogs() && GleapConfig.getInstance().isEnableConsoleLogsFromCode()) {
             body.put("consoleLog", gleapBug.getLogs());
         }
 
@@ -247,7 +247,11 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
             os.write(input, 0, input.length);
         }
 
-        return conn.getResponseCode();
+        conn.getOutputStream().close();
+        int status =  conn.getResponseCode();
+        conn.disconnect();
+
+        return status;
     }
 
     /**

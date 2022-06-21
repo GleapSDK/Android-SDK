@@ -13,19 +13,9 @@ import com.google.android.material.snackbar.Snackbar;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.os.FileUtils;
-import android.provider.MediaStore;
 import android.view.View;
-import androidx.navigation.NavController;
-import androidx.navigation.Navigation;
-import androidx.navigation.ui.AppBarConfiguration;
-import androidx.navigation.ui.NavigationUI;
 
 import java.io.File;
-import java.net.URI;
-import java.net.URISyntaxException;
-
-import gleap.io.gleap_android_sdk.databinding.ActivityAttachmentsBinding;
 import io.gleap.Gleap;
 
 public class Attachments extends AppCompatActivity {

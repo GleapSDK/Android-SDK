@@ -5,6 +5,7 @@ import android.app.Application;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -153,7 +154,9 @@ public class Gleap implements iGleap {
         if (!GleapDetectorUtil.isIsRunning() && UserSessionController.getInstance() != null &&
                 UserSessionController.getInstance().isSessionLoaded() && instance != null) {
             try {
-                screenshotTaker.takeScreenshot();
+                if(screenshotTaker != null) {
+                    screenshotTaker.takeScreenshot();
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -580,9 +583,24 @@ public class Gleap implements iGleap {
 
     @Override
     public void close() {
-        if(application != null && GleapConfig.getInstance().getCallCloseCallback() != null && isOpened()) {
-          GleapConfig.getInstance().getCallCloseCallback().invoke();
+        if (application != null && GleapConfig.getInstance().getCallCloseCallback() != null && isOpened()) {
+            GleapConfig.getInstance().getCallCloseCallback().invoke();
         }
+    }
+
+    @Override
+    public void log(String msg) {
+        LogReader.getInstance().log(msg, GleapLogLevel.INFO);
+    }
+
+    @Override
+    public void log(String msg, GleapLogLevel gleapLogLevel) {
+        LogReader.getInstance().log(msg, gleapLogLevel);
+    }
+
+    @Override
+    public void disableConsoleLog() {
+        GleapConfig.getInstance().setEnableConsoleLogsFromCode(false);
     }
 
     /**

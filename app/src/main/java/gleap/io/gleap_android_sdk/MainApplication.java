@@ -26,7 +26,7 @@ public class MainApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        Gleap.initialize("OAf5N8i9fiiFwwWNgJB8IEt5llGLjV0R", this);
+        Gleap.initialize("DUPaIr7s689BBblcFI4pc5aBgYJTm7Sc", this);
 
         Gleap.getInstance().setLanguage("AR_EG");
 

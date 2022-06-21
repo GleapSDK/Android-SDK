@@ -58,6 +58,7 @@ class GleapConfig {
 
     //user config
     private boolean enableConsoleLogs = true;
+    private boolean enableConsoleLogsFromCode = true;
     private boolean enableReplays = false;
     private boolean activationMethodShake = false;
     private boolean activationMethodScreenshotGesture = false;
@@ -389,5 +390,13 @@ class GleapConfig {
 
     public void setInitializationDoneCallback(InitializationDoneCallback initializationDoneCallback) {
         this.initializationDoneCallback = initializationDoneCallback;
+    }
+
+    public boolean isEnableConsoleLogsFromCode() {
+        return enableConsoleLogsFromCode;
+    }
+
+    public void setEnableConsoleLogsFromCode(boolean enableConsoleLogsFromCode) {
+        this.enableConsoleLogsFromCode = enableConsoleLogsFromCode;
     }
 }

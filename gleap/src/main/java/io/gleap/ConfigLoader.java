@@ -71,7 +71,8 @@ class ConfigLoader extends AsyncTask<GleapBug, Void, Integer> {
                         }
                     }
                 }
-                con.getResponseCode();
+
+                con.disconnect();
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (JSONException e) {

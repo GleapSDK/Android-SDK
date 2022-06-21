@@ -26,7 +26,6 @@ class ScreenshotTaker {
         if(GleapConfig.getInstance().getPlainConfig() != null) {
             try {
                 if (!alreadyTakingScreenshot) {
-                    LogReader.getInstance().readLog();
                     GleapDetectorUtil.stopAllDetectors();
 
                     ScreenshotUtil.takeScreenshot(new ScreenshotUtil.GetImageCallback() {

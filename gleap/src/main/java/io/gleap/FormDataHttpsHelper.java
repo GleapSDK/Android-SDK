@@ -105,10 +105,13 @@ class FormDataHttpsHelper {
         }
 
         outputStream.flush();
+        outputStream.close();
         inputStream.close();
 
         writer.append(this.crlf);
         writer.flush();
+
+        httpConn.disconnect();
     }
 
     /**
@@ -142,11 +145,11 @@ class FormDataHttpsHelper {
             while ((line = responseStreamReader.readLine()) != null) {
                 stringBuilder.append(line).append("\n");
             }
-            httpConn.disconnect();
+
             responseStreamReader.close();
 
             response = stringBuilder.toString();
-
+            httpConn.disconnect();
         } else {
             throw new IOException("Server returned non-OK status: " + status);
         }

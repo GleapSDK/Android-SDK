@@ -7,7 +7,11 @@ import android.view.View;
 
 import org.json.JSONObject;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import io.gleap.Gleap;
+import io.gleap.GleapLogLevel;
 
 public class EventLogging extends AppCompatActivity {
 
@@ -27,6 +31,10 @@ public class EventLogging extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Gleap.getInstance().logEvent("HEY");
+                Gleap.getInstance().log("THIS IS A CRIT", GleapLogLevel.ERROR);
+                Gleap.getInstance().log("THIS IS A INFO", GleapLogLevel.INFO);
+                Gleap.getInstance().log("THIS IS A WARN", GleapLogLevel.WARNING);
+                Gleap.getInstance().log("THIS IS A INFO EMPTS");
             }
         });
 
@@ -39,6 +47,8 @@ public class EventLogging extends AppCompatActivity {
                 }catch (Exception ex) {
 
                 }
+                System.out.println("THIS SHOULD BE AFTERWARDS!!!");
+                Logger.getAnonymousLogger().log(Level.INFO, "HEY THIS IS IT?" );
                 Gleap.getInstance().logEvent("THIS IS AN EVENT", jsonObject);
             }
         });

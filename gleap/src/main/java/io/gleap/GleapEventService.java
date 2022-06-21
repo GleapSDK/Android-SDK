@@ -192,6 +192,9 @@ class GleapEventService {
                     }
                 }
 
+                conn.getInputStream().close();
+                conn.getOutputStream().close();
+                conn.disconnect();
             } catch (JSONException e) {
                 e.printStackTrace();
             }
@@ -264,8 +267,10 @@ class GleapEventService {
                 }
             } catch (Exception e) {
             }
-
-            return conn.getResponseCode();
+            conn.getOutputStream().close();
+            int status = conn.getResponseCode();
+            conn.disconnect();
+            return status;
         }
 
         private JSONArray arrayToJSONArray(ArrayList<JSONObject> arrayList) {
