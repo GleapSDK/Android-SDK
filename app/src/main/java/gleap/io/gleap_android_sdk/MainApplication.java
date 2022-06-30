@@ -1,81 +1,96 @@
 package gleap.io.gleap_android_sdk;
 
 import android.app.Application;
-import android.graphics.Bitmap;
 import android.os.AsyncTask;
 
 import org.json.JSONObject;
 
 import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.Base64;
 
-import io.gleap.ConfigLoadedCallback;
-import io.gleap.CustomActionCallback;
-import io.gleap.FeedbackSentCallback;
-import io.gleap.FeedbackSentWithDataCallback;
-import io.gleap.FeedbackWillBeSentCallback;
-import io.gleap.GetBitmapCallback;
+import io.gleap.APPLICATIONTYPE;
 import io.gleap.Gleap;
-import io.gleap.GleapActivationMethod;
-import io.gleap.GleapNotInitialisedException;
 import io.gleap.GleapUser;
 import io.gleap.GleapUserProperties;
+import io.gleap.PrefillHelper;
+import io.gleap.callbacks.ConfigLoadedCallback;
+import io.gleap.callbacks.CustomActionCallback;
+import io.gleap.callbacks.FeedbackFlowStartedCallback;
+import io.gleap.callbacks.FeedbackSendingFailedCallback;
+import io.gleap.callbacks.FeedbackSentCallback;
+import io.gleap.callbacks.InitializationDoneCallback;
+import io.gleap.callbacks.WidgetClosedCallback;
+import io.gleap.callbacks.WidgetOpenedCallback;
 
 public class MainApplication extends Application {
 
     @Override
     public void onCreate() {
         super.onCreate();
-        Gleap.initialize("sY2CirCOveIVc8fwPRymTL4oz2flS9p5",  this);
-        Gleap.getInstance().setConfigLoadedCallback(new ConfigLoadedCallback() {
+        Gleap.initialize("DUPaIr7s689BBblcFI4pc5aBgYJTm7Sc", this);
+
+        Gleap.getInstance().setLanguage("AR_EG");
+
+        Gleap.getInstance().setInitializationDoneCallback(new InitializationDoneCallback() {
             @Override
-            public void configLoaded(JSONObject jsonObject) {
-                System.out.println(jsonObject);
+            public void invoke() {
+                Gleap.getInstance().open();
             }
         });
 
-        GleapActivationMethod[] action = new GleapActivationMethod[2];
-        action[0] = GleapActivationMethod.SHAKE;
-        Gleap.getInstance().setActivationMethods(action);
-
-        Gleap.getInstance().setFeedbackSentWithDataCallback(new FeedbackSentWithDataCallback() {
-            @Override
-            public void close(JSONObject jsonObject) {
-                System.out.println(jsonObject.toString());
-            }
-        });
-
-        GleapUserProperties userProperties = new GleapUserProperties("12", "niklas@gmail.com");
+       /*   GleapUserProperties userProperties = new GleapUserProperties("Test User", "niklas@gmail.com" );
+        //userProperties.setHash();
         GleapUser gleapUserWithId = new GleapUser("12");
         GleapUser gleapUserWithIdAndProps = new GleapUser("12", userProperties);
-        File file = new File("/data/data/gleap.io.gleap_android_sdk/cache/file1057025163966562657.png");
+
+        File file = new File("/data/user/0/gleap.io.gleap_android_sdk/cache/file5101004034427200754.png");
         Gleap.getInstance().addAttachment(file);
 
 
-        Gleap.getInstance().setFeedbackSentCallback(new FeedbackSentCallback() {
+      //  Gleap.getInstance().identifyUser("1234", userProperties, "f60d2a8960f5e2711159d72b67695014a05aa576023d77056bb27e7d7a96b4a6");
+*/
+
+
+        Gleap.getInstance().setWidgetClosedCallback(new WidgetClosedCallback() {
             @Override
-            public void close() {
-                // Feedback got sent
+            public void invoke() {
+                Gleap.getInstance().logEvent(WidgetClosedCallback.class.getName());
             }
         });
 
         Gleap.getInstance().setConfigLoadedCallback(new ConfigLoadedCallback() {
             @Override
             public void configLoaded(JSONObject jsonObject) {
-                // Loaded Gleap config
+                Gleap.getInstance().logEvent(ConfigLoadedCallback.class.getName());
             }
         });
 
-        Gleap.getInstance().setFeedbackWillBeSentCallback(new FeedbackWillBeSentCallback() {
+        Gleap.getInstance().setFeedbackSentCallback(new FeedbackSentCallback() {
             @Override
-            public void flowInvoced() {
-                // The feedback will be sent
+            public void invoke(String message) {
+                Gleap.getInstance().logEvent(FeedbackSentCallback.class.getName());
             }
         });
 
-        new HttpCall().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        Gleap.getInstance().setFeedbackSendingFailedCallback(new FeedbackSendingFailedCallback() {
+            @Override
+            public void invoke(String message) {
+                Gleap.getInstance().logEvent(FeedbackSentCallback.class.getName());
+            }
+        });
 
+        Gleap.getInstance().registerCustomAction(new CustomActionCallback() {
+            @Override
+            public void invoke(String message) {
+                Gleap.getInstance().logEvent(CustomActionCallback.class.getName() + " " + message);
+                Gleap.getInstance().close();
+            }
+        });
+
+        Gleap.getInstance().setFeedbackFlowStartedCallback(new FeedbackFlowStartedCallback() {
+            @Override
+            public void invoke(String message) {
+                Gleap.getInstance().logEvent(FeedbackFlowStartedCallback.class.getName());
+            }
+        });
     }
 }

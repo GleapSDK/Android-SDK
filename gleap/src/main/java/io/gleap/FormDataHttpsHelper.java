@@ -13,9 +13,15 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.Date;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -24,10 +30,14 @@ import javax.net.ssl.HttpsURLConnection;
  */
 class FormDataHttpsHelper {
     private final HttpURLConnection httpConn;
-    private final DataOutputStream request;
+    //private final DataOutputStream request;
     private final String boundary = "BBBOUNDARY";
     private final String crlf = "\r\n";
     private final String twoHyphens = "--";
+    private Date date;
+
+    private OutputStream outputStream;
+    private PrintWriter writer;
 
     /**
      * This constructor initializes a new HTTPS POST request with content type
@@ -38,9 +48,10 @@ class FormDataHttpsHelper {
      */
     public FormDataHttpsHelper(String requestURL, String apiToken)
             throws IOException {
+
         URL url = new URL(requestURL);
         if (requestURL.contains("https")) {
-            httpConn = (HttpsURLConnection) url.openConnection();
+            httpConn = (HttpURLConnection) url.openConnection();
         } else {
             httpConn = (HttpURLConnection) url.openConnection();
         }
@@ -52,13 +63,18 @@ class FormDataHttpsHelper {
         httpConn.setRequestProperty("Connection", "Keep-Alive");
         httpConn.setRequestProperty("Cache-Control", "no-cache");
         httpConn.setRequestProperty("api-token", apiToken);
+        httpConn.setRequestProperty("Accept","*/*");
         UserSession userSession = UserSessionController.getInstance().getUserSession();
         httpConn.setRequestProperty("gleap-id", userSession.getId());
         httpConn.setRequestProperty("gleap-hash", userSession.getHash());
+
         httpConn.setRequestProperty(
                 "Content-Type", "multipart/form-data;boundary=" + this.boundary);
 
-        request =  new DataOutputStream(httpConn.getOutputStream());
+        outputStream = httpConn.getOutputStream();
+        writer = new PrintWriter(new OutputStreamWriter(outputStream, StandardCharsets.UTF_8.newEncoder()),
+                true);
+      //  request =  new DataOutputStream(httpConn.getOutputStream());
     }
 
     /**
@@ -70,23 +86,32 @@ class FormDataHttpsHelper {
     public void addFilePart(File uploadFile)
             throws IOException {
         String fileName = uploadFile.getName();
-        request.writeBytes(this.twoHyphens + this.boundary + this.crlf);
-        request.writeBytes("Content-Disposition: form-data; name=\"file\";filename=\"" +
+        writer.append(this.twoHyphens + this.boundary + this.crlf);
+        writer.append("Content-Disposition: form-data; name=\"file\";filename=\"" +
                 fileName + "\"" + this.crlf);
-        request.writeBytes("Content-Type: " +
-                "" + URLConnection.guessContentTypeFromName(fileName) + this.crlf + this.crlf);
+        writer.append("Content-Type: " +
+                "" + URLConnection.guessContentTypeFromName(fileName) + this.crlf);
+        writer.append("Content-Transfer-Encoding: binary").append(this.crlf);
+        writer.append(this.crlf);
+        writer.flush();
+
         int size = (int) uploadFile.length();
         byte[] bytes = new byte[size];
-        try {
-            BufferedInputStream buf = new BufferedInputStream(new FileInputStream(uploadFile));
-            buf.read(bytes, 0, bytes.length);
-            buf.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        request.write(bytes);
-        request.writeBytes(this.crlf);
 
+        FileInputStream inputStream = new FileInputStream(uploadFile);
+        int bytesRead = -1;
+        while ((bytesRead = inputStream.read(bytes)) != -1) {
+            outputStream.write(bytes, 0, bytesRead);
+        }
+
+        outputStream.flush();
+        outputStream.close();
+        inputStream.close();
+
+        writer.append(this.crlf);
+        writer.flush();
+
+        httpConn.disconnect();
     }
 
     /**
@@ -97,13 +122,16 @@ class FormDataHttpsHelper {
      */
     public String finishAndUpload() throws IOException {
         String response;
-        request.writeBytes(this.twoHyphens + this.boundary + this.twoHyphens + this.crlf);
+        writer.append(this.twoHyphens + this.boundary + this.twoHyphens + this.crlf);
+        writer.close();
 
-        request.flush();
-        request.close();
+        int status = httpConn.getResponseCode();
+
+
+        this.date = new Date();
 
         // checks server's status code first
-        int status = httpConn.getResponseCode();
+
         if (status == HttpURLConnection.HTTP_OK) {
             InputStream responseStream = new
                     BufferedInputStream(httpConn.getInputStream());
@@ -117,6 +145,7 @@ class FormDataHttpsHelper {
             while ((line = responseStreamReader.readLine()) != null) {
                 stringBuilder.append(line).append("\n");
             }
+
             responseStreamReader.close();
 
             response = stringBuilder.toString();

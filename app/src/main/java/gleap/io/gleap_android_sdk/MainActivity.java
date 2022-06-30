@@ -1,25 +1,13 @@
 package gleap.io.gleap_android_sdk;
 
-import android.app.Activity;
-import android.app.ActivityManager;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.os.BatteryManager;
 import android.os.Bundle;
-import android.os.PowerManager;
 import android.view.View;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import org.json.JSONObject;
-
 import java.io.IOException;
 import java.io.RandomAccessFile;
-
-import io.gleap.GetActivityCallback;
-import io.gleap.Gleap;
-import io.gleap.GleapActivationMethod;
-import io.gleap.GleapNotInitialisedException;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -28,18 +16,61 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Gleap.getInstance().setGetActivityCallback(new GetActivityCallback() {
+
+        findViewById(R.id.feedback).setOnClickListener(new View.OnClickListener() {
             @Override
-            public Activity getActivity() {
-                return MainActivity.this;
+            public void onClick(View view) {
+                Intent intent = new Intent(MainActivity.this, MainActivity2.class);
+                startActivity(intent);
             }
         });
 
-        findViewById(R.id.button3).setOnClickListener(new View.OnClickListener() {
+        findViewById(R.id.crash).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                // Gleap.getInstance().sendSilentBugReport("HEY", Gleap.SEVERITY.LOW);
-            Gleap.getInstance().sendSilentBugReport("This is ninja", Gleap.SEVERITY.LOW, "NINJA");
+                Intent intent = new Intent(MainActivity.this, SilentCrashReport.class);
+                startActivity(intent);
+            }
+        });
+
+        findViewById(R.id.event).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MainActivity.this, EventLogging.class);
+                startActivity(intent);
+            }
+        });
+
+        findViewById(R.id.identify).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MainActivity.this, IdentifyUser.class);
+                startActivity(intent);
+            }
+        });
+
+        findViewById(R.id.attach).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MainActivity.this, Attachments.class);
+                startActivity(intent);
+            }
+        });
+
+        findViewById(R.id.custom).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MainActivity.this, CustomData.class);
+                startActivity(intent);
+            }
+        });
+
+
+        findViewById(R.id.network).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MainActivity.this, NetworkLogging.class);
+                startActivity(intent);
             }
         });
     }

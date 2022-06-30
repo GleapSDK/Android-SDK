@@ -28,7 +28,7 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
             GleapUser gleapUser = UserSessionController.getInstance().getGleapUserSession();
 
             URL url = new URL(httpsUrl);
-            HttpURLConnection conn = (HttpsURLConnection) url.openConnection();
+            HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
             conn.setRequestProperty("Api-Token", GleapConfig.getInstance().getSdkKey());
             conn.setRequestProperty("Accept", "application/json");
             conn.setRequestProperty("Content-Type", "application/json");
@@ -52,6 +52,7 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                     if (gleapUser.getGleapUserProperties() != null) {
                         jsonObject.put("email", gleapUser.getGleapUserProperties().getEmail());
                         jsonObject.put("name", gleapUser.getGleapUserProperties().getName());
+                        jsonObject.put("userHash", gleapUser.getGleapUserProperties().getHash());
                     }
                 } catch (Exception ex) {
 
@@ -63,6 +64,8 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                 os.write(input, 0, input.length);
             }
 
+
+
             try (BufferedReader br = new BufferedReader(
                     new InputStreamReader(conn.getInputStream(), "utf-8"))) {
                 JSONObject result = null;
@@ -70,6 +73,8 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                 while ((input = br.readLine()) != null) {
                     result = new JSONObject(input);
                 }
+
+                conn.getInputStream().close();
 
                 String id = null;
                 String hash = null;
@@ -89,15 +94,16 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                         isLoaded = true;
                     }
                 }
-
+                conn.getOutputStream().close();
+                conn.disconnect();
             } catch (JSONException e) {
                 UserSessionController.getInstance().clearUserSession();
                 e.printStackTrace();
             }
 
         } catch (IOException e) {
-            UserSessionController.getInstance().clearUserSession();
-            e.printStackTrace();
+            UserSessionController.getInstance().clearUser();
+            isLoaded = true;
         }
         return 200;
     }

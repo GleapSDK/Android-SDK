@@ -17,15 +17,17 @@ class GleapFileHelper {
     }
 
     public void addAttachment(File file) {
-        if(file.length() <= MAX_FILE_SIZE) {
-            if (curreIndex < MAX_AMOUNT) {
-                files[curreIndex] = file;
-                curreIndex++;
+        if(file != null) {
+            if (file.length() <= MAX_FILE_SIZE) {
+                if (curreIndex < MAX_AMOUNT) {
+                    files[curreIndex] = file;
+                    curreIndex++;
+                } else {
+                    System.err.println("Gleap: Already " + MAX_AMOUNT + " appended. This is the maximum amount.");
+                }
             } else {
-                System.err.println("Gleap: Already " + MAX_AMOUNT + " appended. This is the maximum amount.");
+                System.err.println("Gleap: File is to big.");
             }
-        }else {
-            System.err.println("Gleap: File is to big.");
         }
     }
 

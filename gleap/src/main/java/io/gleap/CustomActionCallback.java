@@ -1,4 +1,4 @@
-package io.gleap;
+package io.gleap.callbacks;
 
 /**
  * Can be called from the webview

@@ -71,7 +71,11 @@ class GleapHttpInterceptor {
 
 
     public static void log(HttpsURLConnection httpsURLConnection, JSONObject requestBody, JSONObject responseBody) {
-        JSONObject headers = generateJSONFromMap(httpsURLConnection.getHeaderFields());
+
+        JSONObject headers = new JSONObject();
+        if(httpsURLConnection != null) {
+            headers = generateJSONFromMap(httpsURLConnection.getHeaderFields());
+        }
         JSONObject request = new JSONObject();
         try {
             request.put("payload", requestBody);
@@ -82,14 +86,18 @@ class GleapHttpInterceptor {
         try {
             BigDecimal from = new BigDecimal(0);
             if(headers.has("X-Android-Sent-Millis")) {
+                assert httpsURLConnection != null;
                 from = new BigDecimal(httpsURLConnection.getHeaderFields().get("X-Android-Sent-Millis").get(0));
             }
 
             BigDecimal to =  new BigDecimal(-1);
             if(headers.has("X-Android-Received-Millis")) {
+                assert httpsURLConnection != null;
                 to =  new BigDecimal(httpsURLConnection.getHeaderFields().get("X-Android-Received-Millis").get(0));
             }
-            Networklog networklog = new Networklog(httpsURLConnection.getURL().toString(), mapStringToRequestType(httpsURLConnection), httpsURLConnection.getResponseCode(), to.subtract(from).intValue(), request, responseBody);
+
+   
+            Networklog networklog = new Networklog(httpsURLConnection != null ? httpsURLConnection.getURL().toString() : null, mapStringToRequestType(httpsURLConnection), httpsURLConnection != null ? httpsURLConnection.getResponseCode() : 0, to.subtract(from).intValue(), request, responseBody);
             GleapBug.getInstance().addRequest(networklog);
         } catch (IOException exception) {
             exception.printStackTrace();
@@ -97,16 +105,18 @@ class GleapHttpInterceptor {
     }
 
     private static RequestType mapStringToRequestType(HttpsURLConnection httpsURLConnection) {
-        String type = httpsURLConnection.getRequestMethod();
-        switch (type) {
-            case "POST":
-                return RequestType.POST;
-            case "PUT":
-                return RequestType.PUT;
-            case "GET":
-                return RequestType.GET;
-            case "DELETE":
-                return RequestType.DELETE;
+        if(httpsURLConnection != null) {
+            String type = httpsURLConnection.getRequestMethod();
+            switch (type) {
+                case "POST":
+                    return RequestType.POST;
+                case "PUT":
+                    return RequestType.PUT;
+                case "GET":
+                    return RequestType.GET;
+                case "DELETE":
+                    return RequestType.DELETE;
+            }
         }
         return RequestType.GET;
     }
@@ -130,12 +140,12 @@ class GleapHttpInterceptor {
     private static boolean isJSONValid(String test) {
         try {
             new JSONObject(test);
-        } catch (JSONException ex) {
+        } catch (Exception ex) {
             // edited, to include @Arthur's comment
             // e.g. in case JSONArray is valid as well...
             try {
                 new JSONArray(test);
-            } catch (JSONException ex1) {
+            } catch (Exception ex1) {
                 return false;
             }
         }

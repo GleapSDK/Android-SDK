@@ -15,7 +15,8 @@ class DateUtil {
         date += "-" + Calendar.getInstance().get(Calendar.YEAR);
 
         String[] splittedDate = date.split("-");
-        SimpleDateFormat sdf = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss.SSS", Locale.getDefault());
+        SimpleDateFormat sdf = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss.SSS", Locale.ENGLISH);
+
         try {
             Calendar cal = Calendar.getInstance();
             Date parsedDate = sdf.parse(date + " " + time);
@@ -23,7 +24,7 @@ class DateUtil {
                 cal.setTime(parsedDate);
             }
             TimeZone tz = TimeZone.getTimeZone("UTC");
-            DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault()); // Quoted "Z" to indicate UTC, no timezone offset
+            DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ENGLISH); // Quoted "Z" to indicate UTC, no timezone offset
             df.setTimeZone(tz);
             result += df.format(cal.getTime());
         } catch (ParseException err) {
@@ -34,21 +35,14 @@ class DateUtil {
 
     public static Date stringToDate(String date) throws ParseException {
         TimeZone tz = TimeZone.getTimeZone("UTC");
-        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault()); // Quoted "Z" to indicate UTC, no timezone offset
+        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ENGLISH); // Quoted "Z" to indicate UTC, no timezone offset
         df.setTimeZone(tz);
         return df.parse(date);
     }
 
     public static String dateToString(Date date){
         TimeZone tz = TimeZone.getTimeZone("UTC");
-        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault()); // Quoted "Z" to indicate UTC, no timezone offset
-        df.setTimeZone(tz);
-        return df.format(date);
-    }
-
-    public static String dateToStringDate(Date date) {
-        TimeZone tz = TimeZone.getTimeZone("UTC");
-        DateFormat df = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()); // Quoted "Z" to indicate UTC, no timezone offset
+        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ENGLISH); // Quoted "Z" to indicate UTC, no timezone offset
         df.setTimeZone(tz);
         return df.format(date);
     }

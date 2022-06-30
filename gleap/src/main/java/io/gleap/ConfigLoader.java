@@ -8,6 +8,7 @@ import org.json.JSONObject;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 
@@ -17,7 +18,7 @@ import javax.net.ssl.HttpsURLConnection;
  * Loads the configuration from the server.
  */
 class ConfigLoader extends AsyncTask<GleapBug, Void, Integer> {
-    private final String httpsUrl = GleapConfig.getInstance().getWidgetUrl() + "/appwidget/" + GleapConfig.getInstance().getSdkKey() + "/config?s=android";
+    private final String httpsUrl = GleapConfig.getInstance().getApiUrl() + "/config/" + GleapConfig.getInstance().getSdkKey();
     private final OnHttpResponseListener listener;
 
     public ConfigLoader(OnHttpResponseListener listener) {
@@ -41,15 +42,14 @@ class ConfigLoader extends AsyncTask<GleapBug, Void, Integer> {
             HttpsURLConnection con = (HttpsURLConnection) url.openConnection();
             con.connect();
             readResponse(con);
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
         return 200;
     }
 
-    private void readResponse(HttpsURLConnection con) {
+    private void readResponse(HttpsURLConnection con) throws IOException {
+
         if (con != null) {
 
             try {
@@ -66,9 +66,13 @@ class ConfigLoader extends AsyncTask<GleapBug, Void, Integer> {
                 if (result != null) {
                     GleapConfig.getInstance().initConfig(result);
                     if(GleapConfig.getInstance().getConfigLoadedCallback() != null) {
-                        GleapConfig.getInstance().getConfigLoadedCallback().configLoaded(result);
+                        if(result.has("flowConfig")) {
+                            GleapConfig.getInstance().getConfigLoadedCallback().configLoaded(result.getJSONObject("flowConfig"));
+                        }
                     }
                 }
+
+                con.disconnect();
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (JSONException e) {

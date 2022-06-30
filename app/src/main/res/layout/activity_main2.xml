@@ -4,6 +4,62 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#ffffff"
     tools:context=".MainActivity2">
 
+    <ImageButton
+        android:id="@+id/bck_btn"
+        android:layout_width="40dp"
+        android:layout_height="32dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:backgroundTint="#00000000"
+        android:scaleType="fitXY"
+        android:src="@drawable/np_back_26915_000000"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/bck_btn">
+
+        <TextView
+            android:id="@+id/textView2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:text="Feedback Flow"
+            android:textAlignment="center"
+            android:textColor="#000000"
+            android:textSize="24dp" />
+
+        <Button
+            android:id="@+id/btn_feedback"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:text="startFeedbackFlow(bug)" />
+
+        <Button
+            android:id="@+id/btn_feedback_2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="28dp"
+            android:text="startFeedbackFlow(bug, true)" />
+
+        <Button
+            android:id="@+id/btn_feedback_1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="28dp"
+            android:text="startFeedbackFlow(bug, false)" />
+
+    </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

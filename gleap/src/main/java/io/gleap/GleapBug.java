@@ -34,16 +34,18 @@ class GleapBug {
     private Replay replay;
     private JSONObject customData;
     private JSONObject data;
+    private String spamToken;
+    private String outboubdId;
+
     private @Nullable
     PhoneMeta phoneMeta;
-    private final LogReader logReader;
+
 
     private final JSONArray customEventLog = new JSONArray();
 
     private List<Networklog> networklogs = new LinkedList<>();
 
     private GleapBug() {
-        logReader = new LogReader();
         customData = new JSONObject();
         if(60 % GleapConfig.getInstance().getInterval() == 0) {
             replay = new Replay(60 / GleapConfig.getInstance().getInterval(), 1000 * GleapConfig.getInstance().getInterval());
@@ -85,8 +87,8 @@ class GleapBug {
         return screenshot;
     }
 
-    public JSONArray getLogs() throws ParseException {
-        return logReader.readLog();
+    public JSONArray getLogs() {
+        return LogReader.getInstance().getLogs();
     }
 
     public JSONObject getCustomData() {
@@ -99,19 +101,19 @@ class GleapBug {
 
 
     public void setCustomData(String key, String value) {
-        try {
-            this.customData.put(key, value);
-        } catch (Exception e) {
-            e.printStackTrace();
+        if(key != null && value != null) {
+            try {
+                this.customData.put(key, value);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
-    public void attachData(JSONObject data) {
-        this.customData = JsonUtil.mergeJSONObjects(this.customData, data);
-    }
-
     public void removeUserAttribute(String key) {
-        this.customData.remove(key);
+        if(key != null) {
+            this.customData.remove(key);
+        }
     }
 
     public void clearCustomData() {
@@ -171,7 +173,10 @@ class GleapBug {
         JSONArray requestArry = new JSONArray();
         try {
             for (Networklog networklog : networklogs) {
-                requestArry.put(networklog.toJSON());
+                JSONObject item = networklog.toJSON();
+                if(item != null) {
+                    requestArry.put(item);
+                }
             }
         } catch (Exception err) {
            err.printStackTrace();
@@ -240,4 +245,22 @@ class GleapBug {
     public void setSilent(boolean silent) {
         isSilent = silent;
     }
+
+    public String getSpamToken() {
+        return spamToken;
+    }
+
+    public void setSpamToken(String spamToken) {
+        this.spamToken = spamToken;
+    }
+
+    public String getOutboubdId() {
+        return outboubdId;
+    }
+
+    public void setOutboubdId(String outboubdId) {
+        this.outboubdId = outboubdId;
+    }
+
+
 }

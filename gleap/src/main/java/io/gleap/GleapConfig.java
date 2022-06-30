@@ -4,9 +4,22 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
+
+import io.gleap.callbacks.ConfigLoadedCallback;
+import io.gleap.callbacks.CustomActionCallback;
+import io.gleap.callbacks.FeedbackFlowClosedCallback;
+import io.gleap.callbacks.FeedbackFlowStartedCallback;
+import io.gleap.callbacks.FeedbackSendingFailedCallback;
+import io.gleap.callbacks.FeedbackSentCallback;
+import io.gleap.callbacks.FeedbackWillBeSentCallback;
+import io.gleap.callbacks.GetActivityCallback;
+import io.gleap.callbacks.GetBitmapCallback;
+import io.gleap.callbacks.InitializationDoneCallback;
+import io.gleap.callbacks.WidgetClosedCallback;
+import io.gleap.callbacks.WidgetOpenedCallback;
 
 /**
  * Configuration received by the server
@@ -16,32 +29,42 @@ class GleapConfig {
 
     //bb config
     private String apiUrl = "https://api.gleap.io";
-    private String widgetUrl = "https://widget.gleap.io";
+    private String iFrameUrl = "https://frame.gleap.io/app.html";
     private String sdkKey = "";
     private String feedbackFlow ="";
 
     private GleapAction action;
 
     private JSONObject stripModel = new JSONObject();
+    private JSONObject crashStripModel = new JSONObject();
 
     private ConfigLoadedCallback configLoadedCallback;
     private FeedbackSentCallback feedbackSentCallback;
-    private FeedbackSentWithDataCallback feedbackSentWithDataCallback;
+    private FeedbackSentCallback crashFeedbackSentCallback;
     private FeedbackWillBeSentCallback feedbackWillBeSentCallback;
+    private FeedbackFlowStartedCallback feedbackFlowStartedCallback;
+    private FeedbackFlowClosedCallback feedbackFlowClosedCallback;
+    private FeedbackSendingFailedCallback feedbackSendingFailedCallback;
+    private CallCloseCallback callCloseCallback;
+    private WidgetOpenedCallback widgetOpenedCallback;
+    private WidgetClosedCallback widgetClosedCallback;
     private GetActivityCallback getActivityCallback;
     private CustomActionCallback customAction;
     private GetBitmapCallback getBitmapCallback;
+    private InitializationDoneCallback initializationDoneCallback;
     private List<GleapDetector> gestureDetectors = new LinkedList<>();
     private List<GleapActivationMethod> priorizedGestureDetectors = new LinkedList<>();
     private int interval = 5;
 
     //user config
     private boolean enableConsoleLogs = true;
+    private boolean enableConsoleLogsFromCode = true;
     private boolean enableReplays = false;
     private boolean activationMethodShake = false;
     private boolean activationMethodScreenshotGesture = false;
     private String language = "en";
     private JSONArray networkLogPropsToIgnore;
+    private JSONArray blackList = new JSONArray();
     private JSONObject plainConfig;
 
     //Streamedevent
@@ -50,6 +73,7 @@ class GleapConfig {
     private int resceduleEventStreamDurationLong = 3000;
 
     private GleapConfig() {
+        this.language = Locale.getDefault().toLanguageTag();
     }
 
     public static GleapConfig getInstance() {
@@ -68,24 +92,51 @@ class GleapConfig {
         if(config != null) {
             this.plainConfig = config;
         }
+
+        JSONObject flowConfigs = new JSONObject();
+        if(config.has("flowConfig")) {
+            try {
+                flowConfigs = config.getJSONObject("flowConfig");
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+
+        JSONObject projectActions = new JSONObject();
+        if(config.has("projectActions")) {
+            try {
+                projectActions = config.getJSONObject("projectActions");
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+
         try {
-            if(config.has("enableConsoleLogs")) {
-                this.enableConsoleLogs = config.getBoolean("enableConsoleLogs");
+            if(flowConfigs.has("enableConsoleLogs")) {
+                this.enableConsoleLogs = flowConfigs.getBoolean("enableConsoleLogs");
             }
-            if(config.has("enableReplays")) {
-                this.enableReplays = config.getBoolean("enableReplays");
+            if(flowConfigs.has("enableReplays")) {
+                this.enableReplays = flowConfigs.getBoolean("enableReplays");
             }
-            if(config.has("activationMethodShake")) {
-                this.activationMethodShake = config.getBoolean("activationMethodShake");
+            if(flowConfigs.has("activationMethodShake")) {
+                this.activationMethodShake = flowConfigs.getBoolean("activationMethodShake");
             }
-            if(config.has("activationMethodScreenshotGesture")) {
-                this.activationMethodScreenshotGesture = config.getBoolean("activationMethodScreenshotGesture");
+            if(flowConfigs.has("activationMethodScreenshotGesture")) {
+                this.activationMethodScreenshotGesture = flowConfigs.getBoolean("activationMethodScreenshotGesture");
             }
-            if(config.has("replaysInterval")){
-                this.interval = config.getInt("replaysInterval");
+            if(flowConfigs.has("replaysInterval")){
+                this.interval = flowConfigs.getInt("replaysInterval");
             }
-            if (config.has("networkLogPropsToIgnore")) {
-                this.networkLogPropsToIgnore  = config.getJSONArray("networkLogPropsToIgnore");
+            if (flowConfigs.has("networkLogPropsToIgnore")) {
+                this.networkLogPropsToIgnore  = flowConfigs.getJSONArray("networkLogPropsToIgnore");
+            }
+            if(flowConfigs.has("replaysInterval")) {
+                this.interval = flowConfigs.getInt("replaysInterval");
+                GleapBug.getInstance().setReplay(new Replay(60 / this.interval, 1000 * this.interval));
+            }
+
+            if(flowConfigs.has("networkLogBlacklist")) {
+                this.blackList = flowConfigs.getJSONArray("networkLogBlacklist");
             }
         } catch (JSONException e) {
             e.printStackTrace();
@@ -108,10 +159,6 @@ class GleapConfig {
         this.apiUrl = apiUrl;
     }
 
-    public void setWidgetUrl(String widgetUrl) {
-        this.widgetUrl = widgetUrl;
-    }
-
     public String getLanguage() {
         return language;
     }
@@ -128,20 +175,52 @@ class GleapConfig {
         this.feedbackSentCallback = feedbackSentCallback;
     }
 
-    public FeedbackSentWithDataCallback getFeedbackSentWithDataCallback() {
-        return feedbackSentWithDataCallback;
-    }
-
-    public void setFeedbackSentWithDataCallback(FeedbackSentWithDataCallback feedbackSentWithDataCallback) {
-        this.feedbackSentWithDataCallback = feedbackSentWithDataCallback;
-    }
-
-    public FeedbackWillBeSentCallback getBugWillBeSentCallback() {
+    public FeedbackWillBeSentCallback getFeedbackWillBeSentCallback() {
         return feedbackWillBeSentCallback;
     }
 
-    public void setBugWillBeSentCallback(FeedbackWillBeSentCallback feedbackWillBeSentCallback) {
+    public void setFeedbackWillBeSentCallback(FeedbackWillBeSentCallback feedbackWillBeSentCallback) {
         this.feedbackWillBeSentCallback = feedbackWillBeSentCallback;
+    }
+
+    public FeedbackFlowStartedCallback getFeedbackFlowStartedCallback() {
+        return feedbackFlowStartedCallback;
+    }
+
+    public void setFeedbackFlowStartedCallback(FeedbackFlowStartedCallback feedbackFlowStartedCallback) {
+        this.feedbackFlowStartedCallback = feedbackFlowStartedCallback;
+    }
+
+    public FeedbackFlowClosedCallback getFeedbackFlowClosedCallback() {
+        return feedbackFlowClosedCallback;
+    }
+
+    public void setFeedbackFlowClosedCallback(FeedbackFlowClosedCallback feedbackFlowClosedCallback) {
+        this.feedbackFlowClosedCallback = feedbackFlowClosedCallback;
+    }
+
+    public FeedbackSendingFailedCallback getFeedbackSendingFailedCallback() {
+        return feedbackSendingFailedCallback;
+    }
+
+    public void setFeedbackSendingFailedCallback(FeedbackSendingFailedCallback feedbackSendingFailedCallback) {
+        this.feedbackSendingFailedCallback = feedbackSendingFailedCallback;
+    }
+
+    public WidgetOpenedCallback getWidgetOpenedCallback() {
+        return widgetOpenedCallback;
+    }
+
+    public void setWidgetOpenedCallback(WidgetOpenedCallback widgetOpenedCallback) {
+        this.widgetOpenedCallback = widgetOpenedCallback;
+    }
+
+    public WidgetClosedCallback getWidgetClosedCallback() {
+        return widgetClosedCallback;
+    }
+
+    public void setWidgetClosedCallback(WidgetClosedCallback widgetClosedCallback) {
+        this.widgetClosedCallback = widgetClosedCallback;
     }
 
     public GetBitmapCallback getGetBitmapCallback() {
@@ -180,6 +259,10 @@ class GleapConfig {
         return enableConsoleLogs;
     }
 
+    public void setEnableConsoleLogs(boolean enableConsoleLogs) {
+        this.enableConsoleLogs = enableConsoleLogs;
+    }
+
     public boolean isEnableReplays() {
         return enableReplays;
     }
@@ -194,10 +277,6 @@ class GleapConfig {
 
     public CustomActionCallback getCustomActions() {
         return customAction;
-    }
-
-    public String getWidgetUrl() {
-        return widgetUrl;
     }
 
     public ConfigLoadedCallback getConfigLoadedCallback() {
@@ -262,5 +341,62 @@ class GleapConfig {
 
     public void setGetActivityCallback(GetActivityCallback getActivityCallback) {
         this.getActivityCallback = getActivityCallback;
+    }
+
+    public String getiFrameUrl() {
+        return iFrameUrl;
+    }
+
+    public void setiFrameUrl(String iFrameUrl) {
+        this.iFrameUrl = iFrameUrl;
+    }
+
+    public void setInterval(int interval) {
+        this.interval = interval;
+    }
+
+    public FeedbackSentCallback getCrashFeedbackSentCallback() {
+        return crashFeedbackSentCallback;
+    }
+
+    public void setCrashFeedbackSentCallback(FeedbackSentCallback crashFeedbackSentCallback) {
+        this.crashFeedbackSentCallback = crashFeedbackSentCallback;
+    }
+
+    public JSONObject getCrashStripModel() {
+        return crashStripModel;
+    }
+
+    public void setCrashStripModel(JSONObject crashStripModel) {
+        this.crashStripModel = crashStripModel;
+    }
+
+    public JSONArray getBlackList() {
+        return blackList;
+    }
+
+
+    public CallCloseCallback getCallCloseCallback() {
+        return callCloseCallback;
+    }
+
+    public void setCallCloseCallback(CallCloseCallback callCloseCallback) {
+        this.callCloseCallback = callCloseCallback;
+    }
+
+    public InitializationDoneCallback getInitializationDoneCallback() {
+        return initializationDoneCallback;
+    }
+
+    public void setInitializationDoneCallback(InitializationDoneCallback initializationDoneCallback) {
+        this.initializationDoneCallback = initializationDoneCallback;
+    }
+
+    public boolean isEnableConsoleLogsFromCode() {
+        return enableConsoleLogsFromCode;
+    }
+
+    public void setEnableConsoleLogsFromCode(boolean enableConsoleLogsFromCode) {
+        this.enableConsoleLogsFromCode = enableConsoleLogsFromCode;
     }
 }

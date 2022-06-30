@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.Application;
 import android.graphics.Bitmap;
 import android.os.Handler;
+import android.os.Looper;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -31,7 +32,7 @@ class ReplaysDetector extends GleapDetector {
     @Override
     public void initialize() {
         replay = GleapBug.getInstance().getReplay();
-        handler = new Handler();
+        handler = new Handler(Looper.getMainLooper());
         //start
         handler.post(runnableCode);
     }
@@ -54,38 +55,21 @@ class ReplaysDetector extends GleapDetector {
     private final Runnable runnableCode = new Runnable() {
         @Override
         public void run() {
-            if(Gleap.getInstance() != null && UserSessionController.getInstance().isSessionLoaded()) {
+            if (Gleap.getInstance() != null && UserSessionController.getInstance().isSessionLoaded()) {
                 try {
                     Activity activity = ActivityUtil.getCurrentActivity();
                     if (activity != null) {
-                        ScreenshotUtil.takeScreenshot(new ScreenshotUtil.GetImageCallback() {
-                            @Override
-                            public void getImage(Bitmap bitmap) {
-                                if (bitmap != null) {
-                                    String screenName = "MainActivity";
-                                    ViewGroup viewGroup = (ViewGroup) ((ViewGroup) activity
-                                            .findViewById(android.R.id.content)).getChildAt(0);
-                                    if (viewGroup != null) {
-                                        viewGroup.setOnTouchListener(new View.OnTouchListener() {
-                                            @Override
-                                            public boolean onTouch(View v, MotionEvent event) {
-                                                if (replay != null) {
-                                                    if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                                                        replay.addInteractionToCurrentReplay(new Interaction(event.getX(), event.getY(), new Date(), INTERACTIONTYPE.TD));
-                                                    }
-                                                    if (event.getAction() == MotionEvent.ACTION_UP) {
-                                                        replay.addInteractionToCurrentReplay(new Interaction(event.getX(), event.getY(), new Date(), INTERACTIONTYPE.TU));
-                                                    }
-                                                }
-                                                return true;
-                                            }
-                                        });
+                        String screenName = activity.getClass().getSimpleName();
+                        if (!screenName.equals("GleapMainActivity")) {
+                            ScreenshotUtil.takeScreenshot(new ScreenshotUtil.GetImageCallback() {
+                                @Override
+                                public void getImage(Bitmap bitmap) {
+                                    if (bitmap != null) {
+                                        replay.addScreenshot(bitmap, screenName);
                                     }
-                                    screenName = activity.getClass().getSimpleName();
-                                    replay.addScreenshot(bitmap, screenName);
                                 }
-                            }
-                        });
+                            });
+                        }
                     }
                 } catch (GleapSessionNotInitialisedException gleapSessionNotInitialisedException) {
                     gleapSessionNotInitialisedException.printStackTrace();

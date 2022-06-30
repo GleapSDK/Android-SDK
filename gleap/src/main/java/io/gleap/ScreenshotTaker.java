@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+import android.util.Log;
 
 import java.util.concurrent.ExecutionException;
 
@@ -22,37 +23,35 @@ class ScreenshotTaker {
      * Take a screenshot of the current view and opens it in the editor
      */
     public void takeScreenshot() {
-        try {
-            if(!alreadyTakingScreenshot) {
-                alreadyTakingScreenshot = true;
-                GleapDetectorUtil.stopAllDetectors();
-                if (GleapConfig.getInstance().getBugWillBeSentCallback() != null) {
-                    GleapConfig.getInstance().getBugWillBeSentCallback().flowInvoced();
-                }
-                ScreenshotUtil.takeScreenshot(new ScreenshotUtil.GetImageCallback() {
-                    @Override
-                    public void getImage(Bitmap bitmap) {
-                        if (bitmap != null) {
-                            openScreenshot(bitmap);
-                            alreadyTakingScreenshot = false;
+        if(GleapConfig.getInstance().getPlainConfig() != null) {
+            try {
+                if (!alreadyTakingScreenshot) {
+                    GleapDetectorUtil.stopAllDetectors();
+
+                    ScreenshotUtil.takeScreenshot(new ScreenshotUtil.GetImageCallback() {
+                        @Override
+                        public void getImage(Bitmap bitmap) {
+                            if (bitmap != null) {
+                                openScreenshot(bitmap);
+                                alreadyTakingScreenshot = false;
+                            }
                         }
-                    }
-                });
+                    });
+                }
+            } catch (GleapSessionNotInitialisedException exception) {
+                GleapDetectorUtil.resumeAllDetectors();
+                System.err.println("Gleap: Gleap Session not initialized.");                alreadyTakingScreenshot = true;
+
+                alreadyTakingScreenshot = false;
+            } catch (InterruptedException e) {
+                alreadyTakingScreenshot = false;
+            } catch (ExecutionException e) {
+                alreadyTakingScreenshot = false;
             }
-        }catch (GleapSessionNotInitialisedException exception) {
-            GleapDetectorUtil.resumeAllDetectors();
-            System.err.println("Gleap: Gleap Session not initialized.");
-            alreadyTakingScreenshot = false;
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-            alreadyTakingScreenshot = false;
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-            alreadyTakingScreenshot = false;
         }
     }
 
-    public void  openScreenshot(Bitmap imageFile) {
+    public void openScreenshot(Bitmap imageFile) {
         try {
             Activity activity = ActivityUtil.getCurrentActivity();
             if (activity != null) {
@@ -68,6 +67,10 @@ class ScreenshotTaker {
                     Intent intent = new Intent(ActivityUtil.getCurrentActivity(), GleapMainActivity.class);
                     intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
                     gleapBug.setScreenshot(imageFile);
+
+                    if(GleapConfig.getInstance().getWidgetOpenedCallback() != null) {
+                        GleapConfig.getInstance().getWidgetOpenedCallback().invoke();
+                    }
                     activity.startActivity(intent);
                 }
             }

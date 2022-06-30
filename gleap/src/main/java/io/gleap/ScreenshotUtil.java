@@ -156,7 +156,7 @@ class ScreenshotUtil {
         Bitmap bitmap = Bitmap.createBitmap(
                 bm, 0, 0, width, height, matrix, false);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        bitmap.compress(Bitmap.CompressFormat.PNG, 0, out);
+        bitmap.compress(Bitmap.CompressFormat.PNG, 80, out);
         Bitmap decoded = BitmapFactory.decodeStream(new ByteArrayInputStream(out.toByteArray()));
         return decoded;
     }
@@ -171,12 +171,13 @@ class ScreenshotUtil {
         } else {
             matrix.postScale(downScale - 0.2f, downScale - 0.2f);
         }
+
         Bitmap bitmap = Bitmap.createBitmap(
                 bm, 0, 0, width, height, matrix, false);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        bitmap.compress(Bitmap.CompressFormat.PNG, 40, out);
+        bitmap.compress(Bitmap.CompressFormat.PNG, 90, out);
         Bitmap decoded = BitmapFactory.decodeStream(new ByteArrayInputStream(out.toByteArray()));
-        return decoded;
+        return bm;
     }
 
     private static Field getFieldForName(String name, Object obj) throws NullPointerException {

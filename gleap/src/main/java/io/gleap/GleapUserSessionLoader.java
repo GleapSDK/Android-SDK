@@ -26,7 +26,7 @@ class GleapUserSessionLoader extends AsyncTask<Void, Void, Integer> {
     protected Integer doInBackground(Void... voids) {
         try {
             URL url = new URL(httpsUrl);
-            HttpURLConnection conn = (HttpsURLConnection) url.openConnection();
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestProperty("Api-Token", GleapConfig.getInstance().getSdkKey());
             conn.setRequestProperty("Accept", "application/json");
             conn.setRequestProperty("Content-Type", "application/json");
@@ -39,6 +39,7 @@ class GleapUserSessionLoader extends AsyncTask<Void, Void, Integer> {
             if(userSession != null && userSession.getHash() != null && !userSession.getHash().equals("")) {
                 conn.setRequestProperty("Gleap-Hash", userSession.getHash());
             }
+
 
             try (BufferedReader br = new BufferedReader(
                     new InputStreamReader(conn.getInputStream(), "utf-8"))) {
@@ -70,6 +71,10 @@ class GleapUserSessionLoader extends AsyncTask<Void, Void, Integer> {
                         new GleapIdentifyService().execute();
                     }
                 }
+
+                if(GleapConfig.getInstance().getInitializationDoneCallback() != null) {
+                    GleapConfig.getInstance().getInitializationDoneCallback().invoke();
+                }
             } catch (JSONException e) {
                 UserSessionController.getInstance().setSessionLoaded(true);
                 e.printStackTrace();
@@ -81,4 +86,6 @@ class GleapUserSessionLoader extends AsyncTask<Void, Void, Integer> {
         }
         return 200;
     }
+
+
 }

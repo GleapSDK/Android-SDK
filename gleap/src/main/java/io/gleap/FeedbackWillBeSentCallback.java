@@ -1,5 +1,5 @@
-package io.gleap;
+package io.gleap.callbacks;
 
 public interface FeedbackWillBeSentCallback {
-    void flowInvoced();
+    void invoke(String message);
 }

@@ -42,6 +42,10 @@ public class UserSessionController {
 
     }
 
+    public void clearUser() {
+        this.gleapUser = null;
+    }
+
 
     public void mergeUserSession(String id, String hash) {
         if(userSession == null){

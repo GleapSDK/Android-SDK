@@ -6,7 +6,6 @@ public class GleapUser {
 
     public GleapUser(String userId) {
         this.userId = userId;
-        this.gleapUserProperties = gleapUserProperties;
     }
 
     public GleapUser(String userId, GleapUserProperties gleapUserProperties) {

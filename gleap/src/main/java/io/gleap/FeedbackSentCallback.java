@@ -1,5 +1,5 @@
-package io.gleap;
+package io.gleap.callbacks;
 
 public interface FeedbackSentCallback {
-    void close();
+    void invoke(String message);
 }
