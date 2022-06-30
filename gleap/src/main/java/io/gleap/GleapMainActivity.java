@@ -56,7 +56,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 getSupportActionBar().hide();
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
         }
         super.onCreate(savedInstanceState);
 
@@ -112,7 +111,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
     @Override
     public void onTaskComplete(int httpResponse) {
         if (httpResponse == 201) {
-
             try {
                 sendMessage(generateGleapMessage("feedback-sent", null));
                 GleapDetectorUtil.resumeAllDetectors();
@@ -264,8 +262,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                                 handler.postDelayed(new Runnable() {
                                     @Override
                                     public void run() {
-
-
                                         webView.setVisibility(View.VISIBLE);
                                     }
                                 }, 500);

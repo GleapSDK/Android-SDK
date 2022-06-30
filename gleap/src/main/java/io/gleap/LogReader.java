@@ -26,6 +26,7 @@ import static io.gleap.DateUtil.formatDate;
 class LogReader {
     private static LogReader instance;
     private JSONArray logs = new JSONArray();
+    private JSONArray customLogs = new JSONArray();
 
 
     private LogReader() {
@@ -83,7 +84,6 @@ class LogReader {
         } catch (IOException e) {
             return null;
         } catch (JSONException e) {
-            e.printStackTrace();
         }
         return null;
     }
@@ -94,7 +94,7 @@ class LogReader {
             object.put("date", dateToString(new Date()));
             object.put("priority", level.name());
             object.put("log", msg);
-            this.logs.put(object);
+            this.customLogs.put(object);
         }catch (Exception ex) {
 
         }
@@ -112,18 +112,28 @@ class LogReader {
 
     public JSONArray getLogs() {
         JSONArray sortedJsonArray = new JSONArray();
+        JSONArray toBeSorted = new JSONArray();
+        if(GleapConfig.getInstance().isEnableConsoleLogsFromCode()) {
+            JSONArray cl = readLog();
+            for (int i = 0; i < cl.length(); i++) {
+                try {
+                    toBeSorted.put(cl.getJSONObject(i));
+                } catch (Exception ex) {
+                }
+            }
+        }
 
-        JSONArray cl = readLog();
-        for(int i = 0; i < cl.length();i++) {
-            try{
-                this.logs.put(cl.getJSONObject(i));
-            }catch (Exception ex) {}
+        for(int i = 0; i < customLogs.length(); i++) {
+            try {
+                toBeSorted.put(customLogs.getJSONObject(i));
+            } catch (Exception ex) {
+            }
         }
 
         List list = new ArrayList();
-        for(int i = 0; i < this.logs.length(); i++) {
+        for(int i = 0; i < toBeSorted.length(); i++) {
             try {
-                list.add(this.logs.getJSONObject(i));
+                list.add(toBeSorted.getJSONObject(i));
             } catch (JSONException e) {
                 e.printStackTrace();
             }
@@ -143,7 +153,7 @@ class LogReader {
                 return 0;
             }
         });
-        for(int i = 0; i < this.logs.length(); i++) {
+        for(int i = 0; i < toBeSorted.length(); i++) {
             sortedJsonArray.put(list.get(i));
         }
         return sortedJsonArray;

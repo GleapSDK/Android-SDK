@@ -105,7 +105,6 @@ class GleapBug {
             try {
                 this.customData.put(key, value);
             } catch (Exception e) {
-                e.printStackTrace();
             }
         }
     }

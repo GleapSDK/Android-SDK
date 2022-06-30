@@ -71,7 +71,6 @@ class Networklog {
                 object.put("response", response);
             }
         } catch (Exception err) {
-    err.printStackTrace();
         }
         return object;
     }
@@ -83,7 +82,6 @@ class Networklog {
                 String key = stripWords.getString(i);
                 object.remove(key);
             } catch (JSONException e) {
-                e.printStackTrace();
             }
         }
     }

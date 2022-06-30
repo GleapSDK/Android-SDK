@@ -114,7 +114,6 @@ class PhoneMeta {
                 releaseVersionNumber = packageInfo.versionName;
                 bundleID = packageInfo.packageName;
             } catch (PackageManager.NameNotFoundException e) {
-                e.printStackTrace();
                 bundleID = context.getPackageName();
 
             }
@@ -241,5 +240,10 @@ class PhoneMeta {
 
     public void setLastScreen(String lastScreenName) {
         PhoneMeta.lastScreenName = lastScreenName;
+    }
+
+
+    public void getDensity() {
+
     }
 }

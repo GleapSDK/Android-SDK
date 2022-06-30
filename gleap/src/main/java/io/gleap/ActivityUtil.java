@@ -5,7 +5,7 @@ import android.app.Activity;
 import java.lang.reflect.Field;
 import java.util.Map;
 
-import io.gleap.callbacks.GetActivityCallback;
+import io.gleap.GetActivityCallback;
 
 class ActivityUtil {
     public static Activity getCurrentActivity() {
@@ -33,7 +33,6 @@ class ActivityUtil {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
         }
 
         return null;

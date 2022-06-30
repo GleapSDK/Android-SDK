@@ -98,7 +98,6 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                 conn.disconnect();
             } catch (JSONException e) {
                 UserSessionController.getInstance().clearUserSession();
-                e.printStackTrace();
             }
 
         } catch (IOException e) {
