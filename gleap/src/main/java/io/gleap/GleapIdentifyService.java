@@ -53,6 +53,7 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                         jsonObject.put("email", gleapUser.getGleapUserProperties().getEmail());
                         jsonObject.put("name", gleapUser.getGleapUserProperties().getName());
                         jsonObject.put("userHash", gleapUser.getGleapUserProperties().getHash());
+                        jsonObject.put("value", gleapUser.getGleapUserProperties().getValue());
                     }
                 } catch (Exception ex) {
 
@@ -74,8 +75,6 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                     result = new JSONObject(input);
                 }
 
-                conn.getInputStream().close();
-
                 String id = null;
                 String hash = null;
 
@@ -94,8 +93,7 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                         isLoaded = true;
                     }
                 }
-                conn.getOutputStream().close();
-                conn.disconnect();
+
             } catch (JSONException e) {
                 UserSessionController.getInstance().clearUserSession();
             }

@@ -30,6 +30,7 @@ public class EventLogging extends AppCompatActivity {
         findViewById(R.id.event).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                //Gleap.getInstance().disableConsoleLog();
                 Gleap.getInstance().logEvent("HEY");
                 Gleap.getInstance().log("THIS IS A CRIT", GleapLogLevel.ERROR);
                 Gleap.getInstance().log("THIS IS A INFO", GleapLogLevel.INFO);

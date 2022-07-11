@@ -21,6 +21,7 @@ import static io.gleap.DateUtil.dateToString;
 class GleapBug {
     private static GleapBug instance;
     private Application application;
+    private NetworkBuffer networkBuffer = new NetworkBuffer();
     private boolean isSilent = false;
     //bug specific data
     private APPLICATIONTYPE applicationtype = APPLICATIONTYPE.NATIVE;
@@ -42,8 +43,6 @@ class GleapBug {
 
 
     private final JSONArray customEventLog = new JSONArray();
-
-    private List<Networklog> networklogs = new LinkedList<>();
 
     private GleapBug() {
         customData = new JSONObject();
@@ -111,7 +110,9 @@ class GleapBug {
 
     public void removeUserAttribute(String key) {
         if(key != null) {
-            this.customData.remove(key);
+            try {
+                this.customData.remove(key);
+            }catch (Exception ex){}
         }
     }
 
@@ -164,23 +165,22 @@ class GleapBug {
     }
 
     public void addRequest(Networklog networklog) {
-        networklogs.add(networklog);
+        networkBuffer.addNetworkLog(networklog);
     }
 
 
     public JSONArray getNetworklogs() {
         JSONArray requestArry = new JSONArray();
         try {
-            for (Networklog networklog : networklogs) {
+            for (Networklog networklog : networkBuffer.getNetworklogs()) {
                 JSONObject item = networklog.toJSON();
                 if(item != null) {
                     requestArry.put(item);
                 }
             }
         } catch (Exception err) {
-           err.printStackTrace();
         }
-        networklogs = new LinkedList<>();
+        networkBuffer.clear();
         return requestArry;
     }
 
@@ -261,5 +261,7 @@ class GleapBug {
         this.outboubdId = outboubdId;
     }
 
-
+    public NetworkBuffer getNetworkBuffer() {
+        return networkBuffer;
+    }
 }

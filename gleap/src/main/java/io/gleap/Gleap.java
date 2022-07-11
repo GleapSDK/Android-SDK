@@ -56,6 +56,7 @@ public class Gleap implements iGleap {
                 replaysDetector.initialize();
                 detectorList.add(replaysDetector);
             }
+
             GleapConfig.getInstance().setGestureDetectors(detectorList);
             GleapDetectorUtil.resumeAllDetectors();
 
@@ -361,6 +362,16 @@ public class Gleap implements iGleap {
         GleapConfig.getInstance().setInitializationDoneCallback(initializationDoneCallback);
     }
 
+    /**
+     * Network
+     */
+
+    /**
+     * Replace the current network logs.
+     */
+    public void attachNetworkLogs(Networklog[] networklogs){
+        GleapBug.getInstance().getNetworkBuffer().attachNetworkLogs(networklogs);
+    }
 
     /**
      * Log network traffic by logging it manually.
@@ -461,6 +472,8 @@ public class Gleap implements iGleap {
             if (config.isActivationMethodScreenshotGesture()) {
                 activationMethods.add(GleapActivationMethod.SCREENSHOT);
             }
+
+
             if (instance == null) {
                 instance = new Gleap();
             }

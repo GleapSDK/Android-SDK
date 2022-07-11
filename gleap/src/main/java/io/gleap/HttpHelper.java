@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.AsyncTask;
 import android.os.Build;
+import android.util.JsonWriter;
 
 import androidx.annotation.RequiresApi;
 
@@ -56,7 +57,7 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
         int httpResult = 0;
         try {
             httpResult = postFeedback(gleapBug);
-        } catch (JSONException | IOException | ParseException e) {
+        } catch (Exception e) {
         }
 
         GleapConfig.getInstance().setAction(null);
@@ -66,11 +67,19 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
 
     @Override
     protected void onPostExecute(Integer result) {
-        if (GleapConfig.getInstance().getFeedbackSentCallback() != null && !GleapBug.getInstance().isSilent()) {
+        if (GleapConfig.getInstance().getFeedbackSentCallback() != null) {
             if (sentCallbackData != null) {
                 GleapConfig.getInstance().getFeedbackSentCallback().invoke(sentCallbackData.toString());
             } else {
                 GleapConfig.getInstance().getFeedbackSentCallback().invoke("");
+            }
+        }
+
+        if (GleapConfig.getInstance().getCrashFeedbackSentCallback() != null) {
+            if (sentCallbackData != null) {
+                GleapConfig.getInstance().getCrashFeedbackSentCallback().invoke(sentCallbackData.toString());
+            } else {
+                GleapConfig.getInstance().getCrashFeedbackSentCallback().invoke("");
             }
         }
 
@@ -134,7 +143,7 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
 
 
     @RequiresApi(api = Build.VERSION_CODES.O)
-    private Integer postFeedback(GleapBug gleapBug) throws JSONException, IOException, ParseException {
+    private Integer postFeedback(GleapBug gleapBug) throws JSONException, IOException {
         JSONObject config = GleapConfig.getInstance().getStripModel();
         JSONObject stripConfig = GleapConfig.getInstance().getCrashStripModel();
         boolean stripImages = false;
@@ -153,6 +162,7 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
         } else {
             conn = (HttpURLConnection) url.openConnection();
         }
+
         conn.setRequestProperty("api-token", bbConfig.getSdkKey());
         conn.setDoOutput(true);
         conn.setRequestProperty("Accept", "application/json");
@@ -268,7 +278,7 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
-    private JSONArray generateAttachments() throws IOException, JSONException {
+    private JSONArray generateAttachments() {
         JSONArray result = new JSONArray();
         try {
             JSONObject obj = uploadFiles(GleapFileHelper.getInstance().getAttachments());
@@ -294,7 +304,7 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
 
         for (ScreenshotReplay replay : replays) {
             if (replay != null) {
-                bitmapList.add(ScreenshotUtil.getResizedBitmap(replay.getScreenshot(), 0.3f));
+                bitmapList.add(replay.getScreenshot());
             }
         }
 

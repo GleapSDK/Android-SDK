@@ -114,6 +114,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
             try {
                 sendMessage(generateGleapMessage("feedback-sent", null));
                 GleapDetectorUtil.resumeAllDetectors();
+                GleapBug.getInstance().setScreenshot(null);
                 GleapBug.getInstance().setDisabled(false);
             } catch (Exception ex) {
             }
@@ -450,6 +451,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 if (gleapUserProperties != null) {
                     sessionData.put("name", gleapUserProperties.getName());
                     sessionData.put("email", gleapUserProperties.getEmail());
+                    sessionData.put("value", gleapUserProperties.getValue());
                 }
 
                 JSONObject data = new JSONObject();

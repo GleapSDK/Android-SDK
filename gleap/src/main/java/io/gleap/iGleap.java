@@ -254,6 +254,11 @@ interface iGleap {
     /**
      * Network
      */
+
+    /**
+     * Replace the current network logs.
+     */
+    void attachNetworkLogs(Networklog[] networklogs);
     /**
      * Log network traffic by logging it manually.
      *

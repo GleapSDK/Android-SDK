@@ -2,6 +2,7 @@ package io.gleap;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
@@ -15,6 +16,7 @@ import android.os.Build;
 import android.os.Environment;
 import android.os.PowerManager;
 import android.os.StatFs;
+import android.util.DisplayMetrics;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
@@ -87,6 +89,14 @@ class PhoneMeta {
 
         obj.put("totalDiskSpace", getTotalInternalMemorySize());
         obj.put("totalFreeDiskSpace", getFreeStorage());
+
+
+        try {
+            DisplayMetrics dm = context.getResources().getDisplayMetrics();
+            obj.put("screenWidth", dm.widthPixels);
+            obj.put("screenHeight", dm.heightPixels);
+            obj.put("devicePixelRatio", getDensityName(dm.density));
+        }catch (Exception ex){}
 
         if (BuildConfig.BUILD_TYPE.equals("debug")) {
             obj.put("buildMode", "DEBUG");
@@ -243,7 +253,23 @@ class PhoneMeta {
     }
 
 
-    public void getDensity() {
-
+    private static String getDensityName(float density) {
+        if (density >= 4.0) {
+            return "xxxhdpi";
+        }
+        if (density >= 3.0) {
+            return "xxhdpi";
+        }
+        if (density >= 2.0) {
+            return "xhdpi";
+        }
+        if (density >= 1.5) {
+            return "hdpi";
+        }
+        if (density >= 1.0) {
+            return "mdpi";
+        }
+        return "ldpi";
     }
+
 }
