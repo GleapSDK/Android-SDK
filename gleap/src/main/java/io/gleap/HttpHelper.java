@@ -246,18 +246,19 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
      * @return return the file
      */
     private File bitmapToFile(Bitmap bitmap) {
-        try {
-            File outputDir = context.getCacheDir();
-            File outputFile = File.createTempFile("file", ".png", outputDir);
-            OutputStream
-                    os
-                    = new FileOutputStream(outputFile);
+        if(bitmap != null) {
+            try {
+                File outputDir = context.getCacheDir();
+                File outputFile = File.createTempFile("file", ".png", outputDir);
+                OutputStream
+                        os
+                        = new FileOutputStream(outputFile);
 
-            os.write(getBytes(bitmap));
-            os.close();
-            return outputFile;
-        } catch (Exception e) {
-            e.printStackTrace();
+                os.write(getBytes(bitmap));
+                os.close();
+                return outputFile;
+            } catch (Exception e) {
+            }
         }
         return null;
     }
