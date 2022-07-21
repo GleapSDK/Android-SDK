@@ -86,6 +86,7 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
         sentCallbackData = null;
 
         GleapBug.getInstance().setSilent(false);
+        GleapConfig.getInstance().setCrashStripModel(new JSONObject());
         try {
             listener.onTaskComplete(result);
         } catch (GleapAlreadyInitialisedException e) {
