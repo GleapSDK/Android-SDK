@@ -6,6 +6,7 @@ public class GleapUserProperties {
     private String email;
     private String hash;
     private double value;
+    private String phoneNumber;
 
     /**
      * Create a gleap user. This can be used to identify the user.
@@ -85,5 +86,13 @@ public class GleapUserProperties {
 
     public void setValue(double value) {
         this.value = value;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
     }
 }

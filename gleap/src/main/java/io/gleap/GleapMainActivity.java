@@ -26,6 +26,7 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -451,7 +452,12 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 if (gleapUserProperties != null) {
                     sessionData.put("name", gleapUserProperties.getName());
                     sessionData.put("email", gleapUserProperties.getEmail());
+
                     sessionData.put("value", gleapUserProperties.getValue());
+
+                    if(gleapUserProperties.getPhoneNumber() != null) {
+                        sessionData.put("phone", gleapUserProperties.getPhoneNumber());
+                    }
                 }
 
                 JSONObject data = new JSONObject();

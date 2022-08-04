@@ -11,7 +11,7 @@ public class NetworkBuffer {
     private final int MAX_AMOUNT = 25;
 
     public NetworkBuffer() {
-        networklogs = new Networklog[MAX_AMOUNT-1];
+        networklogs = new Networklog[MAX_AMOUNT];
     }
 
     public Networklog[] getNetworklogs() {

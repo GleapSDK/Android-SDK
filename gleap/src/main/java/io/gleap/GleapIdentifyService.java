@@ -60,6 +60,7 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                             jsonObject.put("name", gleapUser.getGleapUserProperties().getName());
                             jsonObject.put("userHash", gleapUser.getGleapUserProperties().getHash());
                             jsonObject.put("value", gleapUser.getGleapUserProperties().getValue());
+                            jsonObject.put("phone", gleapUser.getGleapUserProperties().getPhoneNumber());
                         }
                     } catch (Exception ex) {
 

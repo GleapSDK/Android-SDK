@@ -108,9 +108,19 @@ class PhoneMeta {
         if (GleapBug.getInstance().getApplicationtype() == APPLICATIONTYPE.FLUTTER) {
             applicationType = "Flutter/Android";
         }
+
         if (GleapBug.getInstance().getApplicationtype() == APPLICATIONTYPE.REACTNATIVE) {
             applicationType = "ReactNative/Android";
         }
+
+        if(GleapBug.getInstance().getApplicationtype() == APPLICATIONTYPE.CORDOVA) {
+            applicationType = "Cordova/Android";
+        }
+
+        if(GleapBug.getInstance().getApplicationtype() == APPLICATIONTYPE.CAPACITOR) {
+            applicationType = "Capacitor/Android";
+        }
+
         obj.put("sdkType", applicationType);
         return obj;
     }

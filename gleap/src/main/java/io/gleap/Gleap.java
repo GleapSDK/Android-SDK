@@ -61,6 +61,7 @@ public class Gleap implements iGleap {
             GleapDetectorUtil.resumeAllDetectors();
 
             GleapEventService.getInstance().start();
+
         } catch (Exception ignore) {
         }
     }
