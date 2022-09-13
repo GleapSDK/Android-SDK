@@ -150,9 +150,13 @@ public class FABGesture extends GleapDetector {
                                 imageButton.setScaleType(ImageView.ScaleType.FIT_CENTER);
 
                                 imageButton.setImageBitmap(bm);
+                                imageButton.setVerticalScrollbarPosition(400);
                                 view.setLayoutParams(new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
                                 ViewGroup viewGroup = (ViewGroup) ((ViewGroup) local
                                         .findViewById(android.R.id.content)).getChildAt(0);
+
+                                imageButton.setY(view.getHeight() - imageButton.getHeight());
+                                imageButton.setX(view.getWidth() - imageButton.getWidth());
 
                                 viewGroup.addView(view);
                             }catch (Exception ex){}

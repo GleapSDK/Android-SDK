@@ -8,6 +8,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 
+import io.gleap.CallCloseCallback;
 import io.gleap.callbacks.ConfigLoadedCallback;
 import io.gleap.callbacks.CustomActionCallback;
 import io.gleap.callbacks.FeedbackFlowClosedCallback;
@@ -69,6 +70,7 @@ class GleapConfig {
     private JSONArray networkLogPropsToIgnore;
     private JSONArray blackList = new JSONArray();
     private JSONObject plainConfig;
+    private WidgetPosition widgetPosition = WidgetPosition.BOTTOM_RIGHT;
 
     //Streamedevent
     private int maxEventLength = 500;
@@ -117,6 +119,17 @@ class GleapConfig {
         try {
             if(flowConfigs.has("enableConsoleLogs")) {
                 this.enableConsoleLogs = flowConfigs.getBoolean("enableConsoleLogs");
+            }
+
+            if(flowConfigs.has("feedbackButtonPosition")) {
+                switch (flowConfigs.getString("feedbackButtonPosition")) {
+                    case "BOTTOM_RIGHT":
+                        this.widgetPosition = WidgetPosition.BOTTOM_RIGHT;
+                        break;
+                    case "BOTTOM_LEFT":
+                        this.widgetPosition = WidgetPosition.BOTTOM_LEFT;
+                        break;
+                }
             }
 
             if(flowConfigs.has("buttonLogo") && !flowConfigs.getString("buttonLogo").equals("")) {
