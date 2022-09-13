@@ -64,6 +64,14 @@ class ScreenshotUtil {
                             getImageCallback.getImage(getResizedBitmap(bitmap));
                         }
                     });
+                } else if(Build.VERSION.SDK_INT <= Build.VERSION_CODES.N){
+                    bitmap = Bitmap.createBitmap(view.getWidth(),
+                            view.getHeight(), Bitmap.Config.ARGB_8888);
+                    Canvas canvas = new Canvas(bitmap);
+                    view.draw(canvas);
+                    if (bitmap != null) {
+                        getImageCallback.getImage(getResizedBitmap(bitmap));
+                    }
                 } else {
                     bitmap = generateBitmap(ActivityUtil.getCurrentActivity());
                     if (bitmap != null) {
