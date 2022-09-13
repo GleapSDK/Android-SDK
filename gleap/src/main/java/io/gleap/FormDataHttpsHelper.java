@@ -68,7 +68,6 @@ class FormDataHttpsHelper {
      * default name is file
      * @param uploadFile a File to be uploaded
      */
-    @RequiresApi(api = Build.VERSION_CODES.O)
     public void addFilePart(File uploadFile)
             throws IOException {
         String fileName = uploadFile.getName();

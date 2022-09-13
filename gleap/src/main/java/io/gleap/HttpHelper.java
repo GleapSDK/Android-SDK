@@ -12,14 +12,18 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.text.ParseException;
@@ -50,7 +54,6 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
         this.context = context;
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     protected Integer doInBackground(GleapBug... gleapBugs) {
         GleapBug gleapBug = gleapBugs[0];
@@ -93,7 +96,7 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
         }
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
+
     private JSONObject uploadImage(Bitmap image) throws IOException, JSONException {
         FormDataHttpsHelper multipart = new FormDataHttpsHelper(bbConfig.getApiUrl() + UPLOAD_IMAGE_BACKEND_URL_POSTFIX, bbConfig.getSdkKey());
         File file = bitmapToFile(image);
@@ -108,7 +111,7 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
         }
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
+
     private JSONObject uploadFiles(File[] files) throws IOException, JSONException {
         FormDataHttpsHelper multipart = new FormDataHttpsHelper(bbConfig.getApiUrl() + UPLOAD_FILES_MULTI_BACKEND_URL_POSTFIX, bbConfig.getSdkKey());
         for (File file : files) {
@@ -124,7 +127,6 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
         return new JSONObject(response);
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
     private JSONObject uploadImages(Bitmap[] images) throws IOException, JSONException {
         FormDataHttpsHelper multipart = new FormDataHttpsHelper(bbConfig.getApiUrl() + UPLOAD_IMAGE_MULTI_BACKEND_URL_POSTFIX, bbConfig.getSdkKey());
         for (Bitmap bitmap : images) {
@@ -143,7 +145,6 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
     }
 
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
     private Integer postFeedback(GleapBug gleapBug) throws JSONException, IOException {
         JSONObject config = GleapConfig.getInstance().getStripModel();
         JSONObject stripConfig = GleapConfig.getInstance().getCrashStripModel();
@@ -270,7 +271,6 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
         return baos.toByteArray();
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
     private JSONObject generateFrames() throws IOException, JSONException {
         JSONObject replay = new JSONObject();
         replay.put("interval", GleapBug.getInstance().getReplay().getInterval());
@@ -279,7 +279,6 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
         return replay;
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
     private JSONArray generateAttachments() {
         JSONArray result = new JSONArray();
         try {
@@ -290,7 +289,8 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
                 JSONObject entry = new JSONObject();
                 entry.put("url", fileUrls.get(i));
                 entry.put("name", currentFile.getName());
-                entry.put("type", Files.probeContentType(currentFile.toPath()));
+                InputStream is = new BufferedInputStream(new FileInputStream(currentFile));
+                entry.put("type", URLConnection.guessContentTypeFromStream(is));
                 result.put(entry);
             }
         }catch (Exception ex){}
@@ -298,7 +298,6 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
         return result;
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
     private JSONArray generateReplayImageUrls() throws IOException, JSONException {
         JSONArray result = new JSONArray();
         ScreenshotReplay[] replays = GleapBug.getInstance().getReplay().getScreenshots();
