@@ -52,44 +52,6 @@ public class Gleap implements iGleap {
             //init config and load from the server
             GleapConfig.getInstance().setSdkKey(sdkKey);
 
-            application.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
-                @Override
-                public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle savedInstanceState) {
-
-                }
-
-                @Override
-                public void onActivityStarted(@NonNull Activity activity) {
-                    //  GleapDetectorUtil.resumeAllDetectors();
-                }
-
-                @Override
-                public void onActivityResumed(@NonNull Activity activity) {
-
-
-                }
-
-                @Override
-                public void onActivityPaused(@NonNull Activity activity) {
-
-                }
-
-                @Override
-                public void onActivityStopped(@NonNull Activity activity) {
-                    //GleapDetectorUtil.stopAllDetectors();
-                }
-
-                @Override
-                public void onActivitySaveInstanceState(@NonNull Activity activity, @NonNull Bundle outState) {
-
-                }
-
-                @Override
-                public void onActivityDestroyed(@NonNull Activity activity) {
-
-                }
-            });
-
             //init Gleap bug
             GleapBug.getInstance().setPhoneMeta(new PhoneMeta(application.getApplicationContext()));
 
@@ -103,6 +65,12 @@ public class Gleap implements iGleap {
                 replaysDetector.initialize();
                 detectorList.add(replaysDetector);
             }
+
+            FABGesture fabGesture = new FABGesture(application);
+
+            detectorList.add(fabGesture);
+
+            fabGesture.attachFAB(null);
             GleapConfig.getInstance().setGestureDetectors(detectorList);
             GleapDetectorUtil.resumeAllDetectors();
 

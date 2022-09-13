@@ -30,12 +30,7 @@ public class MainApplication extends Application {
 
         Gleap.getInstance().setLanguage("AR_EG");
 
-        Gleap.getInstance().setInitializationDoneCallback(new InitializationDoneCallback() {
-            @Override
-            public void invoke() {
-                Gleap.getInstance().open();
-            }
-        });
+
 
        /*   GleapUserProperties userProperties = new GleapUserProperties("Test User", "niklas@gmail.com" );
         //userProperties.setHash();
