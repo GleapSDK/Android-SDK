@@ -80,7 +80,6 @@ class ScreenshotUtil {
                 }
             }
         } catch (Exception ex) {
-            System.out.println(ex);
             GleapDetectorUtil.resumeAllDetectors();
         }
     }
