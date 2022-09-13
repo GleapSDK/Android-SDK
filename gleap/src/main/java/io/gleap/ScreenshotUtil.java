@@ -48,10 +48,24 @@ class ScreenshotUtil {
                 throw new GleapSessionNotInitialisedException();
             }
 
-            try {
-                Bitmap bitmap = null;
-                if (GleapConfig.getInstance().getGetBitmapCallback() != null) {
-                    bitmap = GleapConfig.getInstance().getGetBitmapCallback().getBitmap();
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && view.isHardwareAccelerated()) {
+                    captureView(view, window, new PixelCopyTask.ImageTaken() {
+                        @Override
+                        public void invoke(Bitmap bitmap) {
+                            getImageCallback.getImage(getResizedBitmap(bitmap));
+                        }
+                    });
+                } else if(Build.VERSION.SDK_INT <= Build.VERSION_CODES.N){
+                    bitmap = Bitmap.createBitmap(view.getWidth(),
+                            view.getHeight(), Bitmap.Config.ARGB_8888);
+                    Canvas canvas = new Canvas(bitmap);
+                    view.draw(canvas);
+                    if (bitmap != null) {
+                        getImageCallback.getImage(getResizedBitmap(bitmap));
+                    }
+                } else {
+                    bitmap = generateBitmap(ActivityUtil.getCurrentActivity());
                     if (bitmap != null) {
                         getImageCallback.getImage(getResizedBitmap(bitmap));
                     }
@@ -76,7 +90,9 @@ class ScreenshotUtil {
             } catch (Exception ex) {
                 GleapDetectorUtil.resumeAllDetectors();
             }
-        } catch (Error ex) {
+        } catch (Exception ex) {
+            GleapDetectorUtil.resumeAllDetectors();
+
         }
     }
 
