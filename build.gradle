@@ -1,6 +1,5 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
-
 buildscript {
 
     repositories {
@@ -18,15 +17,8 @@ allprojects {
     repositories {
         google()
         mavenCentral()
-        maven {
-            url "https://jitpack.io"
-            credentials { username "jp_7rg0e64ocjh7pif4v5a1lfjkkd" }
-        }
     }
 }
-
-
-
 
 task clean(type: Delete) {
     delete rootProject.buildDir

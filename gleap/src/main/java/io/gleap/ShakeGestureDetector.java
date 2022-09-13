@@ -66,7 +66,6 @@ class ShakeGestureDetector extends GleapDetector implements SensorEventListener 
                     pause();
                 }
             } catch (Exception e) {
-                e.printStackTrace();
             }
         }
     }

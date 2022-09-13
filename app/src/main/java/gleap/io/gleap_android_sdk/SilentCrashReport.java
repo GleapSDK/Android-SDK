@@ -10,7 +10,7 @@ import android.widget.Toast;
 import org.json.JSONObject;
 
 import io.gleap.Gleap;
-import io.gleap.callbacks.FeedbackSentCallback;
+import io.gleap.FeedbackSentCallback;
 
 public class SilentCrashReport extends AppCompatActivity {
 
@@ -56,6 +56,7 @@ ex.printStackTrace();
                     Gleap.getInstance().sendSilentCrashReport("This is silent, Severity LOW, exclude ConsoleLog with callback", Gleap.SEVERITY.LOW, exclude, new FeedbackSentCallback() {
                         @Override
                         public void invoke(String message) {
+                            System.out.println("HEY");
                             Toast toast = Toast.makeText(getApplicationContext(), "CALLBACK CALLED", Toast.LENGTH_LONG);
                             toast.show();
                         }

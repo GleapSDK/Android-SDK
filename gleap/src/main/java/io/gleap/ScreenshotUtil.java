@@ -43,49 +43,41 @@ import org.json.JSONObject;
 
 class ScreenshotUtil {
     public static void takeScreenshot(GetImageCallback getImageCallback) throws GleapSessionNotInitialisedException, InterruptedException, ExecutionException {
-        if (!UserSessionController.getInstance().isSessionLoaded()) {
-            throw new GleapSessionNotInitialisedException();
-        }
         try {
+            if (!UserSessionController.getInstance().isSessionLoaded()) {
+                throw new GleapSessionNotInitialisedException();
+            }
             Bitmap bitmap = null;
-            if (GleapConfig.getInstance().getGetBitmapCallback() != null) {
-                bitmap = GleapConfig.getInstance().getGetBitmapCallback().getBitmap();
+            View view = ActivityUtil.getCurrentActivity().getWindow().getDecorView().getRootView();
+            Window window = ActivityUtil.getCurrentActivity().getWindow();
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && view.isHardwareAccelerated()) {
+                captureView(view, window, new PixelCopyTask.ImageTaken() {
+                    @Override
+                    public void invoke(Bitmap bitmap) {
+                        getImageCallback.getImage(getResizedBitmap(bitmap));
+                    }
+                });
+            } else if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N) {
+                bitmap = Bitmap.createBitmap(view.getWidth(),
+                        view.getHeight(), Bitmap.Config.ARGB_8888);
+                Canvas canvas = new Canvas(bitmap);
+                view.draw(canvas);
                 if (bitmap != null) {
                     getImageCallback.getImage(getResizedBitmap(bitmap));
                 }
             } else {
-                View view = ActivityUtil.getCurrentActivity().getWindow().getDecorView().getRootView();
-                Window window = ActivityUtil.getCurrentActivity().getWindow();
-
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && view.isHardwareAccelerated()) {
-                    captureView(view, window, new PixelCopyTask.ImageTaken() {
-                        @Override
-                        public void invoke(Bitmap bitmap) {
-                            getImageCallback.getImage(getResizedBitmap(bitmap));
-                        }
-                    });
-                } else if(Build.VERSION.SDK_INT <= Build.VERSION_CODES.N){
-                    bitmap = Bitmap.createBitmap(view.getWidth(),
-                            view.getHeight(), Bitmap.Config.ARGB_8888);
-                    Canvas canvas = new Canvas(bitmap);
-                    view.draw(canvas);
-                    if (bitmap != null) {
-                        getImageCallback.getImage(getResizedBitmap(bitmap));
-                    }
-                } else {
-                    bitmap = generateBitmap(ActivityUtil.getCurrentActivity());
-                    if (bitmap != null) {
-                        getImageCallback.getImage(getResizedBitmap(bitmap));
-                    }
+                bitmap = generateBitmap(ActivityUtil.getCurrentActivity());
+                if (bitmap != null) {
+                    getImageCallback.getImage(getResizedBitmap(bitmap));
                 }
             }
         } catch (Exception ex) {
-            System.out.println(ex);
             GleapDetectorUtil.resumeAllDetectors();
+
         }
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
     public static Bitmap takeScreenshot(float downScale) {
         Bitmap bitmap = null;
         if (GleapConfig.getInstance().getGetBitmapCallback() != null) {
@@ -153,39 +145,47 @@ class ScreenshotUtil {
     }
 
     private static Bitmap getResizedBitmap(Bitmap bm) {
-        int width = bm.getWidth();
-        int height = bm.getHeight();
-        Matrix matrix = new Matrix();
-        if (isPortrait(bm)) {
-            matrix.postScale(0.7f, 0.7f);
-        } else {
-            matrix.postScale(0.5f, 0.5f);
+        try {
+            int width = bm.getWidth();
+            int height = bm.getHeight();
+            Matrix matrix = new Matrix();
+            if (isPortrait(bm)) {
+                matrix.postScale(0.7f, 0.7f);
+            } else {
+                matrix.postScale(0.5f, 0.5f);
+            }
+            Bitmap bitmap = Bitmap.createBitmap(
+                    bm, 0, 0, width, height, matrix, false);
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            bitmap.compress(Bitmap.CompressFormat.PNG, 80, out);
+            Bitmap decoded = BitmapFactory.decodeStream(new ByteArrayInputStream(out.toByteArray()));
+            return decoded;
+        } catch (OutOfMemoryError error) {
         }
-        Bitmap bitmap = Bitmap.createBitmap(
-                bm, 0, 0, width, height, matrix, false);
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        bitmap.compress(Bitmap.CompressFormat.PNG, 80, out);
-        Bitmap decoded = BitmapFactory.decodeStream(new ByteArrayInputStream(out.toByteArray()));
-        return decoded;
+        return null;
     }
 
     public static Bitmap getResizedBitmap(Bitmap bm, float downScale) {
+        try {
+            int width = bm.getWidth();
+            int height = bm.getHeight();
+            Matrix matrix = new Matrix();
+            if (isPortrait(bm)) {
+                matrix.postScale(downScale, downScale);
+            } else {
+                matrix.postScale(downScale - 0.2f, downScale - 0.2f);
+            }
 
-        int width = bm.getWidth();
-        int height = bm.getHeight();
-        Matrix matrix = new Matrix();
-        if (isPortrait(bm)) {
-            matrix.postScale(downScale, downScale);
-        } else {
-            matrix.postScale(downScale - 0.2f, downScale - 0.2f);
+            Bitmap bitmap = Bitmap.createBitmap(
+                    bm, 0, 0, width, height, matrix, false);
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            bitmap.compress(Bitmap.CompressFormat.PNG, 90, out);
+            Bitmap decoded = BitmapFactory.decodeStream(new ByteArrayInputStream(out.toByteArray()));
+            return bm;
+        } catch (OutOfMemoryError error) {
         }
 
-        Bitmap bitmap = Bitmap.createBitmap(
-                bm, 0, 0, width, height, matrix, false);
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        bitmap.compress(Bitmap.CompressFormat.PNG, 90, out);
-        Bitmap decoded = BitmapFactory.decodeStream(new ByteArrayInputStream(out.toByteArray()));
-        return bm;
+        return null;
     }
 
     private static Field getFieldForName(String name, Object obj) throws NullPointerException {

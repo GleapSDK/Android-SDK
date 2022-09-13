@@ -12,14 +12,14 @@ import io.gleap.Gleap;
 import io.gleap.GleapUser;
 import io.gleap.GleapUserProperties;
 import io.gleap.PrefillHelper;
-import io.gleap.callbacks.ConfigLoadedCallback;
-import io.gleap.callbacks.CustomActionCallback;
-import io.gleap.callbacks.FeedbackFlowStartedCallback;
-import io.gleap.callbacks.FeedbackSendingFailedCallback;
-import io.gleap.callbacks.FeedbackSentCallback;
-import io.gleap.callbacks.InitializationDoneCallback;
-import io.gleap.callbacks.WidgetClosedCallback;
-import io.gleap.callbacks.WidgetOpenedCallback;
+import io.gleap.ConfigLoadedCallback;
+import io.gleap.CustomActionCallback;
+import io.gleap.FeedbackFlowStartedCallback;
+import io.gleap.FeedbackSendingFailedCallback;
+import io.gleap.FeedbackSentCallback;
+import io.gleap.InitializationDoneCallback;
+import io.gleap.WidgetClosedCallback;
+import io.gleap.WidgetOpenedCallback;
 
 public class MainApplication extends Application {
 
@@ -29,8 +29,6 @@ public class MainApplication extends Application {
         Gleap.initialize("KProDXhMS0V3UUku2iNnrZ4XsBnAYzxt", this);
 
         Gleap.getInstance().setLanguage("AR_EG");
-
-
 
        /*   GleapUserProperties userProperties = new GleapUserProperties("Test User", "niklas@gmail.com" );
         //userProperties.setHash();
@@ -59,12 +57,7 @@ public class MainApplication extends Application {
             }
         });
 
-        Gleap.getInstance().setFeedbackSentCallback(new FeedbackSentCallback() {
-            @Override
-            public void invoke(String message) {
-                Gleap.getInstance().logEvent(FeedbackSentCallback.class.getName());
-            }
-        });
+
 
         Gleap.getInstance().setFeedbackSendingFailedCallback(new FeedbackSendingFailedCallback() {
             @Override

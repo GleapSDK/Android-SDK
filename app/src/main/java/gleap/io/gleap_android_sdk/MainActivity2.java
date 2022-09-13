@@ -29,7 +29,6 @@ public class MainActivity2 extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                     Gleap.getInstance().open();
-
             }
         });
 

@@ -1,4 +1,4 @@
-package io.gleap.callbacks;
+package io.gleap;
 
 import org.json.JSONObject;
 

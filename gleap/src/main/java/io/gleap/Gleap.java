@@ -19,18 +19,6 @@ import java.util.List;
 
 import javax.net.ssl.HttpsURLConnection;
 
-import io.gleap.callbacks.ConfigLoadedCallback;
-import io.gleap.callbacks.CustomActionCallback;
-import io.gleap.callbacks.FeedbackFlowStartedCallback;
-import io.gleap.callbacks.FeedbackSendingFailedCallback;
-import io.gleap.callbacks.FeedbackSentCallback;
-import io.gleap.callbacks.FeedbackWillBeSentCallback;
-import io.gleap.callbacks.GetActivityCallback;
-import io.gleap.callbacks.GetBitmapCallback;
-import io.gleap.callbacks.InitializationDoneCallback;
-import io.gleap.callbacks.WidgetClosedCallback;
-import io.gleap.callbacks.WidgetOpenedCallback;
-
 public class Gleap implements iGleap {
     private static Gleap instance;
     private static ScreenshotTaker screenshotTaker;
@@ -39,6 +27,9 @@ public class Gleap implements iGleap {
 
     private Gleap() {
     }
+
+    static final Thread.UncaughtExceptionHandler oldHandler =
+            Thread.getDefaultUncaughtExceptionHandler();
 
     /**
      * Init Gleap with the given properties
@@ -66,16 +57,19 @@ public class Gleap implements iGleap {
                 detectorList.add(replaysDetector);
             }
 
+
             FABGesture fabGesture = new FABGesture(application);
 
             detectorList.add(fabGesture);
 
             fabGesture.attachFAB(null);
+
             GleapConfig.getInstance().setGestureDetectors(detectorList);
             GleapDetectorUtil.resumeAllDetectors();
 
             GleapEventService.getInstance().start();
-        } catch (Exception err) {
+
+        } catch (Exception ignore) {
         }
     }
 
@@ -376,6 +370,16 @@ public class Gleap implements iGleap {
         GleapConfig.getInstance().setInitializationDoneCallback(initializationDoneCallback);
     }
 
+    /**
+     * Network
+     */
+
+    /**
+     * Replace the current network logs.
+     */
+    public void attachNetworkLogs(Networklog[] networklogs){
+        GleapBug.getInstance().getNetworkBuffer().attachNetworkLogs(networklogs);
+    }
 
     /**
      * Log network traffic by logging it manually.
@@ -476,6 +480,8 @@ public class Gleap implements iGleap {
             if (config.isActivationMethodScreenshotGesture()) {
                 activationMethods.add(GleapActivationMethod.SCREENSHOT);
             }
+
+
             if (instance == null) {
                 instance = new Gleap();
             }
@@ -539,16 +545,32 @@ public class Gleap implements iGleap {
         }
     }
 
+    /**
+     * Prefills the widget form with data.
+     * @author Gleap
+     *
+     * @param data The data you want to prefill the form with.
+     */
     @Override
     public void preFillForm(JSONObject data) {
         PrefillHelper.getInstancen().setPrefillData(data);
     }
 
+    /**
+     * Disables the console logging. This must be called BEFORE initializing the SDK.
+     * @author Gleap
+     *
+     */
     @Override
     public boolean isOpened() {
         return GleapDetectorUtil.isIsRunning();
     }
 
+    /**
+     * Manually close the feedback.
+     * @author Gleap
+     *
+     */
     @Override
     public void close() {
         if (application != null && GleapConfig.getInstance().getCallCloseCallback() != null && isOpened()) {
@@ -556,16 +578,33 @@ public class Gleap implements iGleap {
         }
     }
 
+    /**
+     * Logs a message to the Gleap activity log
+     * @author Gleap
+     *
+     * @param msg The logged message
+     */
     @Override
     public void log(String msg) {
         LogReader.getInstance().log(msg, GleapLogLevel.INFO);
     }
 
+    /**
+     * Logs a message to the Gleap activity log
+     * @author Gleap
+     *
+     * @param msg The logged message
+     */
     @Override
     public void log(String msg, GleapLogLevel gleapLogLevel) {
         LogReader.getInstance().log(msg, gleapLogLevel);
     }
 
+    /**
+     * Disables the console logging. This must be called BEFORE initializing the SDK.
+     * @author Gleap
+     *
+     */
     @Override
     public void disableConsoleLog() {
         GleapConfig.getInstance().setEnableConsoleLogsFromCode(false);

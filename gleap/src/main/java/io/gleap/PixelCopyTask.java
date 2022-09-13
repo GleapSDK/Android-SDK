@@ -29,11 +29,9 @@ public class PixelCopyTask implements Callable<String> {
         this.timer = timer;
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public String call() {
-
-    return "";
+        return "";
     }
     protected interface ImageTaken {
         void invoke(Bitmap bitmap);

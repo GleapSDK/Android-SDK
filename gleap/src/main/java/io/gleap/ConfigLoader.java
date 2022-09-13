@@ -30,7 +30,6 @@ class ConfigLoader extends AsyncTask<GleapBug, Void, Integer> {
         try {
             listener.onTaskComplete(result);
         } catch (GleapAlreadyInitialisedException e) {
-            e.printStackTrace();
         }
     }
 
@@ -43,7 +42,6 @@ class ConfigLoader extends AsyncTask<GleapBug, Void, Integer> {
             con.connect();
             readResponse(con);
         } catch (IOException e) {
-            e.printStackTrace();
         }
         return 200;
     }
@@ -73,10 +71,7 @@ class ConfigLoader extends AsyncTask<GleapBug, Void, Integer> {
                 }
 
                 con.disconnect();
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (JSONException e) {
-                e.printStackTrace();
+            } catch (IOException | JSONException e) {
             }
 
         }
