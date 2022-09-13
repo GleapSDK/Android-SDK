@@ -5,6 +5,8 @@ import android.app.Application;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.GradientDrawable;
 import android.media.Image;
 import android.net.Uri;
 import android.os.Bundle;
@@ -117,6 +119,15 @@ public class FABGesture extends GleapDetector {
         View view = inflater.inflate(R.layout.activity_gleap_fab, null);
         ImageView imageButton = view.findViewById(R.id.gleap_imageButton);
 
+        imageButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (running) {
+                    Gleap.getInstance().open();
+                }
+            }
+        });
+
         Activity local = activity;
 
         Thread loadImage = new Thread(new Runnable() {
@@ -128,9 +139,22 @@ public class FABGesture extends GleapDetector {
                         @Override
                         public void run() {
                             try {
-                                imageButton.setBackgroundColor(Color.parseColor(GleapConfig.getInstance().getButtonColor()));
+                                GradientDrawable gdDefault = new GradientDrawable();
+
+                                gdDefault.setColor(Color.parseColor(GleapConfig.getInstance().getButtonColor()));
+                                gdDefault.setCornerRadius(1000);
+                                imageButton.setBackground(gdDefault);
+
+                                imageButton.setAdjustViewBounds(true);
+
+                                imageButton.setScaleType(ImageView.ScaleType.FIT_CENTER);
 
                                 imageButton.setImageBitmap(bm);
+                                view.setLayoutParams(new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+                                ViewGroup viewGroup = (ViewGroup) ((ViewGroup) local
+                                        .findViewById(android.R.id.content)).getChildAt(0);
+
+                                viewGroup.addView(view);
                             }catch (Exception ex){}
                         }
                     });
@@ -143,22 +167,9 @@ public class FABGesture extends GleapDetector {
 
         loadImage.start();
 
-       imageButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (running) {
-                    Gleap.getInstance().open();
-                }
-            }
-        });
 
 
-        view.setLayoutParams(new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
-        ViewGroup viewGroup = (ViewGroup) ((ViewGroup) activity
-                .findViewById(android.R.id.content)).getChildAt(0);
-
-        viewGroup.addView(view);
     }
 
     private Bitmap getImageBitmap(String url) {
@@ -170,6 +181,9 @@ public class FABGesture extends GleapDetector {
         } catch (IOException e) {
             System.out.println(e);
         }
-        return Bitmap.createScaledBitmap(bm, 130, 130, false);
+        if(bm != null) {
+            return bm;
+        }
+        return getImageBitmap("https://sdk.gleap.io/res/chatbubble.png");
     }
 }
