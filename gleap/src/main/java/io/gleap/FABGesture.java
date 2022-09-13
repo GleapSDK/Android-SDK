@@ -128,8 +128,9 @@ public class FABGesture extends GleapDetector {
                         @Override
                         public void run() {
                             try {
-                                imageButton.setImageBitmap(bm);
                                 imageButton.setBackgroundColor(Color.parseColor(GleapConfig.getInstance().getButtonColor()));
+
+                                imageButton.setImageBitmap(bm);
                             }catch (Exception ex){}
                         }
                     });
