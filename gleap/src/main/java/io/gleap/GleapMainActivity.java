@@ -66,6 +66,9 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
         setContentView(R.layout.activity_gleap_main);
         webView = findViewById(R.id.gleap_webview);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            webView.setWebContentsDebuggingEnabled(true);
+        }
         Handler handler = new Handler(Looper.getMainLooper());
         handler.postDelayed(new Runnable() {
             @Override
@@ -211,6 +214,8 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
             }
 
             mUploadMessage = filePathCallback;
+            sendSessionUpdate();
+
 
             Intent i = new Intent(Intent.ACTION_GET_CONTENT);
             i.addCategory(Intent.CATEGORY_OPENABLE);
@@ -235,6 +240,38 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         public boolean onJsPrompt(WebView view, String url, String message, String defaultValue,
                                   final JsPromptResult result) {
             return true;
+        }
+
+        private void sendSessionUpdate() {
+            try {
+                UserSession userSession = UserSessionController.getInstance().getUserSession();
+                GleapUser gleapUser = UserSessionController.getInstance().getGleapUserSession();
+                JSONObject sessionData = new JSONObject();
+                sessionData.put("gleapId", userSession.getId());
+                sessionData.put("gleapHash", userSession.getHash());
+
+                sessionData.put("userId", gleapUser.getUserId());
+                GleapUserProperties gleapUserProperties = gleapUser.getGleapUserProperties();
+                if (gleapUserProperties != null) {
+                    sessionData.put("name", gleapUserProperties.getName());
+                    sessionData.put("email", gleapUserProperties.getEmail());
+
+                    sessionData.put("value", gleapUserProperties.getValue());
+
+                    if (gleapUserProperties.getPhoneNumber() != null) {
+                        sessionData.put("phone", gleapUserProperties.getPhoneNumber());
+                    }
+                }
+
+                JSONObject data = new JSONObject();
+                data.put("sessionData", sessionData);
+                data.put("apiUrl", GleapConfig.getInstance().getApiUrl());
+                data.put("sdkKey", GleapConfig.getInstance().getSdkKey());
+
+                sendMessage(generateGleapMessage("session-update", data));
+            } catch (Exception exception) {
+
+            }
         }
     }
 
@@ -446,20 +483,21 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 JSONObject sessionData = new JSONObject();
                 sessionData.put("gleapId", userSession.getId());
                 sessionData.put("gleapHash", userSession.getHash());
+                if (gleapUser != null) {
+                    sessionData.put("userId", gleapUser.getUserId());
 
-                sessionData.put("userId", gleapUser.getUserId());
-                GleapUserProperties gleapUserProperties = gleapUser.getGleapUserProperties();
-                if (gleapUserProperties != null) {
-                    sessionData.put("name", gleapUserProperties.getName());
-                    sessionData.put("email", gleapUserProperties.getEmail());
+                    GleapUserProperties gleapUserProperties = gleapUser.getGleapUserProperties();
+                    if (gleapUserProperties != null) {
+                        sessionData.put("name", gleapUserProperties.getName());
+                        sessionData.put("email", gleapUserProperties.getEmail());
 
-                    sessionData.put("value", gleapUserProperties.getValue());
+                        sessionData.put("value", gleapUserProperties.getValue());
 
-                    if(gleapUserProperties.getPhoneNumber() != null) {
-                        sessionData.put("phone", gleapUserProperties.getPhoneNumber());
+                        if (gleapUserProperties.getPhoneNumber() != null) {
+                            sessionData.put("phone", gleapUserProperties.getPhoneNumber());
+                        }
                     }
                 }
-
                 JSONObject data = new JSONObject();
                 data.put("sessionData", sessionData);
                 data.put("apiUrl", GleapConfig.getInstance().getApiUrl());
@@ -467,7 +505,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
                 sendMessage(generateGleapMessage("session-update", data));
             } catch (Exception exception) {
-
             }
         }
 
