@@ -1,4 +1,4 @@
-package io.gleap.callbacks;
+package io.gleap;
 
 public interface WidgetOpenedCallback {
     void invoke();

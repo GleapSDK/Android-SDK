@@ -48,7 +48,11 @@
             android:text="Log Network (2 Requests logged)" />
 
 
-
+        <Button
+            android:id="@+id/network_clear"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Clear Network" />
 
         <Button
             android:id="@+id/network_send"

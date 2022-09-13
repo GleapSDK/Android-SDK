@@ -67,6 +67,13 @@
             android:text="identifyUser(id, User Properties, Hash) Null" />
 
         <Button
+            android:id="@+id/btn_identify_value"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="28dp"
+            android:text="identifyUser(id, User Properties, Hash) + value" />
+
+        <Button
             android:id="@+id/btn_clear"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

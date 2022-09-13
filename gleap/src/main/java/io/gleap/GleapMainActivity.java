@@ -25,6 +25,7 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -56,7 +57,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 getSupportActionBar().hide();
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
         }
         super.onCreate(savedInstanceState);
 
@@ -112,10 +112,10 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
     @Override
     public void onTaskComplete(int httpResponse) {
         if (httpResponse == 201) {
-
             try {
                 sendMessage(generateGleapMessage("feedback-sent", null));
                 GleapDetectorUtil.resumeAllDetectors();
+                GleapBug.getInstance().setScreenshot(null);
                 GleapBug.getInstance().setDisabled(false);
             } catch (Exception ex) {
             }
@@ -264,8 +264,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                                 handler.postDelayed(new Runnable() {
                                     @Override
                                     public void run() {
-
-
                                         webView.setVisibility(View.VISIBLE);
                                     }
                                 }, 500);
@@ -454,6 +452,12 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 if (gleapUserProperties != null) {
                     sessionData.put("name", gleapUserProperties.getName());
                     sessionData.put("email", gleapUserProperties.getEmail());
+
+                    sessionData.put("value", gleapUserProperties.getValue());
+
+                    if(gleapUserProperties.getPhoneNumber() != null) {
+                        sessionData.put("phone", gleapUserProperties.getPhoneNumber());
+                    }
                 }
 
                 JSONObject data = new JSONObject();

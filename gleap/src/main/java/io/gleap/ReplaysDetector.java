@@ -71,12 +71,9 @@ class ReplaysDetector extends GleapDetector {
                             });
                         }
                     }
-                } catch (GleapSessionNotInitialisedException gleapSessionNotInitialisedException) {
+                } catch (GleapSessionNotInitialisedException | ExecutionException gleapSessionNotInitialisedException) {
                     gleapSessionNotInitialisedException.printStackTrace();
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } catch (ExecutionException e) {
-                    e.printStackTrace();
                 }
             }
             handler.postDelayed(this, replay.getInterval());

@@ -53,9 +53,7 @@ class GleapEventService {
             public void run() {
                 if (UserSessionController.getInstance() != null && UserSessionController.getInstance().isSessionLoaded()) {
                     try {
-                        try {
-                            new InitialEventHttpHelper().execute();
-                        }catch (Exception ex){}
+                        new InitialEventHttpHelper().execute();
                     }catch (Exception ex){}
                 } else {
                     h.postDelayed(this, time);
@@ -104,7 +102,6 @@ class GleapEventService {
                         }
 
                     } catch (JSONException e) {
-                        e.printStackTrace();
                     }
 
                 }
@@ -142,6 +139,7 @@ class GleapEventService {
         }
 
         private int postEvent() throws IOException, JSONException {
+
             URL url = new URL(GleapConfig.getInstance().getApiUrl() + "/sessions/stream");
             HttpURLConnection conn;
             if (GleapConfig.getInstance().getApiUrl().contains("https")) {
@@ -154,26 +152,33 @@ class GleapEventService {
             conn.setRequestProperty("Accept", "application/json");
             conn.setRequestProperty("Content-Type", "application/json");
             conn.setRequestMethod("POST");
-            UserSession userSession = UserSessionController.getInstance().getUserSession();
-            if (userSession != null) {
-               // conn.setRequestProperty("gleap-id", userSession.getId());
-               // conn.setRequestProperty("gleap-hash", userSession.getHash());
-            }
+
             JSONArray jsonArray = new JSONArray();
             JSONObject event = new JSONObject();
             event.put("date", dateToString(new Date()));
             event.put("name", "sessionStarted");
             jsonArray.put(event);
+
+            UserSession userSession = UserSessionController.getInstance().getUserSession();
+            if (userSession != null) {
+                conn.setRequestProperty("gleap-id", userSession.getId());
+                conn.setRequestProperty("gleap-hash", userSession.getHash());
+            }
+
             JSONObject body = new JSONObject();
             body.put("events", jsonArray);
 
             try (OutputStream os = conn.getOutputStream()) {
                 byte[] input = body.toString().getBytes(StandardCharsets.UTF_8);
                 os.write(input, 0, input.length);
+                os.close();
+                os.flush();
             }
 
+            conn.getOutputStream().close();
+
             try (BufferedReader br = new BufferedReader(
-                    new InputStreamReader(conn.getInputStream(), "utf-8"))) {
+                    new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
                 JSONObject result = null;
                 String input;
                 while ((input = br.readLine()) != null) {
@@ -186,21 +191,17 @@ class GleapEventService {
 
                         try {
                             Gleap.getInstance().startFeedbackFlow(GleapConfig.getInstance().getAction().getActionType());
-                        } catch (GleapNotInitialisedException e) {
-                            e.printStackTrace();
-                        }
+                        } catch (GleapNotInitialisedException e) {}
                     }
                 }
-
-                conn.getInputStream().close();
-                conn.getOutputStream().close();
-                conn.disconnect();
             } catch (JSONException e) {
                 e.printStackTrace();
             }
 
-
-            return conn.getResponseCode();
+            conn.getInputStream().close();
+            int status = conn.getResponseCode();
+            conn.disconnect();
+            return status;
         }
     }
 
@@ -220,6 +221,7 @@ class GleapEventService {
         }
 
         private int postEvent() throws IOException, JSONException {
+
             URL url = new URL(GleapConfig.getInstance().getApiUrl() + "/sessions/stream");
             HttpURLConnection conn;
             if (GleapConfig.getInstance().getApiUrl().contains("https")) {
@@ -227,6 +229,7 @@ class GleapEventService {
             } else {
                 conn = (HttpURLConnection) url.openConnection();
             }
+
             conn.setRequestProperty("api-token", GleapConfig.getInstance().getSdkKey());
             conn.setDoOutput(true);
             conn.setRequestProperty("Accept", "application/json");
@@ -245,7 +248,10 @@ class GleapEventService {
             try (OutputStream os = conn.getOutputStream()) {
                 byte[] input = body.toString().getBytes(StandardCharsets.UTF_8);
                 os.write(input, 0, input.length);
+                os.close();
+                os.flush();
             }
+            conn.getOutputStream().close();
 
             try (BufferedReader br = new BufferedReader(
                     new InputStreamReader(conn.getInputStream(), "utf-8"))) {
@@ -267,10 +273,13 @@ class GleapEventService {
                 }
             } catch (Exception e) {
             }
-            conn.getOutputStream().close();
+
+            conn.getInputStream().close();
             int status = conn.getResponseCode();
             conn.disconnect();
             return status;
+
+
         }
 
         private JSONArray arrayToJSONArray(ArrayList<JSONObject> arrayList) {

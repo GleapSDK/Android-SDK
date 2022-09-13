@@ -57,6 +57,17 @@ public class IdentifyUser extends AppCompatActivity {
             }
         });
 
+        findViewById(R.id.btn_identify_value).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                GleapUserProperties gleapUserProperties = new GleapUserProperties("13", "VALUE boy", "test@email.com");
+                gleapUserProperties.setValue(20);
+                gleapUserProperties.setPhoneNumber("+436502425552");
+                Gleap.getInstance().identifyUser("13", gleapUserProperties);
+            }
+        });
+
+
         findViewById(R.id.btn_clear).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
