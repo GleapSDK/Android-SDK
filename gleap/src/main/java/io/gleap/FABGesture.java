@@ -118,15 +118,19 @@ public class FABGesture extends GleapDetector {
         ImageView imageButton = view.findViewById(R.id.gleap_imageButton);
 
         Activity local = activity;
+
         Thread loadImage = new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
-                    Bitmap bm = getImageBitmap("https://sdk.gleap.io/res/chatbubble.png");
+                    Bitmap bm = getImageBitmap(GleapConfig.getInstance().getButtonLogo());
                     local.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            imageButton.setImageBitmap(bm);
+                            try {
+                                imageButton.setImageBitmap(bm);
+                                imageButton.setBackgroundColor(Color.parseColor(GleapConfig.getInstance().getButtonColor()));
+                            }catch (Exception ex){}
                         }
                     });
 

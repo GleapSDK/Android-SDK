@@ -57,6 +57,9 @@ class GleapConfig {
     private int interval = 5;
 
     //user config
+    private String buttonLogo = "https://sdk.gleap.io/res/chatbubble.png";
+    private String buttonColor = "#485bff";
+
     private boolean enableConsoleLogs = true;
     private boolean enableConsoleLogsFromCode = true;
     private boolean enableReplays = false;
@@ -115,6 +118,15 @@ class GleapConfig {
             if(flowConfigs.has("enableConsoleLogs")) {
                 this.enableConsoleLogs = flowConfigs.getBoolean("enableConsoleLogs");
             }
+
+            if(flowConfigs.has("buttonLogo")) {
+                this.buttonLogo = flowConfigs.getString("buttonLogo");
+            }
+
+            if(flowConfigs.has("buttonColor")) {
+                this.buttonColor = flowConfigs.getString("buttonColor");
+            }
+
             if(flowConfigs.has("enableReplays")) {
                 this.enableReplays = flowConfigs.getBoolean("enableReplays");
             }
@@ -398,5 +410,13 @@ class GleapConfig {
 
     public void setEnableConsoleLogsFromCode(boolean enableConsoleLogsFromCode) {
         this.enableConsoleLogsFromCode = enableConsoleLogsFromCode;
+    }
+
+    public String getButtonLogo() {
+        return buttonLogo;
+    }
+
+    public String getButtonColor() {
+        return buttonColor;
     }
 }
