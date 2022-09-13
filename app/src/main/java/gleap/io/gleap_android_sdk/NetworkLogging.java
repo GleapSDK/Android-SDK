@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.view.View;
 
 import io.gleap.Gleap;
+import io.gleap.Networklog;
 
 public class NetworkLogging extends AppCompatActivity {
 
@@ -27,6 +28,28 @@ public class NetworkLogging extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 new HttpCall().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                new HttpCall().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                new HttpCall().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                new HttpCall().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                new HttpCall().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                new HttpCall().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                new HttpCall().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                new HttpCall().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                new HttpCall().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                new HttpCall().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                new HttpCall().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                new HttpCall().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                new HttpCall().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                new HttpCall().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                new HttpCall().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+            }
+        });
+
+
+        findViewById(R.id.network_clear).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Gleap.getInstance().attachNetworkLogs(new Networklog[10]);
             }
         });
 

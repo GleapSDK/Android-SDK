@@ -9,10 +9,11 @@ import org.json.JSONObject;
 import java.util.Iterator;
 import java.util.concurrent.ExecutionException;
 
-import io.gleap.callbacks.FeedbackSentCallback;
+import io.gleap.FeedbackSentCallback;
 
 class SilentBugReportUtil {
     public static void createSilentBugReport(Context context, String description, Gleap.SEVERITY severity, String type, JSONObject excludeData) {
+
         if (excludeData == null || excludeData.length() == 0) {
             excludeData = new JSONObject();
             try {
@@ -31,7 +32,6 @@ class SilentBugReportUtil {
                     try {
                         obj.put("description", description);
                     } catch (JSONException e) {
-                        e.printStackTrace();
                     }
                     model.setType(type);
                     model.setData(obj);
@@ -50,7 +50,6 @@ class SilentBugReportUtil {
                         try {
                             new HttpHelper(new SilentBugReportHTTPListener(), context).execute(model);
                         } catch (Exception e) {
-                            e.printStackTrace();
                         }
                     }
                 }
@@ -58,10 +57,7 @@ class SilentBugReportUtil {
 
         } catch (GleapSessionNotInitialisedException gleapSessionNotInitialisedException) {
             System.err.println("Gleap: Gleap Session not initialized.");
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
+        } catch (InterruptedException | ExecutionException e) {
         }
     }
 
@@ -70,12 +66,11 @@ class SilentBugReportUtil {
     }
 
     public static void createSilentBugReport(Context context, String description, Gleap.SEVERITY severity, JSONObject excludeData, FeedbackSentCallback feedbackSentCallback) {
+
         if (!GleapDetectorUtil.isIsRunning() && UserSessionController.getInstance() != null &&
                 UserSessionController.getInstance().isSessionLoaded() && Gleap.getInstance() != null) {
-            if (feedbackSentCallback != null) {
-                GleapConfig.getInstance().setCrashFeedbackSentCallback(feedbackSentCallback);
-            }
 
+            GleapConfig.getInstance().setCrashFeedbackSentCallback(feedbackSentCallback);
             createSilentBugReport(context, description, severity, "CRASH", excludeData);
         }
     }

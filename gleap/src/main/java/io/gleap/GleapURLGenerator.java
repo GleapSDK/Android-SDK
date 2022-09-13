@@ -12,7 +12,6 @@ class GleapURLGenerator {
                 postfixUrl += "?lang=" + URLEncoder.encode(config.getLanguage(), "utf-8");
             }
 
-
             UserSessionController userSessionController = UserSessionController.getInstance();
             if(userSessionController != null) {
                 UserSession userSession = userSessionController.getUserSession();
@@ -28,9 +27,7 @@ class GleapURLGenerator {
                 GleapConfig.getInstance().setFeedbackFlow("");
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
         }
-
 
         return postfixUrl;
     }

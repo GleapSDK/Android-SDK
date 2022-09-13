@@ -6,7 +6,7 @@ import org.json.JSONObject;
 
 import java.util.Date;
 
-class Networklog {
+public class Networklog {
     private final String url;
     private final RequestType requestType;
     private final JSONObject request;
@@ -35,7 +35,7 @@ class Networklog {
     public JSONObject toJSON() {
         JSONObject object = new JSONObject();
         try {
-            if(!checkUrl(url)) {
+            if (!checkUrl(url)) {
                 return null;
             }
             object.put("date", DateUtil.dateToString(date));
@@ -47,22 +47,22 @@ class Networklog {
             }
             object.put("success", true);
             if (request != null) {
-                if(request.has("headers") && request.has("payload")) {
-                    if(isJSONValid(request.getString("headers"))) {
+                if (request.has("headers") && request.has("payload")) {
+                    if (isJSONValid(request.getString("headers"))) {
                         String objString = request.getString("headers");
                         JSONObject obj = new JSONObject(objString);
                         stripObject(obj);
                         request.put("headers", obj);
                     }
-                    if(isJSONValid(request.getString("payload"))) {
-                        String reStr = request.getString("payload");
-                        JSONObject re = new JSONObject(reStr);
-                        stripObject(re);
-                        request.put("payload", re);
+
+                    String reStr = request.getString("payload");
+                    if (reStr.length() > 1000) {
+                        reStr = "<payload_too_large>";
                     }
+                    request.put("payload", reStr);
 
                     object.put("request", request);
-                }else {
+                } else {
                     stripObject(request);
                     object.put("request", request);
                 }
@@ -71,31 +71,30 @@ class Networklog {
                 object.put("response", response);
             }
         } catch (Exception err) {
-    err.printStackTrace();
         }
         return object;
     }
 
-    private void stripObject(JSONObject object){
+    private void stripObject(JSONObject object) {
         JSONArray stripWords = GleapConfig.getInstance().getNetworkLogPropsToIgnore();
         for (int i = 0; i < stripWords.length(); i++) {
             try {
                 String key = stripWords.getString(i);
                 object.remove(key);
             } catch (JSONException e) {
-                e.printStackTrace();
             }
         }
     }
 
     private boolean checkUrl(String url) {
         JSONArray jsonArray = GleapConfig.getInstance().getBlackList();
-        for(int i = 0; i < jsonArray.length(); i++) {
+        for (int i = 0; i < jsonArray.length(); i++) {
             try {
                 if (url.contains(jsonArray.getString(i))) {
                     return false;
                 }
-            }catch (Exception ex){}
+            } catch (Exception ex) {
+            }
         }
         return true;
     }
@@ -104,8 +103,6 @@ class Networklog {
         try {
             new JSONObject(test);
         } catch (JSONException ex) {
-            // edited, to include @Arthur's comment
-            // e.g. in case JSONArray is valid as well...
             try {
                 new JSONArray(test);
             } catch (JSONException ex1) {

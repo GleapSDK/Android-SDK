@@ -37,4 +37,5 @@ class ScreenshotReplay {
     public String getScreenName() {
         return screenName;
     }
+
 }

@@ -25,7 +25,6 @@ class JsonUtil {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
         }
         return result;
     }
