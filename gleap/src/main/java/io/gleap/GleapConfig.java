@@ -29,7 +29,7 @@ class GleapConfig {
 
     //bb config
     private String apiUrl = "https://api.gleap.io";
-    private String iFrameUrl = "https://frame.gleap.io/app.html";
+    private String iFrameUrl = "https://messenger.gleap.io/app.html";
     private String sdkKey = "";
     private String feedbackFlow ="";
 
@@ -57,6 +57,9 @@ class GleapConfig {
     private int interval = 5;
 
     //user config
+    private String buttonLogo = "https://sdk.gleap.io/res/chatbubble.png";
+    private String buttonColor = "#485bff";
+
     private boolean enableConsoleLogs = true;
     private boolean enableConsoleLogsFromCode = true;
     private boolean enableReplays = false;
@@ -115,21 +118,35 @@ class GleapConfig {
             if(flowConfigs.has("enableConsoleLogs")) {
                 this.enableConsoleLogs = flowConfigs.getBoolean("enableConsoleLogs");
             }
+
+            if(flowConfigs.has("buttonLogo") && !flowConfigs.getString("buttonLogo").equals("")) {
+                this.buttonLogo = flowConfigs.getString("buttonLogo");
+            }
+
+            if(flowConfigs.has("buttonColor")) {
+                this.buttonColor = flowConfigs.getString("buttonColor");
+            }
+
             if(flowConfigs.has("enableReplays")) {
                 this.enableReplays = flowConfigs.getBoolean("enableReplays");
             }
+
             if(flowConfigs.has("activationMethodShake")) {
                 this.activationMethodShake = flowConfigs.getBoolean("activationMethodShake");
             }
+
             if(flowConfigs.has("activationMethodScreenshotGesture")) {
                 this.activationMethodScreenshotGesture = flowConfigs.getBoolean("activationMethodScreenshotGesture");
             }
+
             if(flowConfigs.has("replaysInterval")){
                 this.interval = flowConfigs.getInt("replaysInterval");
             }
+
             if (flowConfigs.has("networkLogPropsToIgnore")) {
                 this.networkLogPropsToIgnore  = flowConfigs.getJSONArray("networkLogPropsToIgnore");
             }
+
             if(flowConfigs.has("replaysInterval")) {
                 this.interval = flowConfigs.getInt("replaysInterval");
                 GleapBug.getInstance().setReplay(new Replay(60 / this.interval, 1000 * this.interval));
@@ -400,5 +417,13 @@ class GleapConfig {
 
     public void setEnableConsoleLogsFromCode(boolean enableConsoleLogsFromCode) {
         this.enableConsoleLogsFromCode = enableConsoleLogsFromCode;
+    }
+
+    public String getButtonLogo() {
+        return buttonLogo;
+    }
+
+    public String getButtonColor() {
+        return buttonColor;
     }
 }

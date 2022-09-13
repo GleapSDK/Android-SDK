@@ -26,10 +26,9 @@ public class MainApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        Gleap.initialize("DUPaIr7s689BBblcFI4pc5aBgYJTm7Sc", this);
+        Gleap.initialize("KProDXhMS0V3UUku2iNnrZ4XsBnAYzxt", this);
 
         Gleap.getInstance().setLanguage("AR_EG");
-
 
        /*   GleapUserProperties userProperties = new GleapUserProperties("Test User", "niklas@gmail.com" );
         //userProperties.setHash();

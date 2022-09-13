@@ -57,6 +57,13 @@ public class Gleap implements iGleap {
                 detectorList.add(replaysDetector);
             }
 
+
+            FABGesture fabGesture = new FABGesture(application);
+
+            detectorList.add(fabGesture);
+
+            fabGesture.attachFAB(null);
+
             GleapConfig.getInstance().setGestureDetectors(detectorList);
             GleapDetectorUtil.resumeAllDetectors();
 
