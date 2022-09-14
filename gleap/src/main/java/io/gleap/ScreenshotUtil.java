@@ -48,28 +48,33 @@ class ScreenshotUtil {
                 throw new GleapSessionNotInitialisedException();
             }
             Bitmap bitmap = null;
-            View view = ActivityUtil.getCurrentActivity().getWindow().getDecorView().getRootView();
-            Window window = ActivityUtil.getCurrentActivity().getWindow();
+            if (GleapConfig.getInstance().getGetBitmapCallback() != null) {
+                bitmap = GleapConfig.getInstance().getGetBitmapCallback().getBitmap();
+                getImageCallback.getImage(getResizedBitmap(bitmap));
+            } else {
+                View view = ActivityUtil.getCurrentActivity().getWindow().getDecorView().getRootView();
+                Window window = ActivityUtil.getCurrentActivity().getWindow();
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && view.isHardwareAccelerated()) {
-                captureView(view, window, new PixelCopyTask.ImageTaken() {
-                    @Override
-                    public void invoke(Bitmap bitmap) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && view.isHardwareAccelerated()) {
+                    captureView(view, window, new PixelCopyTask.ImageTaken() {
+                        @Override
+                        public void invoke(Bitmap bitmap) {
+                            getImageCallback.getImage(getResizedBitmap(bitmap));
+                        }
+                    });
+                } else if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N) {
+                    bitmap = Bitmap.createBitmap(view.getWidth(),
+                            view.getHeight(), Bitmap.Config.ARGB_8888);
+                    Canvas canvas = new Canvas(bitmap);
+                    view.draw(canvas);
+                    if (bitmap != null) {
                         getImageCallback.getImage(getResizedBitmap(bitmap));
                     }
-                });
-            } else if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N) {
-                bitmap = Bitmap.createBitmap(view.getWidth(),
-                        view.getHeight(), Bitmap.Config.ARGB_8888);
-                Canvas canvas = new Canvas(bitmap);
-                view.draw(canvas);
-                if (bitmap != null) {
-                    getImageCallback.getImage(getResizedBitmap(bitmap));
-                }
-            } else {
-                bitmap = generateBitmap(ActivityUtil.getCurrentActivity());
-                if (bitmap != null) {
-                    getImageCallback.getImage(getResizedBitmap(bitmap));
+                } else {
+                    bitmap = generateBitmap(ActivityUtil.getCurrentActivity());
+                    if (bitmap != null) {
+                        getImageCallback.getImage(getResizedBitmap(bitmap));
+                    }
                 }
             }
         } catch (Exception ex) {
