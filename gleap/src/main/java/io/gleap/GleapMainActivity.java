@@ -51,41 +51,47 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        this.requestWindowFeature(Window.FEATURE_NO_TITLE);
         try {
-            if (getSupportActionBar() != null) {
-                getSupportActionBar().hide();
-            }
-        } catch (Exception ex) {
-        }
-        super.onCreate(savedInstanceState);
-
-        GleapBug.getInstance().setLanguage(Locale.getDefault().getLanguage());
-
-        url += GleapURLGenerator.generateURL();
-
-        setContentView(R.layout.activity_gleap_main);
-        webView = findViewById(R.id.gleap_webview);
-        Handler handler = new Handler(Looper.getMainLooper());
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                if (webView.getVisibility() == View.INVISIBLE) {
-                    finish();
+            this.requestWindowFeature(Window.FEATURE_NO_TITLE);
+            try {
+                if (getSupportActionBar() != null) {
+                    getSupportActionBar().hide();
                 }
+            } catch (Exception ex) {
             }
-        }, 15000);
+            super.onCreate(savedInstanceState);
 
-        GleapConfig.getInstance().setCallCloseCallback(new CallCloseCallback() {
-            @Override
-            public void invoke() {
-                GleapDetectorUtil.resumeAllDetectors();
-                GleapBug.getInstance().setDisabled(false);
-                GleapMainActivity.this.finish();
+            GleapBug.getInstance().setLanguage(Locale.getDefault().getLanguage());
+
+            url += GleapURLGenerator.generateURL();
+
+            setContentView(R.layout.activity_gleap_main);
+            if (getPackageManager().hasSystemFeature("android.software.webview")) {
+                webView = findViewById(R.id.gleap_webview);
+
+
+                Handler handler = new Handler(Looper.getMainLooper());
+                handler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (webView.getVisibility() == View.INVISIBLE) {
+                            finish();
+                        }
+                    }
+                }, 15000);
+
+                GleapConfig.getInstance().setCallCloseCallback(new CallCloseCallback() {
+                    @Override
+                    public void invoke() {
+                        GleapDetectorUtil.resumeAllDetectors();
+                        GleapBug.getInstance().setDisabled(false);
+                        GleapMainActivity.this.finish();
+                    }
+                });
+
+                initBrowser();
             }
-        });
-
-        initBrowser();
+        }catch (Exception ex) {}
     }
 
 
@@ -205,19 +211,21 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
         @Override
         public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
-
+        try {
             if (mUploadMessage != null) {
                 mUploadMessage.onReceiveValue(null);
             }
 
             mUploadMessage = filePathCallback;
+            sendSessionUpdate();
+
 
             Intent i = new Intent(Intent.ACTION_GET_CONTENT);
             i.addCategory(Intent.CATEGORY_OPENABLE);
             i.setType("*/*"); // set MIME type to filter
 
             ActivityUtil.getCurrentActivity().startActivityForResult(Intent.createChooser(i, "File Chooser"), 1);
-
+        }catch (Exception ex) {}
             return true;
         }
 
@@ -235,6 +243,38 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         public boolean onJsPrompt(WebView view, String url, String message, String defaultValue,
                                   final JsPromptResult result) {
             return true;
+        }
+
+        private void sendSessionUpdate() {
+            try {
+                UserSession userSession = UserSessionController.getInstance().getUserSession();
+                GleapUser gleapUser = UserSessionController.getInstance().getGleapUserSession();
+                JSONObject sessionData = new JSONObject();
+                sessionData.put("gleapId", userSession.getId());
+                sessionData.put("gleapHash", userSession.getHash());
+
+                sessionData.put("userId", gleapUser.getUserId());
+                GleapUserProperties gleapUserProperties = gleapUser.getGleapUserProperties();
+                if (gleapUserProperties != null) {
+                    sessionData.put("name", gleapUserProperties.getName());
+                    sessionData.put("email", gleapUserProperties.getEmail());
+
+                    sessionData.put("value", gleapUserProperties.getValue());
+
+                    if (gleapUserProperties.getPhoneNumber() != null) {
+                        sessionData.put("phone", gleapUserProperties.getPhoneNumber());
+                    }
+                }
+
+                JSONObject data = new JSONObject();
+                data.put("sessionData", sessionData);
+                data.put("apiUrl", GleapConfig.getInstance().getApiUrl());
+                data.put("sdkKey", GleapConfig.getInstance().getSdkKey());
+
+                sendMessage(generateGleapMessage("session-update", data));
+            } catch (Exception exception) {
+
+            }
         }
     }
 
@@ -359,14 +399,15 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 String base64String = null;
                 try {
                     base64String = object.getString("data");
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
+
                 if (base64String != null) {
                     String base64Image = base64String.split(",")[1];
                     byte[] decodedString = Base64.decode(base64Image, Base64.DEFAULT);
                     Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
                     GleapBug.getInstance().setScreenshot(decodedByte);
+                }
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
             }
         }
@@ -446,20 +487,21 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 JSONObject sessionData = new JSONObject();
                 sessionData.put("gleapId", userSession.getId());
                 sessionData.put("gleapHash", userSession.getHash());
+                if (gleapUser != null) {
+                    sessionData.put("userId", gleapUser.getUserId());
 
-                sessionData.put("userId", gleapUser.getUserId());
-                GleapUserProperties gleapUserProperties = gleapUser.getGleapUserProperties();
-                if (gleapUserProperties != null) {
-                    sessionData.put("name", gleapUserProperties.getName());
-                    sessionData.put("email", gleapUserProperties.getEmail());
+                    GleapUserProperties gleapUserProperties = gleapUser.getGleapUserProperties();
+                    if (gleapUserProperties != null) {
+                        sessionData.put("name", gleapUserProperties.getName());
+                        sessionData.put("email", gleapUserProperties.getEmail());
 
-                    sessionData.put("value", gleapUserProperties.getValue());
+                        sessionData.put("value", gleapUserProperties.getValue());
 
-                    if(gleapUserProperties.getPhoneNumber() != null) {
-                        sessionData.put("phone", gleapUserProperties.getPhoneNumber());
+                        if (gleapUserProperties.getPhoneNumber() != null) {
+                            sessionData.put("phone", gleapUserProperties.getPhoneNumber());
+                        }
                     }
                 }
-
                 JSONObject data = new JSONObject();
                 data.put("sessionData", sessionData);
                 data.put("apiUrl", GleapConfig.getInstance().getApiUrl());
@@ -467,7 +509,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
                 sendMessage(generateGleapMessage("session-update", data));
             } catch (Exception exception) {
-
             }
         }
 
