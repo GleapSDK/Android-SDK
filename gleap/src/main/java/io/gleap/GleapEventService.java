@@ -186,12 +186,19 @@ class GleapEventService {
                 }
 
                 if (result != null) {
-                    if (result.has("actionType") && result.has("outbound")) {
-                        GleapConfig.getInstance().setAction(new GleapAction(result.getString("actionType"), result.getString("outbound")));
+                    if (result.has("actionType")) {
+                        if (result.has("outbound")) {
+                            GleapConfig.getInstance().setAction(new GleapAction(result.getString("actionType"), result.getString("outbound")));
 
-                        try {
-                            Gleap.getInstance().startFeedbackFlow(GleapConfig.getInstance().getAction().getActionType());
-                        } catch (GleapNotInitialisedException e) {}
+                            try {
+                                Gleap.getInstance().startFeedbackFlow(GleapConfig.getInstance().getAction().getActionType());
+                            } catch (GleapNotInitialisedException e) {
+                            }
+                        }
+
+                        if(result.has("notification")) {
+                            System.out.println(result.getString("notification"));
+                        }
                     }
                 }
             } catch (JSONException e) {

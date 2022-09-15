@@ -22,9 +22,6 @@ public class Gleap implements iGleap {
     private Gleap() {
     }
 
-    static final Thread.UncaughtExceptionHandler oldHandler =
-            Thread.getDefaultUncaughtExceptionHandler();
-
     /**
      * Init Gleap with the given properties
      */
@@ -62,6 +59,7 @@ public class Gleap implements iGleap {
             GleapDetectorUtil.resumeAllDetectors();
 
             GleapEventService.getInstance().start();
+            GleapPingService.getInstance().start();
 
         } catch (Exception ignore) {
         }
@@ -169,12 +167,12 @@ public class Gleap implements iGleap {
     }
 
     @Override
-    public void sendSilentCrashReport(String description, SEVERITY severity, JSONObject excludeData, FeedbackSentCallback feedbackSentCallback) {
+    public void sendSilentCrashReport(String description, SEVERITY severity, JSONObject excludeData, io.gleap.FeedbackSentCallback feedbackSentCallback) {
         SilentBugReportUtil.createSilentBugReport(application, description, severity, excludeData, feedbackSentCallback);
     }
 
     @Override
-    public void sendSilentCrashReport(String description, SEVERITY severity, FeedbackSentCallback feedbackSentCallback) {
+    public void sendSilentCrashReport(String description, SEVERITY severity, io.gleap.FeedbackSentCallback feedbackSentCallback) {
         SilentBugReportUtil.createSilentBugReport(application, description, severity, null, feedbackSentCallback);
     }
 
@@ -256,12 +254,12 @@ public class Gleap implements iGleap {
     }
 
     @Override
-    public void setWidgetOpenedCallback(WidgetOpenedCallback widgetOpenedCallback) {
+    public void setWidgetOpenedCallback(io.gleap.WidgetOpenedCallback widgetOpenedCallback) {
         GleapConfig.getInstance().setWidgetOpenedCallback(widgetOpenedCallback);
     }
 
     @Override
-    public void setWidgetClosedCallback(WidgetClosedCallback widgetClosedCallback) {
+    public void setWidgetClosedCallback(io.gleap.WidgetClosedCallback widgetClosedCallback) {
         GleapConfig.getInstance().setWidgetClosedCallback(widgetClosedCallback);
     }
 
@@ -313,7 +311,7 @@ public class Gleap implements iGleap {
      * @param feedbackWillBeSentCallback is called when BB is opened
      */
     @Override
-    public void setFeedbackWillBeSentCallback(FeedbackWillBeSentCallback feedbackWillBeSentCallback) {
+    public void setFeedbackWillBeSentCallback(io.gleap.FeedbackWillBeSentCallback feedbackWillBeSentCallback) {
         GleapConfig.getInstance().setFeedbackWillBeSentCallback(feedbackWillBeSentCallback);
     }
 
@@ -323,12 +321,12 @@ public class Gleap implements iGleap {
      * @param feedbackSentCallback this callback is called when the flow is called
      */
     @Override
-    public void setFeedbackSentCallback(FeedbackSentCallback feedbackSentCallback) {
+    public void setFeedbackSentCallback(io.gleap.FeedbackSentCallback feedbackSentCallback) {
         GleapConfig.getInstance().setFeedbackSentCallback(feedbackSentCallback);
     }
 
     @Override
-    public void setFeedbackSendingFailedCallback(FeedbackSendingFailedCallback feedbackSendingFailedCallback) {
+    public void setFeedbackSendingFailedCallback(io.gleap.FeedbackSendingFailedCallback feedbackSendingFailedCallback) {
         GleapConfig.getInstance().setFeedbackSendingFailedCallback(feedbackSendingFailedCallback);
     }
 
@@ -340,7 +338,7 @@ public class Gleap implements iGleap {
      * @param getBitmapCallback get the Bitmap
      */
     @Override
-    public void setBitmapCallback(GetBitmapCallback getBitmapCallback) {
+    public void setBitmapCallback(io.gleap.GetBitmapCallback getBitmapCallback) {
         GleapConfig.getInstance().setGetBitmapCallback(getBitmapCallback);
     }
 
@@ -350,17 +348,17 @@ public class Gleap implements iGleap {
      * @param configLoadedCallback callback which is called
      */
     @Override
-    public void setConfigLoadedCallback(ConfigLoadedCallback configLoadedCallback) {
+    public void setConfigLoadedCallback(io.gleap.ConfigLoadedCallback configLoadedCallback) {
         GleapConfig.getInstance().setConfigLoadedCallback(configLoadedCallback);
     }
 
     @Override
-    public void setFeedbackFlowStartedCallback(FeedbackFlowStartedCallback feedbackFlowStartedCallback) {
+    public void setFeedbackFlowStartedCallback(io.gleap.FeedbackFlowStartedCallback feedbackFlowStartedCallback) {
         GleapConfig.getInstance().setFeedbackFlowStartedCallback(feedbackFlowStartedCallback);
     }
 
     @Override
-    public void setInitializationDoneCallback(InitializationDoneCallback initializationDoneCallback) {
+    public void setInitializationDoneCallback(io.gleap.InitializationDoneCallback initializationDoneCallback) {
         GleapConfig.getInstance().setInitializationDoneCallback(initializationDoneCallback);
     }
 
@@ -421,7 +419,7 @@ public class Gleap implements iGleap {
      * @param customAction what is executed when the custom step is pressed
      */
     @Override
-    public void registerCustomAction(CustomActionCallback customAction) {
+    public void registerCustomAction(io.gleap.CustomActionCallback customAction) {
         GleapConfig.getInstance().registerCustomAction(customAction);
     }
 
@@ -617,7 +615,7 @@ public class Gleap implements iGleap {
      *
      * @param getActivityCallback get the current activity
      */
-    public void setGetActivityCallback(GetActivityCallback getActivityCallback) {
+    public void setGetActivityCallback(io.gleap.GetActivityCallback getActivityCallback) {
         GleapConfig.getInstance().setGetActivityCallback(getActivityCallback);
     }
 

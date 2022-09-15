@@ -65,12 +65,12 @@ public class FABGesture extends GleapDetector {
             this.application.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
                 @Override
                 public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle bundle) {
-                    System.out.println("CREATED?");
+
                 }
 
                 @Override
                 public void onActivityStarted(@NonNull Activity activity) {
-                    System.out.println("STARTED?");
+
                     if (activity != null) {
                         System.out.println(activity.getLocalClassName());
                         System.out.println("----------");

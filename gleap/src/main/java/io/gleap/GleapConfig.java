@@ -8,21 +8,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 
-<<<<<<< HEAD
-import io.gleap.CallCloseCallback;
-import io.gleap.callbacks.ConfigLoadedCallback;
-import io.gleap.callbacks.CustomActionCallback;
-import io.gleap.callbacks.FeedbackFlowClosedCallback;
-import io.gleap.callbacks.FeedbackFlowStartedCallback;
-import io.gleap.callbacks.FeedbackSendingFailedCallback;
-import io.gleap.callbacks.FeedbackSentCallback;
-import io.gleap.callbacks.FeedbackWillBeSentCallback;
-import io.gleap.callbacks.GetActivityCallback;
-import io.gleap.callbacks.GetBitmapCallback;
-import io.gleap.callbacks.InitializationDoneCallback;
-import io.gleap.callbacks.WidgetClosedCallback;
-import io.gleap.callbacks.WidgetOpenedCallback;
-=======
+
 import io.gleap.ConfigLoadedCallback;
 import io.gleap.CustomActionCallback;
 import io.gleap.FeedbackFlowClosedCallback;
@@ -35,7 +21,6 @@ import io.gleap.GetBitmapCallback;
 import io.gleap.InitializationDoneCallback;
 import io.gleap.WidgetClosedCallback;
 import io.gleap.WidgetOpenedCallback;
->>>>>>> c0a72f02d4034017f6cf4280900544f2adacbcc1
 
 /**
  * Configuration received by the server

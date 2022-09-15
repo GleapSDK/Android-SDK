@@ -66,6 +66,9 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
             url += GleapURLGenerator.generateURL();
 
             setContentView(R.layout.activity_gleap_main);
+
+                WebView.setWebContentsDebuggingEnabled(true);
+
             if (getPackageManager().hasSystemFeature("android.software.webview")) {
                 webView = findViewById(R.id.gleap_webview);
 
@@ -180,6 +183,22 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         @Override
         public void onReceivedHttpError(WebView view, WebResourceRequest request, WebResourceResponse errorResponse) {
             super.onReceivedHttpError(view, request, errorResponse);
+        }
+
+        @Override
+        public void onPageFinished(WebView view, String url) {
+            super.onPageFinished(view, url);
+            JSONObject data = new JSONObject();
+            try {
+                data.put("isWidgetOpen",true);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            try {
+                sendMessage(generateGleapMessage("widget-status-update", data));
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
         }
     }
 
