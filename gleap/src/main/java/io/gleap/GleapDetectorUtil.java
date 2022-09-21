@@ -55,4 +55,14 @@ class GleapDetectorUtil {
     public static boolean isIsRunning() {
         return isRunning;
     }
+
+    public static GleapDetector getDetectorByClassName(String name) {
+        for(int i = 0; i < GleapConfig.getInstance().getGestureDetectors().size(); i++ ) {
+            GleapDetector detector = GleapConfig.getInstance().getGestureDetectors().get(i);
+            if(detector.getClass().getSimpleName().equals(name)){
+                return detector;
+            }
+        }
+        return null;
+    }
 }

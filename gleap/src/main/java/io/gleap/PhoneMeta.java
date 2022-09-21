@@ -145,9 +145,14 @@ class PhoneMeta {
         systemVersion = Build.VERSION.RELEASE;
     }
 
-    private static String calculateDuration() {
+    public static String calculateDuration() {
         double timeDif = (new Date().getTime() - startTime) / 1000;
         return Double.toString(timeDif);
+    }
+
+    public static double calculateDurationInDouble() {
+        double timeDif = (new Date().getTime() - startTime) / 1000;
+        return timeDif;
     }
 
     /**

@@ -75,7 +75,7 @@ class GleapConfig {
     //Streamedevent
     private int maxEventLength = 500;
     private int resceduleEventStreamDurationShort = 1500;
-    private int resceduleEventStreamDurationLong = 3000;
+    private int resceduleEventStreamDurationLong = 7500;
 
     private GleapConfig() {
         this.language = Locale.getDefault().toLanguageTag();
@@ -438,5 +438,9 @@ class GleapConfig {
 
     public String getButtonColor() {
         return buttonColor;
+    }
+
+    public WidgetPosition getWidgetPosition() {
+        return widgetPosition;
     }
 }

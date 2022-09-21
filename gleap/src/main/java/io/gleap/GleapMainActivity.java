@@ -91,7 +91,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                         GleapMainActivity.this.finish();
                     }
                 });
-
                 initBrowser();
             }
         }catch (Exception ex) {}
@@ -351,7 +350,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                                 break;
                         }
                     } catch (Exception err) {
-
+                        System.out.println(err);
                     }
                 }
             });
@@ -556,7 +555,9 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     if (GleapConfig.getInstance().getWidgetClosedCallback() != null) {
                         GleapConfig.getInstance().getWidgetClosedCallback().invoke();
                     }
+
                     finish();
+                    GleapInvisibleActivityManger.getInstance().setVisible();
                 }
             });
         }
@@ -567,7 +568,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
      *
      * @param message
      */
-    private void sendMessage(String message) {
+    public void sendMessage(String message) {
         webView.evaluateJavascript("sendMessage(" + message + ");", null);
     }
 

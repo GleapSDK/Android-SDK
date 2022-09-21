@@ -20,21 +20,19 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import javax.net.ssl.HttpsURLConnection;
 
 class GleapEventService {
+    private GleapArrayHelper<JSONObject> gleapArrayHelper;
     private static GleapEventService instance;
-    private final int CHECK_PAGE_INTERVAL = 5000;
     private int time = GleapConfig.getInstance().getResceduleEventStreamDurationShort();
-    private String currentPage = "";
-    private ArrayList<JSONObject> eventsToBeSent = new ArrayList<>();
+    private List<JSONObject> eventsToBeSent = new ArrayList<>();
 
     private GleapEventService() {
+        gleapArrayHelper = new GleapArrayHelper<>();
         sendInitialMessage();
-        if (GleapBug.getInstance().getApplicationtype() == APPLICATIONTYPE.NATIVE) {
-            checkPage();
-        }
     }
 
     public static GleapEventService getInstance() {
@@ -54,7 +52,8 @@ class GleapEventService {
                 if (UserSessionController.getInstance() != null && UserSessionController.getInstance().isSessionLoaded()) {
                     try {
                         new InitialEventHttpHelper().execute();
-                    }catch (Exception ex){}
+                    } catch (Exception ex) {
+                    }
                 } else {
                     h.postDelayed(this, time);
                 }
@@ -69,7 +68,7 @@ class GleapEventService {
 
             @Override
             public void run() {
-                if (eventsToBeSent.size() > 0 && UserSessionController.getInstance() != null && UserSessionController.getInstance().isSessionLoaded()) {
+                if (UserSessionController.getInstance() != null && UserSessionController.getInstance().isSessionLoaded()) {
                     time = GleapConfig.getInstance().getResceduleEventStreamDurationLong();
                     new EventHttpHelper().execute();
                 } else {
@@ -77,38 +76,16 @@ class GleapEventService {
                 }
                 h.postDelayed(this, time);
             }
-        }, time); // 1 second delay (takes millis)
+        }, time);
     }
 
     public void addEvent(JSONObject event) {
+        if (eventsToBeSent.size() == GleapConfig.getInstance().getMaxEventLength()) {
+            eventsToBeSent = gleapArrayHelper.shiftArray(eventsToBeSent);
+        }
         eventsToBeSent.add(event);
     }
 
-
-    public void checkPage() {
-        final Handler h = new Handler(Looper.getMainLooper());
-        h.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                Activity activity = ActivityUtil.getCurrentActivity();
-                if (activity != null && !currentPage.equals(activity.getClass().getSimpleName()) && !activity.getClass().getSimpleName().contains("Gleap")) {
-                    currentPage = activity.getClass().getSimpleName();
-                    JSONObject object = new JSONObject();
-                    try {
-                        object.put("page", activity.getClass().getSimpleName());
-                        Gleap.getInstance().logEvent("pageView", object);
-                        if (eventsToBeSent.size() == GleapConfig.getInstance().getMaxEventLength()) {
-                            eventsToBeSent = shiftArray(eventsToBeSent);
-                        }
-
-                    } catch (JSONException e) {
-                    }
-
-                }
-                h.postDelayed(this, CHECK_PAGE_INTERVAL);
-            }
-        }, 1);
-    }
 
     private JSONObject generateEvent(JSONObject obj) throws JSONException {
         JSONObject event = new JSONObject();
@@ -118,29 +95,21 @@ class GleapEventService {
         return event;
     }
 
-    private ArrayList<JSONObject> shiftArray(ArrayList<JSONObject> arrayList) {
-        ArrayList<JSONObject> tmp = new ArrayList<>();
-        for (int i = 1; i < arrayList.size() - 1; i++) {
-            tmp.add(arrayList.get(i));
-        }
-        return tmp;
-    }
-
     private class InitialEventHttpHelper extends AsyncTask {
 
         @Override
         protected Object doInBackground(Object[] objects) {
             try {
                 int status = postEvent();
-            } catch (IOException | JSONException exception) {
-            //    exception.printStackTrace();
+            } catch (Exception exception) {
+                //    exception.printStackTrace();
             }
             return null;
         }
 
         private int postEvent() throws IOException, JSONException {
 
-            URL url = new URL(GleapConfig.getInstance().getApiUrl() + "/sessions/stream");
+            URL url = new URL(GleapConfig.getInstance().getApiUrl() + "/sessions/ping");
             HttpURLConnection conn;
             if (GleapConfig.getInstance().getApiUrl().contains("https")) {
                 conn = (HttpsURLConnection) url.openConnection();
@@ -167,6 +136,9 @@ class GleapEventService {
 
             JSONObject body = new JSONObject();
             body.put("events", jsonArray);
+            // body.put("time", PhoneMeta.calculateDurationInDouble());
+            body.put("time", 300);
+            body.put("opened", false);
 
             try (OutputStream os = conn.getOutputStream()) {
                 byte[] input = body.toString().getBytes(StandardCharsets.UTF_8);
@@ -186,22 +158,10 @@ class GleapEventService {
                 }
 
                 if (result != null) {
-                    if (result.has("actionType")) {
-                        if (result.has("outbound")) {
-                            GleapConfig.getInstance().setAction(new GleapAction(result.getString("actionType"), result.getString("outbound")));
+                    processData(result);
 
-                            try {
-                                Gleap.getInstance().startFeedbackFlow(GleapConfig.getInstance().getAction().getActionType());
-                            } catch (GleapNotInitialisedException e) {
-                            }
-                        }
-
-                        if(result.has("notification")) {
-                            System.out.println(result.getString("notification"));
-                        }
-                    }
                 }
-            } catch (JSONException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
 
@@ -209,6 +169,36 @@ class GleapEventService {
             int status = conn.getResponseCode();
             conn.disconnect();
             return status;
+        }
+
+        private void processData(JSONObject data) throws Exception {
+            if (data.has("a")) {
+                JSONArray actions = data.getJSONArray("a");
+                for (int i = 0; i < actions.length(); i++) {
+                    JSONObject currentAction = actions.getJSONObject(i);
+                    if (currentAction.has("actionType")) {
+                        if (currentAction.getString("actionType").contains("outbound")) {
+                            GleapConfig.getInstance().setAction(new GleapAction(currentAction.getString("actionType"), currentAction.getString("outbound")));
+                            try {
+                                Gleap.getInstance().startFeedbackFlow(GleapConfig.getInstance().getAction().getActionType());
+                            } catch (GleapNotInitialisedException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                        if (currentAction.getString("actionType").contains("notification")) {
+
+                            //generates comment based on incoming message
+                            JSONObject messageData = currentAction.getJSONObject("data");
+                            Comment comment = createComment(messageData);
+                            GleapInvisibleActivityManger.getInstance().addComment(comment);
+                        }
+                    }
+                }
+                GleapInvisibleActivityManger.getInstance().render(null);
+            }
+            if (data.has("u")) {
+                System.out.println("Size" + data.get("u"));
+            }
         }
     }
 
@@ -229,7 +219,7 @@ class GleapEventService {
 
         private int postEvent() throws IOException, JSONException {
 
-            URL url = new URL(GleapConfig.getInstance().getApiUrl() + "/sessions/stream");
+            URL url = new URL(GleapConfig.getInstance().getApiUrl() + "/sessions/ping");
             HttpURLConnection conn;
             if (GleapConfig.getInstance().getApiUrl().contains("https")) {
                 conn = (HttpsURLConnection) url.openConnection();
@@ -251,6 +241,9 @@ class GleapEventService {
 
             JSONObject body = new JSONObject();
             body.put("events", arrayToJSONArray(eventsToBeSent));
+            body.put("time", PhoneMeta.calculateDuration());
+            body.put("opened", Gleap.getInstance().isOpened());
+
 
             try (OutputStream os = conn.getOutputStream()) {
                 byte[] input = body.toString().getBytes(StandardCharsets.UTF_8);
@@ -267,18 +260,11 @@ class GleapEventService {
                 while ((input = br.readLine()) != null) {
                     result = new JSONObject(input);
                 }
-
                 if (result != null) {
-                    if (result.has("actionType") && result.has("outbound")) {
-                        GleapConfig.getInstance().setAction(new GleapAction(result.getString("actionType"), result.getString("outbound")));
-                        try {
-                            Gleap.getInstance().startFeedbackFlow(GleapConfig.getInstance().getAction().getActionType());
-                        } catch (GleapNotInitialisedException e) {
-                            e.printStackTrace();
-                        }
-                    }
+                    processData(result);
                 }
             } catch (Exception e) {
+                e.printStackTrace();
             }
 
             conn.getInputStream().close();
@@ -289,7 +275,7 @@ class GleapEventService {
 
         }
 
-        private JSONArray arrayToJSONArray(ArrayList<JSONObject> arrayList) {
+        private JSONArray arrayToJSONArray(List<JSONObject> arrayList) {
             JSONArray result = new JSONArray();
             for (JSONObject jsonObject :
                     arrayList) {
@@ -298,5 +284,77 @@ class GleapEventService {
 
             return result;
         }
+
+        private void processData(JSONObject data) throws Exception {
+            if (data.has("a")) {
+                System.out.println(data.get("a"));
+                JSONArray actions = data.getJSONArray("a");
+                for (int i = 0; i < actions.length(); i++) {
+                    JSONObject currentAction = actions.getJSONObject(i);
+                    if (currentAction.has("actionType")) {
+                        if (currentAction.getString("actionType").contains("notification") && currentAction.has("data")) {
+                            //generates comment based on incoming message
+                            JSONObject messageData = currentAction.getJSONObject("data");
+                            Comment comment = createComment(messageData);
+                            GleapInvisibleActivityManger.getInstance().addComment(comment);
+                        } else {
+                            GleapConfig.getInstance().setAction(new GleapAction(currentAction.getString("actionType"), currentAction.getString("outbound")));
+                            try {
+                                Gleap.getInstance().startFeedbackFlow(GleapConfig.getInstance().getAction().getActionType());
+                            } catch (GleapNotInitialisedException e) {
+                                e.printStackTrace();
+                            }
+                        }
+
+                    }
+                }
+                GleapInvisibleActivityManger.getInstance().render(null);
+            }
+
+            if (data.has("u")) {
+                System.out.println("Size u:" + data.get("u"));
+            }
+        }
+    }
+
+    private Comment createComment(JSONObject messageData) throws Exception {
+        String senderName = "";
+        String profileImageUrl = "";
+
+        String text = "";
+        String type = "";
+
+        String shareToken = "";
+
+        if (messageData.has("type")) {
+            type = messageData.getString("type");
+        }
+
+        if (messageData.has("text")) {
+            text = messageData.getString("text");
+        }
+
+        if (messageData.has("sender")) {
+            JSONObject sender = messageData.getJSONObject("sender");
+
+            if (sender.has("name")) {
+                senderName = sender.getString("name");
+            }
+
+            if (sender.has("profileImageUrl")) {
+                profileImageUrl = sender.getString("profileImageUrl");
+            }
+        }
+
+        if (messageData.has("conversation")) {
+            JSONObject conversation = messageData.getJSONObject("conversation");
+            if (conversation.has("shareToken")) {
+                shareToken = conversation.getString("shareToken");
+            }
+        }
+
+        GleapSender sender = new GleapSender(senderName, profileImageUrl);
+        System.out.println(sender.toString());
+        return new Comment(type, text, shareToken, sender);
     }
 }

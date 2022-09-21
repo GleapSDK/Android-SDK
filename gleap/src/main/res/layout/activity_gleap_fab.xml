@@ -4,23 +4,7 @@
     android:id="@+id/frameLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-
     android:elevation="8dp">
-
-    <ImageButton
-        android:id="@+id/gleap_imageButton"
-        android:layout_width="60dp"
-        android:layout_height="60dp"
-        android:layout_marginEnd="20dp"
-        android:padding="5dp"
-        android:layout_marginBottom="20dp"
-        android:background="@drawable/rounded_corner"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
-
-
-    </ImageButton>
-
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

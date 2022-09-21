@@ -53,13 +53,16 @@ public class Gleap implements iGleap {
 
             detectorList.add(fabGesture);
 
-            fabGesture.attachFAB(null);
+           // fabGesture.attachFAB(null);
+
+
+
+            //start services
+            GleapActivityManager.getInstance().start(application);
+            GleapEventService.getInstance().start();
 
             GleapConfig.getInstance().setGestureDetectors(detectorList);
             GleapDetectorUtil.resumeAllDetectors();
-
-            GleapEventService.getInstance().start();
-            GleapPingService.getInstance().start();
 
         } catch (Exception ignore) {
         }
