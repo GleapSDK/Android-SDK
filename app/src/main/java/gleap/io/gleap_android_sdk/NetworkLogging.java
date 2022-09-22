@@ -32,16 +32,6 @@ public class NetworkLogging extends AppCompatActivity {
                 new HttpCall().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
                 new HttpCall().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
                 new HttpCall().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-                new HttpCall().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-                new HttpCall().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-                new HttpCall().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-                new HttpCall().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-                new HttpCall().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-                new HttpCall().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-                new HttpCall().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-                new HttpCall().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-                new HttpCall().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-                new HttpCall().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
             }
         });
 

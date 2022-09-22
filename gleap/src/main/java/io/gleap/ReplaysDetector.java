@@ -31,14 +31,15 @@ class ReplaysDetector extends GleapDetector {
 
     @Override
     public void initialize() {
+        System.out.println("CALLED?");
         replay = GleapBug.getInstance().getReplay();
         handler = new Handler(Looper.getMainLooper());
-        //start
-        handler.post(runnableCode);
+
     }
 
     @Override
     public void resume() {
+        System.out.println("HEYLLO");
         handler.post(runnableCode);
     }
 
@@ -55,28 +56,31 @@ class ReplaysDetector extends GleapDetector {
     private final Runnable runnableCode = new Runnable() {
         @Override
         public void run() {
-            if (Gleap.getInstance() != null && UserSessionController.getInstance().isSessionLoaded()) {
-                try {
-                    Activity activity = ActivityUtil.getCurrentActivity();
-                    if (activity != null) {
-                        String screenName = activity.getClass().getSimpleName();
-                        if (!screenName.equals("GleapMainActivity")) {
-                            ScreenshotUtil.takeScreenshot(new ScreenshotUtil.GetImageCallback() {
-                                @Override
-                                public void getImage(Bitmap bitmap) {
-                                    if (bitmap != null) {
-                                        replay.addScreenshot(bitmap, screenName);
+            try {
+                if (Gleap.getInstance() != null && UserSessionController.getInstance().isSessionLoaded()) {
+                    try {
+                        Activity activity = ActivityUtil.getCurrentActivity();
+
+                        if (activity != null) {
+                            String screenName = activity.getClass().getSimpleName();
+                            if (!screenName.equals("GleapMainActivity")) {
+                                ScreenshotUtil.takeScreenshot(new ScreenshotUtil.GetImageCallback() {
+                                    @Override
+                                    public void getImage(Bitmap bitmap) {
+                                        if (bitmap != null) {
+                                            replay.addScreenshot(bitmap, screenName);
+                                            handler.postDelayed(runnableCode, replay.getInterval());
+                                        }
                                     }
-                                }
-                            });
+                                });
+                            }
                         }
+                    } catch (GleapSessionNotInitialisedException | ExecutionException gleapSessionNotInitialisedException) {
+                        gleapSessionNotInitialisedException.printStackTrace();
+                    } catch (InterruptedException e) {
                     }
-                } catch (GleapSessionNotInitialisedException | ExecutionException gleapSessionNotInitialisedException) {
-                    gleapSessionNotInitialisedException.printStackTrace();
-                } catch (InterruptedException e) {
                 }
-            }
-            handler.postDelayed(this, replay.getInterval());
+            }catch (Exception ex) {}
         }
     };
 }

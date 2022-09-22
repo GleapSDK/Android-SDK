@@ -165,7 +165,9 @@ class GleapBug {
     }
 
     public void addRequest(Networklog networklog) {
-        networkBuffer.addNetworkLog(networklog);
+        try {
+            networkBuffer.addNetworkLog(networklog);
+        }catch (Exception ex) {}
     }
 
 
