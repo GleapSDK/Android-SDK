@@ -6,30 +6,42 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class NetworkBuffer {
-    private  int ringBufferCounter = 0;
-    private Networklog[] networklogs;
+    private LinkedList<Networklog> networklogs;
     private final int MAX_AMOUNT = 25;
 
     public NetworkBuffer() {
-        networklogs = new Networklog[MAX_AMOUNT];
+        networklogs = new LinkedList<>();
     }
 
     public Networklog[] getNetworklogs() {
-        return networklogs;
+        try {
+            return networklogs.toArray(networklogs.toArray(new Networklog[0]));
+        }catch (Exception ignore) {}
+
+        return new Networklog[0];
     }
 
     public void addNetworkLog(Networklog networklog) {
-        if (ringBufferCounter > networklogs.length - 1) {
-            ringBufferCounter = 0;
-        }
-        networklogs[ringBufferCounter++] = networklog;
+        try {
+            if (networklogs.size() == 25) {
+                networklogs.removeFirst();
+            }
+
+            System.out.println(networklogs.size());
+
+            networklogs.push(networklog);
+        }catch (Exception ignore) {}
     }
 
     public void attachNetworkLogs(Networklog[] networklogs) {
-        this.networklogs = networklogs;
+        try {
+            for (Networklog networklog : networklogs) {
+                addNetworkLog(networklog);
+            }
+        }catch (Exception ignore) {}
     }
 
     public void clear() {
-        networklogs = new Networklog[MAX_AMOUNT];
+        networklogs = new LinkedList<>();
     }
 }
