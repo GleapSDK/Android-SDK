@@ -220,7 +220,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     webViewMessages) {
                 try {
                     sendMessage(gleapWVMessage.getMessage());
-
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

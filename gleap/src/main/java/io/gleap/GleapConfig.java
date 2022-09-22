@@ -82,8 +82,8 @@ class GleapConfig {
     private JSONObject plainConfig;
 
     private WidgetPosition widgetPosition = WidgetPosition.BOTTOM_RIGHT;
-    private int bottomX = 20; //horizontal
-    private int bottomY = 20; //vertical
+    private int buttonX = 20; //horizontal
+    private int buttonY = 20; //vertical
 
     //Streamedevent
     private int maxEventLength = 500;
@@ -144,6 +144,9 @@ class GleapConfig {
                     case "BOTTOM_LEFT":
                         this.widgetPosition = WidgetPosition.BOTTOM_LEFT;
                         break;
+                    default:
+                        GleapInvisibleActivityManger.getInstance().setShowFab(false);
+                        break;
                 }
             }
 
@@ -188,12 +191,12 @@ class GleapConfig {
                 this.interval = flowConfigs.getInt("replaysInterval");
             }
 
-            if(flowConfigs.has("bottomX")) {
-                this.bottomX = flowConfigs.getInt("bottomX");
+            if(flowConfigs.has("buttonX")) {
+                this.buttonX = flowConfigs.getInt("buttonX");
             }
 
-            if(flowConfigs.has("bottomY")) {
-                this.bottomY = flowConfigs.getInt("bottomY");
+            if(flowConfigs.has("buttonY")) {
+                this.buttonY = flowConfigs.getInt("buttonY");
             }
 
             if (flowConfigs.has("networkLogPropsToIgnore")) {
@@ -512,12 +515,12 @@ class GleapConfig {
         return loaderColor;
     }
 
-    public int getBottomX() {
-        return bottomX;
+    public int getButtonX() {
+        return buttonX;
     }
 
-    public int getBottomY() {
-        return bottomY;
+    public int getButtonY() {
+        return buttonY;
     }
 
     private int getContrastColor(int color) {

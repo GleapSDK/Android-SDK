@@ -41,6 +41,7 @@ class GleapInvisibleActivityManger {
     private ConstraintLayout relativeLayout;
     private int prevSize = 0;
     private int messageCounter = 0;
+    private int prevMessageCounter = 0;
     private boolean showFab = false;
 
 
@@ -99,8 +100,8 @@ class GleapInvisibleActivityManger {
                         ConstraintSet set = new ConstraintSet();
                         set.clone(layout);
 
-                        int offsetX = GleapConfig.getInstance().getBottomX();
-                        int offsetY = GleapConfig.getInstance().getBottomY();
+                        int offsetX = GleapConfig.getInstance().getButtonX();
+                        int offsetY = GleapConfig.getInstance().getButtonY();
 
                         if (relativeLayout != null) {
                             set.connect(chatMessages.getId(), ConstraintSet.BOTTOM, relativeLayout.getId(), ConstraintSet.TOP, 5);
@@ -153,6 +154,7 @@ class GleapInvisibleActivityManger {
         this.messages.add(comment);
     }
 
+
     public void addFab(Activity activity) {
         if (activity == null) {
             activity = ActivityUtil.getCurrentActivity();
@@ -167,11 +169,11 @@ class GleapInvisibleActivityManger {
             this.layout = (ConstraintLayout) inflater.inflate(R.layout.activity_gleap_fab, null);
             this.layout.setLayoutParams(new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         }
-
-        if (relativeLayout != null) {
+/*
+        if (relativeLayout != null && prevMessageCounter == messageCounter ) {
             addLayout(activity);
             return;
-        }
+        }*/
 
         Activity local = activity;
 
@@ -180,12 +182,12 @@ class GleapInvisibleActivityManger {
                 @Override
                 public void run() {
                     try {
+                        prevMessageCounter = messageCounter;
                         relativeLayout = new ConstraintLayout(local);
                         relativeLayout.setId(View.generateViewId());
                         RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
 
                         relativeLayout.setLayoutParams(params);
-
 
                         GradientDrawable gdDefaultText = new GradientDrawable();
                         gdDefaultText.setColor(Color.RED);
@@ -196,7 +198,7 @@ class GleapInvisibleActivityManger {
                         textView.setBackground(gdDefaultText);
                         textView.setTextColor(Color.WHITE);
 
-                        textView.setText("1");
+                        textView.setText(String.valueOf(messageCounter));
                         textView.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
                         textView.setGravity(Gravity.CENTER);
 
@@ -222,7 +224,7 @@ class GleapInvisibleActivityManger {
                         });
 
                         relativeLayout.addView(imageButton, convertDpToPixel(60, local), convertDpToPixel(60, local));
-
+                        System.out.println(messageCounter);
                         if(messageCounter > 0) {
                             relativeLayout.addView(textView,convertDpToPixel(20, local), convertDpToPixel(20, local));
                             ConstraintSet set = new ConstraintSet();
@@ -239,9 +241,8 @@ class GleapInvisibleActivityManger {
                         ConstraintSet set = new ConstraintSet();
                         set.clone(layout);
 
-
-                        int offsetX = GleapConfig.getInstance().getBottomX();
-                        int offsetY = GleapConfig.getInstance().getBottomY();
+                        int offsetX = GleapConfig.getInstance().getButtonX();
+                        int offsetY = GleapConfig.getInstance().getButtonY();
 
                         if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.BOTTOM_RIGHT) {
                             set.connect(relativeLayout.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, convertDpToPixel(offsetX, local));
@@ -285,10 +286,12 @@ class GleapInvisibleActivityManger {
 
     public void setShowFab(boolean showFab) {
         this.showFab = showFab;
-        if(!showFab) {
-            this.relativeLayout.setVisibility(View.INVISIBLE);
-        } else {
-            this.relativeLayout.setVisibility(View.VISIBLE);
+        if(this.relativeLayout != null) {
+            if (!showFab) {
+                this.relativeLayout.setVisibility(View.INVISIBLE);
+            } else {
+                this.relativeLayout.setVisibility(View.VISIBLE);
+            }
         }
     }
 }

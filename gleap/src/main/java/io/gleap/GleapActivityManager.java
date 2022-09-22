@@ -38,7 +38,7 @@ class GleapActivityManager {
                 public void onActivityStarted(@NonNull Activity activity) {
                     checkPage(activity);
                     generateFab(activity);
-                }
+                  }
 
                 @Override
                 public void onActivityResumed(@NonNull Activity activity) {
