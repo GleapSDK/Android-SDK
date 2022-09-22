@@ -6,23 +6,38 @@
     android:layout_height="match_parent"
     android:background="#00000000"
     tools:context="io.gleap.GleapMainActivity">
+        <LinearLayout
+            android:id="@+id/loader"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center_horizontal"
+            android:background="#ffffff"
+            android:orientation="vertical">
 
-        <ProgressBar
-            android:id="@+id/gleap_progressBar"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerHorizontal="true"
-            android:layout_centerInParent="true"
-            android:indeterminateTint="@android:color/white"
-            android:progressBackgroundTint="@android:color/white"
-            android:progressTint="@android:color/white" />
+                <View
+                    android:id="@+id/gleap_progressBarHeader"
+                    android:background="#485bff"
+                    android:layout_width="match_parent"
+                    android:layout_height="263dp" />
+
+                <ProgressBar
+                    android:id="@+id/gleap_progressBarBody"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingTop="20dp"
+                    android:layout_centerVertical="true"
+                    android:indeterminateTint="#000000"
+                    android:progressBackgroundTint="#000000"
+                    android:progressTint="#000000" />
+        </LinearLayout>
 
         <WebView
             android:id="@+id/gleap_webview"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
 
-            >
+            android:visibility="gone">
 
         </WebView>
+
 </RelativeLayout>

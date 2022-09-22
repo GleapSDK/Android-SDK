@@ -21,7 +21,12 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+
         }
+    }
+
+    packagingOptions {
+        exclude 'META-INF/*'
     }
 }
 
@@ -30,4 +35,5 @@ dependencies {
     implementation project(':gleap')
     implementation 'androidx.appcompat:appcompat:1.4.2'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+
 }

@@ -12,6 +12,7 @@ abstract class GleapDetector {
     public Application application;
     private final ScreenshotTaker screenshotTaker;
 
+
     /**
      * Abstract class for Detectors. All implemented detectors must extend
      * this class.

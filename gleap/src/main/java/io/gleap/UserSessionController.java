@@ -12,24 +12,24 @@ public class UserSessionController {
     private UserSession userSession;
     private Application application;
 
-    private  UserSessionController(Application application){
+    private UserSessionController(Application application) {
         this.application = application;
         SharedPreferences sharedPreferences = application.getSharedPreferences("usersession", MODE_PRIVATE);
         String id = sharedPreferences.getString("id", "");
         String hash = sharedPreferences.getString("hash", "");
-        if(!id.equals("") && !hash.equals("")) {
+        if (!id.equals("") && !hash.equals("")) {
             userSession = new UserSession(id, hash);
         }
     }
 
     public static UserSessionController initialize(Application application) {
-        if(instance == null) {
+        if (instance == null) {
             instance = new UserSessionController(application);
         }
         return instance;
     }
 
-    public static UserSessionController getInstance(){
+    public static UserSessionController getInstance() {
         return instance;
     }
 
@@ -48,9 +48,9 @@ public class UserSessionController {
 
 
     public void mergeUserSession(String id, String hash) {
-        if(userSession == null){
+        if (userSession == null) {
             userSession = new UserSession(id, hash);
-        }else {
+        } else {
             userSession.setHash(hash);
             userSession.setId(id);
         }
@@ -63,8 +63,39 @@ public class UserSessionController {
         return userSession;
     }
 
-    public void setGleapUserSession(GleapUser gleapUser){
+    public void setGleapUserSession(GleapUser gleapUser) {
         this.gleapUser = gleapUser;
+        SharedPreferences sharedPreferences = application.getSharedPreferences("gleap-user", MODE_PRIVATE);
+        sharedPreferences.edit().putString("userId", gleapUser.getUserId()).apply();
+        if (gleapUser.getGleapUserProperties() != null) {
+            sharedPreferences.edit().putString("userId.name", gleapUser.getGleapUserProperties().getName()).apply();
+            sharedPreferences.edit().putString("userId.email", gleapUser.getGleapUserProperties().getEmail()).apply();
+            sharedPreferences.edit().putString("userId.phonenumber", gleapUser.getGleapUserProperties().getPhoneNumber()).apply();
+            sharedPreferences.edit().putFloat("userId.value", (float) gleapUser.getGleapUserProperties().getValue()).apply();
+        }
+    }
+
+    public GleapUser getStoredGleapUser() {
+        GleapUser gleapUser = null;
+        SharedPreferences sharedPreferences = application.getSharedPreferences("gleap-user", MODE_PRIVATE);
+        String userId = sharedPreferences.getString("userId", "");
+
+        String userName = sharedPreferences.getString("userId.name", "");
+        String email = sharedPreferences.getString("userId.email", "");
+        String phoneNumber = sharedPreferences.getString("userId.phonenumber", "");
+        double value = sharedPreferences.getFloat("userId.value", 0);
+
+        GleapUserProperties gleapUserProperties = new GleapUserProperties();
+        gleapUserProperties.setName(userName);
+        gleapUserProperties.setEmail(email);
+        gleapUserProperties.setPhoneNumber(phoneNumber);
+        gleapUserProperties.setValue(value);
+        if(!userId.equals("")) {
+            gleapUser = new GleapUser(userId, gleapUserProperties);
+        }
+
+
+       return gleapUser;
     }
 
     public GleapUser getGleapUserSession() {

@@ -13,9 +13,11 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.util.Base64;
 import android.view.GestureDetector;
+import android.view.LayoutInflater;
 import android.view.PixelCopy;
 import android.view.SurfaceView;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 
@@ -41,12 +43,15 @@ import androidx.annotation.RequiresApi;
 
 import org.json.JSONObject;
 
+import gleap.io.gleap.R;
+
 class ScreenshotUtil {
     public static void takeScreenshot(GetImageCallback getImageCallback) throws GleapSessionNotInitialisedException, InterruptedException, ExecutionException {
         try {
             if (!UserSessionController.getInstance().isSessionLoaded()) {
                 throw new GleapSessionNotInitialisedException();
             }
+
             Bitmap bitmap = null;
             if (GleapConfig.getInstance().getGetBitmapCallback() != null) {
                 bitmap = GleapConfig.getInstance().getGetBitmapCallback().getBitmap();

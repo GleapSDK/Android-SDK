@@ -53,6 +53,7 @@ class ScreenshotTaker {
 
     public void openScreenshot(Bitmap imageFile) {
         try {
+            GleapInvisibleActivityManger.getInstance().setInvisible();
             Activity activity = ActivityUtil.getCurrentActivity();
             if (activity != null) {
                 Context applicationContext = activity.getApplicationContext();

@@ -26,7 +26,7 @@ public class CustomData extends AppCompatActivity {
         findViewById(R.id.custom).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Gleap.getInstance().setCustomData("HZEY", "YOI");
+                Gleap.getInstance().setCustomData("HEY", "YOI");
             }
         });
 

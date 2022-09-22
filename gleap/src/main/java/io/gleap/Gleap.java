@@ -1,14 +1,8 @@
 package io.gleap;
 
-import android.app.Activity;
 import android.app.Application;
-import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import org.json.JSONObject;
 
@@ -27,9 +21,6 @@ public class Gleap implements iGleap {
 
     private Gleap() {
     }
-
-    static final Thread.UncaughtExceptionHandler oldHandler =
-            Thread.getDefaultUncaughtExceptionHandler();
 
     /**
      * Init Gleap with the given properties
@@ -57,10 +48,12 @@ public class Gleap implements iGleap {
                 detectorList.add(replaysDetector);
             }
 
+            //start services
+            GlapActivityManager.getInstance().start(application);
+            GleapEventService.getInstance().start();
+
             GleapConfig.getInstance().setGestureDetectors(detectorList);
             GleapDetectorUtil.resumeAllDetectors();
-
-            GleapEventService.getInstance().start();
 
         } catch (Exception ignore) {
         }
@@ -199,6 +192,7 @@ public class Gleap implements iGleap {
             SilentBugReportUtil.createSilentBugReport(application, description, severity, null, feedbackSentCallback);
         } catch (Error | Exception ignore) {
         }
+
     }
 
     /**
@@ -252,6 +246,9 @@ public class Gleap implements iGleap {
             new GleapUserSessionLoader().execute();
         } catch (Error | Exception ignore) {
         }
+        GleapUserSessionLoader sessionLoader = new GleapUserSessionLoader();
+        sessionLoader.execute();
+
     }
 
     /**
@@ -311,6 +308,7 @@ public class Gleap implements iGleap {
 
         } catch (Error | Exception ignore) {
         }
+
     }
 
     /**
@@ -379,6 +377,7 @@ public class Gleap implements iGleap {
             GleapConfig.getInstance().setFeedbackWillBeSentCallback(feedbackWillBeSentCallback);
         } catch (Error | Exception ignore) {
         }
+
     }
 
     /**
@@ -415,6 +414,7 @@ public class Gleap implements iGleap {
             GleapConfig.getInstance().setGetBitmapCallback(getBitmapCallback);
         } catch (Error | Exception ignore) {
         }
+
     }
 
     /**
@@ -546,18 +546,25 @@ public class Gleap implements iGleap {
 
         public GleapListener() {
             try {
-                new ConfigLoader(this).execute(GleapBug.getInstance());
-                new GleapUserSessionLoader().execute();
 
-                Handler handler = new Handler();
-                handler.postDelayed(new Runnable() {
-                    public void run() {
-                        try {
-                            if (GleapConfig.getInstance().getAction() != null) {
-                                Gleap.getInstance().startFeedbackFlow(GleapConfig.getInstance().getAction().getActionType());
-                            }
-                        } catch (Error | Exception ignore) {
-                        }
+            new ConfigLoader(this).execute(GleapBug.getInstance());
+
+            GleapUserSessionLoader sessionLoader = new GleapUserSessionLoader();
+            sessionLoader.setCallback(new GleapUserSessionLoader.UserSessionLoadedCallback() {
+                @Override
+                public void invoke() {
+                    new GleapIdentifyService().execute();
+                }
+            });
+            sessionLoader.execute();
+
+            Handler handler = new Handler();
+            handler.postDelayed(new Runnable() {
+                public void run() {
+                    try {
+                        if (GleapConfig.getInstance().getAction() != null) {
+                            Gleap.getInstance().startFeedbackFlow(GleapConfig.getInstance().getAction().getActionType());
+                    }
                     }
                 }, 2000);   //2 seconds
             } catch (Error | Exception ignore) {
@@ -578,6 +585,9 @@ public class Gleap implements iGleap {
                     activationMethods.add(GleapActivationMethod.SCREENSHOT);
                 }
 
+            if (config.isActivationMethodFeedbackButton()) {
+                activationMethods.add(GleapActivationMethod.FAB);
+            }
 
                 if (instance == null) {
                     instance = new Gleap();
@@ -736,6 +746,11 @@ public class Gleap implements iGleap {
        }catch (Error | Exception ignore) {}
     }
 
+    @Override
+    public void showFeedbackButton(boolean show) {
+        GleapInvisibleActivityManger.getInstance().setShowFab(show);
+    }
+
     /**
      * Enable Replay function for BB
      * Use with care, check performance on phone
@@ -755,6 +770,7 @@ public class Gleap implements iGleap {
         try{
             GleapConfig.getInstance().setGetActivityCallback(getActivityCallback);
         }catch (Error | Exception ignore) {}
+
     }
 
 }

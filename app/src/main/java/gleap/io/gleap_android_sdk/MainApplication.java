@@ -30,7 +30,6 @@ public class MainApplication extends Application {
 
         Gleap.getInstance().setLanguage("AR_EG");
 
-
        /*   GleapUserProperties userProperties = new GleapUserProperties("Test User", "niklas@gmail.com" );
         //userProperties.setHash();
         GleapUser gleapUserWithId = new GleapUser("12");

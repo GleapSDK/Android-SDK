@@ -20,9 +20,8 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.feedback).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-          //      Intent intent = new Intent(MainActivity.this, MainActivity2.class);
-            //    startActivity(intent);
-                throw new NullPointerException();
+                Intent intent = new Intent(MainActivity.this, MainActivity2.class);
+                startActivity(intent);
             }
         });
 
