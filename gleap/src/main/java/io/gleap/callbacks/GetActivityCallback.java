@@ -1,4 +1,4 @@
-package io.gleap;
+package io.gleap.callbacks;
 
 import android.app.Activity;
 
