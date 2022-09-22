@@ -32,6 +32,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 
@@ -67,7 +68,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
             setContentView(R.layout.activity_gleap_main);
 
-                WebView.setWebContentsDebuggingEnabled(true);
+            WebView.setWebContentsDebuggingEnabled(true);
 
             if (getPackageManager().hasSystemFeature("android.software.webview")) {
                 webView = findViewById(R.id.gleap_webview);
@@ -93,7 +94,8 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 });
                 initBrowser();
             }
-        }catch (Exception ex) {}
+        } catch (Exception ex) {
+        }
     }
 
 
@@ -189,7 +191,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
             super.onPageFinished(view, url);
             JSONObject data = new JSONObject();
             try {
-                data.put("isWidgetOpen",true);
+                data.put("isWidgetOpen", true);
             } catch (JSONException e) {
                 e.printStackTrace();
             }
@@ -198,6 +200,20 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
             } catch (JSONException e) {
                 e.printStackTrace();
             }
+
+            // GleapConfig.getInstance().setWebView(webView);
+            LinkedList<GleapWebViewMessage> webViewMessages = GleapConfig.getInstance().getGleapWebViewMessages();
+
+            for (GleapWebViewMessage gleapWVMessage :
+                    webViewMessages) {
+                try {
+                    sendMessage(gleapWVMessage.getMessage());
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            GleapConfig.getInstance().getGleapWebViewMessages().clear();
         }
     }
 
@@ -229,21 +245,22 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
         @Override
         public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
-        try {
-            if (mUploadMessage != null) {
-                mUploadMessage.onReceiveValue(null);
+            try {
+                if (mUploadMessage != null) {
+                    mUploadMessage.onReceiveValue(null);
+                }
+
+                mUploadMessage = filePathCallback;
+                sendSessionUpdate();
+
+
+                Intent i = new Intent(Intent.ACTION_GET_CONTENT);
+                i.addCategory(Intent.CATEGORY_OPENABLE);
+                i.setType("*/*"); // set MIME type to filter
+
+                ActivityUtil.getCurrentActivity().startActivityForResult(Intent.createChooser(i, "File Chooser"), 1);
+            } catch (Exception ex) {
             }
-
-            mUploadMessage = filePathCallback;
-            sendSessionUpdate();
-
-
-            Intent i = new Intent(Intent.ACTION_GET_CONTENT);
-            i.addCategory(Intent.CATEGORY_OPENABLE);
-            i.setType("*/*"); // set MIME type to filter
-
-            ActivityUtil.getCurrentActivity().startActivityForResult(Intent.createChooser(i, "File Chooser"), 1);
-        }catch (Exception ex) {}
             return true;
         }
 
@@ -418,12 +435,12 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 try {
                     base64String = object.getString("data");
 
-                if (base64String != null) {
-                    String base64Image = base64String.split(",")[1];
-                    byte[] decodedString = Base64.decode(base64Image, Base64.DEFAULT);
-                    Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
-                    GleapBug.getInstance().setScreenshot(decodedByte);
-                }
+                    if (base64String != null) {
+                        String base64Image = base64String.split(",")[1];
+                        byte[] decodedString = Base64.decode(base64Image, Base64.DEFAULT);
+                        Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+                        GleapBug.getInstance().setScreenshot(decodedByte);
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

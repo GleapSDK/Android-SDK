@@ -15,7 +15,7 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-public class GleapImageHandler extends AsyncTask<Void, Void, Bitmap> {
+class GleapImageHandler extends AsyncTask<Void, Void, Bitmap> {
 
     private String url;
     private ImageView imageView;

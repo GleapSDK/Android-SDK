@@ -1,5 +1,7 @@
 package io.gleap;
 
+import android.webkit.WebView;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -66,6 +68,7 @@ class GleapConfig {
     private boolean enableReplays = false;
     private boolean activationMethodShake = false;
     private boolean activationMethodScreenshotGesture = false;
+    private boolean activationMethodFeedbackButton = false;
     private String language = "en";
     private JSONArray networkLogPropsToIgnore;
     private JSONArray blackList = new JSONArray();
@@ -76,6 +79,8 @@ class GleapConfig {
     private int maxEventLength = 500;
     private int resceduleEventStreamDurationShort = 1500;
     private int resceduleEventStreamDurationLong = 7500;
+
+    private LinkedList<GleapWebViewMessage> gleapWebViewMessages = new LinkedList<>();
 
     private GleapConfig() {
         this.language = Locale.getDefault().toLanguageTag();
@@ -150,6 +155,10 @@ class GleapConfig {
 
             if(flowConfigs.has("activationMethodScreenshotGesture")) {
                 this.activationMethodScreenshotGesture = flowConfigs.getBoolean("activationMethodScreenshotGesture");
+            }
+
+            if(flowConfigs.has("activationMethodFeedbackButton")) {
+                this.activationMethodFeedbackButton = flowConfigs.getBoolean("activationMethodFeedbackButton");
             }
 
             if(flowConfigs.has("replaysInterval")){
@@ -285,6 +294,14 @@ class GleapConfig {
 
     public boolean isActivationMethodScreenshotGesture() {
         return activationMethodScreenshotGesture;
+    }
+
+    public boolean isActivationMethodFeedbackButton() {
+        return activationMethodFeedbackButton;
+    }
+
+    public void setActivationMethodFeedbackButton(boolean activationMethodFeedbackButton) {
+        this.activationMethodFeedbackButton = activationMethodFeedbackButton;
     }
 
     public boolean isEnableConsoleLogs() {
@@ -442,5 +459,14 @@ class GleapConfig {
 
     public WidgetPosition getWidgetPosition() {
         return widgetPosition;
+    }
+
+    public void addGleapWebViewMessage(GleapWebViewMessage gleapWebViewMessage) {
+        this.gleapWebViewMessages.push(gleapWebViewMessage);
+    }
+
+
+    public LinkedList<GleapWebViewMessage> getGleapWebViewMessages() {
+        return gleapWebViewMessages;
     }
 }

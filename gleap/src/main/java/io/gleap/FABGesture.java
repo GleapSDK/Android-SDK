@@ -32,7 +32,7 @@ import java.net.URLConnection;
 
 import gleap.io.gleap.R;
 
-public class FABGesture extends GleapDetector {
+class FABGesture extends GleapDetector {
     private ImageButton imageButton;
     private boolean running = false;
 

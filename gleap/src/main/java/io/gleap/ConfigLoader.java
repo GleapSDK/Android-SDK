@@ -8,6 +8,7 @@ import org.json.JSONObject;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
 import java.net.URL;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -36,7 +37,7 @@ class ConfigLoader extends AsyncTask<GleapBug, Void, Integer> {
         URL url;
         try {
             url = new URL(httpsUrl);
-            HttpsURLConnection con = (HttpsURLConnection) url.openConnection();
+            HttpURLConnection con = (HttpURLConnection) url.openConnection();
             con.connect();
             readResponse(con);
         } catch (IOException e) {
@@ -44,7 +45,7 @@ class ConfigLoader extends AsyncTask<GleapBug, Void, Integer> {
         return 200;
     }
 
-    private void readResponse(HttpsURLConnection con) throws IOException {
+    private void readResponse(HttpURLConnection con) throws IOException {
 
         if (con != null) {
 

@@ -8,7 +8,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import gleap.io.gleap.R;
 
-public class GleapFAB extends AppCompatActivity {
+class GleapFAB extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

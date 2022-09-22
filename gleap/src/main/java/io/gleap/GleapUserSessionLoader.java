@@ -15,18 +15,20 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 import javax.net.ssl.HttpsURLConnection;
 
 class GleapUserSessionLoader extends AsyncTask<Void, Void, Integer> {
     private static final String httpsUrl = GleapConfig.getInstance().getApiUrl() + "/sessions";
+    private UserSessionLoadedCallback callback;
 
     @SuppressLint("WrongThread")
     @Override
     protected Integer doInBackground(Void... voids) {
         try {
             URL url = new URL(httpsUrl);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
             conn.setRequestProperty("Api-Token", GleapConfig.getInstance().getSdkKey());
             conn.setRequestProperty("Accept", "application/json");
             conn.setRequestProperty("Content-Type", "application/json");
@@ -39,7 +41,6 @@ class GleapUserSessionLoader extends AsyncTask<Void, Void, Integer> {
             if(userSession != null && userSession.getHash() != null && !userSession.getHash().equals("")) {
                 conn.setRequestProperty("Gleap-Hash", userSession.getHash());
             }
-
 
             try (BufferedReader br = new BufferedReader(
                     new InputStreamReader(conn.getInputStream(), "utf-8"))) {
@@ -67,23 +68,51 @@ class GleapUserSessionLoader extends AsyncTask<Void, Void, Integer> {
                         UserSessionController.getInstance().setSessionLoaded(true);
                     }
 
-                    if(UserSessionController.getInstance().getGleapUserSession() != null) {
-                        new GleapIdentifyService().execute();
+                    GleapUserProperties gleapUserProperties = new GleapUserProperties();
+                    if(result.has("name")) {
+                        gleapUserProperties.setName(result.getString("name"));
                     }
+
+                    if(result.has("email")) {
+                        gleapUserProperties.setEmail(result.getString("email"));
+                    }
+
+                    String userId="";
+
+                    if(result.has("userId")) {
+                        userId = result.getString("userId");
+                    }
+
+                    UserSessionController.getInstance().setGleapUserSession(new GleapUser(userId, gleapUserProperties));
+                    GleapInvisibleActivityManger.getInstance().render(null, true);
                 }
 
                 if(GleapConfig.getInstance().getInitializationDoneCallback() != null) {
                     GleapConfig.getInstance().getInitializationDoneCallback().invoke();
                 }
-            } catch (JSONException e) {
+
+                GleapUser gleapUser = UserSessionController.getInstance().getGleapUserSession();
+
+                if(this.callback != null && !gleapUser.compareTo(UserSessionController.getInstance().getStoredGleapUser())) {
+                    this.callback.invoke();
+                    this.callback = null;
+                }
+
+            } catch (Exception e) {
                 UserSessionController.getInstance().setSessionLoaded(true);
             }
 
-        } catch (IOException e) {
+        } catch (Exception e) {
             UserSessionController.getInstance().setSessionLoaded(true);
         }
         return 200;
     }
 
+    public void setCallback(UserSessionLoadedCallback callback) {
+        this.callback = callback;
+    }
 
+    public interface UserSessionLoadedCallback{
+        void invoke();
+    }
 }

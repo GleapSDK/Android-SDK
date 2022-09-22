@@ -48,15 +48,6 @@ public class Gleap implements iGleap {
                 detectorList.add(replaysDetector);
             }
 
-
-            FABGesture fabGesture = new FABGesture(application);
-
-            detectorList.add(fabGesture);
-
-           // fabGesture.attachFAB(null);
-
-
-
             //start services
             GleapActivityManager.getInstance().start(application);
             GleapEventService.getInstance().start();
@@ -89,6 +80,7 @@ public class Gleap implements iGleap {
     public static void initialize(String sdkKey, Application application) {
         Gleap.application = application;
         GleapConfig.getInstance().setSdkKey(sdkKey);
+
         if (!isInitialized) {
             isInitialized = true;
             UserSessionController.initialize(application);
@@ -220,7 +212,8 @@ public class Gleap implements iGleap {
         if (UserSessionController.getInstance() != null) {
             UserSessionController.getInstance().clearUserSession();
         }
-        new GleapUserSessionLoader().execute();
+        GleapUserSessionLoader sessionLoader = new GleapUserSessionLoader();
+        sessionLoader.execute();
     }
 
     /**
@@ -447,7 +440,15 @@ public class Gleap implements iGleap {
 
         public GleapListener() {
             new ConfigLoader(this).execute(GleapBug.getInstance());
-            new GleapUserSessionLoader().execute();
+
+            GleapUserSessionLoader sessionLoader = new GleapUserSessionLoader();
+            sessionLoader.setCallback(new GleapUserSessionLoader.UserSessionLoadedCallback() {
+                @Override
+                public void invoke() {
+                    new GleapIdentifyService().execute();
+                }
+            });
+            sessionLoader.execute();
 
             Handler handler = new Handler();
             handler.postDelayed(new Runnable() {
@@ -476,6 +477,9 @@ public class Gleap implements iGleap {
                 activationMethods.add(GleapActivationMethod.SCREENSHOT);
             }
 
+            if (config.isActivationMethodFeedbackButton()) {
+                activationMethods.add(GleapActivationMethod.FAB);
+            }
 
             if (instance == null) {
                 instance = new Gleap();

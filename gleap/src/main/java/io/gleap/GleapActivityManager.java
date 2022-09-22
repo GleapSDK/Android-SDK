@@ -37,7 +37,7 @@ class GleapActivityManager {
                 public void onActivityStarted(@NonNull Activity activity) {
                     checkPage(activity);
                     generateFab(activity);
-                    GleapInvisibleActivityManger.getInstance().render(activity);
+                    GleapInvisibleActivityManger.getInstance().render(activity, false);
                 }
 
                 @Override

@@ -2,7 +2,6 @@ package io.gleap;
 
 import static io.gleap.DateUtil.dateToString;
 
-import android.app.Activity;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
@@ -189,12 +188,12 @@ class GleapEventService {
 
                             //generates comment based on incoming message
                             JSONObject messageData = currentAction.getJSONObject("data");
-                            Comment comment = createComment(messageData);
+                            GleapChatMessage comment = createComment(messageData);
                             GleapInvisibleActivityManger.getInstance().addComment(comment);
                         }
                     }
                 }
-                GleapInvisibleActivityManger.getInstance().render(null);
+                GleapInvisibleActivityManger.getInstance().render(null, false);
             }
             if (data.has("u")) {
                 System.out.println("Size" + data.get("u"));
@@ -295,7 +294,7 @@ class GleapEventService {
                         if (currentAction.getString("actionType").contains("notification") && currentAction.has("data")) {
                             //generates comment based on incoming message
                             JSONObject messageData = currentAction.getJSONObject("data");
-                            Comment comment = createComment(messageData);
+                            GleapChatMessage comment = createComment(messageData);
                             GleapInvisibleActivityManger.getInstance().addComment(comment);
                         } else {
                             GleapConfig.getInstance().setAction(new GleapAction(currentAction.getString("actionType"), currentAction.getString("outbound")));
@@ -308,7 +307,7 @@ class GleapEventService {
 
                     }
                 }
-                GleapInvisibleActivityManger.getInstance().render(null);
+                GleapInvisibleActivityManger.getInstance().render(null, false);
             }
 
             if (data.has("u")) {
@@ -317,7 +316,7 @@ class GleapEventService {
         }
     }
 
-    private Comment createComment(JSONObject messageData) throws Exception {
+    private GleapChatMessage createComment(JSONObject messageData) throws Exception {
         String senderName = "";
         String profileImageUrl = "";
 
@@ -355,6 +354,6 @@ class GleapEventService {
 
         GleapSender sender = new GleapSender(senderName, profileImageUrl);
         System.out.println(sender.toString());
-        return new Comment(type, text, shareToken, sender);
+        return new GleapChatMessage(type, text, shareToken, sender);
     }
 }

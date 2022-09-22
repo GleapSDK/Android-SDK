@@ -17,25 +17,25 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 import javax.net.ssl.HttpsURLConnection;
- class GleapPingService {
+
+class GleapPingService {
     private static GleapPingService instance;
     private final static int TIMEINTERVAL = 7500; //7.5 seconds
-     private final String httpsUrl = GleapConfig.getInstance().getApiUrl() + "/sessions/ping";
+    private final String httpsUrl = GleapConfig.getInstance().getApiUrl() + "/sessions/ping";
 
-    private GleapPingService(){
+    private GleapPingService() {
         System.out.println(httpsUrl);
     }
 
     public static GleapPingService getInstance() {
-        if(instance == null ){
+        if (instance == null) {
             instance = new GleapPingService();
         }
         return instance;
     }
 
     Handler mHandler;
-    Runnable mHandlerTask = new Runnable()
-    {
+    Runnable mHandlerTask = new Runnable() {
         @Override
         public void run() {
             new PingCall().execute();
@@ -43,18 +43,17 @@ import javax.net.ssl.HttpsURLConnection;
         }
     };
 
-    public void start(){
+    public void start() {
         //run your Task
         mHandlerTask.run();
     }
 
-    private void stopTask()
-    {
+    private void stopTask() {
         // stop your Task
         mHandler.removeCallbacks(mHandlerTask);
     }
 
-    private class PingCall extends AsyncTask<String,Void,Integer> {
+    private class PingCall extends AsyncTask<String, Void, Integer> {
 
         @Override
         protected Integer doInBackground(String... params) {
@@ -95,14 +94,13 @@ import javax.net.ssl.HttpsURLConnection;
                                 }
                             }
 
-                            if(result.has("notification")) {
+                            if (result.has("notification")) {
                                 System.out.println(result.getString("notification"));
                             }
                         }
                     }
                     con.disconnect();
                 } catch (Exception ex) {
-ex.printStackTrace();
                 }
 
             }

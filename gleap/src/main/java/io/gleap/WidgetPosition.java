@@ -1,5 +1,5 @@
 package io.gleap;
 
-public enum WidgetPosition {
+enum WidgetPosition {
     BOTTOM_LEFT, BOTTOM_RIGHT
 }

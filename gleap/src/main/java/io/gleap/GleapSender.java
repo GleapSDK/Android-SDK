@@ -1,6 +1,6 @@
 package io.gleap;
 
-public class GleapSender {
+class GleapSender {
     private String name;
     private String profileImageUrl;
 
