@@ -24,7 +24,6 @@ class GleapPingService {
     private final String httpsUrl = GleapConfig.getInstance().getApiUrl() + "/sessions/ping";
 
     private GleapPingService() {
-        System.out.println(httpsUrl);
     }
 
     public static GleapPingService getInstance() {
@@ -92,10 +91,6 @@ class GleapPingService {
                                     Gleap.getInstance().startFeedbackFlow(GleapConfig.getInstance().getAction().getActionType());
                                 } catch (GleapNotInitialisedException e) {
                                 }
-                            }
-
-                            if (result.has("notification")) {
-                                System.out.println(result.getString("notification"));
                             }
                         }
                     }

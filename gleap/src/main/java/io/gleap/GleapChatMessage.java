@@ -76,13 +76,15 @@ class GleapChatMessage {
 
 
         completeMessage.setBackgroundResource(R.drawable.chatbubble);
-        completeMessage.setElevation(5f);
+        completeMessage.setElevation(7f);
+
         completeMessage.setBaselineAligned(true);
         completeMessage.setLayoutParams(paramsCompleteMessage);
         completeMessage.setPadding(convertDpToPixel(15, local), convertDpToPixel(10, local), convertDpToPixel(15, local), convertDpToPixel(10, local));
 
         ImageView avatarImage = new ImageView(local.getApplication().getApplicationContext());
         avatarImage.setPadding(0, 0, convertDpToPixel(5, local), 0);
+
         avatarImage.setLayoutParams(paramsCompleteMessage);
         new GleapImageHandler(getSender().getProfileImageUrl(), avatarImage).execute();
 

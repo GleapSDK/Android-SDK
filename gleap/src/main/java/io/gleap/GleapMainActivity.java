@@ -5,11 +5,13 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.net.Uri;
 import android.net.http.SslError;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.Settings;
 import android.util.Base64;
 import android.view.View;
 import android.view.Window;
@@ -24,14 +26,17 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.ProgressBar;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -73,6 +78,13 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
             if (getPackageManager().hasSystemFeature("android.software.webview")) {
                 webView = findViewById(R.id.gleap_webview);
 
+                findViewById(R.id.gleap_progressBarHeader).setBackgroundColor(Color.parseColor(GleapConfig.getInstance().getHeaderColor()));
+                findViewById(R.id.loader).setBackgroundColor(Color.parseColor(GleapConfig.getInstance().getBackgroundColor()));
+
+                try{
+                    ((ProgressBar)findViewById(R.id.gleap_progressBarBody)).getIndeterminateDrawable()
+                            .setColorFilter(GleapConfig.getInstance().getLoaderColor(), PorterDuff.Mode.SRC_IN );
+                }catch (Exception ex) {}
 
                 Handler handler = new Handler(Looper.getMainLooper());
                 handler.postDelayed(new Runnable() {
@@ -367,8 +379,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                                 break;
                         }
                     } catch (Exception err) {
-                        System.out.println(err);
-                    }
+                        }
                 }
             });
         }
@@ -572,9 +583,8 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     if (GleapConfig.getInstance().getWidgetClosedCallback() != null) {
                         GleapConfig.getInstance().getWidgetClosedCallback().invoke();
                     }
-
+                    System.out.println("START"+new Date().getTime());
                     finish();
-                    GleapInvisibleActivityManger.getInstance().setVisible();
                 }
             });
         }

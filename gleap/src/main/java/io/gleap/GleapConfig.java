@@ -1,6 +1,9 @@
 package io.gleap;
 
+import android.graphics.Color;
 import android.webkit.WebView;
+
+import androidx.core.graphics.ColorUtils;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -34,7 +37,7 @@ class GleapConfig {
     private String apiUrl = "https://api.gleap.io";
     private String iFrameUrl = "https://messenger.gleap.io/app.html";
     private String sdkKey = "";
-    private String feedbackFlow ="";
+    private String feedbackFlow = "";
 
     private GleapAction action;
 
@@ -63,6 +66,10 @@ class GleapConfig {
     private String buttonLogo = "https://sdk.gleap.io/res/chatbubble.png";
     private String buttonColor = "#485bff";
 
+    private String backgroundColor = "#ffffff";
+    private String headerColor = "#485bff";
+    private int loaderColor = Color.BLACK;
+
     private boolean enableConsoleLogs = true;
     private boolean enableConsoleLogsFromCode = true;
     private boolean enableReplays = false;
@@ -73,7 +80,10 @@ class GleapConfig {
     private JSONArray networkLogPropsToIgnore;
     private JSONArray blackList = new JSONArray();
     private JSONObject plainConfig;
+
     private WidgetPosition widgetPosition = WidgetPosition.BOTTOM_RIGHT;
+    private int bottomX = 20; //horizontal
+    private int bottomY = 20; //vertical
 
     //Streamedevent
     private int maxEventLength = 500;
@@ -99,12 +109,12 @@ class GleapConfig {
      * @param config response from the server with all the configuration data in it
      */
     public void initConfig(JSONObject config) {
-        if(config != null) {
+        if (config != null) {
             this.plainConfig = config;
         }
 
         JSONObject flowConfigs = new JSONObject();
-        if(config.has("flowConfig")) {
+        if (config.has("flowConfig")) {
             try {
                 flowConfigs = config.getJSONObject("flowConfig");
             } catch (JSONException e) {
@@ -113,7 +123,7 @@ class GleapConfig {
         }
 
         JSONObject projectActions = new JSONObject();
-        if(config.has("projectActions")) {
+        if (config.has("projectActions")) {
             try {
                 projectActions = config.getJSONObject("projectActions");
             } catch (JSONException e) {
@@ -122,11 +132,11 @@ class GleapConfig {
         }
 
         try {
-            if(flowConfigs.has("enableConsoleLogs")) {
+            if (flowConfigs.has("enableConsoleLogs")) {
                 this.enableConsoleLogs = flowConfigs.getBoolean("enableConsoleLogs");
             }
 
-            if(flowConfigs.has("feedbackButtonPosition")) {
+            if (flowConfigs.has("feedbackButtonPosition")) {
                 switch (flowConfigs.getString("feedbackButtonPosition")) {
                     case "BOTTOM_RIGHT":
                         this.widgetPosition = WidgetPosition.BOTTOM_RIGHT;
@@ -137,47 +147,67 @@ class GleapConfig {
                 }
             }
 
-            if(flowConfigs.has("buttonLogo") && !flowConfigs.getString("buttonLogo").equals("")) {
+            if (flowConfigs.has("buttonLogo") && !flowConfigs.getString("buttonLogo").equals("")) {
                 this.buttonLogo = flowConfigs.getString("buttonLogo");
             }
 
-            if(flowConfigs.has("buttonColor")) {
+            if (flowConfigs.has("buttonColor")) {
                 this.buttonColor = flowConfigs.getString("buttonColor");
             }
 
-            if(flowConfigs.has("enableReplays")) {
+            if (flowConfigs.has("backgroundColor")) {
+                this.backgroundColor = flowConfigs.getString("backgroundColor");
+                try {
+                    int contrastColor = getContrastColor(Color.parseColor(this.backgroundColor));
+                    this.loaderColor = contrastColor;
+                } catch (Exception ignore) {
+                }
+            }
+
+            if (flowConfigs.has("headerColor")) {
+                this.headerColor = flowConfigs.getString("headerColor");
+            }
+
+            if (flowConfigs.has("enableReplays")) {
                 this.enableReplays = flowConfigs.getBoolean("enableReplays");
             }
 
-            if(flowConfigs.has("activationMethodShake")) {
+            if (flowConfigs.has("activationMethodShake")) {
                 this.activationMethodShake = flowConfigs.getBoolean("activationMethodShake");
             }
 
-            if(flowConfigs.has("activationMethodScreenshotGesture")) {
+            if (flowConfigs.has("activationMethodScreenshotGesture")) {
                 this.activationMethodScreenshotGesture = flowConfigs.getBoolean("activationMethodScreenshotGesture");
             }
 
-            if(flowConfigs.has("activationMethodFeedbackButton")) {
+            if (flowConfigs.has("activationMethodFeedbackButton")) {
                 this.activationMethodFeedbackButton = flowConfigs.getBoolean("activationMethodFeedbackButton");
             }
 
-            if(flowConfigs.has("replaysInterval")){
+            if (flowConfigs.has("replaysInterval")) {
                 this.interval = flowConfigs.getInt("replaysInterval");
             }
 
-            if (flowConfigs.has("networkLogPropsToIgnore")) {
-                this.networkLogPropsToIgnore  = flowConfigs.getJSONArray("networkLogPropsToIgnore");
+            if(flowConfigs.has("bottomX")) {
+                this.bottomX = flowConfigs.getInt("bottomX");
             }
 
-            if(flowConfigs.has("replaysInterval")) {
+            if(flowConfigs.has("bottomY")) {
+                this.bottomY = flowConfigs.getInt("bottomY");
+            }
+
+            if (flowConfigs.has("networkLogPropsToIgnore")) {
+                this.networkLogPropsToIgnore = flowConfigs.getJSONArray("networkLogPropsToIgnore");
+            }
+
+            if (flowConfigs.has("replaysInterval")) {
                 this.interval = flowConfigs.getInt("replaysInterval");
                 GleapBug.getInstance().setReplay(new Replay(60 / this.interval, 1000 * this.interval));
             }
 
-            if(flowConfigs.has("networkLogBlacklist")) {
+            if (flowConfigs.has("networkLogBlacklist")) {
                 this.blackList = flowConfigs.getJSONArray("networkLogBlacklist");
             }
-
 
         } catch (JSONException e) {
             e.printStackTrace();
@@ -468,5 +498,33 @@ class GleapConfig {
 
     public LinkedList<GleapWebViewMessage> getGleapWebViewMessages() {
         return gleapWebViewMessages;
+    }
+
+    public String getBackgroundColor() {
+        return backgroundColor;
+    }
+
+    public String getHeaderColor() {
+        return headerColor;
+    }
+
+    public int getLoaderColor() {
+        return loaderColor;
+    }
+
+    public int getBottomX() {
+        return bottomX;
+    }
+
+    public int getBottomY() {
+        return bottomY;
+    }
+
+    private int getContrastColor(int color) {
+        double y = ColorUtils.calculateContrast(Color.WHITE, color);
+        if (y <= 5) {
+            return Color.BLACK;
+        }
+        return Color.WHITE;
     }
 }

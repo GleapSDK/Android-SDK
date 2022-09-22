@@ -18,6 +18,7 @@ class GleapDetectorUtil {
 
     public static void stopAllDetectors() {
         isRunning = true;
+
         for (GleapDetector detector : GleapConfig.getInstance().getGestureDetectors()) {
             detector.pause();
         }
@@ -44,6 +45,7 @@ class GleapDetectorUtil {
                 }
                 if (activationMethod == GleapActivationMethod.FAB) {
                     FABGesture fabGesture = new FABGesture(application);
+                    fabGesture.initialize();
                     detectorList.add(fabGesture);
                 }
             }

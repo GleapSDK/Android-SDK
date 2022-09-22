@@ -85,15 +85,6 @@ class GleapEventService {
         eventsToBeSent.add(event);
     }
 
-
-    private JSONObject generateEvent(JSONObject obj) throws JSONException {
-        JSONObject event = new JSONObject();
-        event.put("date", dateToString(new Date()));
-        event.put("name", "pageView");
-        event.put("data", obj);
-        return event;
-    }
-
     private class InitialEventHttpHelper extends AsyncTask {
 
         @Override
@@ -171,7 +162,12 @@ class GleapEventService {
         }
 
         private void processData(JSONObject data) throws Exception {
-            if (data.has("a")) {
+            if (data.has("u")) {
+                System.out.println("Size" + data.get("u"));
+                GleapInvisibleActivityManger.getInstance().setMessageCounter(data.getInt("u"));
+            }
+
+            if (data.has("a") && data.get("a") instanceof  JSONArray) {
                 JSONArray actions = data.getJSONArray("a");
                 for (int i = 0; i < actions.length(); i++) {
                     JSONObject currentAction = actions.getJSONObject(i);
@@ -194,9 +190,6 @@ class GleapEventService {
                     }
                 }
                 GleapInvisibleActivityManger.getInstance().render(null, false);
-            }
-            if (data.has("u")) {
-                System.out.println("Size" + data.get("u"));
             }
         }
     }
@@ -285,8 +278,11 @@ class GleapEventService {
         }
 
         private void processData(JSONObject data) throws Exception {
-            if (data.has("a")) {
-                System.out.println(data.get("a"));
+            if (data.has("u")) {
+               GleapInvisibleActivityManger.getInstance().setMessageCounter(data.getInt("u"));
+            }
+
+            if (data.has("a") && data.get("a") instanceof  JSONArray) {
                 JSONArray actions = data.getJSONArray("a");
                 for (int i = 0; i < actions.length(); i++) {
                     JSONObject currentAction = actions.getJSONObject(i);
@@ -310,9 +306,7 @@ class GleapEventService {
                 GleapInvisibleActivityManger.getInstance().render(null, false);
             }
 
-            if (data.has("u")) {
-                System.out.println("Size u:" + data.get("u"));
-            }
+
         }
     }
 
@@ -353,7 +347,6 @@ class GleapEventService {
         }
 
         GleapSender sender = new GleapSender(senderName, profileImageUrl);
-        System.out.println(sender.toString());
         return new GleapChatMessage(type, text, shareToken, sender);
     }
 }

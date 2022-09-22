@@ -10,6 +10,8 @@ import androidx.annotation.Nullable;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.Date;
+
 class GleapActivityManager {
     private static GleapActivityManager gleapActivityManager;
     private Application application;
@@ -30,14 +32,12 @@ class GleapActivityManager {
             this.application.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
                 @Override
                 public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle bundle) {
-
                 }
 
                 @Override
                 public void onActivityStarted(@NonNull Activity activity) {
                     checkPage(activity);
                     generateFab(activity);
-                    GleapInvisibleActivityManger.getInstance().render(activity, false);
                 }
 
                 @Override
@@ -52,7 +52,7 @@ class GleapActivityManager {
 
                 @Override
                 public void onActivityStopped(@NonNull Activity activity) {
-
+                    GleapInvisibleActivityManger.getInstance().setVisible();
                 }
 
                 @Override
@@ -86,6 +86,8 @@ class GleapActivityManager {
                     currentPage = activity.getClass().getSimpleName();
                 } catch (JSONException e) {
                 }
+            } else if(!activity.getClass().getSimpleName().contains("Gleap")){
+                GleapInvisibleActivityManger.getInstance().setVisible();
             } else {
                 GleapInvisibleActivityManger.getInstance().setInvisible();
             }
@@ -94,7 +96,6 @@ class GleapActivityManager {
 
 
     private void generateFab(Activity activity) {
-        //TODO generate fab if
         GleapDetector detector =  GleapDetectorUtil.getDetectorByClassName("FABGesture");
 
         if(detector != null) {

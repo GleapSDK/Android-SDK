@@ -33,8 +33,6 @@ import java.net.URLConnection;
 import gleap.io.gleap.R;
 
 class FABGesture extends GleapDetector {
-    private ImageButton imageButton;
-    private boolean running = false;
 
     public FABGesture(Application application) {
         super(application);
@@ -43,7 +41,7 @@ class FABGesture extends GleapDetector {
 
     @Override
     public void initialize() {
-
+        attachFAB(null);
     }
 
     @Override
@@ -53,7 +51,6 @@ class FABGesture extends GleapDetector {
 
     @Override
     public void pause() {
-        //   attachFAB(null);
 
     }
 
@@ -63,7 +60,7 @@ class FABGesture extends GleapDetector {
     }
 
     private void start() {
-        attachFAB(null);
+       //
     }
 
     private void run() {

@@ -609,6 +609,11 @@ public class Gleap implements iGleap {
         GleapConfig.getInstance().setEnableConsoleLogsFromCode(false);
     }
 
+    @Override
+    public void showFeedbackButton(boolean show) {
+        GleapInvisibleActivityManger.getInstance().setShowFab(show);
+    }
+
     /**
      * Enable Replay function for BB
      * Use with care, check performance on phone
