@@ -170,7 +170,7 @@ class ScreenshotUtil {
             bitmap.compress(Bitmap.CompressFormat.PNG, 80, out);
             Bitmap decoded = BitmapFactory.decodeStream(new ByteArrayInputStream(out.toByteArray()));
             return decoded;
-        } catch (OutOfMemoryError error) {
+        } catch (OutOfMemoryError | Exception error) {
         }
         return null;
     }
@@ -192,7 +192,7 @@ class ScreenshotUtil {
             bitmap.compress(Bitmap.CompressFormat.PNG, 90, out);
             Bitmap decoded = BitmapFactory.decodeStream(new ByteArrayInputStream(out.toByteArray()));
             return bm;
-        } catch (OutOfMemoryError error) {
+        } catch (OutOfMemoryError | Exception error) {
         }
 
         return null;
@@ -217,7 +217,6 @@ class ScreenshotUtil {
             field.setAccessible(true);
             return field.get(target);
         } catch (Exception e) {
-            e.printStackTrace();
         }
         return null;
     }
