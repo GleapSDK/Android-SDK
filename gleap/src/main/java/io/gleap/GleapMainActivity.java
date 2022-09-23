@@ -212,19 +212,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
             } catch (JSONException e) {
                 e.printStackTrace();
             }
-
-            // GleapConfig.getInstance().setWebView(webView);
-            LinkedList<GleapWebViewMessage> webViewMessages = GleapConfig.getInstance().getGleapWebViewMessages();
-
-            for (GleapWebViewMessage gleapWVMessage :
-                    webViewMessages) {
-                try {
-                    sendMessage(gleapWVMessage.getMessage());
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-            GleapConfig.getInstance().getGleapWebViewMessages().clear();
         }
     }
 
@@ -346,6 +333,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                                 sendPrefillData();
                                 sendScreenshotUpdate();
                                 sendPendingActions();
+
                                 Handler handler = new Handler();
                                 handler.postDelayed(new Runnable() {
                                     @Override

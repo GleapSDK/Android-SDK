@@ -141,6 +141,8 @@ public class Gleap implements iGleap {
         } catch (Error | Exception ignore) {
         }
     }
+    
+    
 
     @Override
     public void startFeedbackFlow(String feedbackFlow, Boolean showBackButton) {
@@ -152,7 +154,8 @@ public class Gleap implements iGleap {
                     if (!GleapDetectorUtil.isIsRunning() && UserSessionController.getInstance() != null && UserSessionController.getInstance().isSessionLoaded() && Gleap.getInstance() != null) {
                         try {
                             JSONObject message = new JSONObject();
-                            message.put("name", "start-feedbackflow");
+//TODO:
+                            message.put("name", "start-survey");
 
                             JSONObject data = new JSONObject();
                             if (!feedbackFlow.equals("")) {

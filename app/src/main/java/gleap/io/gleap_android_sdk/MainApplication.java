@@ -1,17 +1,10 @@
 package gleap.io.gleap_android_sdk;
 
 import android.app.Application;
-import android.os.AsyncTask;
 
 import org.json.JSONObject;
 
-import java.io.File;
-
-import io.gleap.APPLICATIONTYPE;
 import io.gleap.Gleap;
-import io.gleap.GleapUser;
-import io.gleap.GleapUserProperties;
-import io.gleap.PrefillHelper;
 import io.gleap.callbacks.ConfigLoadedCallback;
 import io.gleap.callbacks.CustomActionCallback;
 import io.gleap.callbacks.FeedbackFlowStartedCallback;

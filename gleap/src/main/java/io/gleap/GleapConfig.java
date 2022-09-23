@@ -87,7 +87,7 @@ class GleapConfig {
     //Streamedevent
     private int maxEventLength = 500;
     private int resceduleEventStreamDurationShort = 1500;
-    private int resceduleEventStreamDurationLong = 7500;
+    private int resceduleEventStreamDurationLong = 10000;
 
     private LinkedList<GleapWebViewMessage> gleapWebViewMessages = new LinkedList<>();
 
