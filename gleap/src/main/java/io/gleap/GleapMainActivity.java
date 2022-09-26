@@ -81,10 +81,11 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 findViewById(R.id.gleap_progressBarHeader).setBackgroundColor(Color.parseColor(GleapConfig.getInstance().getHeaderColor()));
                 findViewById(R.id.loader).setBackgroundColor(Color.parseColor(GleapConfig.getInstance().getBackgroundColor()));
 
-                try{
-                    ((ProgressBar)findViewById(R.id.gleap_progressBarBody)).getIndeterminateDrawable()
-                            .setColorFilter(GleapConfig.getInstance().getLoaderColor(), PorterDuff.Mode.SRC_IN );
-                }catch (Exception ex) {}
+                try {
+                    ((ProgressBar) findViewById(R.id.gleap_progressBarBody)).getIndeterminateDrawable()
+                            .setColorFilter(GleapConfig.getInstance().getLoaderColor(), PorterDuff.Mode.SRC_IN);
+                } catch (Exception ex) {
+                }
 
                 Handler handler = new Handler(Looper.getMainLooper());
                 handler.postDelayed(new Runnable() {
@@ -366,7 +367,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                                 break;
                         }
                     } catch (Exception err) {
-                        }
+                    }
                 }
             });
         }
@@ -415,11 +416,13 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
             for (JSONObject action :
                     queue) {
                 try {
-                    if (action.has("data")) {
-                        JSONObject data = action.getJSONObject("data");
-                        data.put("actionOutboundId", GleapBug.getInstance().getOutboubdId());
+
+                    action.put("actionOutboundId", GleapBug.getInstance().getOutboubdId());
+                    String command = "start-feedbackflow";
+                    if(action.has("isSurvey") && action.getBoolean("isSurvey") ){
+                        command = "start-survey";
                     }
-                    sendMessage(action.toString());
+                    sendMessage(generateGleapMessage(command, action));
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -570,7 +573,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     if (GleapConfig.getInstance().getWidgetClosedCallback() != null) {
                         GleapConfig.getInstance().getWidgetClosedCallback().invoke();
                     }
-                    System.out.println("START"+new Date().getTime());
                     finish();
                 }
             });

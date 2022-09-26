@@ -27,9 +27,7 @@ public class NetworkBuffer {
                 networklogs.removeFirst();
             }
 
-            System.out.println(networklogs.size());
-
-            networklogs.push(networklog);
+              networklogs.push(networklog);
         }catch (Exception ignore) {}
     }
 

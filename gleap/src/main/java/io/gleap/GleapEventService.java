@@ -287,7 +287,6 @@ class GleapEventService {
 
     private void processData(JSONObject data) throws Exception {
         if (data.has("u")) {
-            System.out.println("Size" + data.get("u"));
             GleapInvisibleActivityManger.getInstance().setMessageCounter(data.getInt("u"));
         }
 
@@ -298,16 +297,31 @@ class GleapEventService {
                 if (currentAction.has("actionType")) {
                     if (currentAction.getString("format").contains("survey")) {
                         JSONObject jsonObject = new JSONObject();
-                        try{
-                            jsonObject.put("actionOutboundId",currentAction.getString("outbound"));
+                        try {
+                            jsonObject.put("actionOutboundId", currentAction.getString("outbound"));
                             jsonObject.put("isSurvey", true);
                             jsonObject.put("hideBackButton", true);
-                            jsonObject.put("format", currentAction.getString("format") );
-                        }catch (Exception ex) {}
+                            jsonObject.put("format", currentAction.getString("format"));
+                            jsonObject.put("flow", currentAction.getString("actionType"));
+                        } catch (Exception ex) {
+                        }
                         //check if it isopen
                         GleapActionQueueHandler.getInstance().addActionMessage(jsonObject);
+                        Gleap.getInstance().open();
+                    } else {
 
-                        Gleap.getInstance().startFeedbackFlow(currentAction.getString("actionType"));
+                        JSONObject jsonObject = new JSONObject();
+                        try {
+                            jsonObject.put("actionOutboundId", currentAction.getString("outbound"));
+                            jsonObject.put("isSurvey", false);
+                            jsonObject.put("hideBackButton", true);
+                            jsonObject.put("format", currentAction.getString("format"));
+                            jsonObject.put("flow", currentAction.getString("actionType"));
+                        } catch (Exception ex) {
+                        }
+                        //check if it isopen
+                        GleapActionQueueHandler.getInstance().addActionMessage(jsonObject);
+                        Gleap.getInstance().open();
                     }
                     if (currentAction.getString("actionType").contains("notification")) {
 

@@ -154,8 +154,7 @@ public class Gleap implements iGleap {
                     if (!GleapDetectorUtil.isIsRunning() && UserSessionController.getInstance() != null && UserSessionController.getInstance().isSessionLoaded() && Gleap.getInstance() != null) {
                         try {
                             JSONObject message = new JSONObject();
-//TODO:
-                            message.put("name", "start-survey");
+                            message.put("name", "start-feedbackflow");
 
                             JSONObject data = new JSONObject();
                             if (!feedbackFlow.equals("")) {

@@ -31,7 +31,6 @@ class ReplaysDetector extends GleapDetector {
 
     @Override
     public void initialize() {
-        System.out.println("CALLED?");
         replay = GleapBug.getInstance().getReplay();
         handler = new Handler(Looper.getMainLooper());
 
@@ -39,7 +38,6 @@ class ReplaysDetector extends GleapDetector {
 
     @Override
     public void resume() {
-        System.out.println("HEYLLO");
         handler.post(runnableCode);
     }
 

@@ -224,7 +224,6 @@ class GleapInvisibleActivityManger {
                         });
 
                         relativeLayout.addView(imageButton, convertDpToPixel(60, local), convertDpToPixel(60, local));
-                        System.out.println(messageCounter);
                         if(messageCounter > 0) {
                             relativeLayout.addView(textView,convertDpToPixel(20, local), convertDpToPixel(20, local));
                             ConstraintSet set = new ConstraintSet();
