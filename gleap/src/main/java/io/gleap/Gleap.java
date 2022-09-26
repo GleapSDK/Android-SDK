@@ -619,7 +619,7 @@ public class Gleap implements iGleap {
          * @author Gleap
          */
         @Override
-        public void logEvent(String name) {
+        public void trackEvent(String name) {
             try {
                 GleapBug.getInstance().logEvent(name);
             } catch (Error | Exception ignore) {
@@ -634,7 +634,7 @@ public class Gleap implements iGleap {
          * @author Gleap
          */
         @Override
-        public void logEvent(String name, JSONObject data) {
+        public void trackEvent(String name, JSONObject data) {
             try {
                 GleapBug.getInstance().logEvent(name, data);
             } catch (Error | Exception ignore) {
