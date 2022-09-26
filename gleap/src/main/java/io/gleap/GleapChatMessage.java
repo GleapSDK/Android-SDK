@@ -72,18 +72,18 @@ class GleapChatMessage {
         completeMessage.addView(messageComponent);
 
         LinearLayout.LayoutParams paramsCompleteMessage = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        paramsCompleteMessage.setMargins(convertDpToPixel(5, local), convertDpToPixel(5, local), convertDpToPixel(5, local), convertDpToPixel(5, local));
+        paramsCompleteMessage.setMargins(convertDpToPixel(5, local), convertDpToPixel(7, local), convertDpToPixel(5, local), convertDpToPixel(7, local));
 
 
         completeMessage.setBackgroundResource(R.drawable.chatbubble);
-        completeMessage.setElevation(7f);
+        completeMessage.setElevation(3f);
 
         completeMessage.setBaselineAligned(true);
         completeMessage.setLayoutParams(paramsCompleteMessage);
         completeMessage.setPadding(convertDpToPixel(15, local), convertDpToPixel(10, local), convertDpToPixel(15, local), convertDpToPixel(10, local));
 
         ImageView avatarImage = new ImageView(local.getApplication().getApplicationContext());
-        avatarImage.setPadding(0, 0, convertDpToPixel(5, local), 0);
+        avatarImage.setPadding(0, 0, convertDpToPixel(7, local), 0);
 
         avatarImage.setLayoutParams(paramsCompleteMessage);
         new GleapImageHandler(getSender().getProfileImageUrl(), avatarImage).execute();

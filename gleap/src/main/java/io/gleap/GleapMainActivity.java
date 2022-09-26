@@ -202,17 +202,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         @Override
         public void onPageFinished(WebView view, String url) {
             super.onPageFinished(view, url);
-            JSONObject data = new JSONObject();
-            try {
-                data.put("isWidgetOpen", true);
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-            try {
-                sendMessage(generateGleapMessage("widget-status-update", data));
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
+
         }
     }
 
@@ -339,6 +329,18 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                                 handler.postDelayed(new Runnable() {
                                     @Override
                                     public void run() {
+                                        JSONObject data = new JSONObject();
+                                        try {
+                                            data.put("isWidgetOpen", true);
+                                        } catch (JSONException e) {
+                                            e.printStackTrace();
+                                        }
+                                        try {
+                                            sendMessage(generateGleapMessage("widget-status-update", data));
+                                        } catch (JSONException e) {
+                                            e.printStackTrace();
+                                        }
+
                                         webView.setVisibility(View.VISIBLE);
                                     }
                                 }, 500);
@@ -427,7 +429,14 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     e.printStackTrace();
                 }
             }
+
+            List<GleapWebViewMessage> messages = GleapConfig.getInstance().getGleapWebViewMessages();
+            for (GleapWebViewMessage message :
+                    messages) {
+                sendMessage(message.getMessage());
+            }
             GleapActionQueueHandler.getInstance().clearActionMessageQueue();
+            GleapConfig.getInstance().clearGleapWebViewMessages();
         }
 
         private void updateScreenshot(JSONObject object) {
@@ -573,6 +582,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     if (GleapConfig.getInstance().getWidgetClosedCallback() != null) {
                         GleapConfig.getInstance().getWidgetClosedCallback().invoke();
                     }
+                    GleapEventService.getInstance().refresh();
                     finish();
                 }
             });

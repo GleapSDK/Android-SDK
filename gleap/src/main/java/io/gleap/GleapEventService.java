@@ -41,6 +41,12 @@ class GleapEventService {
         return instance;
     }
 
+    public void refresh() {
+        try {
+            new EventHttpHelper().execute();
+        }catch (Exception ignore) {}
+    }
+
     public void sendInitialMessage() {
         final Handler h = new Handler(Looper.getMainLooper());
         h.postDelayed(new Runnable() {
@@ -57,7 +63,7 @@ class GleapEventService {
                     h.postDelayed(this, time);
                 }
             }
-        }, time); // 1 second delay (takes millis)
+        }, time);
     }
 
     public void start() {
@@ -67,13 +73,15 @@ class GleapEventService {
 
             @Override
             public void run() {
-                if (UserSessionController.getInstance() != null && UserSessionController.getInstance().isSessionLoaded()) {
-                    time = GleapConfig.getInstance().getResceduleEventStreamDurationLong();
-                    new EventHttpHelper().execute();
-                } else {
-                    time = GleapConfig.getInstance().getResceduleEventStreamDurationShort();
-                }
-                h.postDelayed(this, time);
+                try {
+                    if (UserSessionController.getInstance() != null && UserSessionController.getInstance().isSessionLoaded()) {
+                        time = GleapConfig.getInstance().getResceduleEventStreamDurationLong();
+                        new EventHttpHelper().execute();
+                    } else {
+                        time = GleapConfig.getInstance().getResceduleEventStreamDurationShort();
+                    }
+                    h.postDelayed(this, time);
+                }catch (Exception ignore) {}
             }
         }, time);
     }
@@ -288,6 +296,7 @@ class GleapEventService {
     private void processData(JSONObject data) throws Exception {
         if (data.has("u")) {
             GleapInvisibleActivityManger.getInstance().setMessageCounter(data.getInt("u"));
+            GleapInvisibleActivityManger.getInstance().addFab(null);
         }
 
         if (data.has("a") && data.get("a") instanceof JSONArray) {
@@ -295,6 +304,7 @@ class GleapEventService {
             for (int i = 0; i < actions.length(); i++) {
                 JSONObject currentAction = actions.getJSONObject(i);
                 if (currentAction.has("actionType")) {
+
                     if (currentAction.getString("format").contains("survey")) {
                         JSONObject jsonObject = new JSONObject();
                         try {
@@ -308,8 +318,7 @@ class GleapEventService {
                         //check if it isopen
                         GleapActionQueueHandler.getInstance().addActionMessage(jsonObject);
                         Gleap.getInstance().open();
-                    } else {
-
+                    } else if (!currentAction.getString("format").contains("widget")){
                         JSONObject jsonObject = new JSONObject();
                         try {
                             jsonObject.put("actionOutboundId", currentAction.getString("outbound"));

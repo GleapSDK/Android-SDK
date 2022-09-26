@@ -8,7 +8,7 @@ public class GleapWebViewMessage {
 
     public GleapWebViewMessage(String name, JSONObject objMessage) {
         try {
-            this.message = generateGleapMessage("open-conversation", objMessage);
+            this.message = generateGleapMessage(name, objMessage);
         }catch (Exception ex) {}
     }
 

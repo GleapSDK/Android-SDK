@@ -41,7 +41,7 @@ class GleapInvisibleActivityManger {
     private ConstraintLayout relativeLayout;
     private int prevSize = 0;
     private int messageCounter = 0;
-    private int prevMessageCounter = 0;
+    private int prevMessageCounter = -1;
     private boolean showFab = false;
 
 
@@ -156,6 +156,7 @@ class GleapInvisibleActivityManger {
 
 
     public void addFab(Activity activity) {
+
         if (activity == null) {
             activity = ActivityUtil.getCurrentActivity();
         }
@@ -169,11 +170,11 @@ class GleapInvisibleActivityManger {
             this.layout = (ConstraintLayout) inflater.inflate(R.layout.activity_gleap_fab, null);
             this.layout.setLayoutParams(new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         }
-/*
-        if (relativeLayout != null && prevMessageCounter == messageCounter ) {
-            addLayout(activity);
+
+        if (relativeLayout != null && prevMessageCounter == messageCounter) {
+          //  addLayout(activity);
             return;
-        }*/
+        }
 
         Activity local = activity;
 
@@ -182,6 +183,7 @@ class GleapInvisibleActivityManger {
                 @Override
                 public void run() {
                     try {
+                        System.out.println("PASSED?");
                         prevMessageCounter = messageCounter;
                         relativeLayout = new ConstraintLayout(local);
                         relativeLayout.setId(View.generateViewId());
@@ -192,11 +194,11 @@ class GleapInvisibleActivityManger {
                         GradientDrawable gdDefaultText = new GradientDrawable();
                         gdDefaultText.setColor(Color.RED);
                         gdDefaultText.setCornerRadius(1000);
-
                         TextView textView = new TextView(local);
                         textView.setId(View.generateViewId());
                         textView.setBackground(gdDefaultText);
                         textView.setTextColor(Color.WHITE);
+                        textView.setTextSize(10);
 
                         textView.setText(String.valueOf(messageCounter));
                         textView.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
@@ -212,6 +214,7 @@ class GleapInvisibleActivityManger {
                         imageButton.setBackground(gdDefault);
                         imageButton.setAdjustViewBounds(true);
                         imageButton.setScaleType(ImageView.ScaleType.FIT_CENTER);
+
                         new GleapImageHandler(GleapConfig.getInstance().getButtonLogo(), imageButton).execute();
 
                         imageButton.setOnClickListener(new View.OnClickListener() {
@@ -223,13 +226,19 @@ class GleapInvisibleActivityManger {
                             }
                         });
 
-                        relativeLayout.addView(imageButton, convertDpToPixel(60, local), convertDpToPixel(60, local));
+                        relativeLayout.addView(imageButton, convertDpToPixel(56, local), convertDpToPixel(56, local));
+
                         if(messageCounter > 0) {
-                            relativeLayout.addView(textView,convertDpToPixel(20, local), convertDpToPixel(20, local));
+                            textView.setElevation(1f);
+                            relativeLayout.addView(textView,convertDpToPixel(16, local), convertDpToPixel(16, local));
                             ConstraintSet set = new ConstraintSet();
                             set.clone(relativeLayout);
                             set.connect(textView.getId(), ConstraintSet.END, relativeLayout.getId(), ConstraintSet.END, 0);
                             set.applyTo(relativeLayout);
+
+                            textView.bringToFront();
+                        }else {
+
                         }
 
                         layout.removeView(relativeLayout);
@@ -263,16 +272,18 @@ class GleapInvisibleActivityManger {
     }
 
     private void addLayout(Activity local) {
-        ViewGroup viewGroup = (ViewGroup) ((ViewGroup) local
-                .findViewById(android.R.id.content)).getChildAt(0);
-        if (prev != null) {
-            prev.removeView(layout);
-        }
+        try {
+            ViewGroup viewGroup = (ViewGroup) ((ViewGroup) local
+                    .findViewById(android.R.id.content)).getChildAt(0);
+            if (prev != null) {
+                prev.removeView(layout);
+            }
 
-        if (viewGroup.indexOfChild(layout) < 0) {
-            viewGroup.addView(layout);
-            prev = viewGroup;
-        }
+            if (viewGroup.indexOfChild(layout) < 0) {
+                viewGroup.addView(layout);
+                prev = viewGroup;
+            }
+        }catch (Exception ignore) {}
        }
 
     void clearMessages() {

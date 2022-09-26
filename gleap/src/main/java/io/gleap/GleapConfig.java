@@ -502,6 +502,10 @@ class GleapConfig {
         return gleapWebViewMessages;
     }
 
+    public void clearGleapWebViewMessages() {
+        this.gleapWebViewMessages = new LinkedList<>();
+    }
+
     public String getBackgroundColor() {
         return backgroundColor;
     }
