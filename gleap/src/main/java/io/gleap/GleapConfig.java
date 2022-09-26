@@ -34,7 +34,7 @@ class GleapConfig {
 
     //bb config
     private String apiUrl = "https://api.gleap.io";
-    private String iFrameUrl = "https://messenger.gleap.io/app.html";
+    private String iFrameUrl = "https://messenger.gleap.io/app";
     private String sdkKey = "";
     private String feedbackFlow = "";
 

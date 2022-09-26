@@ -82,7 +82,7 @@ class GleapActivityManager {
                 JSONObject object = new JSONObject();
                 try {
                     object.put("page", activity.getClass().getSimpleName());
-                    Gleap.getInstance().logEvent("pageView", object);
+                    Gleap.getInstance().trackEvent("pageView", object);
                     currentPage = activity.getClass().getSimpleName();
                 } catch (JSONException e) {
                 }
