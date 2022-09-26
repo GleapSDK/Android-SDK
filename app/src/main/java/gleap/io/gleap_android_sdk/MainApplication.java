@@ -37,14 +37,14 @@ public class MainApplication extends Application {
         Gleap.getInstance().setWidgetClosedCallback(new WidgetClosedCallback() {
             @Override
             public void invoke() {
-                Gleap.getInstance().logEvent(WidgetClosedCallback.class.getName());
+                Gleap.getInstance().trackEvent(WidgetClosedCallback.class.getName());
             }
         });
 
         Gleap.getInstance().setConfigLoadedCallback(new ConfigLoadedCallback() {
             @Override
             public void configLoaded(JSONObject jsonObject) {
-                Gleap.getInstance().logEvent(ConfigLoadedCallback.class.getName());
+                Gleap.getInstance().trackEvent(ConfigLoadedCallback.class.getName());
             }
         });
 
@@ -53,14 +53,14 @@ public class MainApplication extends Application {
         Gleap.getInstance().setFeedbackSendingFailedCallback(new FeedbackSendingFailedCallback() {
             @Override
             public void invoke(String message) {
-                Gleap.getInstance().logEvent(FeedbackSentCallback.class.getName());
+                Gleap.getInstance().trackEvent(FeedbackSentCallback.class.getName());
             }
         });
 
         Gleap.getInstance().registerCustomAction(new CustomActionCallback() {
             @Override
             public void invoke(String message) {
-                Gleap.getInstance().logEvent(CustomActionCallback.class.getName() + " " + message);
+                Gleap.getInstance().trackEvent(CustomActionCallback.class.getName() + " " + message);
                 Gleap.getInstance().close();
             }
         });
@@ -68,7 +68,7 @@ public class MainApplication extends Application {
         Gleap.getInstance().setFeedbackFlowStartedCallback(new FeedbackFlowStartedCallback() {
             @Override
             public void invoke(String message) {
-                Gleap.getInstance().logEvent(FeedbackFlowStartedCallback.class.getName());
+                Gleap.getInstance().trackEvent(FeedbackFlowStartedCallback.class.getName());
             }
         });
     }

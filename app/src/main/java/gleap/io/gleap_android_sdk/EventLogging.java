@@ -31,7 +31,7 @@ public class EventLogging extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 //Gleap.getInstance().disableConsoleLog();
-                Gleap.getInstance().logEvent("HEY");
+                Gleap.getInstance().trackEvent("HEY");
                 Gleap.getInstance().log("THIS IS A CRIT", GleapLogLevel.ERROR);
                 Gleap.getInstance().log("THIS IS A INFO", GleapLogLevel.INFO);
                 Gleap.getInstance().log("THIS IS A WARN", GleapLogLevel.WARNING);
@@ -50,21 +50,21 @@ public class EventLogging extends AppCompatActivity {
                 }
                 System.out.println("THIS SHOULD BE AFTERWARDS!!!");
                 Logger.getAnonymousLogger().log(Level.INFO, "HEY THIS IS IT?" );
-                Gleap.getInstance().logEvent("THIS IS AN EVENT", jsonObject);
+                Gleap.getInstance().trackEvent("THIS IS AN EVENT", jsonObject);
             }
         });
 
         findViewById(R.id.event_error).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Gleap.getInstance().logEvent(null);
+                Gleap.getInstance().trackEvent(null);
             }
         });
 
         findViewById(R.id.event_error2).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Gleap.getInstance().logEvent(null, null);
+                Gleap.getInstance().trackEvent(null, null);
             }
         });
 
