@@ -42,6 +42,7 @@ class GleapInvisibleActivityManger {
     private int prevSize = 0;
     private int messageCounter = 0;
     private int prevMessageCounter = -1;
+    private boolean updateQueue = false;
     private boolean showFab = false;
 
 
@@ -124,7 +125,8 @@ class GleapInvisibleActivityManger {
                     }
 
 
-                    if ((messages.size() > 0 && messages.size() != prevSize) || force) {
+                    if ((messages.size() > 0 && (messages.size() != prevSize)) || force || updateQueue) {
+                        updateQueue = false;
                         prevSize = messages.size();
                         //parent.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
                         chatMessages.removeAllViews();
@@ -151,6 +153,10 @@ class GleapInvisibleActivityManger {
     }
 
     public void addComment(GleapChatMessage comment) {
+        if(this.messages.size() >= 3) {
+            this.messages = new GleapArrayHelper<GleapChatMessage>().shiftArray(this.messages);
+            updateQueue = true;
+        }
         this.messages.add(comment);
     }
 

@@ -583,6 +583,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                         GleapConfig.getInstance().getWidgetClosedCallback().invoke();
                     }
                     GleapEventService.getInstance().refresh();
+                    GleapInvisibleActivityManger.getInstance().clearMessages();
                     finish();
                 }
             });
