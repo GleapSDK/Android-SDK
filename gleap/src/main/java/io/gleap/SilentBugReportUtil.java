@@ -9,7 +9,7 @@ import org.json.JSONObject;
 import java.util.Iterator;
 import java.util.concurrent.ExecutionException;
 
-import io.gleap.FeedbackSentCallback;
+import io.gleap.callbacks.FeedbackSentCallback;
 
 class SilentBugReportUtil {
     public static void createSilentBugReport(Context context, String description, Gleap.SEVERITY severity, String type, JSONObject excludeData) {

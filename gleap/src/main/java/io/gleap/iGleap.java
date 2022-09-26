@@ -6,17 +6,16 @@ import java.io.File;
 
 import javax.net.ssl.HttpsURLConnection;
 
-import io.gleap.ConfigLoadedCallback;
-import io.gleap.CustomActionCallback;
-import io.gleap.FeedbackFlowClosedCallback;
-import io.gleap.FeedbackFlowStartedCallback;
-import io.gleap.FeedbackSendingFailedCallback;
-import io.gleap.FeedbackSentCallback;
-import io.gleap.FeedbackWillBeSentCallback;
-import io.gleap.GetBitmapCallback;
-import io.gleap.InitializationDoneCallback;
-import io.gleap.WidgetClosedCallback;
-import io.gleap.WidgetOpenedCallback;
+import io.gleap.callbacks.ConfigLoadedCallback;
+import io.gleap.callbacks.CustomActionCallback;
+import io.gleap.callbacks.FeedbackFlowStartedCallback;
+import io.gleap.callbacks.FeedbackSendingFailedCallback;
+import io.gleap.callbacks.FeedbackSentCallback;
+import io.gleap.callbacks.FeedbackWillBeSentCallback;
+import io.gleap.callbacks.GetBitmapCallback;
+import io.gleap.callbacks.InitializationDoneCallback;
+import io.gleap.callbacks.WidgetClosedCallback;
+import io.gleap.callbacks.WidgetOpenedCallback;
 
 interface iGleap {
 
@@ -150,7 +149,7 @@ interface iGleap {
      * @param name Name of the event
      * @author Gleap
      */
-    void logEvent(String name);
+    void trackEvent(String name);
 
     /**
      * Logs a custom event with data
@@ -159,7 +158,7 @@ interface iGleap {
      * @param data Data passed with the event.
      * @author Gleap
      */
-    void logEvent(String name, JSONObject data);
+    void trackEvent(String name, JSONObject data);
 
     /**
      * Attaches a file to the feedback
@@ -350,6 +349,8 @@ interface iGleap {
      *
      */
     void disableConsoleLog();
+
+    void showFeedbackButton(boolean show);
 }
 
 

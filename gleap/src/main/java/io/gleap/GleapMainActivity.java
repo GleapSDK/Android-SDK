@@ -5,12 +5,13 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.net.Uri;
 import android.net.http.SslError;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.Settings;
 import android.util.Base64;
 import android.view.View;
 import android.view.Window;
@@ -25,18 +26,23 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.ProgressBar;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 
 import gleap.io.gleap.R;
+import io.gleap.CallCloseCallback;
 
 public class GleapMainActivity extends AppCompatActivity implements OnHttpResponseListener {
     private WebView webView;
@@ -66,9 +72,20 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
             url += GleapURLGenerator.generateURL();
 
             setContentView(R.layout.activity_gleap_main);
+
+            WebView.setWebContentsDebuggingEnabled(true);
+
             if (getPackageManager().hasSystemFeature("android.software.webview")) {
                 webView = findViewById(R.id.gleap_webview);
 
+                findViewById(R.id.gleap_progressBarHeader).setBackgroundColor(Color.parseColor(GleapConfig.getInstance().getHeaderColor()));
+                findViewById(R.id.loader).setBackgroundColor(Color.parseColor(GleapConfig.getInstance().getBackgroundColor()));
+
+                try {
+                    ((ProgressBar) findViewById(R.id.gleap_progressBarBody)).getIndeterminateDrawable()
+                            .setColorFilter(GleapConfig.getInstance().getLoaderColor(), PorterDuff.Mode.SRC_IN);
+                } catch (Exception ex) {
+                }
 
                 Handler handler = new Handler(Looper.getMainLooper());
                 handler.postDelayed(new Runnable() {
@@ -88,10 +105,10 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                         GleapMainActivity.this.finish();
                     }
                 });
-
                 initBrowser();
             }
-        }catch (Exception ex) {}
+        } catch (Exception ex) {
+        }
     }
 
 
@@ -181,6 +198,12 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         public void onReceivedHttpError(WebView view, WebResourceRequest request, WebResourceResponse errorResponse) {
             super.onReceivedHttpError(view, request, errorResponse);
         }
+
+        @Override
+        public void onPageFinished(WebView view, String url) {
+            super.onPageFinished(view, url);
+
+        }
     }
 
     @Override
@@ -211,21 +234,22 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
         @Override
         public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
-        try {
-            if (mUploadMessage != null) {
-                mUploadMessage.onReceiveValue(null);
+            try {
+                if (mUploadMessage != null) {
+                    mUploadMessage.onReceiveValue(null);
+                }
+
+                mUploadMessage = filePathCallback;
+                sendSessionUpdate();
+
+
+                Intent i = new Intent(Intent.ACTION_GET_CONTENT);
+                i.addCategory(Intent.CATEGORY_OPENABLE);
+                i.setType("*/*"); // set MIME type to filter
+
+                ActivityUtil.getCurrentActivity().startActivityForResult(Intent.createChooser(i, "File Chooser"), 1);
+            } catch (Exception ex) {
             }
-
-            mUploadMessage = filePathCallback;
-            sendSessionUpdate();
-
-
-            Intent i = new Intent(Intent.ACTION_GET_CONTENT);
-            i.addCategory(Intent.CATEGORY_OPENABLE);
-            i.setType("*/*"); // set MIME type to filter
-
-            ActivityUtil.getCurrentActivity().startActivityForResult(Intent.createChooser(i, "File Chooser"), 1);
-        }catch (Exception ex) {}
             return true;
         }
 
@@ -300,10 +324,23 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                                 sendPrefillData();
                                 sendScreenshotUpdate();
                                 sendPendingActions();
+
                                 Handler handler = new Handler();
                                 handler.postDelayed(new Runnable() {
                                     @Override
                                     public void run() {
+                                        JSONObject data = new JSONObject();
+                                        try {
+                                            data.put("isWidgetOpen", true);
+                                        } catch (JSONException e) {
+                                            e.printStackTrace();
+                                        }
+                                        try {
+                                            sendMessage(generateGleapMessage("widget-status-update", data));
+                                        } catch (JSONException e) {
+                                            e.printStackTrace();
+                                        }
+
                                         webView.setVisibility(View.VISIBLE);
                                     }
                                 }, 500);
@@ -332,7 +369,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                                 break;
                         }
                     } catch (Exception err) {
-
                     }
                 }
             });
@@ -382,16 +418,25 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
             for (JSONObject action :
                     queue) {
                 try {
-                    if (action.has("data")) {
-                        JSONObject data = action.getJSONObject("data");
-                        data.put("actionOutboundId", GleapBug.getInstance().getOutboubdId());
+
+                    action.put("actionOutboundId", GleapBug.getInstance().getOutboubdId());
+                    String command = "start-feedbackflow";
+                    if(action.has("isSurvey") && action.getBoolean("isSurvey") ){
+                        command = "start-survey";
                     }
-                    sendMessage(action.toString());
+                    sendMessage(generateGleapMessage(command, action));
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
             }
+
+            List<GleapWebViewMessage> messages = GleapConfig.getInstance().getGleapWebViewMessages();
+            for (GleapWebViewMessage message :
+                    messages) {
+                sendMessage(message.getMessage());
+            }
             GleapActionQueueHandler.getInstance().clearActionMessageQueue();
+            GleapConfig.getInstance().clearGleapWebViewMessages();
         }
 
         private void updateScreenshot(JSONObject object) {
@@ -400,12 +445,12 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 try {
                     base64String = object.getString("data");
 
-                if (base64String != null) {
-                    String base64Image = base64String.split(",")[1];
-                    byte[] decodedString = Base64.decode(base64Image, Base64.DEFAULT);
-                    Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
-                    GleapBug.getInstance().setScreenshot(decodedByte);
-                }
+                    if (base64String != null) {
+                        String base64Image = base64String.split(",")[1];
+                        byte[] decodedString = Base64.decode(base64Image, Base64.DEFAULT);
+                        Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+                        GleapBug.getInstance().setScreenshot(decodedByte);
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -537,6 +582,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     if (GleapConfig.getInstance().getWidgetClosedCallback() != null) {
                         GleapConfig.getInstance().getWidgetClosedCallback().invoke();
                     }
+                    GleapEventService.getInstance().refresh();
                     finish();
                 }
             });
@@ -548,7 +594,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
      *
      * @param message
      */
-    private void sendMessage(String message) {
+    public void sendMessage(String message) {
         webView.evaluateJavascript("sendMessage(" + message + ");", null);
     }
 

@@ -18,6 +18,7 @@ import javax.net.ssl.HttpsURLConnection;
 public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
     private static final String httpsUrl = GleapConfig.getInstance().getApiUrl() + "/sessions/identify";
     public boolean isLoaded = false;
+
     @Override
     protected Integer doInBackground(Void... voids) {
         try {
@@ -26,7 +27,7 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
             }
 
             UserSession userSession = UserSessionController.getInstance().getUserSession();
-            if (userSession == null && !isLoaded && UserSessionController.getInstance().isSessionLoaded()) {
+            if (userSession == null) {
                 return 200;
             }
 
@@ -40,31 +41,37 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                 conn.setRequestProperty("Content-Type", "application/json");
                 conn.setRequestMethod("POST");
 
-                if (userSession != null && userSession.getId() != null && !userSession.getId().equals("")) {
+                if (userSession.getId() != null && !userSession.getId().equals("")) {
                     conn.setRequestProperty("Gleap-Id", userSession.getId());
                 }
 
-                if (userSession != null && userSession.getHash() != null && !userSession.getHash().equals("")) {
+                if (userSession.getHash() != null && !userSession.getHash().equals("")) {
                     conn.setRequestProperty("Gleap-Hash", userSession.getHash());
                 }
 
                 JSONObject jsonObject = new JSONObject();
                 if (gleapUser != null) {
                     try {
-                        if (gleapUser.getUserId() != null) {
+                        if (gleapUser.getUserId() != null && !gleapUser.getUserId().equals("")) {
                             jsonObject.put("userId", gleapUser.getUserId());
                         }
 
                         if (gleapUser.getGleapUserProperties() != null) {
                             jsonObject.put("email", gleapUser.getGleapUserProperties().getEmail());
                             jsonObject.put("name", gleapUser.getGleapUserProperties().getName());
-                            jsonObject.put("userHash", gleapUser.getGleapUserProperties().getHash());
-                            jsonObject.put("value", gleapUser.getGleapUserProperties().getValue());
+                          //  jsonObject.put("userHash", gleapUser.getGleapUserProperties().getHash());
+                            if(gleapUser.getGleapUserProperties().getValue() != 0) {
+                                jsonObject.put("value", gleapUser.getGleapUserProperties().getValue());
+                            }
                             jsonObject.put("phone", gleapUser.getGleapUserProperties().getPhoneNumber());
                         }
                     } catch (Exception ex) {
 
                     }
+                }
+
+                if(!jsonObject.has("userId")) {
+                    return 200;
                 }
 
                 try (OutputStream os = conn.getOutputStream()) {
@@ -93,14 +100,33 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                             hash = result.getString("gleapHash");
                         }
 
+                        GleapUserProperties gleapUserProperties = new GleapUserProperties();
+                        if(result.has("name")) {
+                            gleapUserProperties.setName(result.getString("name"));
+                        }
+
+                        if(result.has("email")) {
+                            gleapUserProperties.setEmail(result.getString("email"));
+                        }
+
+                        String userId="";
+
+                        if(result.has("userId")) {
+                            userId = result.getString("userId");
+                        }
+
+                        UserSessionController.getInstance().setGleapUserSession(new GleapUser(userId, gleapUserProperties));
+
 
                         if (id != null && hash != null) {
                             UserSessionController.getInstance().mergeUserSession(id, hash);
                             isLoaded = true;
                         }
+                       GleapInvisibleActivityManger.getInstance().render(null, true);
                     }
 
                 } catch (Exception e) {
+                    e.printStackTrace();
                     if (UserSessionController.getInstance() != null) {
                         UserSessionController.getInstance().clearUserSession();
                     }
@@ -117,4 +143,5 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
 
         return 200;
     }
+
 }

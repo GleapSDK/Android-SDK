@@ -1,25 +1,16 @@
 package gleap.io.gleap_android_sdk;
 
 import android.app.Application;
-import android.os.AsyncTask;
 
 import org.json.JSONObject;
 
-import java.io.File;
-
-import io.gleap.APPLICATIONTYPE;
 import io.gleap.Gleap;
-import io.gleap.GleapUser;
-import io.gleap.GleapUserProperties;
-import io.gleap.PrefillHelper;
-import io.gleap.ConfigLoadedCallback;
-import io.gleap.CustomActionCallback;
-import io.gleap.FeedbackFlowStartedCallback;
-import io.gleap.FeedbackSendingFailedCallback;
-import io.gleap.FeedbackSentCallback;
-import io.gleap.InitializationDoneCallback;
-import io.gleap.WidgetClosedCallback;
-import io.gleap.WidgetOpenedCallback;
+import io.gleap.callbacks.ConfigLoadedCallback;
+import io.gleap.callbacks.CustomActionCallback;
+import io.gleap.callbacks.FeedbackFlowStartedCallback;
+import io.gleap.callbacks.FeedbackSendingFailedCallback;
+import io.gleap.callbacks.FeedbackSentCallback;
+import io.gleap.callbacks.WidgetClosedCallback;
 
 public class MainApplication extends Application {
 
@@ -29,7 +20,6 @@ public class MainApplication extends Application {
         Gleap.initialize("DUPaIr7s689BBblcFI4pc5aBgYJTm7Sc", this);
 
         Gleap.getInstance().setLanguage("AR_EG");
-
 
        /*   GleapUserProperties userProperties = new GleapUserProperties("Test User", "niklas@gmail.com" );
         //userProperties.setHash();
@@ -47,14 +37,14 @@ public class MainApplication extends Application {
         Gleap.getInstance().setWidgetClosedCallback(new WidgetClosedCallback() {
             @Override
             public void invoke() {
-                Gleap.getInstance().logEvent(WidgetClosedCallback.class.getName());
+                Gleap.getInstance().trackEvent(WidgetClosedCallback.class.getName());
             }
         });
 
         Gleap.getInstance().setConfigLoadedCallback(new ConfigLoadedCallback() {
             @Override
             public void configLoaded(JSONObject jsonObject) {
-                Gleap.getInstance().logEvent(ConfigLoadedCallback.class.getName());
+                Gleap.getInstance().trackEvent(ConfigLoadedCallback.class.getName());
             }
         });
 
@@ -63,14 +53,14 @@ public class MainApplication extends Application {
         Gleap.getInstance().setFeedbackSendingFailedCallback(new FeedbackSendingFailedCallback() {
             @Override
             public void invoke(String message) {
-                Gleap.getInstance().logEvent(FeedbackSentCallback.class.getName());
+                Gleap.getInstance().trackEvent(FeedbackSentCallback.class.getName());
             }
         });
 
         Gleap.getInstance().registerCustomAction(new CustomActionCallback() {
             @Override
             public void invoke(String message) {
-                Gleap.getInstance().logEvent(CustomActionCallback.class.getName() + " " + message);
+                Gleap.getInstance().trackEvent(CustomActionCallback.class.getName() + " " + message);
                 Gleap.getInstance().close();
             }
         });
@@ -78,7 +68,7 @@ public class MainApplication extends Application {
         Gleap.getInstance().setFeedbackFlowStartedCallback(new FeedbackFlowStartedCallback() {
             @Override
             public void invoke(String message) {
-                Gleap.getInstance().logEvent(FeedbackFlowStartedCallback.class.getName());
+                Gleap.getInstance().trackEvent(FeedbackFlowStartedCallback.class.getName());
             }
         });
     }

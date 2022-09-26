@@ -10,7 +10,7 @@ import android.widget.Toast;
 import org.json.JSONObject;
 
 import io.gleap.Gleap;
-import io.gleap.FeedbackSentCallback;
+import io.gleap.callbacks.FeedbackSentCallback;
 
 public class SilentCrashReport extends AppCompatActivity {
 
