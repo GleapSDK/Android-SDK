@@ -149,7 +149,7 @@ interface iGleap {
      * @param name Name of the event
      * @author Gleap
      */
-    void logEvent(String name);
+    void trackEvent(String name);
 
     /**
      * Logs a custom event with data
@@ -158,7 +158,7 @@ interface iGleap {
      * @param data Data passed with the event.
      * @author Gleap
      */
-    void logEvent(String name, JSONObject data);
+    void trackEvent(String name, JSONObject data);
 
     /**
      * Attaches a file to the feedback
