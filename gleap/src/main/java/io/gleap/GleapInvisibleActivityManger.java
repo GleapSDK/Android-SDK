@@ -142,7 +142,7 @@ class GleapInvisibleActivityManger {
                         chatMessages.removeAllViews();
                     }
 
-
+                    setShowFab(showFab);
                     addLayout(local);
                 } catch (Exception ex) {
                 }
