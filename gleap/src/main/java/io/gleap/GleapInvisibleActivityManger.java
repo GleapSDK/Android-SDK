@@ -266,7 +266,7 @@ class GleapInvisibleActivityManger {
 
     private void addLayout(Activity local) {
         try {
-            if (GleapBug.getInstance().getApplicationtype() == APPLICATIONTYPE.REACTNATIVE) {
+            if (GleapBug.getInstance().getApplicationtype() != APPLICATIONTYPE.NATIVE) {
                 local.addContentView(this.layout, new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT));
             } else {
                 ViewGroup viewGroup = (ViewGroup) ((ViewGroup) local
@@ -295,9 +295,10 @@ class GleapInvisibleActivityManger {
     }
 
     public void setShowFab(boolean showFab) {
+        boolean manualHiden = GleapConfig.getInstance().isHideWidget();
         this.showFab = showFab;
         if (this.layout != null) {
-            if (!showFab) {
+            if (!showFab || manualHiden) {
                 this.layout.setVisibility(View.INVISIBLE);
             } else {
                 this.layout.setVisibility(View.VISIBLE);
