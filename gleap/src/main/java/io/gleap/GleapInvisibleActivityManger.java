@@ -42,7 +42,6 @@ class GleapInvisibleActivityManger {
     private int prevSize = 0;
     private int messageCounter = 0;
     private int prevMessageCounter = -1;
-    private boolean updateQueue = false;
     private boolean showFab = false;
 
 
@@ -125,8 +124,7 @@ class GleapInvisibleActivityManger {
                     }
 
 
-                    if ((messages.size() > 0 && (messages.size() != prevSize)) || force || updateQueue) {
-                        updateQueue = false;
+                    if ((messages.size() > 0 && messages.size() != prevSize) || force) {
                         prevSize = messages.size();
                         //parent.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
                         chatMessages.removeAllViews();
@@ -153,10 +151,6 @@ class GleapInvisibleActivityManger {
     }
 
     public void addComment(GleapChatMessage comment) {
-        if(this.messages.size() >= 3) {
-            this.messages = new GleapArrayHelper<GleapChatMessage>().shiftArray(this.messages);
-            updateQueue = true;
-        }
         this.messages.add(comment);
     }
 
@@ -177,11 +171,6 @@ class GleapInvisibleActivityManger {
             this.layout.setLayoutParams(new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         }
 
-        if (relativeLayout != null && prevMessageCounter == messageCounter) {
-          //  addLayout(activity);
-            return;
-        }
-
         Activity local = activity;
 
         try {
@@ -189,7 +178,6 @@ class GleapInvisibleActivityManger {
                 @Override
                 public void run() {
                     try {
-                        System.out.println("PASSED?");
                         prevMessageCounter = messageCounter;
                         relativeLayout = new ConstraintLayout(local);
                         relativeLayout.setId(View.generateViewId());
@@ -274,7 +262,7 @@ class GleapInvisibleActivityManger {
             });
 
         } catch (Exception ex) {
-         }
+        }
     }
 
     private void addLayout(Activity local) {
@@ -282,15 +270,17 @@ class GleapInvisibleActivityManger {
             ViewGroup viewGroup = (ViewGroup) ((ViewGroup) local
                     .findViewById(android.R.id.content)).getChildAt(0);
             if (prev != null) {
+
                 prev.removeView(layout);
             }
 
             if (viewGroup.indexOfChild(layout) < 0) {
+                layout.setFocusable(false);
                 viewGroup.addView(layout);
                 prev = viewGroup;
             }
         }catch (Exception ignore) {}
-       }
+    }
 
     void clearMessages() {
         this.messages = new LinkedList<>();
