@@ -164,10 +164,6 @@ class GleapInvisibleActivityManger {
             return;
         }
 
-        if (this.layout != null) {
-            return;
-        }
-
         LayoutInflater inflater = activity.getLayoutInflater();
 
         if (this.layout == null) {

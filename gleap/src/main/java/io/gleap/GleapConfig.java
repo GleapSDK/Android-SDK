@@ -139,9 +139,11 @@ class GleapConfig {
                 switch (flowConfigs.getString("feedbackButtonPosition")) {
                     case "BOTTOM_RIGHT":
                         this.widgetPosition = WidgetPosition.BOTTOM_RIGHT;
+                        GleapInvisibleActivityManger.getInstance().setShowFab(true);
                         break;
                     case "BOTTOM_LEFT":
                         this.widgetPosition = WidgetPosition.BOTTOM_LEFT;
+                        GleapInvisibleActivityManger.getInstance().setShowFab(true);
                         break;
                     default:
                         GleapInvisibleActivityManger.getInstance().setShowFab(false);
