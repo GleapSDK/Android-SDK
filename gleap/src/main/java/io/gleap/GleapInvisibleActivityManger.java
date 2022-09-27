@@ -266,20 +266,25 @@ class GleapInvisibleActivityManger {
     }
 
     private void addLayout(Activity local) {
-        try {
-            ViewGroup viewGroup = (ViewGroup) ((ViewGroup) local
-                    .findViewById(android.R.id.content)).getChildAt(0);
-            if (prev != null) {
+        if(GleapBug.getInstance().getApplicationtype() == APPLICATIONTYPE.REACTNATIVE) {
+            local.addContentView(this.layout, new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT) );
+        }else {
+            try {
+                ViewGroup viewGroup = (ViewGroup) ((ViewGroup) local
+                        .findViewById(android.R.id.content)).getChildAt(0);
+                if (prev != null) {
 
-                prev.removeView(layout);
-            }
+                    prev.removeView(layout);
+                }
 
-            if (viewGroup.indexOfChild(layout) < 0) {
-                layout.setFocusable(false);
-                viewGroup.addView(layout);
-                prev = viewGroup;
+                if (viewGroup.indexOfChild(layout) < 0) {
+                    layout.setFocusable(false);
+                    viewGroup.addView(layout);
+                    prev = viewGroup;
+                }
+            } catch (Exception ignore) {
             }
-        }catch (Exception ignore) {}
+        }
     }
 
     void clearMessages() {
