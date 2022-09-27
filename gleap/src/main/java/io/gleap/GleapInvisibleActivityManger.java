@@ -178,13 +178,15 @@ class GleapInvisibleActivityManger {
                 @Override
                 public void run() {
                     try {
+        layout.removeAllViews();
                         prevMessageCounter = messageCounter;
-                        relativeLayout = new ConstraintLayout(local);
-                        relativeLayout.setId(View.generateViewId());
-                        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
+                        if(relativeLayout == null) {
+                            relativeLayout = new ConstraintLayout(local);
+                            relativeLayout.setId(View.generateViewId());
+                            RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
 
-                        relativeLayout.setLayoutParams(params);
-
+                            relativeLayout.setLayoutParams(params);
+                        }
                         GradientDrawable gdDefaultText = new GradientDrawable();
                         gdDefaultText.setColor(Color.RED);
                         gdDefaultText.setCornerRadius(1000);
@@ -219,8 +221,11 @@ class GleapInvisibleActivityManger {
                                 }
                             }
                         });
+                        relativeLayout.removeAllViews();
+                        if(relativeLayout.indexOfChild(imageButton) < 0) {
 
-                        relativeLayout.addView(imageButton, convertDpToPixel(56, local), convertDpToPixel(56, local));
+                            relativeLayout.addView(imageButton, convertDpToPixel(56, local), convertDpToPixel(56, local));
+                        }
 
                         if (messageCounter > 0) {
                             textView.setElevation(1f);
@@ -232,13 +237,17 @@ class GleapInvisibleActivityManger {
 
                             textView.bringToFront();
                         } else {
-
+                            if(relativeLayout.indexOfChild(textView) > 0) {
+                                relativeLayout.removeView(textView);
+                            }
                         }
 
-                        layout.removeView(relativeLayout);
-                        layout.addView(relativeLayout);
+                        if(layout.indexOfChild(relativeLayout) < 0) {
+                            layout.addView(relativeLayout);
+                            addLayout(local);
+                        }
 
-                        addLayout(local);
+
 
                         ConstraintSet set = new ConstraintSet();
                         set.clone(layout);
@@ -272,12 +281,12 @@ class GleapInvisibleActivityManger {
                 ViewGroup viewGroup = (ViewGroup) ((ViewGroup) local
                         .findViewById(android.R.id.content)).getChildAt(0);
                 if (prev != null) {
-
                     prev.removeView(layout);
                 }
-
+                System.out.println(viewGroup.indexOfChild(layout));
                 if (viewGroup.indexOfChild(layout) < 0) {
                     layout.setFocusable(false);
+
                     viewGroup.addView(layout);
                     prev = viewGroup;
                 }
