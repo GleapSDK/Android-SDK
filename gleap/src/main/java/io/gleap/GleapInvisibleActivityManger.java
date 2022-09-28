@@ -269,7 +269,6 @@ class GleapInvisibleActivityManger {
                     }
                 }
             });
-
         } catch (Exception ex) {
         }
     }
@@ -281,13 +280,13 @@ class GleapInvisibleActivityManger {
             } else {
                 ViewGroup viewGroup = (ViewGroup) ((ViewGroup) local
                         .findViewById(android.R.id.content)).getChildAt(0);
+
                 if (prev != null) {
                     prev.removeView(layout);
                 }
-                System.out.println(viewGroup.indexOfChild(layout));
+
                 if (viewGroup.indexOfChild(layout) < 0) {
                     layout.setFocusable(false);
-
                     viewGroup.addView(layout);
                     prev = viewGroup;
                 }
@@ -298,6 +297,7 @@ class GleapInvisibleActivityManger {
 
     void clearMessages() {
         this.messages = new LinkedList<>();
+        this.messageCounter = 0;
     }
 
     public void setMessageCounter(int messageCounter) {
@@ -308,11 +308,11 @@ class GleapInvisibleActivityManger {
         boolean manualHiden = GleapConfig.getInstance().isHideWidget();
         this.showFab = showFab && !manualHiden;
         GleapConfig.getInstance().setHideWidget(false);
-        if (this.imageButton != null) {
+        if (this.relativeLayout != null) {
             if (!showFab) {
-                imageButton.setVisibility(View.INVISIBLE);
+                relativeLayout.setVisibility(View.GONE);
             } else {
-                imageButton.setVisibility(View.VISIBLE);
+                relativeLayout.setVisibility(View.VISIBLE);
             }
         }
 

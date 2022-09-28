@@ -257,7 +257,10 @@ public class Gleap implements iGleap {
             if (UserSessionController.getInstance() != null) {
                 UserSessionController.getInstance().clearUserSession();
             }
-            new GleapUserSessionLoader().execute();
+            GleapInvisibleActivityManger.getInstance().setMessageCounter(0);
+            GleapInvisibleActivityManger.getInstance().clearMessages();
+            new GleapUserSessionLoader();
+
         } catch (Error | Exception ignore) {
         }
         GleapUserSessionLoader sessionLoader = new GleapUserSessionLoader();

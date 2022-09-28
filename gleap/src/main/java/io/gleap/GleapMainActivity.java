@@ -1,5 +1,6 @@
 package io.gleap;
 
+import android.annotation.SuppressLint;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -156,11 +157,16 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
     private class GleapWebViewClient extends WebViewClient {
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, String url) {
-            if (!url.contains(GleapConfig.getInstance().getiFrameUrl())) {
-                Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                startActivity(browserIntent);
-                return true;
-            }
+            try {
+                if (!url.contains(GleapConfig.getInstance().getiFrameUrl())) {
+                    Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                    System.out.println(browserIntent.resolveActivity(getPackageManager()));
+                    if (browserIntent.resolveActivity(getPackageManager()) != null) {
+                        startActivity(browserIntent);
+                    }
+                    return true;
+                }
+            }catch (Error | Exception ignore) {}
             return false;
         }
 
