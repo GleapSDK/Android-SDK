@@ -81,6 +81,8 @@ class GleapConfig {
     private JSONObject plainConfig;
 
     private WidgetPosition widgetPosition = WidgetPosition.BOTTOM_RIGHT;
+    private boolean hideWidget = false;
+
     private int buttonX = 20; //horizontal
     private int buttonY = 20; //vertical
 
@@ -136,16 +138,22 @@ class GleapConfig {
             }
 
             if (flowConfigs.has("feedbackButtonPosition")) {
-                switch (flowConfigs.getString("feedbackButtonPosition")) {
-                    case "BOTTOM_RIGHT":
-                        this.widgetPosition = WidgetPosition.BOTTOM_RIGHT;
-                        break;
-                    case "BOTTOM_LEFT":
-                        this.widgetPosition = WidgetPosition.BOTTOM_LEFT;
-                        break;
-                    default:
-                        GleapInvisibleActivityManger.getInstance().setShowFab(false);
-                        break;
+                if(hideWidget) {
+                    GleapInvisibleActivityManger.getInstance().setShowFab(false);
+                }else {
+                    switch (flowConfigs.getString("feedbackButtonPosition")) {
+                        case "BOTTOM_RIGHT":
+                            this.widgetPosition = WidgetPosition.BOTTOM_RIGHT;
+                            GleapInvisibleActivityManger.getInstance().setShowFab(true);
+                            break;
+                        case "BOTTOM_LEFT":
+                            this.widgetPosition = WidgetPosition.BOTTOM_LEFT;
+                            GleapInvisibleActivityManger.getInstance().setShowFab(true);
+                            break;
+                        default:
+                            GleapInvisibleActivityManger.getInstance().setShowFab(false);
+                            break;
+                    }
                 }
             }
 
@@ -532,5 +540,13 @@ class GleapConfig {
             return Color.BLACK;
         }
         return Color.WHITE;
+    }
+
+    public boolean isHideWidget() {
+        return hideWidget;
+    }
+
+    public void setHideWidget(boolean hideWidget) {
+        this.hideWidget = hideWidget;
     }
 }
