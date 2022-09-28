@@ -106,7 +106,6 @@ class GleapEventService {
         }
 
         private int postEvent() throws IOException, JSONException {
-
             URL url = new URL(GleapConfig.getInstance().getApiUrl() + "/sessions/ping");
             HttpURLConnection conn;
             if (GleapConfig.getInstance().getApiUrl().contains("https")) {
@@ -185,7 +184,6 @@ class GleapEventService {
         }
 
         private int postEvent() throws IOException, JSONException {
-
             URL url = new URL(GleapConfig.getInstance().getApiUrl() + "/sessions/ping");
             HttpURLConnection conn;
             if (GleapConfig.getInstance().getApiUrl().contains("https")) {
@@ -238,8 +236,6 @@ class GleapEventService {
             int status = conn.getResponseCode();
             conn.disconnect();
             return status;
-
-
         }
 
         private JSONArray arrayToJSONArray(List<JSONObject> arrayList) {
@@ -256,10 +252,8 @@ class GleapEventService {
     private GleapChatMessage createComment(JSONObject messageData) throws Exception {
         String senderName = "";
         String profileImageUrl = "";
-
         String text = "";
         String type = "";
-
         String shareToken = "";
 
         if (messageData.has("type")) {
