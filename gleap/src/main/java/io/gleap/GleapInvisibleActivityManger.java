@@ -38,6 +38,7 @@ class GleapInvisibleActivityManger {
     private ConstraintLayout layout;
     private LinearLayout chatMessages;
     private ViewGroup prev;
+    private ImageButton imageButton;
     private ConstraintLayout relativeLayout;
     private int prevSize = 0;
     private int messageCounter = 0;
@@ -62,6 +63,7 @@ class GleapInvisibleActivityManger {
 
     public void setVisible() {
         layout.setVisibility(View.VISIBLE);
+        this.showFab = true;
         render(null, true);
     }
 
@@ -73,7 +75,7 @@ class GleapInvisibleActivityManger {
             return;
         }
 
-        if (activity.getClass().getSimpleName().contains("Gleap")) {
+        if(activity.getClass().getSimpleName().contains("Gleap")) {
             return;
         }
 
@@ -93,7 +95,7 @@ class GleapInvisibleActivityManger {
                         chatMessages = new LinearLayout(layout.getContext());
                         chatMessages.setId(View.generateViewId());
                         chatMessages.setOrientation(LinearLayout.VERTICAL);
-
+                    }
                         layout.removeView(chatMessages);
                         layout.addView(chatMessages);
 
@@ -112,16 +114,16 @@ class GleapInvisibleActivityManger {
                         if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.BOTTOM_RIGHT) {
                             chatMessages.setGravity(Gravity.RIGHT);
                             if (relativeLayout != null) {
-                                set.connect(chatMessages.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, convertDpToPixel(offsetX - 5, local));
+                                set.connect(chatMessages.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, convertDpToPixel(offsetX-5, local));
                             } else {
                                 set.connect(chatMessages.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, convertDpToPixel(0, local));
                             }
                         } else {
-                            set.connect(chatMessages.getId(), ConstraintSet.START, layout.getId(), ConstraintSet.START, convertDpToPixel(offsetX + 5, local));
+                            set.connect(chatMessages.getId(), ConstraintSet.START, layout.getId(), ConstraintSet.START, convertDpToPixel(offsetX+5, local));
                         }
 
                         set.applyTo(layout);
-                    }
+
 
 
                     if ((messages.size() > 0 && messages.size() != prevSize) || force) {
@@ -142,7 +144,7 @@ class GleapInvisibleActivityManger {
                         chatMessages.removeAllViews();
                     }
 
-                    setShowFab(showFab);
+
                     addLayout(local);
                 } catch (Exception ex) {
                 }
@@ -178,9 +180,9 @@ class GleapInvisibleActivityManger {
                 @Override
                 public void run() {
                     try {
-        layout.removeAllViews();
+                        layout.removeAllViews();
                         prevMessageCounter = messageCounter;
-                        if(relativeLayout == null) {
+                        if (relativeLayout == null) {
                             relativeLayout = new ConstraintLayout(local);
                             relativeLayout.setId(View.generateViewId());
                             RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
@@ -199,9 +201,10 @@ class GleapInvisibleActivityManger {
                         textView.setText(String.valueOf(messageCounter));
                         textView.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
                         textView.setGravity(Gravity.CENTER);
-
-                        ImageButton imageButton = new ImageButton(local);
-                        imageButton.setId(View.generateViewId());
+                        if (imageButton == null) {
+                            imageButton = new ImageButton(local);
+                            imageButton.setId(View.generateViewId());
+                        }
 
                         GradientDrawable gdDefault = new GradientDrawable();
                         gdDefault.setColor(Color.parseColor(GleapConfig.getInstance().getButtonColor()));
@@ -222,8 +225,7 @@ class GleapInvisibleActivityManger {
                             }
                         });
                         relativeLayout.removeAllViews();
-                        if(relativeLayout.indexOfChild(imageButton) < 0) {
-
+                        if (relativeLayout.indexOfChild(imageButton) < 0) {
                             relativeLayout.addView(imageButton, convertDpToPixel(56, local), convertDpToPixel(56, local));
                         }
 
@@ -237,16 +239,15 @@ class GleapInvisibleActivityManger {
 
                             textView.bringToFront();
                         } else {
-                            if(relativeLayout.indexOfChild(textView) > 0) {
+                            if (relativeLayout.indexOfChild(textView) > 0) {
                                 relativeLayout.removeView(textView);
                             }
                         }
 
-                        if(layout.indexOfChild(relativeLayout) < 0) {
+                        if (layout.indexOfChild(relativeLayout) < 0) {
                             layout.addView(relativeLayout);
                             addLayout(local);
                         }
-
 
 
                         ConstraintSet set = new ConstraintSet();
@@ -291,7 +292,7 @@ class GleapInvisibleActivityManger {
                     prev = viewGroup;
                 }
             }
-        } catch (Exception ignore) {
+        } catch (Error | Exception ignore) {
         }
     }
 
@@ -305,13 +306,15 @@ class GleapInvisibleActivityManger {
 
     public void setShowFab(boolean showFab) {
         boolean manualHiden = GleapConfig.getInstance().isHideWidget();
-        this.showFab = showFab;
-        if (this.layout != null) {
-            if (!showFab || manualHiden) {
-                this.layout.setVisibility(View.INVISIBLE);
+        this.showFab = showFab && !manualHiden;
+        GleapConfig.getInstance().setHideWidget(false);
+        if (this.imageButton != null) {
+            if (!showFab) {
+                imageButton.setVisibility(View.INVISIBLE);
             } else {
-                this.layout.setVisibility(View.VISIBLE);
+                imageButton.setVisibility(View.VISIBLE);
             }
         }
+
     }
 }
