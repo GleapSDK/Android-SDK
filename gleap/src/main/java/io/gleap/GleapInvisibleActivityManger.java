@@ -92,10 +92,10 @@ class GleapInvisibleActivityManger {
             public void run() {
                 try {
                     if (chatMessages == null) {
-                        chatMessages = new LinearLayout(layout.getContext());
+                        chatMessages = new LinearLayout(local);
                         chatMessages.setId(View.generateViewId());
                         chatMessages.setOrientation(LinearLayout.VERTICAL);
-                    }
+
                         layout.removeView(chatMessages);
                         layout.addView(chatMessages);
 
@@ -124,7 +124,7 @@ class GleapInvisibleActivityManger {
 
                         set.applyTo(layout);
 
-
+                    }
 
                     if ((messages.size() > 0 && messages.size() != prevSize) || force) {
                         prevSize = messages.size();
@@ -144,8 +144,10 @@ class GleapInvisibleActivityManger {
                         chatMessages.removeAllViews();
                     }
 
-
-                    addLayout(local);
+                    if (layout.indexOfChild(chatMessages) < 0) {
+                        layout.addView(chatMessages);
+                        addLayout(local);
+                    }
                 } catch (Exception ex) {
                 }
             }
@@ -153,7 +155,13 @@ class GleapInvisibleActivityManger {
     }
 
     public void addComment(GleapChatMessage comment) {
+        GleapArrayHelper helper = new GleapArrayHelper<GleapChatMessage>();
+        if(this.messages.size() >= 3) {
+            this.messages = helper.shiftArray(this.messages);
+        }
+
         this.messages.add(comment);
+        render(null, true);
     }
 
 
