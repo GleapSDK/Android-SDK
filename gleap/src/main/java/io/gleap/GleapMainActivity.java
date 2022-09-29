@@ -424,8 +424,9 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
             for (JSONObject action :
                     queue) {
                 try {
-
-                    action.put("actionOutboundId", GleapBug.getInstance().getOutboubdId());
+                    if(!action.has("actionOutboundId" )) {
+                        action.put("actionOutboundId", GleapBug.getInstance().getOutboubdId());
+                    }
                     String command = "start-feedbackflow";
                     if(action.has("isSurvey") && action.getBoolean("isSurvey") ){
                         command = "start-survey";
