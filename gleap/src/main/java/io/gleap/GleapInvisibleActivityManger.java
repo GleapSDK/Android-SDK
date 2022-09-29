@@ -153,7 +153,13 @@ class GleapInvisibleActivityManger {
     }
 
     public void addComment(GleapChatMessage comment) {
+        GleapArrayHelper<GleapChatMessage> helper = new GleapArrayHelper<>();
+        if(this.messages.size() >= 3) {
+            this.messages = helper.shiftArray(this.messages);
+        }
+
         this.messages.add(comment);
+        render(null, true);
     }
 
 
@@ -284,7 +290,7 @@ class GleapInvisibleActivityManger {
                 if (prev != null) {
                     prev.removeView(layout);
                 }
-                System.out.println(viewGroup.indexOfChild(layout));
+
                 if (viewGroup.indexOfChild(layout) < 0) {
                     layout.setFocusable(false);
 
@@ -308,11 +314,11 @@ class GleapInvisibleActivityManger {
         boolean manualHiden = GleapConfig.getInstance().isHideWidget();
         this.showFab = showFab && !manualHiden;
         GleapConfig.getInstance().setHideWidget(false);
-        if (this.imageButton != null) {
+        if (this.relativeLayout != null) {
             if (!showFab) {
-                imageButton.setVisibility(View.INVISIBLE);
+                relativeLayout.setVisibility(View.GONE);
             } else {
-                imageButton.setVisibility(View.VISIBLE);
+                relativeLayout.setVisibility(View.VISIBLE);
             }
         }
 

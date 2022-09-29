@@ -24,14 +24,16 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
              //   Intent intent = new Intent(MainActivity.this, MainActivity2.class);
               //  startActivity(intent);
-              Gleap.getInstance().showFeedbackButton(false);
+            //  Gleap.getInstance().showFeedbackButton(false);
+                    Gleap.getInstance().trackEvent("FIRST_EVENT");
             }
         });
 
         findViewById(R.id.crash).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Gleap.getInstance().showFeedbackButton(true);
+                   Intent intent = new Intent(MainActivity.this, SilentCrashReport.class);
+                   startActivity(intent);
             }
         });
 
