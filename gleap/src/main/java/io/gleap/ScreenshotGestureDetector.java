@@ -45,7 +45,12 @@ class ScreenshotGestureDetector extends GleapDetector {
         @Override
         public void onChange(boolean selfChange) {
             super.onChange(selfChange);
-            startBugReporting();
+            try {
+                startBugReporting();
+            }catch (Exception ex) {
+                ex.printStackTrace();
+                GleapDetectorUtil.resumeAllDetectors();
+            }
         }
 
         @Override
