@@ -92,10 +92,10 @@ class GleapInvisibleActivityManger {
             public void run() {
                 try {
                     if (chatMessages == null) {
-                        chatMessages = new LinearLayout(layout.getContext());
+                        chatMessages = new LinearLayout(local);
                         chatMessages.setId(View.generateViewId());
                         chatMessages.setOrientation(LinearLayout.VERTICAL);
-                    }
+
                         layout.removeView(chatMessages);
                         layout.addView(chatMessages);
 
@@ -124,7 +124,7 @@ class GleapInvisibleActivityManger {
 
                         set.applyTo(layout);
 
-
+                    }
 
                     if ((messages.size() > 0 && messages.size() != prevSize) || force) {
                         prevSize = messages.size();
@@ -144,8 +144,10 @@ class GleapInvisibleActivityManger {
                         chatMessages.removeAllViews();
                     }
 
-
-                    addLayout(local);
+                    if (layout.indexOfChild(chatMessages) < 0) {
+                        layout.addView(chatMessages);
+                        addLayout(local);
+                    }
                 } catch (Exception ex) {
                 }
             }
@@ -153,7 +155,11 @@ class GleapInvisibleActivityManger {
     }
 
     public void addComment(GleapChatMessage comment) {
+<<<<<<< HEAD
         GleapArrayHelper<GleapChatMessage> helper = new GleapArrayHelper<>();
+=======
+        GleapArrayHelper helper = new GleapArrayHelper<GleapChatMessage>();
+>>>>>>> 82b13bbcba1e680c08ef3771a7e91f12a8175ecc
         if(this.messages.size() >= 3) {
             this.messages = helper.shiftArray(this.messages);
         }
@@ -275,7 +281,6 @@ class GleapInvisibleActivityManger {
                     }
                 }
             });
-
         } catch (Exception ex) {
         }
     }
@@ -287,13 +292,13 @@ class GleapInvisibleActivityManger {
             } else {
                 ViewGroup viewGroup = (ViewGroup) ((ViewGroup) local
                         .findViewById(android.R.id.content)).getChildAt(0);
+
                 if (prev != null) {
                     prev.removeView(layout);
                 }
 
                 if (viewGroup.indexOfChild(layout) < 0) {
                     layout.setFocusable(false);
-
                     viewGroup.addView(layout);
                     prev = viewGroup;
                 }
@@ -304,6 +309,7 @@ class GleapInvisibleActivityManger {
 
     void clearMessages() {
         this.messages = new LinkedList<>();
+        this.messageCounter = 0;
     }
 
     public void setMessageCounter(int messageCounter) {

@@ -31,8 +31,13 @@ android {
     defaultConfig {
         minSdkVersion 21
         targetSdkVersion 31
+<<<<<<< HEAD
         versionCode 80003
         versionName "8.0.3-FlutterFix"
+=======
+        versionCode 80004
+        versionName "8.0.4"
+>>>>>>> 82b13bbcba1e680c08ef3771a7e91f12a8175ecc
 
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"

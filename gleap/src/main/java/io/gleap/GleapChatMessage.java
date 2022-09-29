@@ -52,6 +52,7 @@ class GleapChatMessage {
         //add avatar and bubble
 
         LinearLayout completeMessage = new LinearLayout(local.getApplication().getApplicationContext());
+        completeMessage.setId(View.generateViewId());
 
         TextView titleComponent = new TextView(local.getApplication().getApplicationContext());
         titleComponent.setId(View.generateViewId());
