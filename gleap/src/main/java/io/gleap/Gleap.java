@@ -257,7 +257,6 @@ public class Gleap implements iGleap {
             if (UserSessionController.getInstance() != null) {
                 UserSessionController.getInstance().clearUserSession();
             }
-            GleapInvisibleActivityManger.getInstance().setMessageCounter(0);
             GleapInvisibleActivityManger.getInstance().clearMessages();
             new GleapUserSessionLoader();
 
@@ -765,8 +764,8 @@ public class Gleap implements iGleap {
 
         @Override
         public void showFeedbackButton(boolean show) {
-            GleapInvisibleActivityManger.getInstance().setShowFab(show);
             GleapConfig.getInstance().setHideWidget(!show);
+            GleapInvisibleActivityManger.getInstance().setShowFab(show);
         }
 
         /**

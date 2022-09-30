@@ -196,6 +196,8 @@ class GleapInvisibleActivityManger {
                             RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
 
                             relativeLayout.setLayoutParams(params);
+                            setShowFab(true);
+
                         }
                         GradientDrawable gdDefaultText = new GradientDrawable();
                         gdDefaultText.setColor(Color.RED);
@@ -232,10 +234,13 @@ class GleapInvisibleActivityManger {
                                 }
                             }
                         });
+
+
                         relativeLayout.removeAllViews();
                         if (relativeLayout.indexOfChild(imageButton) < 0) {
                             relativeLayout.addView(imageButton, convertDpToPixel(56, local), convertDpToPixel(56, local));
                         }
+
 
                         if (messageCounter > 0) {
                             textView.setElevation(1f);
@@ -306,6 +311,7 @@ class GleapInvisibleActivityManger {
     void clearMessages() {
         this.messages = new LinkedList<>();
         this.messageCounter = 0;
+        addFab(null);
     }
 
     public void setMessageCounter(int messageCounter) {
@@ -315,9 +321,9 @@ class GleapInvisibleActivityManger {
     public void setShowFab(boolean showFab) {
         boolean manualHiden = GleapConfig.getInstance().isHideWidget();
         this.showFab = showFab && !manualHiden;
-        GleapConfig.getInstance().setHideWidget(false);
         if (this.relativeLayout != null) {
-            if (!showFab) {
+            GleapConfig.getInstance().setHideWidget(false);
+            if (!this.showFab) {
                 relativeLayout.setVisibility(View.GONE);
             } else {
                 relativeLayout.setVisibility(View.VISIBLE);

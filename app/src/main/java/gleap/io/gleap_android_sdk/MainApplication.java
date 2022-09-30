@@ -5,6 +5,7 @@ import android.app.Application;
 import org.json.JSONObject;
 
 import io.gleap.Gleap;
+import io.gleap.GleapUserProperties;
 import io.gleap.callbacks.ConfigLoadedCallback;
 import io.gleap.callbacks.CustomActionCallback;
 import io.gleap.callbacks.FeedbackFlowStartedCallback;
@@ -19,8 +20,14 @@ public class MainApplication extends Application {
         super.onCreate();
 
         Gleap.initialize("DUPaIr7s689BBblcFI4pc5aBgYJTm7Sc", this);
-
+      //  Gleap.getInstance().showFeedbackButton(false);
+        GleapUserProperties gleapUserProperties = new GleapUserProperties("13", "VALUE boy", "test@email.com");
+        gleapUserProperties.setValue(20);
+        gleapUserProperties.setPhoneNumber("+436502425552");
+        Gleap.getInstance().identifyUser("13", gleapUserProperties);
         Gleap.getInstance().setLanguage("AR_EG");
+        Gleap.getInstance().disableConsoleLog();
+
 
        /*   GleapUserProperties userProperties = new GleapUserProperties("Test User", "niklas@gmail.com" );
         //userProperties.setHash();

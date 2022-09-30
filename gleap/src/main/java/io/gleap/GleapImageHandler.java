@@ -48,7 +48,11 @@ class GleapImageHandler extends AsyncTask<Void, Void, Bitmap> {
     @Override
     protected void onPostExecute(Bitmap result) {
         super.onPostExecute(result);
-        imageView.setImageBitmap(getRoundedCroppedBitmap(result, 500));
+        try {
+            imageView.setImageBitmap(getRoundedCroppedBitmap(result, 500));
+        }catch (Exception ex) {
+
+        }
     }
 
     private Bitmap getRoundedCroppedBitmap(Bitmap bitmap, int radius) {

@@ -31,6 +31,10 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                 return 200;
             }
 
+            try{
+                GleapInvisibleActivityManger.getInstance().clearMessages();
+            }catch (Exception ingore) {}
+
             try {
                 GleapUser gleapUser = UserSessionController.getInstance().getGleapUserSession();
 
@@ -40,6 +44,7 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                 conn.setRequestProperty("Accept", "application/json");
                 conn.setRequestProperty("Content-Type", "application/json");
                 conn.setRequestMethod("POST");
+                System.out.println("CALLED GLEAPIDENTIFY");
 
                 if (userSession.getId() != null && !userSession.getId().equals("")) {
                     conn.setRequestProperty("Gleap-Id", userSession.getId());
