@@ -155,7 +155,11 @@ class GleapInvisibleActivityManger {
     }
 
     public void addComment(GleapChatMessage comment) {
+<<<<<<< HEAD
+        GleapArrayHelper<GleapChatMessage> helper = new GleapArrayHelper<>();
+=======
         GleapArrayHelper helper = new GleapArrayHelper<GleapChatMessage>();
+>>>>>>> 82b13bbcba1e680c08ef3771a7e91f12a8175ecc
         if(this.messages.size() >= 3) {
             this.messages = helper.shiftArray(this.messages);
         }

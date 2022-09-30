@@ -115,18 +115,29 @@ public class Gleap implements iGleap {
     @Override
     public void open() {
         try {
-            if (!GleapDetectorUtil.isIsRunning() && UserSessionController.getInstance() != null &&
-                    UserSessionController.getInstance().isSessionLoaded() && instance != null) {
-                try {
-                    if (screenshotTaker != null) {
-                        screenshotTaker.takeScreenshot();
+            Handler mainHandler = new Handler(Looper.getMainLooper());
+            Runnable gleapRunnable = new Runnable() {
+                @Override
+                public void run() throws RuntimeException {
+                    try {
+                        if (!GleapDetectorUtil.isIsRunning() && UserSessionController.getInstance() != null &&
+                                UserSessionController.getInstance().isSessionLoaded() && instance != null) {
+                            try {
+                                if (screenshotTaker != null) {
+                                    screenshotTaker.takeScreenshot();
+                                }
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    } catch (Error | Exception ignore) {
                     }
-                } catch (Exception e) {
-                    e.printStackTrace();
                 }
-            }
+            };
+            mainHandler.post(gleapRunnable);
         } catch (Error | Exception ignore) {
         }
+
     }
 
     /**
@@ -257,6 +268,7 @@ public class Gleap implements iGleap {
             if (UserSessionController.getInstance() != null) {
                 UserSessionController.getInstance().clearUserSession();
             }
+
             GleapInvisibleActivityManger.getInstance().clearMessages();
             new GleapUserSessionLoader();
 
