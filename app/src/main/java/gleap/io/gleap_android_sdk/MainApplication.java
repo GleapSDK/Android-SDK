@@ -20,7 +20,7 @@ public class MainApplication extends Application {
         super.onCreate();
 
         Gleap.initialize("DUPaIr7s689BBblcFI4pc5aBgYJTm7Sc", this);
-        Gleap.getInstance().showFeedbackButton(false);
+        Gleap.getInstance().clearIdentity();
         GleapUserProperties gleapUserProperties = new GleapUserProperties("13", "VALUE boy", "test@email.com");
         gleapUserProperties.setValue(20);
         gleapUserProperties.setPhoneNumber("+436502425552");

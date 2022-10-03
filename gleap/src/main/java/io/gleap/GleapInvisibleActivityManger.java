@@ -167,7 +167,6 @@ class GleapInvisibleActivityManger {
 
 
     public void addFab(Activity activity) {
-
         if (activity == null) {
             activity = ActivityUtil.getCurrentActivity();
         }
@@ -197,7 +196,7 @@ class GleapInvisibleActivityManger {
                             RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
 
                             relativeLayout.setLayoutParams(params);
-                            setShowFab(true);
+                          //  setShowFab(true);
 
                         }
                         GradientDrawable gdDefaultText = new GradientDrawable();
@@ -235,6 +234,12 @@ class GleapInvisibleActivityManger {
                                 }
                             }
                         });
+
+                        if (!showFab) {
+                            relativeLayout.setVisibility(View.GONE);
+                        } else {
+                            relativeLayout.setVisibility(View.VISIBLE);
+                        }
 
 
                         relativeLayout.removeAllViews();
@@ -320,8 +325,8 @@ class GleapInvisibleActivityManger {
     }
 
     public void setShowFab(boolean showFab) {
-        boolean manualHiden = GleapConfig.getInstance().isHideWidget();
-        this.showFab = showFab && !manualHiden;
+        boolean manualHidden = GleapConfig.getInstance().isHideWidget();
+        this.showFab = showFab && !manualHidden;
         if (this.relativeLayout != null) {
             GleapConfig.getInstance().setHideWidget(false);
             if (!this.showFab) {

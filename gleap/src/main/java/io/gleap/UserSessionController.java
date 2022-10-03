@@ -64,7 +64,9 @@ public class UserSessionController {
     }
 
     public void setGleapUserSession(GleapUser gleapUser) {
+
         this.gleapUser = gleapUser;
+
         SharedPreferences sharedPreferences = application.getSharedPreferences("gleap-user", MODE_PRIVATE);
         sharedPreferences.edit().putString("userId", gleapUser.getUserId()).apply();
         if (gleapUser.getGleapUserProperties() != null) {

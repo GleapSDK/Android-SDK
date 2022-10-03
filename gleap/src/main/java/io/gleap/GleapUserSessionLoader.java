@@ -83,7 +83,7 @@ class GleapUserSessionLoader extends AsyncTask<Void, Void, Integer> {
                         userId = result.getString("userId");
                     }
 
-                    UserSessionController.getInstance().setGleapUserSession(new GleapUser(userId, gleapUserProperties));
+                 //   UserSessionController.getInstance().setGleapUserSession(new GleapUser(userId, gleapUserProperties));
                     GleapInvisibleActivityManger.getInstance().render(null, true);
                 }
 
