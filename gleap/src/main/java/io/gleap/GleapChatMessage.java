@@ -21,15 +21,17 @@ class GleapChatMessage {
     private String type = "comment";
     private String text;
     private String shareToken;
+    private String newsId;
 
     private GleapSender sender;
 
 
-    public GleapChatMessage(String type, String text, String shareToken, GleapSender sender) {
+    public GleapChatMessage(String type, String text, String shareToken, GleapSender sender, String newsId) {
         this.sender = sender;
         this.type = type;
         this.text = text;
         this.shareToken = shareToken;
+        this.newsId = newsId;
     }
 
     public String getType() {
@@ -92,16 +94,19 @@ class GleapChatMessage {
         completeMessage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (getShareToken().equals("")) {
-                    Gleap.getInstance().open();
-                } else {
-                    try {
+                try {
+                    if (!shareToken.equals("")) {
                         JSONObject message = new JSONObject();
                         message.put("shareToken", getShareToken());
                         GleapConfig.getInstance().addGleapWebViewMessage(new GleapWebViewMessage("open-conversation", message));
-                        Gleap.getInstance().open();
-                    } catch (Exception ex) {
+
+                    } else if (!newsId.equals("")) {
+                        JSONObject message = new JSONObject();
+                        message.put("id", getNewsId());
+                        GleapConfig.getInstance().addGleapWebViewMessage(new GleapWebViewMessage("open-news-article", message));
                     }
+                    Gleap.getInstance().open();
+                } catch (Exception ex) {
                 }
 
                 GleapInvisibleActivityManger.getInstance().clearMessages();
@@ -152,5 +157,9 @@ class GleapChatMessage {
         message.put("data", data);
 
         return message.toString();
+    }
+
+    public String getNewsId() {
+        return newsId;
     }
 }

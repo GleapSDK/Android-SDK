@@ -1,19 +1,21 @@
 package io.gleap;
 
+import org.json.JSONObject;
+
 class GleapAction {
-    private String actionType;
-    private String outbound;
+    private String command;
+    private JSONObject data;
 
-    public GleapAction(String actionType, String outbound) {
-        this.actionType = actionType;
-        this.outbound = outbound;
+    public GleapAction(String command, JSONObject data) {
+        this.command = command;
+        this.data = data;
     }
 
-    public String getActionType() {
-        return actionType;
+    public String getCommand() {
+        return command;
     }
 
-    public String getOutbound() {
-        return outbound;
+    public JSONObject getData() {
+        return data;
     }
 }

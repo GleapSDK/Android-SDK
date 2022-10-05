@@ -177,11 +177,11 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
             conn.setRequestProperty("gleap-hash", userSession.getHash());
         }
         JSONObject body = new JSONObject();
-
+/*
         if (GleapConfig.getInstance().getAction() != null && GleapConfig.getInstance().getAction().getOutbound() != null) {
             body.put("outbound", GleapConfig.getInstance().getAction().getOutbound());
         }
-
+*/
         body.put("outbound", gleapBug.getOutboubdId());
         body.put("spamToken", gleapBug.getSpamToken());
 

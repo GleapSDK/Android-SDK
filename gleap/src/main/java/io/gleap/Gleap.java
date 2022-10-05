@@ -144,6 +144,46 @@ public class Gleap implements iGleap {
     }
 
     /**
+     * Manually shows the news section
+     *
+     * @throws GleapNotInitialisedException thrown when Gleap is not initialised
+     * @author Gleap
+     */
+    @Override
+    public void openNews() {
+        try {
+            ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Handler mainHandler = new Handler(Looper.getMainLooper());
+                    Runnable gleapRunnable = new Runnable() {
+                        @Override
+                        public void run() throws RuntimeException {
+                            try {
+                                if (!GleapDetectorUtil.isIsRunning() && UserSessionController.getInstance() != null &&
+                                        UserSessionController.getInstance().isSessionLoaded() && instance != null) {
+                                    try {
+                                        if (screenshotTaker != null) {
+                                            JSONObject message = new JSONObject();
+                                            GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("open-news",message));
+                                            screenshotTaker.takeScreenshot();
+                                        }
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            } catch (Error | Exception ignore) {
+                            }
+                        }
+                    };
+                    mainHandler.post(gleapRunnable);
+                }
+            });
+        } catch (Error | Exception ignore) {
+        }
+    }
+
+    /**
      * Manually start the bug reporting workflow. This is used, when you use the activation method "NONE".
      *
      * @throws GleapNotInitialisedException thrown when Gleap is not initialised
@@ -169,17 +209,13 @@ public class Gleap implements iGleap {
                         public void run() throws RuntimeException {
                             if (!GleapDetectorUtil.isIsRunning() && UserSessionController.getInstance() != null && UserSessionController.getInstance().isSessionLoaded() && Gleap.getInstance() != null) {
                                 try {
-                                    JSONObject message = new JSONObject();
-                                    message.put("name", "start-feedbackflow");
 
                                     JSONObject data = new JSONObject();
                                     if (!feedbackFlow.equals("")) {
                                         data.put("flow", feedbackFlow);
                                     }
-
                                     data.put("hideBackButton", !showBackButton);
-                                    message.put("data", data);
-                                    GleapActionQueueHandler.getInstance().addActionMessage(message);
+                                    GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("start-feedbackflow", data));
                                     screenshotTaker.takeScreenshot();
                                 } catch (Exception e) {
                                     e.printStackTrace();
@@ -608,18 +644,6 @@ public class Gleap implements iGleap {
                     }
                 });
                 sessionLoader.execute();
-
-                Handler handler = new Handler();
-                handler.postDelayed(new Runnable() {
-                    public void run() {
-                        try {
-                            if (GleapConfig.getInstance().getAction() != null) {
-                                Gleap.getInstance().startFeedbackFlow(GleapConfig.getInstance().getAction().getActionType());
-                            }
-                        } catch (Error | Exception ex) {
-                        }
-                    }
-                }, 2000);   //2 seconds
             } catch (Error | Exception ignore) {
             }
         }

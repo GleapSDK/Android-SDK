@@ -27,7 +27,7 @@ public class MainActivity extends AppCompatActivity {
                // Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
             //    startActivityForResult(intent, 1);
                 try {
-                    Gleap.getInstance().startFeedbackFlow("BUG");
+                    Gleap.getInstance().startFeedbackFlow("bugreporting");
                 } catch (GleapNotInitialisedException e) {
                     e.printStackTrace();
                 }
@@ -37,7 +37,7 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.crash).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Gleap.getInstance().showFeedbackButton(true);
+             //   Gleap.getInstance().showFeedbackButton(true);
             }
         });
 

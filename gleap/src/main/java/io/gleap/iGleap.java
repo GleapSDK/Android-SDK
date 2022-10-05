@@ -32,6 +32,13 @@ interface iGleap {
      */
     void open() throws GleapNotInitialisedException;
 
+    /**
+     * Manually shows the news section
+     *
+     * @throws GleapNotInitialisedException thrown when Gleap is not initialised
+     * @author Gleap
+     */
+    void openNews() throws GleapNotInitialisedException;
 
     /**
      * Manually start the bug reporting workflow. This is used, when you use the activation method "NONE".

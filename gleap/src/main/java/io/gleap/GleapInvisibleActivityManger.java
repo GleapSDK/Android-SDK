@@ -327,21 +327,23 @@ class GleapInvisibleActivityManger {
     }
 
     public void setShowFab(boolean showFabIn) {
-
-        ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                boolean manualHidden = GleapConfig.getInstance().isHideWidget();
-                showFab = showFabIn && !manualHidden;
-                if (relativeLayout != null) {
-                    //GleapConfig.getInstance().setHideWidget(false);
-                    if (!showFab) {
-                        relativeLayout.setVisibility(View.GONE);
-                    } else {
-                        relativeLayout.setVisibility(View.VISIBLE);
+        try {
+            ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    boolean manualHidden = GleapConfig.getInstance().isHideWidget();
+                    showFab = showFabIn && !manualHidden;
+                    if (relativeLayout != null) {
+                        //GleapConfig.getInstance().setHideWidget(false);
+                        if (!showFab) {
+                            relativeLayout.setVisibility(View.GONE);
+                        } else {
+                            relativeLayout.setVisibility(View.VISIBLE);
+                        }
                     }
                 }
-            }
-        });
+            });
+        } catch (Error | Exception ignore) {
+        }
     }
 }

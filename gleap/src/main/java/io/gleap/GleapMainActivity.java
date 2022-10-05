@@ -420,18 +420,22 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         }
 
         private void sendPendingActions() {
-            List<JSONObject> queue = GleapActionQueueHandler.getInstance().getActionQueue();
-            for (JSONObject action :
+            List<GleapAction> queue = GleapActionQueueHandler.getInstance().getActionQueue();
+            for (GleapAction action :
                     queue) {
                 try {
-                    if(!action.has("actionOutboundId" )) {
-                        action.put("actionOutboundId", GleapBug.getInstance().getOutboubdId());
+               /*     JSONObject data = action.getData();
+                    if(!data.has("actionOutboundId" )) {
+                        data.put("actionOutboundId", GleapBug.getInstance().getOutboubdId());
                     }
+
                     String command = "start-feedbackflow";
-                    if(action.has("isSurvey") && action.getBoolean("isSurvey") ){
+                    if(data.has("isSurvey") && data.getBoolean("isSurvey") ){
                         command = "start-survey";
                     }
-                    sendMessage(generateGleapMessage(command, action));
+                    sendMessage(generateGleapMessage(command, action));*/
+
+                    sendMessage(generateGleapMessage(action.getCommand(), action.getData()));
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }

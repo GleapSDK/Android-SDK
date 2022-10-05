@@ -255,6 +255,7 @@ class GleapEventService {
         String text = "";
         String type = "";
         String shareToken = "";
+        String newsId = "";
 
         if (messageData.has("type")) {
             type = messageData.getString("type");
@@ -283,8 +284,15 @@ class GleapEventService {
             }
         }
 
+        if (messageData.has("news")) {
+            JSONObject conversation = messageData.getJSONObject("news");
+            if (conversation.has("id")) {
+                newsId = conversation.getString("id");
+            }
+        }
+
         GleapSender sender = new GleapSender(senderName, profileImageUrl);
-        return new GleapChatMessage(type, text, shareToken, sender);
+        return new GleapChatMessage(type, text, shareToken, sender, newsId);
     }
 
     private void processData(JSONObject data) throws Exception {
@@ -310,8 +318,9 @@ class GleapEventService {
                         } catch (Exception ex) {
                         }
                         //check if it isopen
-                        GleapActionQueueHandler.getInstance().addActionMessage(jsonObject);
+                        GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("start-survey",jsonObject));
                         Gleap.getInstance().open();
+
                     } else if (!currentAction.getString("format").contains("widget")){
                         JSONObject jsonObject = new JSONObject();
                         try {
@@ -322,16 +331,15 @@ class GleapEventService {
                             jsonObject.put("flow", currentAction.getString("actionType"));
                         } catch (Exception ex) {
                         }
-                        //check if it isopen
-                        GleapActionQueueHandler.getInstance().addActionMessage(jsonObject);
+                        GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("start-feedbackflow",jsonObject));
                         Gleap.getInstance().open();
                     }
                     if (currentAction.getString("actionType").contains("notification")) {
-
                         //generates comment based on incoming message
                         JSONObject messageData = currentAction.getJSONObject("data");
                         GleapChatMessage comment = createComment(messageData);
                         GleapInvisibleActivityManger.getInstance().addComment(comment);
+
                     }
                 }
             }

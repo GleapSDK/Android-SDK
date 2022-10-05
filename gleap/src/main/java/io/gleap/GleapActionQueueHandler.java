@@ -7,7 +7,7 @@ import java.util.List;
 
 class GleapActionQueueHandler {
     private static GleapActionQueueHandler instance;
-    private List<JSONObject> messagesQueue = new LinkedList();
+    private List<GleapAction> messagesQueue = new LinkedList();
     private GleapActionQueueHandler() {
     }
 
@@ -18,11 +18,11 @@ class GleapActionQueueHandler {
         return instance;
     }
 
-    public void addActionMessage(JSONObject message) {
+    public void addActionMessage(GleapAction message) {
         this.messagesQueue.add(message);
     }
 
-    public List<JSONObject> getActionQueue() {
+    public List<GleapAction> getActionQueue() {
         return messagesQueue;
     }
 
