@@ -58,13 +58,17 @@ class GleapInvisibleActivityManger {
     }
 
     public void setInvisible() {
-        layout.setVisibility(View.INVISIBLE);
+        if(layout != null){
+            layout.setVisibility(View.INVISIBLE);
+        }
     }
 
     public void setVisible() {
-        layout.setVisibility(View.VISIBLE);
-        this.showFab = true;
-        render(null, true);
+        if(layout != null) {
+            layout.setVisibility(View.VISIBLE);
+            this.showFab = true;
+            render(null, true);
+        }
     }
 
     public void render(Activity activity, boolean force) {
@@ -123,7 +127,6 @@ class GleapInvisibleActivityManger {
                         }
 
                         set.applyTo(layout);
-
                     }
 
                     if ((messages.size() > 0 && messages.size() != prevSize) || force) {
@@ -137,7 +140,6 @@ class GleapInvisibleActivityManger {
                                 chatMessages.addView(commentComponent);
                             }
                         }
-
                     }
 
                     if (messages.size() == 0) {
