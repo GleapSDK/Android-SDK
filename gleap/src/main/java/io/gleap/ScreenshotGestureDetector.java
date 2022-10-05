@@ -90,7 +90,9 @@ class ScreenshotGestureDetector extends GleapDetector {
                         ignore.printStackTrace();
                     }
                 } else {
-                    startBugReporting();
+                    try {
+                        startBugReporting();
+                    }catch (Exception ex) {}
                 }
             }
             }
