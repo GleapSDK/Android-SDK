@@ -66,7 +66,6 @@ public class Gleap implements iGleap {
 
             GleapConfig.getInstance().setGestureDetectors(detectorList);
             GleapDetectorUtil.resumeAllDetectors();
-
         } catch (Exception ignore) {
         }
     }
@@ -115,29 +114,33 @@ public class Gleap implements iGleap {
     @Override
     public void open() {
         try {
-            Handler mainHandler = new Handler(Looper.getMainLooper());
-            Runnable gleapRunnable = new Runnable() {
+            ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
                 @Override
-                public void run() throws RuntimeException {
-                    try {
-                        if (!GleapDetectorUtil.isIsRunning() && UserSessionController.getInstance() != null &&
-                                UserSessionController.getInstance().isSessionLoaded() && instance != null) {
+                public void run() {
+                    Handler mainHandler = new Handler(Looper.getMainLooper());
+                    Runnable gleapRunnable = new Runnable() {
+                        @Override
+                        public void run() throws RuntimeException {
                             try {
-                                if (screenshotTaker != null) {
-                                    screenshotTaker.takeScreenshot();
+                                if (!GleapDetectorUtil.isIsRunning() && UserSessionController.getInstance() != null &&
+                                        UserSessionController.getInstance().isSessionLoaded() && instance != null) {
+                                    try {
+                                        if (screenshotTaker != null) {
+                                            screenshotTaker.takeScreenshot();
+                                        }
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                    }
                                 }
-                            } catch (Exception e) {
-                                e.printStackTrace();
+                            } catch (Error | Exception ignore) {
                             }
                         }
-                    } catch (Error | Exception ignore) {
-                    }
+                    };
+                    mainHandler.post(gleapRunnable);
                 }
-            };
-            mainHandler.post(gleapRunnable);
+            });
         } catch (Error | Exception ignore) {
         }
-
     }
 
     /**
@@ -152,37 +155,41 @@ public class Gleap implements iGleap {
         } catch (Error | Exception ignore) {
         }
     }
-    
-    
+
 
     @Override
     public void startFeedbackFlow(String feedbackFlow, Boolean showBackButton) {
         try {
-            Handler mainHandler = new Handler(Looper.getMainLooper());
-            Runnable gleapRunnable = new Runnable() {
+            ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
                 @Override
-                public void run() throws RuntimeException {
-                    if (!GleapDetectorUtil.isIsRunning() && UserSessionController.getInstance() != null && UserSessionController.getInstance().isSessionLoaded() && Gleap.getInstance() != null) {
-                        try {
-                            JSONObject message = new JSONObject();
-                            message.put("name", "start-feedbackflow");
+                public void run() {
+                    Handler mainHandler = new Handler(Looper.getMainLooper());
+                    Runnable gleapRunnable = new Runnable() {
+                        @Override
+                        public void run() throws RuntimeException {
+                            if (!GleapDetectorUtil.isIsRunning() && UserSessionController.getInstance() != null && UserSessionController.getInstance().isSessionLoaded() && Gleap.getInstance() != null) {
+                                try {
+                                    JSONObject message = new JSONObject();
+                                    message.put("name", "start-feedbackflow");
 
-                            JSONObject data = new JSONObject();
-                            if (!feedbackFlow.equals("")) {
-                                data.put("flow", feedbackFlow);
+                                    JSONObject data = new JSONObject();
+                                    if (!feedbackFlow.equals("")) {
+                                        data.put("flow", feedbackFlow);
+                                    }
+
+                                    data.put("hideBackButton", !showBackButton);
+                                    message.put("data", data);
+                                    GleapActionQueueHandler.getInstance().addActionMessage(message);
+                                    screenshotTaker.takeScreenshot();
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
                             }
-
-                            data.put("hideBackButton", !showBackButton);
-                            message.put("data", data);
-                            GleapActionQueueHandler.getInstance().addActionMessage(message);
-                            screenshotTaker.takeScreenshot();
-                        } catch (Exception e) {
-                            e.printStackTrace();
                         }
-                    }
+                    };
+                    mainHandler.post(gleapRunnable);
                 }
-            };
-            mainHandler.post(gleapRunnable);
+            });
         } catch (Error | Exception ignore) {
         }
     }
@@ -196,7 +203,8 @@ public class Gleap implements iGleap {
     }
 
     @Override
-    public void sendSilentCrashReport(String description, SEVERITY severity, JSONObject excludeData) {
+    public void sendSilentCrashReport(String description, SEVERITY severity, JSONObject
+            excludeData) {
         try {
             SilentBugReportUtil.createSilentBugReport(application, description, severity, excludeData, null);
         } catch (Error | Exception ignore) {
@@ -204,7 +212,8 @@ public class Gleap implements iGleap {
     }
 
     @Override
-    public void sendSilentCrashReport(String description, SEVERITY severity, JSONObject excludeData, FeedbackSentCallback feedbackSentCallback) {
+    public void sendSilentCrashReport(String description, SEVERITY severity, JSONObject
+            excludeData, FeedbackSentCallback feedbackSentCallback) {
         try {
             SilentBugReportUtil.createSilentBugReport(application, description, severity, excludeData, feedbackSentCallback);
         } catch (Error | Exception ignore) {
@@ -212,7 +221,8 @@ public class Gleap implements iGleap {
     }
 
     @Override
-    public void sendSilentCrashReport(String description, SEVERITY severity, FeedbackSentCallback feedbackSentCallback) {
+    public void sendSilentCrashReport(String description, SEVERITY
+            severity, FeedbackSentCallback feedbackSentCallback) {
         try {
             SilentBugReportUtil.createSilentBugReport(application, description, severity, null, feedbackSentCallback);
         } catch (Error | Exception ignore) {
@@ -268,8 +278,15 @@ public class Gleap implements iGleap {
             if (UserSessionController.getInstance() != null) {
                 UserSessionController.getInstance().clearUserSession();
             }
-
-            GleapInvisibleActivityManger.getInstance().clearMessages();
+            try {
+                ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        GleapInvisibleActivityManger.getInstance().clearMessages();
+                    }
+                });
+            } catch (Exception ignore) {
+            }
             new GleapUserSessionLoader();
 
         } catch (Error | Exception ignore) {
@@ -400,7 +417,8 @@ public class Gleap implements iGleap {
      * @param feedbackWillBeSentCallback is called when BB is opened
      */
     @Override
-    public void setFeedbackWillBeSentCallback(FeedbackWillBeSentCallback feedbackWillBeSentCallback) {
+    public void setFeedbackWillBeSentCallback(FeedbackWillBeSentCallback
+                                                      feedbackWillBeSentCallback) {
         try {
             GleapConfig.getInstance().setFeedbackWillBeSentCallback(feedbackWillBeSentCallback);
         } catch (Error | Exception ignore) {
@@ -422,7 +440,8 @@ public class Gleap implements iGleap {
     }
 
     @Override
-    public void setFeedbackSendingFailedCallback(FeedbackSendingFailedCallback feedbackSendingFailedCallback) {
+    public void setFeedbackSendingFailedCallback(FeedbackSendingFailedCallback
+                                                         feedbackSendingFailedCallback) {
         try {
             GleapConfig.getInstance().setFeedbackSendingFailedCallback(feedbackSendingFailedCallback);
         } catch (Error | Exception ignore) {
@@ -459,7 +478,8 @@ public class Gleap implements iGleap {
     }
 
     @Override
-    public void setFeedbackFlowStartedCallback(FeedbackFlowStartedCallback feedbackFlowStartedCallback) {
+    public void setFeedbackFlowStartedCallback(FeedbackFlowStartedCallback
+                                                       feedbackFlowStartedCallback) {
         try {
             GleapConfig.getInstance().setFeedbackFlowStartedCallback(feedbackFlowStartedCallback);
         } catch (Error | Exception ignore) {
@@ -467,7 +487,8 @@ public class Gleap implements iGleap {
     }
 
     @Override
-    public void setInitializationDoneCallback(InitializationDoneCallback initializationDoneCallback) {
+    public void setInitializationDoneCallback(InitializationDoneCallback
+                                                      initializationDoneCallback) {
         try {
             GleapConfig.getInstance().setInitializationDoneCallback(initializationDoneCallback);
         } catch (Error | Exception ignore) {
@@ -499,7 +520,8 @@ public class Gleap implements iGleap {
      * @param response      Response of the call. You can add just the information you want and need.
      */
     @Override
-    public void logNetwork(String urlConnection, RequestType requestType, int status, int duration, JSONObject request, JSONObject response) {
+    public void logNetwork(String urlConnection, RequestType requestType, int status,
+                           int duration, JSONObject request, JSONObject response) {
         try {
             GleapHttpInterceptor.log(urlConnection, requestType, status, duration, request, response);
         } catch (Error | Exception ignore) {
@@ -514,7 +536,8 @@ public class Gleap implements iGleap {
      * @param response      Response of the call. You can add just the information you want and need.
      */
     @Override
-    public void logNetwork(HttpsURLConnection urlConnection, JSONObject request, JSONObject response) {
+    public void logNetwork(HttpsURLConnection urlConnection, JSONObject request, JSONObject
+            response) {
         try {
             GleapHttpInterceptor.log(urlConnection, request, response);
         } catch (Error | Exception ignore) {
@@ -593,213 +616,227 @@ public class Gleap implements iGleap {
                             if (GleapConfig.getInstance().getAction() != null) {
                                 Gleap.getInstance().startFeedbackFlow(GleapConfig.getInstance().getAction().getActionType());
                             }
-                        }catch (Error | Exception ex) {}
-                    }}, 2000);   //2 seconds
-                } catch (Error | Exception ignore) {
-                }
-            }
-
-            @Override
-            public void onTaskComplete(int httpResponse) {
-                try {
-                    GleapConfig config = GleapConfig.getInstance();
-
-                    List<GleapActivationMethod> activationMethods = new LinkedList<>();
-                    if (config.isActivationMethodShake()) {
-                        activationMethods.add(GleapActivationMethod.SHAKE);
+                        } catch (Error | Exception ex) {
+                        }
                     }
+                }, 2000);   //2 seconds
+            } catch (Error | Exception ignore) {
+            }
+        }
 
-                    if (config.isActivationMethodScreenshotGesture()) {
-                        activationMethods.add(GleapActivationMethod.SCREENSHOT);
-                    }
+        @Override
+        public void onTaskComplete(int httpResponse) {
+            try {
+                GleapConfig config = GleapConfig.getInstance();
 
-                    if (config.isActivationMethodFeedbackButton()) {
-                        activationMethods.add(GleapActivationMethod.FAB);
-                    }
-
-                    if (instance == null) {
-                        instance = new Gleap();
-                    }
-                    initGleap(GleapConfig.getInstance().getSdkKey(), activationMethods.toArray(new GleapActivationMethod[0]), application);
-                } catch (Error | Exception ignore) {
+                List<GleapActivationMethod> activationMethods = new LinkedList<>();
+                if (config.isActivationMethodShake()) {
+                    activationMethods.add(GleapActivationMethod.SHAKE);
                 }
-            }
-        }
 
-        /**
-         * Logs a custom event
-         *
-         * @param name Name of the event
-         * @author Gleap
-         */
-        @Override
-        public void trackEvent(String name) {
-            try {
-                GleapBug.getInstance().logEvent(name);
-            } catch (Error | Exception ignore) {
-            }
-        }
-
-        /**
-         * Logs a custom event with data
-         *
-         * @param name Name of the event
-         * @param data Data passed with the event.
-         * @author Gleap
-         */
-        @Override
-        public void trackEvent(String name, JSONObject data) {
-            try {
-                GleapBug.getInstance().logEvent(name, data);
-            } catch (Error | Exception ignore) {
-            }
-        }
-
-        /**
-         * Attaches a file to the bug report
-         *
-         * @param attachment The file to attach to the bug report
-         * @author Gleap
-         */
-        @Override
-        public void addAttachment(File attachment) {
-            try {
-                GleapFileHelper.getInstance().addAttachment(attachment);
-            } catch (Error | Exception ignore) {
-            }
-        }
-
-        /**
-         * Removes all attachments
-         *
-         * @author Gleap
-         */
-        @Override
-        public void removeAllAttachments() {
-            try {
-                GleapFileHelper.getInstance().clearAttachments();
-            } catch (Error | Exception ignore) {
-            }
-        }
-
-        @Override
-        public void setActivationMethods(GleapActivationMethod[] activationMethods) {
-            try {
-                if (application != null) {
-                    GleapConfig.getInstance().setPriorizedGestureDetectors(Arrays.asList(activationMethods));
-                    GleapDetectorUtil.clearAllDetectors();
-                    List<GleapDetector> detectorList = GleapDetectorUtil.initDetectors(application, activationMethods);
-                    GleapConfig.getInstance().setGestureDetectors(detectorList);
-                    GleapDetectorUtil.resumeAllDetectors();
+                if (config.isActivationMethodScreenshotGesture()) {
+                    activationMethods.add(GleapActivationMethod.SCREENSHOT);
                 }
-            } catch (Error | Exception ignore) {
-            }
-        }
 
-        /**
-         * Prefills the widget form with data.
-         *
-         * @param data The data you want to prefill the form with.
-         * @author Gleap
-         */
-        @Override
-        public void preFillForm(JSONObject data) {
-            try {
-                PrefillHelper.getInstancen().setPrefillData(data);
-            } catch (Error | Exception ignore) {
-            }
-        }
-
-        /**
-         * Disables the console logging. This must be called BEFORE initializing the SDK.
-         *
-         * @author Gleap
-         */
-        @Override
-        public boolean isOpened() {
-            return GleapDetectorUtil.isIsRunning();
-        }
-
-        /**
-         * Manually close the feedback.
-         *
-         * @author Gleap
-         */
-        @Override
-        public void close() {
-            try {
-                if (application != null && GleapConfig.getInstance().getCallCloseCallback() != null && isOpened()) {
-                    GleapConfig.getInstance().getCallCloseCallback().invoke();
+                if (config.isActivationMethodFeedbackButton()) {
+                    activationMethods.add(GleapActivationMethod.FAB);
                 }
-            } catch (Error | Exception ignore) {}
-        }
 
-        /**
-         * Logs a message to the Gleap activity log
-         *
-         * @param msg The logged message
-         * @author Gleap
-         */
-        @Override
-        public void log(String msg) {
-            try {
-                LogReader.getInstance().log(msg, GleapLogLevel.INFO);
+                if (instance == null) {
+                    instance = new Gleap();
+                }
+                initGleap(GleapConfig.getInstance().getSdkKey(), activationMethods.toArray(new GleapActivationMethod[0]), application);
             } catch (Error | Exception ignore) {
             }
         }
+    }
 
-        /**
-         * Logs a message to the Gleap activity log
-         *
-         * @param msg The logged message
-         * @author Gleap
-         */
-        @Override
-        public void log(String msg, GleapLogLevel gleapLogLevel) {
-            try {
-                LogReader.getInstance().log(msg, gleapLogLevel);
-            } catch (Error | Exception ignored) {
+    /**
+     * Logs a custom event
+     *
+     * @param name Name of the event
+     * @author Gleap
+     */
+    @Override
+    public void trackEvent(String name) {
+        try {
+            GleapBug.getInstance().logEvent(name);
+        } catch (Error | Exception ignore) {
+        }
+    }
+
+    /**
+     * Logs a custom event with data
+     *
+     * @param name Name of the event
+     * @param data Data passed with the event.
+     * @author Gleap
+     */
+    @Override
+    public void trackEvent(String name, JSONObject data) {
+        try {
+            GleapBug.getInstance().logEvent(name, data);
+        } catch (Error | Exception ignore) {
+        }
+    }
+
+    /**
+     * Attaches a file to the bug report
+     *
+     * @param attachment The file to attach to the bug report
+     * @author Gleap
+     */
+    @Override
+    public void addAttachment(File attachment) {
+        try {
+            GleapFileHelper.getInstance().addAttachment(attachment);
+        } catch (Error | Exception ignore) {
+        }
+    }
+
+    /**
+     * Removes all attachments
+     *
+     * @author Gleap
+     */
+    @Override
+    public void removeAllAttachments() {
+        try {
+            GleapFileHelper.getInstance().clearAttachments();
+        } catch (Error | Exception ignore) {
+        }
+    }
+
+    @Override
+    public void setActivationMethods(GleapActivationMethod[] activationMethods) {
+        try {
+            if (application != null) {
+                GleapConfig.getInstance().setPriorizedGestureDetectors(Arrays.asList(activationMethods));
+                GleapDetectorUtil.clearAllDetectors();
+                List<GleapDetector> detectorList = GleapDetectorUtil.initDetectors(application, activationMethods);
+                GleapConfig.getInstance().setGestureDetectors(detectorList);
+                GleapDetectorUtil.resumeAllDetectors();
             }
+        } catch (Error | Exception ignore) {
         }
+    }
 
-        /**
-         * Disables the console logging. This must be called BEFORE initializing the SDK.
-         *
-         * @author Gleap
-         */
-        @Override
-        public void disableConsoleLog() {
-            try{
-                GleapConfig.getInstance().setEnableConsoleLogsFromCode(false);
-            }catch (Error | Exception ignore) {}
+    /**
+     * Prefills the widget form with data.
+     *
+     * @param data The data you want to prefill the form with.
+     * @author Gleap
+     */
+    @Override
+    public void preFillForm(JSONObject data) {
+        try {
+            PrefillHelper.getInstancen().setPrefillData(data);
+        } catch (Error | Exception ignore) {
         }
+    }
 
-        @Override
-        public void showFeedbackButton(boolean show) {
+    /**
+     * Disables the console logging. This must be called BEFORE initializing the SDK.
+     *
+     * @author Gleap
+     */
+    @Override
+    public boolean isOpened() {
+        return GleapDetectorUtil.isIsRunning();
+    }
+
+    /**
+     * Manually close the feedback.
+     *
+     * @author Gleap
+     */
+    @Override
+    public void close() {
+        try {
+            ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (application != null && GleapConfig.getInstance().getCallCloseCallback() != null && isOpened()) {
+                        GleapConfig.getInstance().getCallCloseCallback().invoke();
+                    }
+                }
+            });
+        } catch (Error | Exception ignore) {
+        }
+    }
+
+    /**
+     * Logs a message to the Gleap activity log
+     *
+     * @param msg The logged message
+     * @author Gleap
+     */
+    @Override
+    public void log(String msg) {
+        try {
+            LogReader.getInstance().log(msg, GleapLogLevel.INFO);
+        } catch (Error | Exception ignore) {
+        }
+    }
+
+    /**
+     * Logs a message to the Gleap activity log
+     *
+     * @param msg The logged message
+     * @author Gleap
+     */
+    @Override
+    public void log(String msg, GleapLogLevel gleapLogLevel) {
+        try {
+            LogReader.getInstance().log(msg, gleapLogLevel);
+        } catch (Error | Exception ignored) {
+        }
+    }
+
+    /**
+     * Disables the console logging. This must be called BEFORE initializing the SDK.
+     *
+     * @author Gleap
+     */
+    @Override
+    public void disableConsoleLog() {
+        try {
+            GleapConfig.getInstance().setEnableConsoleLogsFromCode(false);
+        } catch (Error | Exception ignore) {
+        }
+    }
+
+    @Override
+    public void showFeedbackButton(boolean show) {
+        try {
             GleapConfig.getInstance().setHideWidget(!show);
             GleapInvisibleActivityManger.getInstance().setShowFab(show);
+        } catch (Exception ignore) {
         }
+    }
 
-        /**
-         * Enable Replay function for BB
-         * Use with care, check performance on phone
-         */
-        private void enableReplays(boolean enable) {
-            try{
-                GleapConfig.getInstance().setEnableReplays(enable);
-            }catch (Error | Exception ignore) {}
+    /**
+     * Enable Replay function for BB
+     * Use with care, check performance on phone
+     */
+    private void enableReplays(boolean enable) {
+        try {
+            GleapConfig.getInstance().setEnableReplays(enable);
+        } catch (Error | Exception ignore) {
         }
+    }
 
-        /**
-         * Pass the current activity manually (Internal usage!)
-         *
-         * @param getActivityCallback get the current activity
-         */
-        public void setGetActivityCallback(GetActivityCallback getActivityCallback) {
-            try{
-                GleapConfig.getInstance().setGetActivityCallback(getActivityCallback);
-            }catch (Error | Exception ignore) {}
-
+    /**
+     * Pass the current activity manually (Internal usage!)
+     *
+     * @param getActivityCallback get the current activity
+     */
+    public void setGetActivityCallback(GetActivityCallback getActivityCallback) {
+        try {
+            GleapConfig.getInstance().setGetActivityCallback(getActivityCallback);
+        } catch (Error | Exception ignore) {
         }
 
     }
+
+}

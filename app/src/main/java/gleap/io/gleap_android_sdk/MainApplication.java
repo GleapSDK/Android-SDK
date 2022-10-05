@@ -25,6 +25,7 @@ public class MainApplication extends Application {
         gleapUserProperties.setValue(20);
         gleapUserProperties.setPhoneNumber("+436502425552");
         Gleap.getInstance().identifyUser("13", gleapUserProperties);
+        Gleap.getInstance().showFeedbackButton(false);
 
 
 

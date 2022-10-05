@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 import io.gleap.Gleap;
+import io.gleap.GleapNotInitialisedException;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -23,16 +24,20 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.feedback).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-                startActivityForResult(intent, 1);
+               // Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+            //    startActivityForResult(intent, 1);
+                try {
+                    Gleap.getInstance().startFeedbackFlow("BUG");
+                } catch (GleapNotInitialisedException e) {
+                    e.printStackTrace();
+                }
             }
         });
 
         findViewById(R.id.crash).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(MainActivity.this, SilentCrashReport.class);
-                  startActivity(intent);
+                Gleap.getInstance().showFeedbackButton(true);
             }
         });
 

@@ -31,9 +31,15 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                 return 200;
             }
 
-            try{
-                GleapInvisibleActivityManger.getInstance().clearMessages();
-            }catch (Exception ingore) {}
+            try {
+                ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        GleapInvisibleActivityManger.getInstance().clearMessages();
+                    }
+                });
+            } catch (Exception ingore) {
+            }
 
             try {
                 GleapUser gleapUser = UserSessionController.getInstance().getGleapUserSession();
@@ -64,8 +70,8 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                         if (gleapUser.getGleapUserProperties() != null) {
                             jsonObject.put("email", gleapUser.getGleapUserProperties().getEmail());
                             jsonObject.put("name", gleapUser.getGleapUserProperties().getName());
-                          //  jsonObject.put("userHash", gleapUser.getGleapUserProperties().getHash());
-                            if(gleapUser.getGleapUserProperties().getValue() != 0) {
+                            //  jsonObject.put("userHash", gleapUser.getGleapUserProperties().getHash());
+                            if (gleapUser.getGleapUserProperties().getValue() != 0) {
                                 jsonObject.put("value", gleapUser.getGleapUserProperties().getValue());
                             }
                             jsonObject.put("phone", gleapUser.getGleapUserProperties().getPhoneNumber());
@@ -75,7 +81,7 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                     }
                 }
 
-                if(!jsonObject.has("userId")) {
+                if (!jsonObject.has("userId")) {
                     return 200;
                 }
 
@@ -106,17 +112,17 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                         }
 
                         GleapUserProperties gleapUserProperties = new GleapUserProperties();
-                        if(result.has("name")) {
+                        if (result.has("name")) {
                             gleapUserProperties.setName(result.getString("name"));
                         }
 
-                        if(result.has("email")) {
+                        if (result.has("email")) {
                             gleapUserProperties.setEmail(result.getString("email"));
                         }
 
-                        String userId="";
+                        String userId = "";
 
-                        if(result.has("userId")) {
+                        if (result.has("userId")) {
                             userId = result.getString("userId");
                         }
 
@@ -127,7 +133,7 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                             UserSessionController.getInstance().mergeUserSession(id, hash);
                             isLoaded = true;
                         }
-                       GleapInvisibleActivityManger.getInstance().render(null, true);
+                        GleapInvisibleActivityManger.getInstance().render(null, true);
                     }
 
                 } catch (Exception e) {
