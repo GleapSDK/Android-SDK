@@ -358,6 +358,8 @@ interface iGleap {
     void disableConsoleLog();
 
     void showFeedbackButton(boolean show);
+
+    void openFeatureRequests();
 }
 
 

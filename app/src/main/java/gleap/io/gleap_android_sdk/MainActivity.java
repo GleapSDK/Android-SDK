@@ -26,11 +26,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                // Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
             //    startActivityForResult(intent, 1);
-                try {
-                    Gleap.getInstance().startFeedbackFlow("bugreporting");
-                } catch (GleapNotInitialisedException e) {
-                    e.printStackTrace();
-                }
+                Gleap.getInstance().openFeatureRequests();
             }
         });
 

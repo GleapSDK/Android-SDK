@@ -863,4 +863,28 @@ public class Gleap implements iGleap {
 
     }
 
+    @Override
+    public void openFeatureRequests() {
+        ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Handler mainHandler = new Handler(Looper.getMainLooper());
+                Runnable gleapRunnable = new Runnable() {
+                    @Override
+                    public void run() throws RuntimeException {
+                        if (!GleapDetectorUtil.isIsRunning() && UserSessionController.getInstance() != null && UserSessionController.getInstance().isSessionLoaded() && Gleap.getInstance() != null) {
+                            try {
+                                JSONObject data = new JSONObject();
+                                GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("open-feature-requests", data));
+                                screenshotTaker.takeScreenshot();
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                };
+                mainHandler.post(gleapRunnable);
+            }
+        });
+    }
 }
