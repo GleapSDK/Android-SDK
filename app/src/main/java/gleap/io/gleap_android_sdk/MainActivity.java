@@ -26,7 +26,8 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                // Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
             //    startActivityForResult(intent, 1);
-                Gleap.getInstance().openFeatureRequests();
+                System.out.println(Gleap.getInstance().getIdentity());
+                System.out.println(Gleap.getInstance().isUserIdentified());
             }
         });
 

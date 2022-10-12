@@ -360,6 +360,10 @@ interface iGleap {
     void showFeedbackButton(boolean show);
 
     void openFeatureRequests();
+
+    GleapUser getIdentity();
+
+    boolean isUserIdentified();
 }
 
 

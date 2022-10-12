@@ -887,4 +887,24 @@ public class Gleap implements iGleap {
             }
         });
     }
+
+    @Override
+    public GleapUser getIdentity() {
+        GleapUser gleapUser = null;
+        try{
+            gleapUser = UserSessionController.getInstance().getGleapUserSession();
+        }catch (Error | Exception ignore) {}
+        return gleapUser;
+    }
+
+    @Override
+    public boolean isUserIdentified() {
+        try {
+            GleapUser gleapUser = UserSessionController.getInstance().getStoredGleapUser();
+            if (gleapUser != null && gleapUser.getUserId() != null && !gleapUser.getUserId().equals("")) {
+                return true;
+            }
+        }catch (Exception ex){}
+        return false;
+    }
 }
