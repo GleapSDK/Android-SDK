@@ -7,6 +7,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
+import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.net.http.SslError;
 import android.os.Bundle;
@@ -79,8 +80,18 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
             if (getPackageManager().hasSystemFeature("android.software.webview")) {
                 webView = findViewById(R.id.gleap_webview);
 
-                findViewById(R.id.gleap_progressBarHeader).setBackgroundColor(Color.parseColor(GleapConfig.getInstance().getHeaderColor()));
-                findViewById(R.id.loader).setBackgroundColor(Color.parseColor(GleapConfig.getInstance().getBackgroundColor()));
+                int backgroundColor = Color.parseColor(GleapConfig.getInstance().getBackgroundColor());
+                int headerColor = Color.parseColor(GleapConfig.getInstance().getHeaderColor());
+                int[] gradientColors = new int[]{ headerColor, headerColor, headerColor, backgroundColor };
+                GradientDrawable gradientDrawable = new GradientDrawable(
+                        GradientDrawable.Orientation.TOP_BOTTOM,
+                        gradientColors
+                );
+
+                gradientDrawable.setCornerRadius(0f);
+
+                findViewById(R.id.gleap_progressBarHeader).setBackground(gradientDrawable);
+                findViewById(R.id.loader).setBackgroundColor(backgroundColor);
 
                 try {
                     ((ProgressBar) findViewById(R.id.gleap_progressBarBody)).getIndeterminateDrawable()
@@ -165,7 +176,8 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     }
                     return true;
                 }
-            }catch (Error | Exception ignore) {}
+            } catch (Error | Exception ignore) {
+            }
             return false;
         }
 
@@ -346,9 +358,10 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                                             e.printStackTrace();
                                         }
 
-                                        webView.setVisibility(View.VISIBLE);
+
                                     }
-                                }, 500);
+                                }, 100);
+                                webView.setVisibility(View.VISIBLE);
 
                                 break;
                             case "cleanup-drawings":
