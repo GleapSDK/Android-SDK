@@ -160,7 +160,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
             try {
                 if (!url.contains(GleapConfig.getInstance().getiFrameUrl())) {
                     Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                    System.out.println(browserIntent.resolveActivity(getPackageManager()));
                     if (browserIntent.resolveActivity(getPackageManager()) != null) {
                         startActivity(browserIntent);
                     }

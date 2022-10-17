@@ -50,7 +50,6 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                 conn.setRequestProperty("Accept", "application/json");
                 conn.setRequestProperty("Content-Type", "application/json");
                 conn.setRequestMethod("POST");
-                System.out.println("CALLED GLEAPIDENTIFY");
 
                 if (userSession.getId() != null && !userSession.getId().equals("")) {
                     conn.setRequestProperty("Gleap-Id", userSession.getId());
