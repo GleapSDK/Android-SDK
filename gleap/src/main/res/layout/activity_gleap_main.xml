@@ -16,9 +16,9 @@
 
                 <View
                     android:id="@+id/gleap_progressBarHeader"
-                    android:background="#485bff"
                     android:layout_width="match_parent"
-                    android:layout_height="263dp" />
+                    android:layout_height="379dp"
+                    android:background="#485bff" />
 
                 <ProgressBar
                     android:id="@+id/gleap_progressBarBody"
