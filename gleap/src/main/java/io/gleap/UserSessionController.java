@@ -74,6 +74,9 @@ public class UserSessionController {
             sharedPreferences.edit().putString("userId.email", gleapUser.getGleapUserProperties().getEmail()).apply();
             sharedPreferences.edit().putString("userId.phonenumber", gleapUser.getGleapUserProperties().getPhoneNumber()).apply();
             sharedPreferences.edit().putFloat("userId.value", (float) gleapUser.getGleapUserProperties().getValue()).apply();
+            if(gleapUser.getGleapUserProperties().getHash() != null && !gleapUser.getGleapUserProperties().getHash().equals("")) {
+                sharedPreferences.edit().putString("userId.hash", gleapUser.getGleapUserProperties().getHash()).apply();
+            }
         }
     }
 
@@ -92,6 +95,7 @@ public class UserSessionController {
         gleapUserProperties.setEmail(email);
         gleapUserProperties.setPhoneNumber(phoneNumber);
         gleapUserProperties.setValue(value);
+    //    gleapUserProperties.setHash();
         if(!userId.equals("")) {
             gleapUser = new GleapUser(userId, gleapUserProperties);
         }

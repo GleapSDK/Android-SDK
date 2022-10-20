@@ -199,6 +199,7 @@ class GleapInvisibleActivityManger {
 
                             relativeLayout.setLayoutParams(params);
                             //  setShowFab(true);
+                            relativeLayout.setVisibility(View.INVISIBLE);
 
                         }
                         GradientDrawable gdDefaultText = new GradientDrawable();
@@ -216,6 +217,7 @@ class GleapInvisibleActivityManger {
                         if (imageButton == null) {
                             imageButton = new ImageButton(local);
                             imageButton.setId(View.generateViewId());
+
                         }
 
                         GradientDrawable gdDefault = new GradientDrawable();

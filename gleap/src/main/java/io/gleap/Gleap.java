@@ -129,7 +129,6 @@ public class Gleap implements iGleap {
                                             screenshotTaker.takeScreenshot();
                                         }
                                     } catch (Exception e) {
-                                        e.printStackTrace();
                                     }
                                 }
                             } catch (Error | Exception ignore) {
@@ -169,7 +168,6 @@ public class Gleap implements iGleap {
                                             screenshotTaker.takeScreenshot();
                                         }
                                     } catch (Exception e) {
-                                        e.printStackTrace();
                                     }
                                 }
                             } catch (Error | Exception ignore) {
@@ -218,7 +216,6 @@ public class Gleap implements iGleap {
                                     GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("start-feedbackflow", data));
                                     screenshotTaker.takeScreenshot();
                                 } catch (Exception e) {
-                                    e.printStackTrace();
                                 }
                             }
                         }
@@ -323,7 +320,7 @@ public class Gleap implements iGleap {
                 });
             } catch (Exception ignore) {
             }
-            new GleapUserSessionLoader();
+            new GleapUserSessionLoader().execute();
 
         } catch (Error | Exception ignore) {
         }
@@ -878,7 +875,6 @@ public class Gleap implements iGleap {
                                 GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("open-feature-requests", data));
                                 screenshotTaker.takeScreenshot();
                             } catch (Exception e) {
-                                e.printStackTrace();
                             }
                         }
                     }
