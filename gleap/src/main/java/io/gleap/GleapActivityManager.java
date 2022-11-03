@@ -52,7 +52,9 @@ class GleapActivityManager {
 
                 @Override
                 public void onActivityStopped(@NonNull Activity activity) {
-                    GleapInvisibleActivityManger.getInstance().setVisible();
+                    if(GleapBug.getInstance().getApplicationtype() == APPLICATIONTYPE.NATIVE) {
+                        GleapInvisibleActivityManger.getInstance().setVisible();
+                    }
                 }
 
                 @Override
