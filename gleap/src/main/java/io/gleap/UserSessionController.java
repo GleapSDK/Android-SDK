@@ -88,6 +88,7 @@ public class UserSessionController {
         String userName = sharedPreferences.getString("userId.name", "");
         String email = sharedPreferences.getString("userId.email", "");
         String phoneNumber = sharedPreferences.getString("userId.phonenumber", "");
+        String hash = sharedPreferences.getString("userId.hash","");
         double value = sharedPreferences.getFloat("userId.value", 0);
 
         GleapUserProperties gleapUserProperties = new GleapUserProperties();
@@ -95,11 +96,14 @@ public class UserSessionController {
         gleapUserProperties.setEmail(email);
         gleapUserProperties.setPhoneNumber(phoneNumber);
         gleapUserProperties.setValue(value);
-    //    gleapUserProperties.setHash();
+
+        if(!hash.equals("")) {
+            gleapUserProperties.setHash(hash);
+        }
+
         if(!userId.equals("")) {
             gleapUser = new GleapUser(userId, gleapUserProperties);
         }
-
 
        return gleapUser;
     }

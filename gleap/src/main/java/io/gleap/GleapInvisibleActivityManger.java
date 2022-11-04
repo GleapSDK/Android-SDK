@@ -66,7 +66,10 @@ class GleapInvisibleActivityManger {
     public void setVisible() {
         if (layout != null) {
             layout.setVisibility(View.VISIBLE);
-            this.showFab = true;
+            boolean manualHidden = GleapConfig.getInstance().isHideWidget();
+            if(!manualHidden) {
+                this.showFab = true;
+            }
             render(null, true);
         }
     }
