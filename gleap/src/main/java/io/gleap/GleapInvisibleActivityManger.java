@@ -43,8 +43,7 @@ class GleapInvisibleActivityManger {
     private int prevSize = 0;
     private int messageCounter = 0;
     private int prevMessageCounter = -1;
-    private boolean showFab = false;
-
+    boolean showFab = false;
 
     private GleapInvisibleActivityManger() {
         messages = new LinkedList<>();
@@ -58,15 +57,14 @@ class GleapInvisibleActivityManger {
     }
 
     public void setInvisible() {
-        if (layout != null) {
-            layout.setVisibility(View.INVISIBLE);
+        if (relativeLayout != null) {
+            relativeLayout.setVisibility(View.INVISIBLE);
         }
     }
 
     public void setVisible() {
-        if (layout != null) {
-            layout.setVisibility(View.VISIBLE);
-            this.showFab = true;
+        if (relativeLayout != null && !GleapConfig.getInstance().isHideWidget()) {
+            relativeLayout.setVisibility(View.VISIBLE);
             render(null, true);
         }
     }
@@ -239,7 +237,8 @@ class GleapInvisibleActivityManger {
                             }
                         });
                         boolean manualHidden = GleapConfig.getInstance().isHideWidget();
-                        if (showFab && !manualHidden) {
+
+                        if (showFab && manualHidden) {
                             relativeLayout.setVisibility(View.VISIBLE);
                         } else {
                             relativeLayout.setVisibility(View.GONE);
@@ -330,17 +329,25 @@ class GleapInvisibleActivityManger {
 
     public void setShowFab(boolean showFabIn) {
         try {
+            this.showFab = showFabIn;
             ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     boolean manualHidden = GleapConfig.getInstance().isHideWidget();
-                    showFab = showFabIn && !manualHidden;
-                    if (relativeLayout != null) {
-                        //GleapConfig.getInstance().setHideWidget(false);
-                        if (!showFab) {
-                            relativeLayout.setVisibility(View.GONE);
+                    if (!manualHidden) {
+                        if (showFabIn) {
+                            if (relativeLayout != null) {
+                                relativeLayout.setVisibility(View.VISIBLE);
+                                //GleapConfig.getInstance().setHideWidget(false);
+                            }
                         } else {
-                            relativeLayout.setVisibility(View.VISIBLE);
+                            if (relativeLayout != null) {
+                                relativeLayout.setVisibility(View.GONE);
+                            }
+                        }
+                    } else {
+                        if (relativeLayout != null) {
+                            relativeLayout.setVisibility(View.GONE);
                         }
                     }
                 }
