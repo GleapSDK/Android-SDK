@@ -74,7 +74,7 @@ public class UserSessionController {
             sharedPreferences.edit().putString("userId.email", gleapUser.getGleapUserProperties().getEmail()).apply();
             sharedPreferences.edit().putString("userId.phonenumber", gleapUser.getGleapUserProperties().getPhoneNumber()).apply();
             sharedPreferences.edit().putFloat("userId.value", (float) gleapUser.getGleapUserProperties().getValue()).apply();
-            if(gleapUser.getGleapUserProperties().getHash() != null && !gleapUser.getGleapUserProperties().getHash().equals("")) {
+            if (gleapUser.getGleapUserProperties().getHash() != null && !gleapUser.getGleapUserProperties().getHash().equals("")) {
                 sharedPreferences.edit().putString("userId.hash", gleapUser.getGleapUserProperties().getHash()).apply();
             }
         }
@@ -82,30 +82,37 @@ public class UserSessionController {
 
     public GleapUser getStoredGleapUser() {
         GleapUser gleapUser = null;
-        SharedPreferences sharedPreferences = application.getSharedPreferences("gleap-user", MODE_PRIVATE);
-        String userId = sharedPreferences.getString("userId", "");
+        try {
+            SharedPreferences sharedPreferences = application.getSharedPreferences("gleap-user", MODE_PRIVATE);
+            String userId = sharedPreferences.getString("userId", "");
 
-        String userName = sharedPreferences.getString("userId.name", "");
-        String email = sharedPreferences.getString("userId.email", "");
-        String phoneNumber = sharedPreferences.getString("userId.phonenumber", "");
-        String hash = sharedPreferences.getString("userId.hash","");
-        double value = sharedPreferences.getFloat("userId.value", 0);
+            String userName = sharedPreferences.getString("userId.name", "");
+            String email = sharedPreferences.getString("userId.email", "");
+            String phoneNumber = sharedPreferences.getString("userId.phonenumber", "");
 
-        GleapUserProperties gleapUserProperties = new GleapUserProperties();
-        gleapUserProperties.setName(userName);
-        gleapUserProperties.setEmail(email);
-        gleapUserProperties.setPhoneNumber(phoneNumber);
-        gleapUserProperties.setValue(value);
+            String hash = sharedPreferences.getString("userId.hash", "");
 
-        if(!hash.equals("")) {
+            double value = sharedPreferences.getFloat("userId.value", 0);
+
+            GleapUserProperties gleapUserProperties = new GleapUserProperties();
+            gleapUserProperties.setName(userName);
+            gleapUserProperties.setEmail(email);
+            gleapUserProperties.setPhoneNumber(phoneNumber);
+            gleapUserProperties.setValue(value);
+
+            if (!hash.equals("")) {
+                gleapUserProperties.setHash(hash);
+            }
+
             gleapUserProperties.setHash(hash);
-        }
 
-        if(!userId.equals("")) {
-            gleapUser = new GleapUser(userId, gleapUserProperties);
-        }
+            if (!userId.equals("")) {
+                gleapUser = new GleapUser(userId, gleapUserProperties);
+            }
 
-       return gleapUser;
+        } catch (Exception | Error ignore) {
+        }
+        return gleapUser;
     }
 
     public GleapUser getGleapUserSession() {
