@@ -41,6 +41,14 @@ interface iGleap {
     void openNews() throws GleapNotInitialisedException;
 
     /**
+     * Manually shows the news section
+     *
+     * @throws GleapNotInitialisedException thrown when Gleap is not initialised
+     * @author Gleap
+     */
+    void openNews(boolean showBackButton) throws GleapNotInitialisedException;
+
+    /**
      * Manually start the bug reporting workflow. This is used, when you use the activation method "NONE".
      *
      * @param feedbackFlow declares what you want to start. For example start directly a bugreport or a user rating.
@@ -50,6 +58,39 @@ interface iGleap {
     void startFeedbackFlow(String feedbackFlow) throws GleapNotInitialisedException;
 
     void startFeedbackFlow(String feedbackFlow, Boolean showBackButton) throws GleapNotInitialisedException;
+
+    /**
+     * Opens the help center.
+     */
+    void openHelpCenter();
+    /**
+     * Opens the help center.
+     */
+    void openHelpCenter(Boolean showBackButton);
+    /**
+     * Opens a help article
+     */
+    void openHelpCenterArticle(String articleId);
+    /**
+     * Opens a help article
+     */
+    void openHelpCenterArticle(String articleId, Boolean showBackButton);
+    /**
+     * Opens a help article
+     */
+    void openHelpCenterCollection(String collectionId);
+    /**
+     * Opens a help article
+     */
+    void openHelpCenterCollection(String collectionId, Boolean showBackButton);
+    /**
+     * Search for news articles in the help center
+     */
+    void searchHelpCenter(String term);
+    /**
+     * Search for news articles in the help center
+     */
+    void searchHelpCenter(String term, Boolean showBackButton);
 
     /**
      * Send a silent bugreport in the background. Useful for automated ui tests.
@@ -65,7 +106,6 @@ interface iGleap {
 
     void sendSilentCrashReport(String description, Gleap.SEVERITY severity, JSONObject excludeData, FeedbackSentCallback feedbackSentCallback);
 
-
     /**
      * Updates a session's user data.
      *
@@ -73,7 +113,6 @@ interface iGleap {
      * @author Gleap
      */
     void identifyUser(String id);
-
 
     /**
      * Updates a session's user data.
@@ -361,9 +400,12 @@ interface iGleap {
 
     void openFeatureRequests();
 
+    void openFeatureRequests(boolean showBackButton);
+
     GleapUser getIdentity();
 
     boolean isUserIdentified();
+
 }
 
 

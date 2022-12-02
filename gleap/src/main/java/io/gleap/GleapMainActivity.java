@@ -17,6 +17,7 @@ import android.provider.Settings;
 import android.util.Base64;
 import android.view.View;
 import android.view.Window;
+import android.webkit.ConsoleMessage;
 import android.webkit.JavascriptInterface;
 import android.webkit.JsPromptResult;
 import android.webkit.JsResult;
@@ -316,6 +317,11 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
             } catch (Exception exception) {
 
             }
+        }
+
+        @Override
+        public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
+            return true;
         }
     }
 
