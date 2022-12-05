@@ -8,6 +8,7 @@
     <application>
         <activity
             android:name="io.gleap.GleapMainActivity"
+            android:configChanges="orientation|screenSize"
             android:theme="@style/AppTheme.TranslucentBG" />
     </application>
 
