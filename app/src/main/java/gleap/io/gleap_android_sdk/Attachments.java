@@ -13,6 +13,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.view.View;
 
 import java.io.File;
+
 import io.gleap.Gleap;
 
 public class Attachments extends AppCompatActivity {
@@ -68,7 +69,7 @@ public class Attachments extends AppCompatActivity {
         findViewById(R.id.attach2).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-               Gleap.getInstance().removeAllAttachments();
+                Gleap.getInstance().removeAllAttachments();
             }
         });
 
@@ -82,7 +83,7 @@ public class Attachments extends AppCompatActivity {
         findViewById(R.id.attach_send).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Gleap.getInstance().sendSilentCrashReport("Gleap Identity Check" + (int)Math.floor(Math.random() * 1000) , Gleap.SEVERITY.LOW);
+                Gleap.getInstance().sendSilentCrashReport("Gleap Identity Check" + (int) Math.floor(Math.random() * 1000), Gleap.SEVERITY.LOW);
             }
         });
 
@@ -94,10 +95,11 @@ public class Attachments extends AppCompatActivity {
             case 0:
                 if (resultCode == RESULT_OK) {
                     // Get the Uri of the selected file
-                   FileUtilsInternal fileUtilsInternal = new FileUtilsInternal(this.getApplicationContext());
-                   String str = fileUtilsInternal.getPath(data.getData());
-
-                    Gleap.getInstance().addAttachment(new File(str));
+                    FileUtilsInternal fileUtilsInternal = new FileUtilsInternal(this.getApplicationContext());
+                    String str = fileUtilsInternal.getPath(data.getData());
+                    if (str.equals("")) {
+                        Gleap.getInstance().addAttachment(new File(str));
+                    }
                 }
                 break;
         }
