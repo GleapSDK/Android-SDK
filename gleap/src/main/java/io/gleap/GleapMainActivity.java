@@ -118,10 +118,26 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                         GleapMainActivity.this.finish();
                     }
                 });
-                initBrowser();
+                if(savedInstanceState == null) {
+                    initBrowser();
+                }
             }
         } catch (Exception ex) {
         }
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState)
+    {
+        super.onSaveInstanceState(outState);
+        webView.saveState(outState);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState)
+    {
+        super.onRestoreInstanceState(savedInstanceState);
+        webView.restoreState(savedInstanceState);
     }
 
 
@@ -459,11 +475,11 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
             for (GleapAction action :
                     queue) {
                 try {
-               /*     JSONObject data = action.getData();
+                    JSONObject data = action.getData();
                     if(!data.has("actionOutboundId" )) {
                         data.put("actionOutboundId", GleapBug.getInstance().getOutboubdId());
                     }
-
+/*
                     String command = "start-feedbackflow";
                     if(data.has("isSurvey") && data.getBoolean("isSurvey") ){
                         command = "start-survey";
