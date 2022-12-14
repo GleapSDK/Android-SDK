@@ -229,8 +229,8 @@ class GleapEventService {
                 if (result != null) {
                     processData(result);
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
+            } catch (Error | Exception e) {
+               // e.printStackTrace();
             }
 
             conn.getInputStream().close();

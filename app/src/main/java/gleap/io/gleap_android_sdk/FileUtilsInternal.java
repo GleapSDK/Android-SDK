@@ -136,12 +136,16 @@ public class FileUtilsInternal {
                 } else if ("audio".equals(type)) {
                     contentUri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
                 }
-                selection = "_id=?";
-                selectionArgs = new String[]{split[1]};
+
+                if(contentUri != null) {
+                    selection = "_id=?";
+                    selectionArgs = new String[]{split[1]};
 
 
-                return getDataColumn(context, contentUri, selection,
-                        selectionArgs);
+                    return getDataColumn(context, contentUri, selection,
+                            selectionArgs);
+                }
+                return "";
             }
 
             if (isGoogleDriveUri(uri)) {

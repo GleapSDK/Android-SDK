@@ -352,6 +352,22 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         }
     }
 
+    @Override
+    protected void onSaveInstanceState(Bundle outState ){
+        super.onSaveInstanceState(outState);
+        if(webView != null) {
+            webView.saveState(outState);
+        }
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState){
+        super.onRestoreInstanceState(savedInstanceState);
+        if(webView != null) {
+            webView.restoreState(savedInstanceState);
+        }
+    }
+
     private class GleapJSBridge {
         private final AppCompatActivity mContext;
 
@@ -423,6 +439,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     }
                 }
             });
+
         }
 
         private void customActionCalled(JSONObject object) {

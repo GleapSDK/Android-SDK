@@ -65,6 +65,7 @@ class GleapInvisibleActivityManger {
     public void setVisible() {
         if (relativeLayout != null && !GleapConfig.getInstance().isHideWidget()) {
             relativeLayout.setVisibility(View.VISIBLE);
+            relativeLayout.setVisibility(View.VISIBLE);
             render(null, true);
         }
     }
@@ -238,7 +239,7 @@ class GleapInvisibleActivityManger {
                         });
                         boolean manualHidden = GleapConfig.getInstance().isHideWidget();
 
-                        if (showFab && manualHidden) {
+                        if (showFab && !manualHidden) {
                             relativeLayout.setVisibility(View.VISIBLE);
                         } else {
                             relativeLayout.setVisibility(View.GONE);

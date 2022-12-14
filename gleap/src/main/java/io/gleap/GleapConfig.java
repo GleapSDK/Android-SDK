@@ -152,6 +152,7 @@ class GleapConfig {
                             break;
                         default:
                             GleapInvisibleActivityManger.getInstance().setShowFab(false);
+                            hideWidget = true;
                             break;
                     }
                 }
