@@ -206,7 +206,7 @@ class GleapEventService {
 
             JSONObject body = new JSONObject();
             body.put("events", arrayToJSONArray(eventsToBeSent));
-            body.put("time", PhoneMeta.calculateDuration());
+            body.put("time", PhoneMeta.calculateDurationInDouble());
             body.put("opened", Gleap.getInstance().isOpened());
 
 

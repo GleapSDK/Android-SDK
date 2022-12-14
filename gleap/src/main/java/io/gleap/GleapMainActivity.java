@@ -10,6 +10,7 @@ import android.graphics.PorterDuff;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.net.http.SslError;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -51,6 +52,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
     private WebView webView;
     private String url = GleapConfig.getInstance().getiFrameUrl();
     private ValueCallback<Uri[]> mUploadMessage;
+    public static final int REQUEST_SELECT_FILE = 100;
 
     @Override
     public void onBackPressed() {
@@ -124,20 +126,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
             }
         } catch (Exception ex) {
         }
-    }
-
-    @Override
-    protected void onSaveInstanceState(Bundle outState)
-    {
-        super.onSaveInstanceState(outState);
-        webView.saveState(outState);
-    }
-
-    @Override
-    protected void onRestoreInstanceState(Bundle savedInstanceState)
-    {
-        super.onRestoreInstanceState(savedInstanceState);
-        webView.restoreState(savedInstanceState);
     }
 
 
@@ -245,22 +233,14 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
         // manejo de seleccion de archivo
         super.onActivityResult(requestCode, resultCode, intent);
-        if (requestCode == 1) {
-
-            if (null == mUploadMessage || intent == null || resultCode != RESULT_OK) {
-                return;
+        try {
+            if (requestCode == REQUEST_SELECT_FILE) {
+                if (mUploadMessage == null)
+                    return;
+                mUploadMessage.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(resultCode, intent));
+                mUploadMessage = null;
             }
-
-            Uri[] result = null;
-            String dataString = intent.getDataString();
-
-            if (dataString != null) {
-                result = new Uri[]{Uri.parse(dataString)};
-            }
-
-            mUploadMessage.onReceiveValue(result);
-            mUploadMessage = null;
-        }
+        }catch (Exception ex) {}
     }
 
 
@@ -274,14 +254,12 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 }
 
                 mUploadMessage = filePathCallback;
-                sendSessionUpdate();
-
 
                 Intent i = new Intent(Intent.ACTION_GET_CONTENT);
                 i.addCategory(Intent.CATEGORY_OPENABLE);
                 i.setType("*/*"); // set MIME type to filter
 
-                ActivityUtil.getCurrentActivity().startActivityForResult(Intent.createChooser(i, "File Chooser"), 1);
+                ActivityUtil.getCurrentActivity().startActivityForResult(Intent.createChooser(i, "File Chooser"), REQUEST_SELECT_FILE);
             } catch (Exception ex) {
             }
             return true;
