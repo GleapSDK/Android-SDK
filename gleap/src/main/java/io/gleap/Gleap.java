@@ -488,6 +488,16 @@ public class Gleap implements iGleap {
         }
     }
 
+    @Override
+    public void identifyUser(String id, GleapUserProperties gleapUserProperties, JSONObject customData) {
+        GleapUser gleapUser = new GleapUser(id, gleapUserProperties);
+        gleapUserProperties.setCustomData(customData);
+        if (UserSessionController.getInstance() != null) {
+            UserSessionController.getInstance().setGleapUserSession(gleapUser);
+        }
+        new GleapIdentifyService().execute();
+    }
+
     /**
      * Clears a user session.
      *

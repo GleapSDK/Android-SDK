@@ -18,14 +18,11 @@ public class MainApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-
+        GleapUserProperties gleapUserProperties = new GleapUserProperties("12", "Test User", "test@email.com");
+        Gleap.getInstance().identifyUser("12", gleapUserProperties);
         Gleap.initialize("DUPaIr7s689BBblcFI4pc5aBgYJTm7Sc", this);
-        Gleap.getInstance().clearIdentity();
-        GleapUserProperties gleapUserProperties = new GleapUserProperties("13", "VALUE boy", "test@email.com");
-        gleapUserProperties.setValue(20);
-        gleapUserProperties.setPhoneNumber("+436502425552");
-        Gleap.getInstance().identifyUser("13", gleapUserProperties);
-        Gleap.getInstance().showFeedbackButton(false);
+     //   Gleap.getInstance().setLanguage("pt");
+     //   Gleap.getInstance().showFeedbackButton(false);
 
 
 
@@ -40,7 +37,7 @@ public class MainApplication extends Application {
 
       //  Gleap.getInstance().identifyUser("1234", userProperties, "f60d2a8960f5e2711159d72b67695014a05aa576023d77056bb27e7d7a96b4a6");
 */
-
+/*
 
         Gleap.getInstance().setWidgetClosedCallback(new WidgetClosedCallback() {
             @Override
@@ -78,6 +75,6 @@ public class MainApplication extends Application {
             public void invoke(String message) {
                 Gleap.getInstance().trackEvent(FeedbackFlowStartedCallback.class.getName());
             }
-        });
+        });*/
     }
 }

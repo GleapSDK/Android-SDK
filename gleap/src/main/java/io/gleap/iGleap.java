@@ -122,6 +122,14 @@ interface iGleap {
      */
     void identifyUser(String id, GleapUserProperties gleapUserProperties);
 
+    /**
+     * Updates a session's user data.
+     *
+     * @param gleapUserProperties The updated user data.
+     * @author Gleap
+     */
+    void identifyUser(String id, GleapUserProperties gleapUserProperties, JSONObject customData);
+
 
     /**
      * Clears a user session.

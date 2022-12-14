@@ -87,6 +87,7 @@ class GleapEventService {
     }
 
     public void addEvent(JSONObject event) {
+
         if (eventsToBeSent.size() == GleapConfig.getInstance().getMaxEventLength()) {
             eventsToBeSent = gleapArrayHelper.shiftArray(eventsToBeSent);
         }

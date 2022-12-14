@@ -53,6 +53,8 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
     private String url = GleapConfig.getInstance().getiFrameUrl();
     private ValueCallback<Uri[]> mUploadMessage;
     public static final int REQUEST_SELECT_FILE = 100;
+    private Runnable exitAfterFifteenSeconds;
+    private Handler handler;
 
     @Override
     public void onBackPressed() {
@@ -78,8 +80,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
             setContentView(R.layout.activity_gleap_main);
 
-            WebView.setWebContentsDebuggingEnabled(true);
-
             if (getPackageManager().hasSystemFeature("android.software.webview")) {
                 webView = findViewById(R.id.gleap_webview);
 
@@ -102,15 +102,17 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 } catch (Exception ex) {
                 }
 
-                Handler handler = new Handler(Looper.getMainLooper());
-                handler.postDelayed(new Runnable() {
+                exitAfterFifteenSeconds = new Runnable() {
                     @Override
                     public void run() {
                         if (webView.getVisibility() == View.INVISIBLE) {
                             finish();
                         }
                     }
-                }, 15000);
+                };
+
+                this.handler = new Handler(Looper.getMainLooper());
+                this.handler.postDelayed(exitAfterFifteenSeconds, 15000);
 
                 GleapConfig.getInstance().setCallCloseCallback(new CallCloseCallback() {
                     @Override
@@ -120,6 +122,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                         GleapMainActivity.this.finish();
                     }
                 });
+
                 if(savedInstanceState == null) {
                     initBrowser();
                 }
@@ -128,6 +131,28 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         }
     }
 
+    @Override
+    protected void onSaveInstanceState(Bundle outState)
+    {
+        super.onSaveInstanceState(outState);
+        webView.saveState(outState);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState)
+    {
+        super.onRestoreInstanceState(savedInstanceState);
+        webView.restoreState(savedInstanceState);
+    }
+
+    @Override
+    protected void onDestroy() {
+        webView.removeAllViews();
+        webView.destroy();
+        GleapConfig.getInstance().setCallCloseCallback(null);
+        this.handler.removeCallbacks(this.exitAfterFifteenSeconds);
+        super.onDestroy();
+    }
 
     private void initBrowser() {
         WebSettings settings = webView.getSettings();
@@ -319,22 +344,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         }
     }
 
-    @Override
-    protected void onSaveInstanceState(Bundle outState ){
-        super.onSaveInstanceState(outState);
-        if(webView != null) {
-            webView.saveState(outState);
-        }
-    }
-
-    @Override
-    protected void onRestoreInstanceState(Bundle savedInstanceState){
-        super.onRestoreInstanceState(savedInstanceState);
-        if(webView != null) {
-            webView.restoreState(savedInstanceState);
-        }
-    }
-
     private class GleapJSBridge {
         private final AppCompatActivity mContext;
 
@@ -464,7 +473,8 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     }
                     sendMessage(generateGleapMessage(command, action));*/
 
-                    sendMessage(generateGleapMessage(action.getCommand(), action.getData()));
+                        sendMessage(generateGleapMessage(action.getCommand(), action.getData()));
+
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -622,8 +632,9 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     if (GleapConfig.getInstance().getWidgetClosedCallback() != null) {
                         GleapConfig.getInstance().getWidgetClosedCallback().invoke();
                     }
-                    GleapEventService.getInstance().refresh();
+
                     GleapInvisibleActivityManger.getInstance().clearMessages();
+                    mUploadMessage = null;
                     finish();
                 }
             });
@@ -636,7 +647,9 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
      * @param message
      */
     public void sendMessage(String message) {
-        webView.evaluateJavascript("sendMessage(" + message + ");", null);
+        if(webView != null) {
+            webView.evaluateJavascript("sendMessage(" + message + ");", null);
+        }
     }
 
     private String generateGleapMessage(String name, JSONObject data) throws JSONException {
