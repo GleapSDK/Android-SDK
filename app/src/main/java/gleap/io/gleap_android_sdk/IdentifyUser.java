@@ -5,6 +5,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 
+import org.json.JSONObject;
+
 import io.gleap.Gleap;
 import io.gleap.GleapUser;
 import io.gleap.GleapUserProperties;
@@ -37,7 +39,14 @@ public class IdentifyUser extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 GleapUserProperties gleapUserProperties = new GleapUserProperties("12", "Test User", "test@email.com");
-                Gleap.getInstance().identifyUser("12", gleapUserProperties);
+                JSONObject jsonObject = new JSONObject();
+                try{
+                    jsonObject.put("customProperty", 1337);
+                    jsonObject.put("customStringProperty","STRING PROPERTY");
+                }catch (Exception custom) {
+    custom.printStackTrace();
+                }
+                Gleap.getInstance().identifyUser("12", gleapUserProperties, jsonObject);
             }
         });
 

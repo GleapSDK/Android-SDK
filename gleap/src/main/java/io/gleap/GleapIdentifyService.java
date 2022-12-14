@@ -92,6 +92,10 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                                 jsonObject.put("value", gleapUser.getGleapUserProperties().getValue());
                             }
                             jsonObject.put("phone", gleapUser.getGleapUserProperties().getPhoneNumber());
+                            JSONObject customData = gleapUser.getGleapUserProperties().getCustomData();
+                            if(customData != null) {
+                                jsonObject = JsonUtil.mergeJSONObjects(jsonObject, customData);
+                            }
                         }
                     } catch (Exception ex) {
 

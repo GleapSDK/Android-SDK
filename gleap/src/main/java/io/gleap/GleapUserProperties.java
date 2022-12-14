@@ -1,5 +1,7 @@
 package io.gleap;
 
+import org.json.JSONObject;
+
 public class GleapUserProperties {
     private String userId;
     private String name;
@@ -7,6 +9,7 @@ public class GleapUserProperties {
     private String hash;
     private double value;
     private String phoneNumber;
+    private JSONObject customData;
 
     /**
      * Create a gleap user. This can be used to identify the user.
@@ -94,5 +97,13 @@ public class GleapUserProperties {
 
     public void setPhoneNumber(String phoneNumber) {
         this.phoneNumber = phoneNumber;
+    }
+
+    public JSONObject getCustomData() {
+        return customData;
+    }
+
+    public void setCustomData(JSONObject customData) {
+        this.customData = customData;
     }
 }

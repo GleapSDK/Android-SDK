@@ -22,7 +22,7 @@ public class MainApplication extends Application {
         Gleap.getInstance().identifyUser("12", gleapUserProperties);
         Gleap.initialize("DUPaIr7s689BBblcFI4pc5aBgYJTm7Sc", this);
      //   Gleap.getInstance().setLanguage("pt");
-        Gleap.getInstance().showFeedbackButton(false);
+     //   Gleap.getInstance().showFeedbackButton(false);
 
 
 
