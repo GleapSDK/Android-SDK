@@ -211,7 +211,7 @@ class GleapInvisibleActivityManger {
 
                         textView.setText(String.valueOf(messageCounter));
                         textView.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-                        textView.setGravity(Gravity.CENTER);
+
                         if (imageButton == null) {
                             imageButton = new ImageButton(local);
                             imageButton.setId(View.generateViewId());
