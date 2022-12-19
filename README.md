@@ -8,7 +8,7 @@ You have two ways to set up the Gleap SDK for Android. The easiest way ist to us
 
 ## Docs & Examples
 
-Checkout our [documentation](https://docs.gleap.io/android-sdk/customizations) for full reference.
+Checkout our [documentation](https://docs.gleap.io/android/) for full reference.
 
 ## Installation with Maven
 
