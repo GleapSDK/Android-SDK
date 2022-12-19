@@ -30,7 +30,7 @@ class Replay {
 
             screenshots.push(new ScreenshotReplay(bitmap, screenName, new Date()));
         }catch (Exception ex) {
-            System.out.println(ex);
+      ex.printStackTrace();
         }
     }
 

@@ -2,6 +2,7 @@ package io.gleap;
 
 import static io.gleap.DateUtil.dateToString;
 
+import android.app.Activity;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
@@ -31,6 +32,22 @@ class GleapEventService {
 
     private GleapEventService() {
         gleapArrayHelper = new GleapArrayHelper<>();
+
+        try{
+            Activity activity = ActivityUtil.getCurrentActivity();
+
+            JSONObject sessiontStarted = new JSONObject();
+            sessiontStarted.put("name", "sessionStarted");
+            eventsToBeSent.add(sessiontStarted);
+
+            JSONObject pageView = new JSONObject();
+            JSONObject page = new JSONObject();
+            page.put("page", activity.getClass().getSimpleName());
+            pageView.put("name", "pageView");
+            pageView.put("data", page);
+            eventsToBeSent.add(pageView);
+        }catch (Exception ex) {}
+
         sendInitialMessage();
     }
 
@@ -49,6 +66,7 @@ class GleapEventService {
 
     public void sendInitialMessage() {
         final Handler h = new Handler(Looper.getMainLooper());
+
         h.postDelayed(new Runnable() {
             private long time = 0;
 
@@ -56,7 +74,7 @@ class GleapEventService {
             public void run() {
                 if (UserSessionController.getInstance() != null && UserSessionController.getInstance().isSessionLoaded()) {
                     try {
-                        new InitialEventHttpHelper().execute();
+                        new EventHttpHelper().execute();
                     } catch (Exception ex) {
                     }
                 } else {
@@ -93,82 +111,6 @@ class GleapEventService {
         }
         eventsToBeSent.add(event);
     }
-
-    private class InitialEventHttpHelper extends AsyncTask {
-
-        @Override
-        protected Object doInBackground(Object[] objects) {
-            try {
-                int status = postEvent();
-            } catch (Exception exception) {
-                //    exception.printStackTrace();
-            }
-            return null;
-        }
-
-        private int postEvent() throws IOException, JSONException {
-            URL url = new URL(GleapConfig.getInstance().getApiUrl() + "/sessions/ping");
-            HttpURLConnection conn;
-            if (GleapConfig.getInstance().getApiUrl().contains("https")) {
-                conn = (HttpsURLConnection) url.openConnection();
-            } else {
-                conn = (HttpURLConnection) url.openConnection();
-            }
-            conn.setRequestProperty("api-token", GleapConfig.getInstance().getSdkKey());
-            conn.setDoOutput(true);
-            conn.setRequestProperty("Accept", "application/json");
-            conn.setRequestProperty("Content-Type", "application/json");
-            conn.setRequestMethod("POST");
-
-            JSONArray jsonArray = new JSONArray();
-            JSONObject event = new JSONObject();
-            event.put("date", dateToString(new Date()));
-            event.put("name", "sessionStarted");
-            jsonArray.put(event);
-
-            UserSession userSession = UserSessionController.getInstance().getUserSession();
-            if (userSession != null) {
-                conn.setRequestProperty("gleap-id", userSession.getId());
-                conn.setRequestProperty("gleap-hash", userSession.getHash());
-            }
-
-            JSONObject body = new JSONObject();
-            body.put("events", jsonArray);
-            body.put("time", PhoneMeta.calculateDurationInDouble());
-            body.put("opened", Gleap.getInstance().isOpened());
-
-            try (OutputStream os = conn.getOutputStream()) {
-                byte[] input = body.toString().getBytes(StandardCharsets.UTF_8);
-                os.write(input, 0, input.length);
-                os.close();
-                os.flush();
-            }
-
-            conn.getOutputStream().close();
-
-            try (BufferedReader br = new BufferedReader(
-                    new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
-                JSONObject result = null;
-                String input;
-                while ((input = br.readLine()) != null) {
-                    result = new JSONObject(input);
-                }
-
-                if (result != null) {
-                    processData(result);
-
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            conn.getInputStream().close();
-            int status = conn.getResponseCode();
-            conn.disconnect();
-            return status;
-        }
-    }
-
 
     private class EventHttpHelper extends AsyncTask {
 
@@ -210,7 +152,6 @@ class GleapEventService {
             body.put("time", PhoneMeta.calculateDurationInDouble());
             body.put("opened", Gleap.getInstance().isOpened());
 
-
             try (OutputStream os = conn.getOutputStream()) {
                 byte[] input = body.toString().getBytes(StandardCharsets.UTF_8);
                 os.write(input, 0, input.length);
@@ -238,16 +179,16 @@ class GleapEventService {
             conn.disconnect();
             return status;
         }
+    }
 
-        private JSONArray arrayToJSONArray(List<JSONObject> arrayList) {
-            JSONArray result = new JSONArray();
-            for (JSONObject jsonObject :
-                    arrayList) {
-                result.put(jsonObject);
-            }
-
-            return result;
+    private JSONArray arrayToJSONArray(List<JSONObject> arrayList) {
+        JSONArray result = new JSONArray();
+        for (JSONObject jsonObject :
+                arrayList) {
+            result.put(jsonObject);
         }
+
+        return result;
     }
 
     private GleapChatMessage createComment(JSONObject messageData) throws Exception {
