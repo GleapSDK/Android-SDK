@@ -33,7 +33,6 @@ class ReplaysDetector extends GleapDetector {
     public void initialize() {
         replay = GleapBug.getInstance().getReplay();
         handler = new Handler(Looper.getMainLooper());
-
     }
 
     @Override

@@ -213,7 +213,6 @@ class GleapBug {
     public void logEvent(String name, JSONObject data) {
         JSONObject event = new JSONObject();
         try {
-            event.put("date", dateToString(new Date()));
             event.put("name", name);
             event.put("data", data);
             customEventLog.put(event);
@@ -225,7 +224,6 @@ class GleapBug {
     public void logEvent(String name) {
         JSONObject event = new JSONObject();
         try {
-            event.put("date", dateToString(new Date()));
             event.put("name", name);
             customEventLog.put(event);
             GleapEventService.getInstance().addEvent(event);
