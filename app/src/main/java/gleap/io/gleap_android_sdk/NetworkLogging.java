@@ -28,10 +28,7 @@ public class NetworkLogging extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 new HttpCall().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-                new HttpCall().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-                new HttpCall().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-                new HttpCall().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-                new HttpCall().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                Gleap.getInstance().trackEvent("HEY");
             }
         });
 

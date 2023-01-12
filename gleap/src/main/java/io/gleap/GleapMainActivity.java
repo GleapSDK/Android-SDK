@@ -1,6 +1,6 @@
 package io.gleap;
 
-import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -10,11 +10,9 @@ import android.graphics.PorterDuff;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.net.http.SslError;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.provider.Settings;
 import android.util.Base64;
 import android.view.View;
 import android.view.Window;
@@ -32,29 +30,52 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ProgressBar;
 
-import androidx.annotation.NonNull;
+import androidx.activity.result.ActivityResult;
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.ContextCompat;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.Date;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 
 import gleap.io.gleap.R;
-import io.gleap.CallCloseCallback;
 
 public class GleapMainActivity extends AppCompatActivity implements OnHttpResponseListener {
     private WebView webView;
     private String url = GleapConfig.getInstance().getiFrameUrl();
-    private ValueCallback<Uri[]> mUploadMessage;
     public static final int REQUEST_SELECT_FILE = 100;
     private Runnable exitAfterFifteenSeconds;
     private Handler handler;
+    private ActivityResultLauncher<Intent> openFileLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            new ActivityResultCallback<ActivityResult>() {
+                @Override
+                public void onActivityResult(ActivityResult activityResult) {
+                    if (activityResult.getResultCode() == Activity.RESULT_OK) {
+                        // There are no request codes
+                        Intent intent = activityResult.getData();
+                        ValueCallback<Uri[]> mUploadMessage = GleapConfig.getInstance().getmUploadMessage();
+                        if (mUploadMessage == null || intent == null) {
+                            return;
+                        }
+
+                        Uri[] result = null;
+                        String dataString = intent.getDataString();
+
+                        if (dataString != null) {
+                            result = new Uri[]{Uri.parse(dataString)};
+                        }
+
+                        mUploadMessage.onReceiveValue(result);
+                        GleapConfig.getInstance().setmUploadMessage(null);
+                    }
+                }
+            });
 
     @Override
     public void onBackPressed() {
@@ -85,7 +106,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
                 int backgroundColor = Color.parseColor(GleapConfig.getInstance().getBackgroundColor());
                 int headerColor = Color.parseColor(GleapConfig.getInstance().getHeaderColor());
-                int[] gradientColors = new int[]{ headerColor, headerColor, headerColor, backgroundColor };
+                int[] gradientColors = new int[]{headerColor, headerColor, headerColor, backgroundColor};
                 GradientDrawable gradientDrawable = new GradientDrawable(
                         GradientDrawable.Orientation.TOP_BOTTOM,
                         gradientColors
@@ -123,7 +144,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     }
                 });
 
-                if(savedInstanceState == null) {
+                if (savedInstanceState == null) {
                     initBrowser();
                 }
             }
@@ -132,15 +153,13 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
     }
 
     @Override
-    protected void onSaveInstanceState(Bundle outState)
-    {
+    protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         webView.saveState(outState);
     }
 
     @Override
-    protected void onRestoreInstanceState(Bundle savedInstanceState)
-    {
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
         webView.restoreState(savedInstanceState);
     }
@@ -253,38 +272,23 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         }
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
-
-        // manejo de seleccion de archivo
-        super.onActivityResult(requestCode, resultCode, intent);
-        try {
-            if (requestCode == REQUEST_SELECT_FILE) {
-                if (mUploadMessage == null)
-                    return;
-                mUploadMessage.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(resultCode, intent));
-                mUploadMessage = null;
-            }
-        }catch (Exception ex) {}
-    }
-
-
     private class GleapWebChromeClient extends WebChromeClient {
 
         @Override
         public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
             try {
+                ValueCallback<Uri[]> mUploadMessage = GleapConfig.getInstance().getmUploadMessage();
+
                 if (mUploadMessage != null) {
                     mUploadMessage.onReceiveValue(null);
                 }
 
-                mUploadMessage = filePathCallback;
-
+                GleapConfig.getInstance().setmUploadMessage(filePathCallback);
                 Intent i = new Intent(Intent.ACTION_GET_CONTENT);
                 i.addCategory(Intent.CATEGORY_OPENABLE);
                 i.setType("*/*"); // set MIME type to filter
+                openFileLauncher.launch(i);
 
-                ActivityUtil.getCurrentActivity().startActivityForResult(Intent.createChooser(i, "File Chooser"), REQUEST_SELECT_FILE);
             } catch (Exception ex) {
             }
             return true;
@@ -463,7 +467,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     queue) {
                 try {
                     JSONObject data = action.getData();
-                    if(!data.has("actionOutboundId" )) {
+                    if (!data.has("actionOutboundId")) {
                         data.put("actionOutboundId", GleapBug.getInstance().getOutboubdId());
                     }
 /*
@@ -473,7 +477,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     }
                     sendMessage(generateGleapMessage(command, action));*/
 
-                        sendMessage(generateGleapMessage(action.getCommand(), action.getData()));
+                    sendMessage(generateGleapMessage(action.getCommand(), action.getData()));
 
                 } catch (JSONException e) {
                     e.printStackTrace();
@@ -634,7 +638,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     }
 
                     GleapInvisibleActivityManger.getInstance().clearMessages();
-                    mUploadMessage = null;
+                    GleapConfig.getInstance().setmUploadMessage(null);
                     finish();
                 }
             });
@@ -647,7 +651,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
      * @param message
      */
     public void sendMessage(String message) {
-        if(webView != null) {
+        if (webView != null) {
             webView.evaluateJavascript("sendMessage(" + message + ");", null);
         }
     }

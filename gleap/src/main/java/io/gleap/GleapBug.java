@@ -215,6 +215,7 @@ class GleapBug {
         try {
             event.put("name", name);
             event.put("data", data);
+            event.put("date", dateToString(new Date()));
             customEventLog.put(event);
             GleapEventService.getInstance().addEvent(event);
         } catch (Exception ex) {
@@ -225,6 +226,7 @@ class GleapBug {
         JSONObject event = new JSONObject();
         try {
             event.put("name", name);
+            event.put("date", dateToString(new Date()));
             customEventLog.put(event);
             GleapEventService.getInstance().addEvent(event);
         } catch (Exception ex) {

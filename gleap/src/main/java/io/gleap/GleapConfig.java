@@ -1,7 +1,8 @@
 package io.gleap;
 
 import android.graphics.Color;
-import android.webkit.WebView;
+import android.net.Uri;
+import android.webkit.ValueCallback;
 
 import androidx.core.graphics.ColorUtils;
 
@@ -42,7 +43,7 @@ class GleapConfig {
 
     private JSONObject stripModel = new JSONObject();
     private JSONObject crashStripModel = new JSONObject();
-
+    private ValueCallback<Uri[]> mUploadMessage;
     private ConfigLoadedCallback configLoadedCallback;
     private FeedbackSentCallback feedbackSentCallback;
     private FeedbackSentCallback crashFeedbackSentCallback;
@@ -549,5 +550,18 @@ class GleapConfig {
 
     public void setHideWidget(boolean hideWidget) {
         this.hideWidget = hideWidget;
+    }
+
+    public ValueCallback<Uri[]> getmUploadMessage() {
+        return mUploadMessage;
+    }
+
+    public void setmUploadMessage(ValueCallback<Uri[]> mUploadMessage) {
+        this.mUploadMessage = mUploadMessage;
+    }
+
+    public void finishImageUpload(Uri[] uris) {
+        this.mUploadMessage.onReceiveValue(uris);
+        GleapConfig.getInstance().setmUploadMessage(null);
     }
 }

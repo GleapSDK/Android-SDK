@@ -9,6 +9,7 @@ import android.os.Bundle;
 
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 
 import android.view.View;
 
@@ -23,23 +24,12 @@ public class Attachments extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_attachments);
 
-        if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
-                != PackageManager.PERMISSION_GRANTED) {
-
-            // Should we show an explanation?
-            if (shouldShowRequestPermissionRationale(
-                    Manifest.permission.READ_EXTERNAL_STORAGE)) {
-                // Explain to the user why we need to read the contacts
-            }
-
-            requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
-                    1564324);
-
-            // MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE is an
-            // app-defined int constant that should be quite unique
-
-            return;
-        }
+        ActivityCompat.requestPermissions( this,
+                new String[]{
+                        Manifest.permission.READ_EXTERNAL_STORAGE,
+                        Manifest.permission.MANAGE_EXTERNAL_STORAGE
+                }, 1
+        );
 
         findViewById(R.id.bck_attach).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -97,7 +87,7 @@ public class Attachments extends AppCompatActivity {
                     // Get the Uri of the selected file
                     FileUtilsInternal fileUtilsInternal = new FileUtilsInternal(this.getApplicationContext());
                     String str = fileUtilsInternal.getPath(data.getData());
-                    if (str.equals("")) {
+                    if (!str.equals("")) {
                         Gleap.getInstance().addAttachment(new File(str));
                     }
                 }
