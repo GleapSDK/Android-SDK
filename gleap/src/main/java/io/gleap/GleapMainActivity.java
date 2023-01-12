@@ -649,6 +649,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     }
 
                     GleapInvisibleActivityManger.getInstance().clearMessages();
+                    GleapInvisibleActivityManger.getInstance().setShowFab(true);
                     GleapConfig.getInstance().setmUploadMessage(null);
                     finish();
                 }

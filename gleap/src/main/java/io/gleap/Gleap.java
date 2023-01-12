@@ -1111,10 +1111,6 @@ public class Gleap implements iGleap {
         return false;
     }
 
-    public void setOpenFilePickerCallback(OpenFilePickerCallback callback) {
-        GleapConfig.getInstance().setOpenFilePickerCallback(callback);
-    }
-
     public void finishImageUpload(Uri[] uris) {
         GleapConfig.getInstance().finishImageUpload(uris);
     }

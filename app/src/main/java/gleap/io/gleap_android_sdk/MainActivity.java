@@ -1,27 +1,14 @@
 package gleap.io.gleap_android_sdk;
 
 import android.Manifest;
-import android.app.Activity;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
-import android.webkit.ValueCallback;
-
-import androidx.activity.result.ActivityResult;
-import androidx.activity.result.ActivityResultCallback;
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
-import org.json.JSONObject;
-
 import java.io.IOException;
 import java.io.RandomAccessFile;
-
-import io.gleap.ActivityUtil;
-import io.gleap.Gleap;
 
 
 public class MainActivity extends AppCompatActivity {

@@ -233,7 +233,6 @@ class GleapInvisibleActivityManger {
                             public void onClick(View view) {
                                 if (!Gleap.getInstance().isOpened()) {
                                     Gleap.getInstance().open();
-                                    relativeLayout.setVisibility(View.GONE);
                                     showFab = false;
                                 }
                             }
