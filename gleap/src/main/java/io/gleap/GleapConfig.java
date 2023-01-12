@@ -3,7 +3,6 @@ package io.gleap;
 import android.graphics.Color;
 import android.net.Uri;
 import android.webkit.ValueCallback;
-import android.webkit.WebView;
 
 import androidx.core.graphics.ColorUtils;
 
@@ -44,7 +43,7 @@ class GleapConfig {
 
     private JSONObject stripModel = new JSONObject();
     private JSONObject crashStripModel = new JSONObject();
-
+    private ValueCallback<Uri[]> mUploadMessage;
     private ConfigLoadedCallback configLoadedCallback;
     private FeedbackSentCallback feedbackSentCallback;
     private FeedbackSentCallback crashFeedbackSentCallback;
@@ -553,22 +552,6 @@ class GleapConfig {
         this.hideWidget = hideWidget;
     }
 
-    public OpenFilePickerCallback getOpenFilePickerCallback() {
-        return openFilePickerCallback;
-    }
-
-    public void setOpenFilePickerCallback(OpenFilePickerCallback openFilePickerCallback) {
-        this.openFilePickerCallback = openFilePickerCallback;
-    }
-
-    public FinishFilePickerCallback getFinishFilePickerCallback() {
-        return finishFilePickerCallback;
-    }
-
-    public void setFinishFilePickerCallback(FinishFilePickerCallback finishFilePickerCallback) {
-        this.finishFilePickerCallback = finishFilePickerCallback;
-    }
-
     public ValueCallback<Uri[]> getmUploadMessage() {
         return mUploadMessage;
     }
@@ -578,7 +561,7 @@ class GleapConfig {
     }
 
     public void finishImageUpload(Uri[] uris) {
-        mUploadMessage.onReceiveValue(uris);
+        this.mUploadMessage.onReceiveValue(uris);
         GleapConfig.getInstance().setmUploadMessage(null);
     }
 }

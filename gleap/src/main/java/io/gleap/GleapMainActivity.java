@@ -1,6 +1,5 @@
 package io.gleap;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -15,7 +14,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.provider.Settings;
 import android.util.Base64;
 import android.view.View;
 import android.view.Window;
@@ -40,25 +38,22 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.ContextCompat;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.Date;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 
 import gleap.io.gleap.R;
-import io.gleap.CallCloseCallback;
 
 public class GleapMainActivity extends AppCompatActivity implements OnHttpResponseListener {
     private WebView webView;
     private String url = GleapConfig.getInstance().getiFrameUrl();
+    public static final int REQUEST_SELECT_FILE = 100;
     private Runnable exitAfterFifteenSeconds;
     private Handler handler;
-    private ActivityResultLauncher<Intent> someActivityResultLauncher = registerForActivityResult(
+    private ActivityResultLauncher<Intent> openFileLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             new ActivityResultCallback<ActivityResult>() {
                 @Override
@@ -66,7 +61,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     if (activityResult.getResultCode() == Activity.RESULT_OK) {
                         // There are no request codes
                         Intent intent = activityResult.getData();
-                        ValueCallback<Uri[]> mUploadMessage =GleapConfig.getInstance().getmUploadMessage();
+                        ValueCallback<Uri[]> mUploadMessage = GleapConfig.getInstance().getmUploadMessage();
                         if (mUploadMessage == null || intent == null) {
                             return;
                         }
@@ -113,7 +108,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
                 int backgroundColor = Color.parseColor(GleapConfig.getInstance().getBackgroundColor());
                 int headerColor = Color.parseColor(GleapConfig.getInstance().getHeaderColor());
-                int[] gradientColors = new int[]{ headerColor, headerColor, headerColor, backgroundColor };
+                int[] gradientColors = new int[]{headerColor, headerColor, headerColor, backgroundColor};
                 GradientDrawable gradientDrawable = new GradientDrawable(
                         GradientDrawable.Orientation.TOP_BOTTOM,
                         gradientColors
@@ -151,7 +146,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     }
                 });
 
-                if(savedInstanceState == null) {
+                if (savedInstanceState == null) {
                     initBrowser();
                 }
             }
@@ -160,15 +155,13 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
     }
 
     @Override
-    protected void onSaveInstanceState(Bundle outState)
-    {
+    protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         webView.saveState(outState);
     }
 
     @Override
-    protected void onRestoreInstanceState(Bundle savedInstanceState)
-    {
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
         webView.restoreState(savedInstanceState);
     }
@@ -295,23 +288,18 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         @Override
         public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
             try {
-                ValueCallback<Uri[]> mUploadMessage =GleapConfig.getInstance().getmUploadMessage();
+                ValueCallback<Uri[]> mUploadMessage = GleapConfig.getInstance().getmUploadMessage();
+
                 if (mUploadMessage != null) {
                     mUploadMessage.onReceiveValue(null);
                 }
 
                 GleapConfig.getInstance().setmUploadMessage(filePathCallback);
-                sendSessionUpdate();
-
-
                 Intent i = new Intent(Intent.ACTION_GET_CONTENT);
                 i.addCategory(Intent.CATEGORY_OPENABLE);
                 i.setType("*/*"); // set MIME type to filter
-                if(GleapConfig.getInstance().getOpenFilePickerCallback() != null) {
-                    GleapConfig.getInstance().getOpenFilePickerCallback().invoke();
-                }else {
-                    someActivityResultLauncher.launch(i);
-                }
+                openFileLauncher.launch(i);
+
             } catch (Exception ex) {
             }
             return true;
@@ -490,7 +478,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     queue) {
                 try {
                     JSONObject data = action.getData();
-                    if(!data.has("actionOutboundId" )) {
+                    if (!data.has("actionOutboundId")) {
                         data.put("actionOutboundId", GleapBug.getInstance().getOutboubdId());
                     }
 /*
@@ -500,7 +488,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     }
                     sendMessage(generateGleapMessage(command, action));*/
 
-                        sendMessage(generateGleapMessage(action.getCommand(), action.getData()));
+                    sendMessage(generateGleapMessage(action.getCommand(), action.getData()));
 
                 } catch (JSONException e) {
                     e.printStackTrace();
@@ -674,7 +662,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
      * @param message
      */
     public void sendMessage(String message) {
-        if(webView != null) {
+        if (webView != null) {
             webView.evaluateJavascript("sendMessage(" + message + ");", null);
         }
     }
