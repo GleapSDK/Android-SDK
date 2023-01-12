@@ -68,6 +68,7 @@ public class Networklog {
                 }
             }
             if (response != null) {
+                stripObject(response);
                 object.put("response", response);
             }
         } catch (Exception err) {

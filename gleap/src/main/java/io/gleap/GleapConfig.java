@@ -1,6 +1,8 @@
 package io.gleap;
 
 import android.graphics.Color;
+import android.net.Uri;
+import android.webkit.ValueCallback;
 import android.webkit.WebView;
 
 import androidx.core.graphics.ColorUtils;
@@ -37,7 +39,7 @@ class GleapConfig {
     private String iFrameUrl = "https://messenger.gleap.io/app";
     private String sdkKey = "";
     private String feedbackFlow = "";
-
+    private ValueCallback<Uri[]> mUploadMessage;
     private GleapAction action;
 
     private JSONObject stripModel = new JSONObject();
@@ -57,7 +59,7 @@ class GleapConfig {
     private CustomActionCallback customAction;
     private GetBitmapCallback getBitmapCallback;
     private InitializationDoneCallback initializationDoneCallback;
-    private List<GleapDetector> gestureDetectors = new LinkedList<>();
+     private List<GleapDetector> gestureDetectors = new LinkedList<>();
     private List<GleapActivationMethod> priorizedGestureDetectors = new LinkedList<>();
     private int interval = 5;
 
@@ -549,5 +551,34 @@ class GleapConfig {
 
     public void setHideWidget(boolean hideWidget) {
         this.hideWidget = hideWidget;
+    }
+
+    public OpenFilePickerCallback getOpenFilePickerCallback() {
+        return openFilePickerCallback;
+    }
+
+    public void setOpenFilePickerCallback(OpenFilePickerCallback openFilePickerCallback) {
+        this.openFilePickerCallback = openFilePickerCallback;
+    }
+
+    public FinishFilePickerCallback getFinishFilePickerCallback() {
+        return finishFilePickerCallback;
+    }
+
+    public void setFinishFilePickerCallback(FinishFilePickerCallback finishFilePickerCallback) {
+        this.finishFilePickerCallback = finishFilePickerCallback;
+    }
+
+    public ValueCallback<Uri[]> getmUploadMessage() {
+        return mUploadMessage;
+    }
+
+    public void setmUploadMessage(ValueCallback<Uri[]> mUploadMessage) {
+        this.mUploadMessage = mUploadMessage;
+    }
+
+    public void finishImageUpload(Uri[] uris) {
+        mUploadMessage.onReceiveValue(uris);
+        GleapConfig.getInstance().setmUploadMessage(null);
     }
 }

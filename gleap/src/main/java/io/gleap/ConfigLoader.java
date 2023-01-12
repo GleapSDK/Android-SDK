@@ -16,7 +16,7 @@ import javax.net.ssl.HttpsURLConnection;
 /**
  * Loads the configuration from the server.
  */
-class ConfigLoader extends AsyncTask<GleapBug, Void, Integer> {
+class ConfigLoader extends AsyncTask<GleapBug, Void, JSONObject> {
     private final String httpsUrl = GleapConfig.getInstance().getApiUrl() + "/config/" + GleapConfig.getInstance().getSdkKey();
     private final OnHttpResponseListener listener;
 
@@ -25,7 +25,7 @@ class ConfigLoader extends AsyncTask<GleapBug, Void, Integer> {
     }
 
     @Override
-    protected void onPostExecute(Integer result) {
+    protected void onPostExecute(JSONObject result) {
         try {
             listener.onTaskComplete(result);
         } catch (GleapAlreadyInitialisedException e) {
@@ -33,7 +33,7 @@ class ConfigLoader extends AsyncTask<GleapBug, Void, Integer> {
     }
 
     @Override
-    protected Integer doInBackground(GleapBug... gleapBugs) {
+    protected JSONObject doInBackground(GleapBug... gleapBugs) {
         URL url;
         try {
             url = new URL(httpsUrl);
@@ -42,7 +42,13 @@ class ConfigLoader extends AsyncTask<GleapBug, Void, Integer> {
             readResponse(con);
         } catch (IOException e) {
         }
-        return 200;
+
+        JSONObject response = new JSONObject();
+        try{
+            response.put("status", 200);
+        }catch (Exception ignore) {}
+
+        return response;
     }
 
     private void readResponse(HttpURLConnection con) throws IOException {

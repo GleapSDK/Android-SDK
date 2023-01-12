@@ -1,5 +1,7 @@
 package io.gleap;
 
+import org.json.JSONObject;
+
 interface OnHttpResponseListener {
-    void onTaskComplete(int httpResponse) throws GleapAlreadyInitialisedException;
+    void onTaskComplete(JSONObject response) throws GleapAlreadyInitialisedException;
 }

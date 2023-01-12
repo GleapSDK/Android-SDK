@@ -44,9 +44,9 @@ public class IdentifyUser extends AppCompatActivity {
                     jsonObject.put("customProperty", 1337);
                     jsonObject.put("customStringProperty","STRING PROPERTY");
                 }catch (Exception custom) {
-    custom.printStackTrace();
+                    custom.printStackTrace();
                 }
-                Gleap.getInstance().identifyUser("12", gleapUserProperties, jsonObject);
+                Gleap.getInstance().identifyUser("12", gleapUserProperties, null);
             }
         });
 

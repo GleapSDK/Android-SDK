@@ -13,12 +13,14 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -37,7 +39,7 @@ import javax.net.ssl.HttpsURLConnection;
 /**
  * Sends the report to the gleap dashboard.
  */
-class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
+class HttpHelper extends AsyncTask<GleapBug, Void, JSONObject> {
     private static final String UPLOAD_IMAGE_BACKEND_URL_POSTFIX = "/uploads/sdk";
     private static final String UPLOAD_IMAGE_MULTI_BACKEND_URL_POSTFIX = "/uploads/sdksteps";
     private static final String UPLOAD_FILES_MULTI_BACKEND_URL_POSTFIX = "/uploads/attachments";
@@ -55,21 +57,21 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
     }
 
     @Override
-    protected Integer doInBackground(GleapBug... gleapBugs) {
+    protected JSONObject doInBackground(GleapBug... gleapBugs) {
         GleapBug gleapBug = gleapBugs[0];
-        int httpResult = 0;
+        JSONObject result = new JSONObject();
         try {
-            httpResult = postFeedback(gleapBug);
+            result = postFeedback(gleapBug);
         } catch (Exception e) {
         }
 
         GleapConfig.getInstance().setAction(null);
 
-        return httpResult;
+        return result;
     }
 
     @Override
-    protected void onPostExecute(Integer result) {
+    protected void onPostExecute(JSONObject result) {
         if (GleapConfig.getInstance().getFeedbackSentCallback() != null) {
             if (sentCallbackData != null) {
                 GleapConfig.getInstance().getFeedbackSentCallback().invoke(sentCallbackData.toString());
@@ -145,7 +147,7 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
     }
 
 
-    private Integer postFeedback(GleapBug gleapBug) throws JSONException, IOException {
+    private JSONObject postFeedback(GleapBug gleapBug) throws JSONException, IOException {
         JSONObject config = GleapConfig.getInstance().getStripModel();
         JSONObject stripConfig = GleapConfig.getInstance().getCrashStripModel();
         boolean stripImages = false;
@@ -235,10 +237,54 @@ class HttpHelper extends AsyncTask<GleapBug, Void, Integer> {
             byte[] input = body.toString().getBytes(StandardCharsets.UTF_8);
             os.write(input, 0, input.length);
         }catch (Exception ex){
-            return 403;
+            JSONObject response = new JSONObject();
+            try {
+                response.put("status", 403);
+            }catch (Exception ignore){}
+
+            return response;
         }
 
-        return conn.getResponseCode();
+    JSONObject response = new JSONObject();
+
+        try{
+            response.put("status",conn.getResponseCode());
+            JSONObject result = new JSONObject(readInputStreamToString(conn));
+
+            response.put("response", result);
+        }catch (Exception ex) {}
+
+        return response;
+    }
+
+    private String readInputStreamToString(HttpURLConnection connection) {
+        String result = null;
+        StringBuffer sb = new StringBuffer();
+        InputStream is = null;
+
+        try {
+            is = new BufferedInputStream(connection.getInputStream());
+            BufferedReader br = new BufferedReader(new InputStreamReader(is));
+            String inputLine = "";
+            while ((inputLine = br.readLine()) != null) {
+                sb.append(inputLine);
+            }
+            result = sb.toString();
+        }
+        catch (Exception e) {
+            result = null;
+        }
+        finally {
+            if (is != null) {
+                try {
+                    is.close();
+                }
+                catch (IOException e) {
+                }
+            }
+        }
+
+        return result;
     }
 
     /**

@@ -1,6 +1,7 @@
 package io.gleap;
 
 import android.app.Application;
+import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
 
@@ -844,7 +845,7 @@ public class Gleap implements iGleap {
         }
 
         @Override
-        public void onTaskComplete(int httpResponse) {
+        public void onTaskComplete(JSONObject httpResponse) {
             try {
                 GleapConfig config = GleapConfig.getInstance();
 
@@ -1109,4 +1110,13 @@ public class Gleap implements iGleap {
         }
         return false;
     }
+
+    public void setOpenFilePickerCallback(OpenFilePickerCallback callback) {
+        GleapConfig.getInstance().setOpenFilePickerCallback(callback);
+    }
+
+    public void finishImageUpload(Uri[] uris) {
+        GleapConfig.getInstance().finishImageUpload(uris);
+    }
+
 }
