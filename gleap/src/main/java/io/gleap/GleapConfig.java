@@ -24,6 +24,8 @@ import io.gleap.callbacks.FeedbackWillBeSentCallback;
 import io.gleap.callbacks.GetActivityCallback;
 import io.gleap.callbacks.GetBitmapCallback;
 import io.gleap.callbacks.InitializationDoneCallback;
+import io.gleap.callbacks.RegisterPushMessageGroupCallback;
+import io.gleap.callbacks.UnRegisterPushMessageGroupCallback;
 import io.gleap.callbacks.WidgetClosedCallback;
 import io.gleap.callbacks.WidgetOpenedCallback;
 
@@ -56,6 +58,8 @@ class GleapConfig {
     private GetActivityCallback getActivityCallback;
     private CustomActionCallback customAction;
     private GetBitmapCallback getBitmapCallback;
+    private RegisterPushMessageGroupCallback registerPushMessageGroupCallback;
+    private UnRegisterPushMessageGroupCallback unRegisterPushMessageGroupCallback;
     private InitializationDoneCallback initializationDoneCallback;
      private List<GleapDetector> gestureDetectors = new LinkedList<>();
     private List<GleapActivationMethod> priorizedGestureDetectors = new LinkedList<>();
@@ -562,5 +566,21 @@ class GleapConfig {
     public void finishImageUpload(Uri[] uris) {
         this.mUploadMessage.onReceiveValue(uris);
         GleapConfig.getInstance().setmUploadMessage(null);
+    }
+
+    public RegisterPushMessageGroupCallback getRegisterPushMessageGroupCallback() {
+        return registerPushMessageGroupCallback;
+    }
+
+    public void setRegisterPushMessageGroupCallback(RegisterPushMessageGroupCallback registerPushMessageGroupCallback) {
+        this.registerPushMessageGroupCallback = registerPushMessageGroupCallback;
+    }
+
+    public UnRegisterPushMessageGroupCallback getUnRegisterPushMessageGroupCallback() {
+        return unRegisterPushMessageGroupCallback;
+    }
+
+    public void setUnRegisterPushMessageGroupCallback(UnRegisterPushMessageGroupCallback unRegisterPushMessageGroupCallback) {
+        this.unRegisterPushMessageGroupCallback = unRegisterPushMessageGroupCallback;
     }
 }

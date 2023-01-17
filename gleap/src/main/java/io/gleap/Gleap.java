@@ -23,6 +23,8 @@ import io.gleap.callbacks.FeedbackWillBeSentCallback;
 import io.gleap.callbacks.GetActivityCallback;
 import io.gleap.callbacks.GetBitmapCallback;
 import io.gleap.callbacks.InitializationDoneCallback;
+import io.gleap.callbacks.RegisterPushMessageGroupCallback;
+import io.gleap.callbacks.UnRegisterPushMessageGroupCallback;
 import io.gleap.callbacks.WidgetClosedCallback;
 import io.gleap.callbacks.WidgetOpenedCallback;
 
@@ -1111,8 +1113,21 @@ public class Gleap implements iGleap {
         return false;
     }
 
+    @Override
+    public void setRegisterPushMessageGroupCallback(RegisterPushMessageGroupCallback callback) {
+        GleapConfig.getInstance().setRegisterPushMessageGroupCallback(callback);
+    }
+
+    @Override
+    public void setUnRegisterPushMessageGroupCallback(UnRegisterPushMessageGroupCallback callback) {
+        GleapConfig.getInstance().setUnRegisterPushMessageGroupCallback(callback);
+    }
+
     public void finishImageUpload(Uri[] uris) {
         GleapConfig.getInstance().finishImageUpload(uris);
     }
+
+
+
 
 }

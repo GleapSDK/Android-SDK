@@ -27,6 +27,7 @@ class GleapUserSessionLoader extends AsyncTask<Void, Void, Integer> {
     @Override
     protected Integer doInBackground(Void... voids) {
         try {
+
             URL url = new URL(httpsUrl);
             HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
             conn.setRequestProperty("Api-Token", GleapConfig.getInstance().getSdkKey());
@@ -84,6 +85,10 @@ class GleapUserSessionLoader extends AsyncTask<Void, Void, Integer> {
                     }
 
                  //   UserSessionController.getInstance().setGleapUserSession(new GleapUser(userId, gleapUserProperties));
+
+                    if(GleapConfig.getInstance().getRegisterPushMessageGroupCallback() != null) {
+                        GleapConfig.getInstance().getRegisterPushMessageGroupCallback().invoke("gleapuser-" + hash);
+                    }
                     GleapInvisibleActivityManger.getInstance().render(null, true);
                 }
 

@@ -36,6 +36,14 @@ public class UserSessionController {
     public void clearUserSession() {
         SharedPreferences sharedPreferences = application.getSharedPreferences("usersession", MODE_PRIVATE);
         sharedPreferences.edit().clear().apply();
+
+        if(GleapConfig.getInstance().getUnRegisterPushMessageGroupCallback() != null && userSession != null) {
+            String hash = userSession.getHash();
+            if(!hash.equals("")) {
+                GleapConfig.getInstance().getUnRegisterPushMessageGroupCallback().invoke("gleapuser-" + hash);
+            }
+        }
+
         this.gleapUser = null;
         this.userSession = null;
         this.isSessionLoaded = false;

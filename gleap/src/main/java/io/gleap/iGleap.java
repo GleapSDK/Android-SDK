@@ -14,6 +14,8 @@ import io.gleap.callbacks.FeedbackSentCallback;
 import io.gleap.callbacks.FeedbackWillBeSentCallback;
 import io.gleap.callbacks.GetBitmapCallback;
 import io.gleap.callbacks.InitializationDoneCallback;
+import io.gleap.callbacks.RegisterPushMessageGroupCallback;
+import io.gleap.callbacks.UnRegisterPushMessageGroupCallback;
 import io.gleap.callbacks.WidgetClosedCallback;
 import io.gleap.callbacks.WidgetOpenedCallback;
 
@@ -413,6 +415,10 @@ interface iGleap {
     GleapUser getIdentity();
 
     boolean isUserIdentified();
+
+    void setRegisterPushMessageGroupCallback(RegisterPushMessageGroupCallback callback);
+
+    void setUnRegisterPushMessageGroupCallback(UnRegisterPushMessageGroupCallback callback);
 
 }
 

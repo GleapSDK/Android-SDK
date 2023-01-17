@@ -31,6 +31,7 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
             UserSession userSession = UserSessionController.getInstance().getUserSession();
             if (userSession == null) {
                 try {
+
                     GleapUserSessionLoader gleapUserSessionLoader = new GleapUserSessionLoader();
                     gleapUserSessionLoader.setCallback(new GleapUserSessionLoader.UserSessionLoadedCallback() {
                         @Override
@@ -48,7 +49,12 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                 }catch (Exception ignore) {}
                 return 200;
             }
-
+            if(GleapConfig.getInstance().getUnRegisterPushMessageGroupCallback() != null) {
+                String hash = userSession.getHash();
+                if(!hash.equals("")) {
+                    GleapConfig.getInstance().getUnRegisterPushMessageGroupCallback().invoke("gleapuser-" + hash);
+                }
+            }
             try {
                 ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
                     @Override
@@ -156,6 +162,9 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                         }
                         GleapInvisibleActivityManger.getInstance().render(null, true);
                         UserSessionController.getInstance().setSessionLoaded(true);
+                        if(GleapConfig.getInstance().getRegisterPushMessageGroupCallback() != null) {
+                            GleapConfig.getInstance().getRegisterPushMessageGroupCallback().invoke("gleapuser-" + hash);
+                        }
                     }
 
                 } catch (Exception e) {
