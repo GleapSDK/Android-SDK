@@ -4,6 +4,10 @@ import static android.content.Context.MODE_PRIVATE;
 
 import android.app.Application;
 import android.content.SharedPreferences;
+import android.os.Handler;
+import android.os.Looper;
+
+import org.json.JSONObject;
 
 public class UserSessionController {
     private static UserSessionController instance;
@@ -37,12 +41,24 @@ public class UserSessionController {
         SharedPreferences sharedPreferences = application.getSharedPreferences("usersession", MODE_PRIVATE);
         sharedPreferences.edit().clear().apply();
 
-        if(GleapConfig.getInstance().getUnRegisterPushMessageGroupCallback() != null && userSession != null) {
-            String hash = userSession.getHash();
-            if(!hash.equals("")) {
-                GleapConfig.getInstance().getUnRegisterPushMessageGroupCallback().invoke("gleapuser-" + hash);
+        ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Handler mainHandler = new Handler(Looper.getMainLooper());
+                Runnable gleapRunnable = new Runnable() {
+                    @Override
+                    public void run() throws RuntimeException {
+                        if(GleapConfig.getInstance().getUnRegisterPushMessageGroupCallback() != null && userSession != null) {
+                            String hash = userSession.getHash();
+                            if(!hash.equals("")) {
+                                GleapConfig.getInstance().getUnRegisterPushMessageGroupCallback().invoke("gleapuser-" + hash);
+                            }
+                        }
+                    }
+                };
+                mainHandler.post(gleapRunnable);
             }
-        }
+        });
 
         this.gleapUser = null;
         this.userSession = null;

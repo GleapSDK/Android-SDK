@@ -46,13 +46,29 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                             gleapUserSessionLoader.execute();
                         }
                     });
-                }catch (Exception ignore) {}
+                } catch (Exception ignore) {
+                }
                 return 200;
             }
-            if(GleapConfig.getInstance().getUnRegisterPushMessageGroupCallback() != null) {
+            if (GleapConfig.getInstance().getUnRegisterPushMessageGroupCallback() != null) {
                 String hash = userSession.getHash();
-                if(!hash.equals("")) {
-                    GleapConfig.getInstance().getUnRegisterPushMessageGroupCallback().invoke("gleapuser-" + hash);
+                if (!hash.equals("")) {
+                    try {
+                        ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                Handler mainHandler = new Handler(Looper.getMainLooper());
+                                Runnable gleapRunnable = new Runnable() {
+                                    @Override
+                                    public void run() throws RuntimeException {
+                                        GleapConfig.getInstance().getUnRegisterPushMessageGroupCallback().invoke("gleapuser-" + hash);
+                                    }
+                                };
+                                mainHandler.post(gleapRunnable);
+                            }
+                        });
+                    } catch (Exception ignore) {
+                    }
                 }
             }
             try {
@@ -99,7 +115,7 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                             }
                             jsonObject.put("phone", gleapUser.getGleapUserProperties().getPhoneNumber());
                             JSONObject customData = gleapUser.getGleapUserProperties().getCustomData();
-                            if(customData != null) {
+                            if (customData != null) {
                                 jsonObject = JsonUtil.mergeJSONObjects(jsonObject, customData);
                             }
                         }
@@ -162,9 +178,24 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                         }
                         GleapInvisibleActivityManger.getInstance().render(null, true);
                         UserSessionController.getInstance().setSessionLoaded(true);
-                        if(GleapConfig.getInstance().getRegisterPushMessageGroupCallback() != null) {
-                            GleapConfig.getInstance().getRegisterPushMessageGroupCallback().invoke("gleapuser-" + hash);
-                        }
+                        ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                Handler mainHandler = new Handler(Looper.getMainLooper());
+                                Runnable gleapRunnable = new Runnable() {
+                                    @Override
+                                    public void run() throws RuntimeException {
+                                        if (GleapConfig.getInstance().getRegisterPushMessageGroupCallback() != null) {
+                                            String hash = userSession.getHash();
+                                            if(!hash.equals("")) {
+                                                GleapConfig.getInstance().getRegisterPushMessageGroupCallback().invoke("gleapuser-" + hash);
+                                            }
+                                        }
+                                    }
+                                };
+                                mainHandler.post(gleapRunnable);
+                            }
+                        });
                     }
 
                 } catch (Exception e) {

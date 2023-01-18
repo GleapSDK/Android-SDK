@@ -3,6 +3,7 @@ package io.gleap;
 import android.annotation.SuppressLint;
 import android.os.AsyncTask;
 import android.os.Handler;
+import android.os.Looper;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -84,9 +85,26 @@ class GleapUserSessionLoader extends AsyncTask<Void, Void, Integer> {
                         userId = result.getString("userId");
                     }
 
-                 //   UserSessionController.getInstance().setGleapUserSession(new GleapUser(userId, gleapUserProperties));
-
+                    ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Handler mainHandler = new Handler(Looper.getMainLooper());
+                            Runnable gleapRunnable = new Runnable() {
+                                @Override
+                                public void run() throws RuntimeException {
+                                    if (GleapConfig.getInstance().getRegisterPushMessageGroupCallback() != null && userSession != null) {
+                                        String hash = userSession.getHash();
+                                        if(!hash.equals("")) {
+                                            GleapConfig.getInstance().getRegisterPushMessageGroupCallback().invoke("gleapuser-" + hash);
+                                        }
+                                    }
+                                }
+                            };
+                            mainHandler.post(gleapRunnable);
+                        }
+                    });
                     if(GleapConfig.getInstance().getRegisterPushMessageGroupCallback() != null) {
+
                         GleapConfig.getInstance().getRegisterPushMessageGroupCallback().invoke("gleapuser-" + hash);
                     }
                     GleapInvisibleActivityManger.getInstance().render(null, true);
