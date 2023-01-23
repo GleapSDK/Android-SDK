@@ -61,6 +61,10 @@ interface iGleap {
 
     void startFeedbackFlow(String feedbackFlow, Boolean showBackButton) throws GleapNotInitialisedException;
 
+    void showSurvey(String surveyId);
+
+    void showSurvey(String surveyId, SurveyType surveyType);
+
     /**
      * Opens the help center.
      */

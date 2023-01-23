@@ -252,7 +252,6 @@ class GleapEventService {
                     if (currentAction.getString("format").contains("survey")) {
                         JSONObject jsonObject = new JSONObject();
                         try {
-                            jsonObject.put("actionOutboundId", currentAction.getString("outbound"));
                             jsonObject.put("isSurvey", true);
                             jsonObject.put("hideBackButton", true);
                             jsonObject.put("format", currentAction.getString("format"));
@@ -266,7 +265,6 @@ class GleapEventService {
                     } else if (!currentAction.getString("format").contains("widget")){
                         JSONObject jsonObject = new JSONObject();
                         try {
-                            jsonObject.put("actionOutboundId", currentAction.getString("outbound"));
                             jsonObject.put("isSurvey", false);
                             jsonObject.put("hideBackButton", true);
                             jsonObject.put("format", currentAction.getString("format"));

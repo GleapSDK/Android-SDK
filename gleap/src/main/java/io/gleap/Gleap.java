@@ -11,6 +11,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -163,7 +164,7 @@ public class Gleap implements iGleap {
      * @throws GleapNotInitialisedException thrown when Gleap is not initialised
      * @author Gleap
      */
-    public void openNews(boolean showBackButton){
+    public void openNews(boolean showBackButton) {
         try {
             ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
                 @Override
@@ -216,7 +217,7 @@ public class Gleap implements iGleap {
                                         if (screenshotTaker != null) {
                                             JSONObject message = new JSONObject();
                                             message.put("hideBackButton", !showBackButton);
-                                            message.put("id",articleId);
+                                            message.put("id", articleId);
                                             GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("open-news-article", message));
                                             screenshotTaker.takeScreenshot();
                                         }
@@ -277,6 +278,39 @@ public class Gleap implements iGleap {
             });
         } catch (Error | Exception ignore) {
         }
+    }
+
+
+    //survey, survey_full
+
+    @Override
+    public void showSurvey(String surveyId) {
+        JSONObject jsonObject = new JSONObject();
+        try {
+            jsonObject.put("isSurvey", true);
+            jsonObject.put("hideBackButton", true);
+            jsonObject.put("format", "survey");
+            jsonObject.put("flow", surveyId);
+        } catch (Exception ex) {
+        }
+        //check if it isopen
+        GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("start-survey", jsonObject));
+        Gleap.getInstance().open();
+    }
+
+    @Override
+    public void showSurvey(String surveyId, SurveyType surveyType) {
+        JSONObject jsonObject = new JSONObject();
+        try {
+            jsonObject.put("isSurvey", true);
+            jsonObject.put("hideBackButton", true);
+            jsonObject.put("format", surveyType.name().toLowerCase(Locale.ROOT));
+            jsonObject.put("flow", surveyId);
+        } catch (Exception ex) {
+        }
+        //check if it isopen
+        GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("start-survey", jsonObject));
+        Gleap.getInstance().open();
     }
 
     @Override
@@ -1063,7 +1097,7 @@ public class Gleap implements iGleap {
 
     @Override
     public void openFeatureRequests() {
-       openFeatureRequests(false);
+        openFeatureRequests(false);
     }
 
     @Override
@@ -1126,8 +1160,6 @@ public class Gleap implements iGleap {
     public void finishImageUpload(Uri[] uris) {
         GleapConfig.getInstance().finishImageUpload(uris);
     }
-
-
 
 
 }
