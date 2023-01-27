@@ -50,9 +50,11 @@ public class HttpCall extends AsyncTask {
                 e.printStackTrace();
             }
 
-
+            Gleap.getInstance().trackEvent("Before");
             Gleap.getInstance().logNetwork((HttpsURLConnection) conn, requestBody, requestBody);
-            //Gleap.getInstance().log("after");
+            Gleap.getInstance().log("after");
+            Gleap.getInstance().log("after");
+            Gleap.getInstance().trackEvent("After");
             conn.disconnect();
         } catch(Exception e) {
             e.printStackTrace();

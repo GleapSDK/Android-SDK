@@ -11,6 +11,8 @@ import io.gleap.callbacks.CustomActionCallback;
 import io.gleap.callbacks.FeedbackFlowStartedCallback;
 import io.gleap.callbacks.FeedbackSendingFailedCallback;
 import io.gleap.callbacks.FeedbackSentCallback;
+import io.gleap.callbacks.RegisterPushMessageGroupCallback;
+import io.gleap.callbacks.UnRegisterPushMessageGroupCallback;
 import io.gleap.callbacks.WidgetClosedCallback;
 
 public class MainApplication extends Application {
@@ -18,9 +20,25 @@ public class MainApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        GleapUserProperties gleapUserProperties = new GleapUserProperties("12", "Test User", "test@email.com");
-        Gleap.getInstance().identifyUser("12", gleapUserProperties);
+        //GleapUserProperties gleapUserProperties = new GleapUserProperties("12", "Test User", "test@email.com");
+        //Gleap.getInstance().identifyUser("12", gleapUserProperties);
         Gleap.initialize("DUPaIr7s689BBblcFI4pc5aBgYJTm7Sc", this);
+
+
+
+        Gleap.getInstance().setRegisterPushMessageGroupCallback(new RegisterPushMessageGroupCallback() {
+            @Override
+            public void invoke(String pushMessageGroup) {
+                System.err.println(pushMessageGroup);
+            }
+        });
+
+        Gleap.getInstance().setUnRegisterPushMessageGroupCallback(new UnRegisterPushMessageGroupCallback() {
+            @Override
+            public void invoke(String pushMessageGroup) {
+                System.err.println(pushMessageGroup);
+            }
+        });
      //   Gleap.getInstance().setLanguage("pt");
      //   Gleap.getInstance().showFeedbackButton(false);
 

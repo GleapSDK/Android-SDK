@@ -27,6 +27,8 @@ public class NetworkLogging extends AppCompatActivity {
         findViewById(R.id.network).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                Gleap.getInstance().trackEvent("NEW");
+
                 new HttpCall().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
                 Gleap.getInstance().trackEvent("HEY");
             }

@@ -84,7 +84,9 @@ class GleapConfig {
     private JSONArray blackList = new JSONArray();
     private JSONObject plainConfig;
 
+    private WidgetPositionType widgetPositionType = WidgetPositionType.NEW;
     private WidgetPosition widgetPosition = WidgetPosition.BOTTOM_RIGHT;
+    private String widgetButtonText = "Feedback";
     private boolean hideWidget = false;
 
     private int buttonX = 20; //horizontal
@@ -154,12 +156,32 @@ class GleapConfig {
                             this.widgetPosition = WidgetPosition.BOTTOM_LEFT;
                             GleapInvisibleActivityManger.getInstance().setShowFab(true);
                             break;
+                        case "BUTTON_CLASSIC":
+                            //mid right
+                            this.widgetPosition = WidgetPosition.CLASSIC_RIGHT;
+                            this.widgetPositionType = WidgetPositionType.CLASSIC;
+                            GleapInvisibleActivityManger.getInstance().setShowFab(true);
+                            break;
+                        case "BUTTON_CLASSIC_LEFT":
+                            this.widgetPosition = WidgetPosition.CLASSIC_LEFT;
+                            this.widgetPositionType = WidgetPositionType.CLASSIC;
+                            GleapInvisibleActivityManger.getInstance().setShowFab(true);
+                            break;
+                        case "BUTTON_CLASSIC_BOTTOM":
+                            this.widgetPosition = WidgetPosition.CLASSIC_BOTTOM;
+                            this.widgetPositionType = WidgetPositionType.CLASSIC;
+                            GleapInvisibleActivityManger.getInstance().setShowFab(true);
+                            break;
                         default:
                             GleapInvisibleActivityManger.getInstance().setShowFab(false);
                             hideWidget = true;
                             break;
                     }
                 }
+            }
+
+            if(flowConfigs.has("widgetButtonText")) {
+                this.widgetButtonText = flowConfigs.getString("widgetButtonText");
             }
 
             if (flowConfigs.has("buttonLogo") && !flowConfigs.getString("buttonLogo").equals("")) {
@@ -582,5 +604,13 @@ class GleapConfig {
 
     public void setUnRegisterPushMessageGroupCallback(UnRegisterPushMessageGroupCallback unRegisterPushMessageGroupCallback) {
         this.unRegisterPushMessageGroupCallback = unRegisterPushMessageGroupCallback;
+    }
+
+    public String getWidgetButtonText() {
+        return widgetButtonText;
+    }
+
+    public WidgetPositionType getWidgetPositionType() {
+        return widgetPositionType;
     }
 }

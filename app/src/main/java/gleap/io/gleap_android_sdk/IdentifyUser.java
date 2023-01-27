@@ -10,6 +10,7 @@ import org.json.JSONObject;
 import io.gleap.Gleap;
 import io.gleap.GleapUser;
 import io.gleap.GleapUserProperties;
+import io.gleap.callbacks.RegisterPushMessageGroupCallback;
 
 public class IdentifyUser extends AppCompatActivity {
 
@@ -17,7 +18,6 @@ public class IdentifyUser extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_identify_user);
-
 
         findViewById(R.id.bck_btn_identify).setOnClickListener(new View.OnClickListener() {
             @Override

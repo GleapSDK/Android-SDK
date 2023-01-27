@@ -198,6 +198,7 @@ class GleapEventService {
         String type = "";
         String shareToken = "";
         String newsId = "";
+        String coverImageUrl = "";
 
         if (messageData.has("type")) {
             type = messageData.getString("type");
@@ -233,11 +234,16 @@ class GleapEventService {
             }
         }
 
+        if(messageData.has("coverImageUrl")) {
+            coverImageUrl = messageData.getString("coverImageUrl");
+        }
+
         GleapSender sender = new GleapSender(senderName, profileImageUrl);
-        return new GleapChatMessage(type, text, shareToken, sender, newsId);
+        return new GleapChatMessage(type, text, shareToken, sender, newsId,coverImageUrl);
     }
 
     private void processData(JSONObject data) throws Exception {
+        //GleapInvisibleActivityManger.getInstance().addComment(new GleapChatMessage("news", "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur", "123", new GleapSender("Lukas", " https://www.gravatar.com/avatar/09e6b8aca62319a9c7e1d90f994f8c3a?d=https://api.gleap.io/identicon/09e6b8aca62319a9c7e1d90f994f8c3a"), "","https://cdn.gleap.io/static/1674721788009-1cd2505e-4b59-4d47-a075-f29371b54a0a.png"));
         if (data.has("u")) {
             GleapInvisibleActivityManger.getInstance().setMessageCounter(data.getInt("u"));
             GleapInvisibleActivityManger.getInstance().addFab(null);
