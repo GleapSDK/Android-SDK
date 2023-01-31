@@ -424,6 +424,7 @@ interface iGleap {
 
     void setUnRegisterPushMessageGroupCallback(UnRegisterPushMessageGroupCallback callback);
 
+    void setTags(String[] tags);
 }
 
 

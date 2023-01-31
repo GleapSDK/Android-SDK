@@ -23,6 +23,10 @@ class ScreenshotTaker {
      * Take a screenshot of the current view and opens it in the editor
      */
     public void takeScreenshot() {
+       takeScreenshot(SurveyType.NONE);
+    }
+
+    protected void takeScreenshot(SurveyType type){
         if(GleapConfig.getInstance().getPlainConfig() != null) {
             try {
                 if (!alreadyTakingScreenshot) {
@@ -32,7 +36,7 @@ class ScreenshotTaker {
                         @Override
                         public void getImage(Bitmap bitmap) {
                             if (bitmap != null) {
-                                openScreenshot(bitmap);
+                                openScreenshot(bitmap, type);
                                 alreadyTakingScreenshot = false;
                             }
                         }
@@ -40,8 +44,7 @@ class ScreenshotTaker {
                 }
             } catch (GleapSessionNotInitialisedException exception) {
                 GleapDetectorUtil.resumeAllDetectors();
-                System.err.println("Gleap: Gleap Session not initialized.");                alreadyTakingScreenshot = true;
-
+                System.err.println("Gleap: Gleap Session not initialized.");
                 alreadyTakingScreenshot = false;
             } catch (InterruptedException e) {
                 alreadyTakingScreenshot = false;
@@ -51,7 +54,7 @@ class ScreenshotTaker {
         }
     }
 
-    public void openScreenshot(Bitmap imageFile) {
+    public void openScreenshot(Bitmap imageFile, SurveyType type) {
         try {
             GleapInvisibleActivityManger.getInstance().setInvisible();
             Activity activity = ActivityUtil.getCurrentActivity();
@@ -66,9 +69,11 @@ class ScreenshotTaker {
                     editor.putString("descriptionEditText", ""); // Storing the description
                     editor.apply();
                     Intent intent = new Intent(ActivityUtil.getCurrentActivity(), GleapMainActivity.class);
-
+                    intent.putExtra("IS_SURVEY", type == SurveyType.SURVEY);
                     intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
                     gleapBug.setScreenshot(imageFile);
+
+                    GleapInvisibleActivityManger.getInstance().clearMessages();
 
                     if(GleapConfig.getInstance().getWidgetOpenedCallback() != null) {
                         GleapConfig.getInstance().getWidgetOpenedCallback().invoke();

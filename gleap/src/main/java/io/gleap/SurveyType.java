@@ -1,5 +1,5 @@
 package io.gleap;
 
 public enum SurveyType {
-    SURVEY, SURVEY_FULL
+    NONE, SURVEY, SURVEY_FULL
 }

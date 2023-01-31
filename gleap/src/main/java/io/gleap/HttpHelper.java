@@ -106,7 +106,7 @@ class HttpHelper extends AsyncTask<GleapBug, Void, JSONObject> {
             multipart.addFilePart(file);
         }
         String response = multipart.finishAndUpload();
-        if(isJSONValid(response)) {
+        if (isJSONValid(response)) {
             return new JSONObject(response);
         } else {
             return new JSONObject();
@@ -174,7 +174,7 @@ class HttpHelper extends AsyncTask<GleapBug, Void, JSONObject> {
         conn.setRequestMethod("POST");
         UserSession userSession = UserSessionController.getInstance().getUserSession();
 
-        if(userSession != null) {
+        if (userSession != null) {
             conn.setRequestProperty("gleap-id", userSession.getId());
             conn.setRequestProperty("gleap-hash", userSession.getHash());
         }
@@ -222,6 +222,11 @@ class HttpHelper extends AsyncTask<GleapBug, Void, JSONObject> {
         body.put("customData", gleapBug.getCustomData());
         body.put("priority", gleapBug.getSeverity());
 
+        try {
+            body.put("tags", new JSONArray(gleapBug.getTags()));
+        } catch (Exception ex) {
+        }
+
         if (GleapConfig.getInstance().isEnableConsoleLogs()) {
             body.put("consoleLog", gleapBug.getLogs());
         }
@@ -236,23 +241,25 @@ class HttpHelper extends AsyncTask<GleapBug, Void, JSONObject> {
         try (OutputStream os = conn.getOutputStream()) {
             byte[] input = body.toString().getBytes(StandardCharsets.UTF_8);
             os.write(input, 0, input.length);
-        }catch (Exception ex){
+        } catch (Exception ex) {
             JSONObject response = new JSONObject();
             try {
                 response.put("status", 403);
-            }catch (Exception ignore){}
+            } catch (Exception ignore) {
+            }
 
             return response;
         }
 
-    JSONObject response = new JSONObject();
+        JSONObject response = new JSONObject();
 
-        try{
-            response.put("status",conn.getResponseCode());
+        try {
+            response.put("status", conn.getResponseCode());
             JSONObject result = new JSONObject(readInputStreamToString(conn));
 
             response.put("response", result);
-        }catch (Exception ex) {}
+        } catch (Exception ex) {
+        }
 
         return response;
     }
@@ -270,16 +277,13 @@ class HttpHelper extends AsyncTask<GleapBug, Void, JSONObject> {
                 sb.append(inputLine);
             }
             result = sb.toString();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             result = null;
-        }
-        finally {
+        } finally {
             if (is != null) {
                 try {
                     is.close();
-                }
-                catch (IOException e) {
+                } catch (IOException e) {
                 }
             }
         }
@@ -294,7 +298,7 @@ class HttpHelper extends AsyncTask<GleapBug, Void, JSONObject> {
      * @return return the file
      */
     private File bitmapToFile(Bitmap bitmap) {
-        if(bitmap != null) {
+        if (bitmap != null) {
             try {
                 File outputDir = context.getCacheDir();
                 File outputFile = File.createTempFile("file", ".png", outputDir);
@@ -339,7 +343,8 @@ class HttpHelper extends AsyncTask<GleapBug, Void, JSONObject> {
                 entry.put("type", URLConnection.guessContentTypeFromStream(is));
                 result.put(entry);
             }
-        }catch (Exception ex){}
+        } catch (Exception ex) {
+        }
 
         return result;
     }

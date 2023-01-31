@@ -5,6 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#00000000"
+    android:theme="@android:style/Theme.Translucent"
     tools:context="io.gleap.GleapMainActivity">
         <LinearLayout
             android:id="@+id/loader"
@@ -19,23 +20,13 @@
                     android:layout_width="match_parent"
                     android:layout_height="379dp"
                     android:background="#485bff" />
-
-                <ProgressBar
-                    android:id="@+id/gleap_progressBarBody"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:paddingTop="20dp"
-                    android:layout_centerVertical="true"
-                    android:indeterminateTint="#000000"
-                    android:progressBackgroundTint="#000000"
-                    android:progressTint="#000000" />
         </LinearLayout>
 
         <WebView
             android:id="@+id/gleap_webview"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-
+            android:background="#00000000"
             android:visibility="gone">
 
         </WebView>

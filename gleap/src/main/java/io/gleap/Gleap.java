@@ -117,6 +117,10 @@ public class Gleap implements iGleap {
      */
     @Override
     public void open() {
+        open(SurveyType.NONE);
+    }
+
+    protected void open(SurveyType type) {
         try {
             ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
                 @Override
@@ -130,7 +134,7 @@ public class Gleap implements iGleap {
                                         UserSessionController.getInstance().isSessionLoaded() && instance != null) {
                                     try {
                                         if (screenshotTaker != null) {
-                                            screenshotTaker.takeScreenshot();
+                                            screenshotTaker.takeScreenshot(type);
                                         }
                                     } catch (Exception e) {
                                     }
@@ -1069,6 +1073,11 @@ public class Gleap implements iGleap {
             GleapInvisibleActivityManger.getInstance().setShowFab(show);
         } catch (Exception ignore) {
         }
+    }
+
+    @Override
+    public void setTags(String[] tags) {
+         GleapBug.getInstance().setTags(tags);
     }
 
     /**

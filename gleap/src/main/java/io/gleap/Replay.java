@@ -25,6 +25,7 @@ class Replay {
     public void addScreenshot(Bitmap bitmap, String screenName) {
         try {
             if (screenshots.size() == numberOfScreenshots) {
+                screenshots.get(0).getScreenshot().recycle();
                 screenshots.removeFirst();
             }
 

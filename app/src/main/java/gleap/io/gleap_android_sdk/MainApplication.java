@@ -22,8 +22,12 @@ public class MainApplication extends Application {
         super.onCreate();
         //GleapUserProperties gleapUserProperties = new GleapUserProperties("12", "Test User", "test@email.com");
         //Gleap.getInstance().identifyUser("12", gleapUserProperties);
-        Gleap.initialize("DUPaIr7s689BBblcFI4pc5aBgYJTm7Sc", this);
-
+        Gleap.initialize("5fc1qSGVmGo6G9qU9URp8lVsMH5I3uVh", this);
+        Gleap.getInstance().setTags(new String[] {
+                "Android",
+                "Tags",
+                "#Beste"
+        });
 
 
         Gleap.getInstance().setRegisterPushMessageGroupCallback(new RegisterPushMessageGroupCallback() {

@@ -7,5 +7,4 @@
     android:layout_height="match_parent"
     android:elevation="8dp">
 
-
 </androidx.constraintlayout.widget.ConstraintLayout>

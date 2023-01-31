@@ -37,7 +37,7 @@ class GleapConfig {
 
     //bb config
     private String apiUrl = "https://api.gleap.io";
-    private String iFrameUrl = "https://messenger.gleap.io/app";
+    private String iFrameUrl = "https://messenger.gleap.io/appnew";
     private String sdkKey = "";
     private String feedbackFlow = "";
     private ValueCallback<Uri[]> mUploadMessage;
@@ -61,7 +61,7 @@ class GleapConfig {
     private RegisterPushMessageGroupCallback registerPushMessageGroupCallback;
     private UnRegisterPushMessageGroupCallback unRegisterPushMessageGroupCallback;
     private InitializationDoneCallback initializationDoneCallback;
-     private List<GleapDetector> gestureDetectors = new LinkedList<>();
+    private List<GleapDetector> gestureDetectors = new LinkedList<>();
     private List<GleapActivationMethod> priorizedGestureDetectors = new LinkedList<>();
     private int interval = 5;
 
@@ -144,9 +144,9 @@ class GleapConfig {
             }
 
             if (flowConfigs.has("feedbackButtonPosition")) {
-                if(hideWidget) {
+                if (hideWidget) {
                     GleapInvisibleActivityManger.getInstance().setShowFab(false);
-                }else {
+                } else {
                     switch (flowConfigs.getString("feedbackButtonPosition")) {
                         case "BOTTOM_RIGHT":
                             this.widgetPosition = WidgetPosition.BOTTOM_RIGHT;
@@ -180,8 +180,8 @@ class GleapConfig {
                 }
             }
 
-            if(flowConfigs.has("widgetButtonText")) {
-                this.widgetButtonText = flowConfigs.getString("widgetButtonText");
+            if (flowConfigs.has("widgetButtonText")) {
+                this.widgetButtonText =  localizedString(flowConfigs, flowConfigs.getString("widgetButtonText"));
             }
 
             if (flowConfigs.has("buttonLogo") && !flowConfigs.getString("buttonLogo").equals("")) {
@@ -225,11 +225,11 @@ class GleapConfig {
                 this.interval = flowConfigs.getInt("replaysInterval");
             }
 
-            if(flowConfigs.has("buttonX")) {
+            if (flowConfigs.has("buttonX")) {
                 this.buttonX = flowConfigs.getInt("buttonX");
             }
 
-            if(flowConfigs.has("buttonY")) {
+            if (flowConfigs.has("buttonY")) {
                 this.buttonY = flowConfigs.getInt("buttonY");
             }
 
@@ -612,5 +612,27 @@ class GleapConfig {
 
     public WidgetPositionType getWidgetPositionType() {
         return widgetPositionType;
+    }
+
+    public String localizedString(JSONObject config, String key) {
+
+        if (config != null && config.has("customTranslations")) {
+            try {
+                JSONObject translation = null;
+                JSONObject tranlsations = config.getJSONObject("customTranslations");
+                if (tranlsations.has(this.language)) {
+                    translation = tranlsations.getJSONObject(this.language);
+                } else if (tranlsations.has(this.language.split("-")[0])) {
+                    translation = tranlsations.getJSONObject(this.language.split("-")[0]);
+                }
+
+                if(translation != null && translation.has(key)) {
+                    return translation.getString(key);
+                }
+            } catch (Exception ex) {
+            }
+        }
+
+        return key;
     }
 }

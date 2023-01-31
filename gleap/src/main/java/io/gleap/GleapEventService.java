@@ -243,7 +243,16 @@ class GleapEventService {
     }
 
     private void processData(JSONObject data) throws Exception {
-        //GleapInvisibleActivityManger.getInstance().addComment(new GleapChatMessage("news", "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur", "123", new GleapSender("Lukas", " https://www.gravatar.com/avatar/09e6b8aca62319a9c7e1d90f994f8c3a?d=https://api.gleap.io/identicon/09e6b8aca62319a9c7e1d90f994f8c3a"), "","https://cdn.gleap.io/static/1674721788009-1cd2505e-4b59-4d47-a075-f29371b54a0a.png"));
+/*
+        GleapInvisibleActivityManger.getInstance().addComment(
+                new GleapChatMessage("news","Release update: MONTH", "", new GleapSender("Niklas F", "https://www.gravatar.com/avatar/d4380f9b4c1efb0440253e1a8d234cd0?d=https://api.gleap.io/identicon/d4380f9b4c1efb0440253e1a8d234cd0"),"63d915874213e551e0c7fc66","https://cdn.gleap.io/static/1675171265509-3be99794-2586-4a51-bd07-4efe42e068a1.jpeg"));
+
+        GleapInvisibleActivityManger.getInstance().addComment(
+                new GleapChatMessage("chat","Release update: MONTH", "", new GleapSender("Niklas F", "https://www.gravatar.com/avatar/d4380f9b4c1efb0440253e1a8d234cd0?d=https://api.gleap.io/identicon/d4380f9b4c1efb0440253e1a8d234cd0"),"63d915874213e551e0c7fc66","https://cdn.gleap.io/static/1675171265509-3be99794-2586-4a51-bd07-4efe42e068a1.jpeg"));
+
+        GleapInvisibleActivityManger.getInstance().addComment(
+                new GleapChatMessage("chat","Release update: MONTH", "", new GleapSender("Niklas F", "https://www.gravatar.com/avatar/d4380f9b4c1efb0440253e1a8d234cd0?d=https://api.gleap.io/identicon/d4380f9b4c1efb0440253e1a8d234cd0"),"63d915874213e551e0c7fc66","https://cdn.gleap.io/static/1675171265509-3be99794-2586-4a51-bd07-4efe42e068a1.jpeg"));
+*/
         if (data.has("u")) {
             GleapInvisibleActivityManger.getInstance().setMessageCounter(data.getInt("u"));
             GleapInvisibleActivityManger.getInstance().addFab(null);
@@ -266,7 +275,7 @@ class GleapEventService {
                         }
                         //check if it isopen
                         GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("start-survey",jsonObject));
-                        Gleap.getInstance().open();
+                        Gleap.getInstance().open(SurveyType.SURVEY);
 
                     } else if (!currentAction.getString("format").contains("widget")){
                         JSONObject jsonObject = new JSONObject();

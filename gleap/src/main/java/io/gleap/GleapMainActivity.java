@@ -96,7 +96,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
             } catch (Exception ex) {
             }
             super.onCreate(savedInstanceState);
-
+            GleapInvisibleActivityManger.getInstance().clearMessages();
             GleapBug.getInstance().setLanguage(Locale.getDefault().getLanguage());
 
             url += GleapURLGenerator.generateURL();
@@ -117,13 +117,8 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 gradientDrawable.setCornerRadius(0f);
 
                 findViewById(R.id.gleap_progressBarHeader).setBackground(gradientDrawable);
-                findViewById(R.id.loader).setBackgroundColor(backgroundColor);
 
-                try {
-                    ((ProgressBar) findViewById(R.id.gleap_progressBarBody)).getIndeterminateDrawable()
-                            .setColorFilter(GleapConfig.getInstance().getLoaderColor(), PorterDuff.Mode.SRC_IN);
-                } catch (Exception ex) {
-                }
+
 
                 exitAfterFifteenSeconds = new Runnable() {
                     @Override
@@ -134,6 +129,15 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     }
                 };
 
+
+                //if it is no survey preload with shadow
+                boolean isSurvey = getIntent().getBooleanExtra("IS_SURVEY", false);
+                if (isSurvey) {
+                    findViewById(R.id.loader).setVisibility(View.INVISIBLE);
+                } else {
+                    findViewById(R.id.loader).setBackgroundColor(backgroundColor);
+                }
+
                 this.handler = new Handler(Looper.getMainLooper());
                 this.handler.postDelayed(exitAfterFifteenSeconds, 15000);
 
@@ -142,6 +146,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     public void invoke() {
                         GleapDetectorUtil.resumeAllDetectors();
                         GleapBug.getInstance().setDisabled(false);
+                        GleapInvisibleActivityManger.getInstance().setShowFab(true);
                         GleapMainActivity.this.finish();
                     }
                 });
@@ -222,7 +227,8 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 } catch (Exception ex) {
                 }
             }
-        }catch (Exception ignore) {}
+        } catch (Exception ignore) {
+        }
     }
 
     private class GleapWebViewClient extends WebViewClient {
@@ -321,38 +327,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
             return true;
         }
 
-        private void sendSessionUpdate() {
-            try {
-                UserSession userSession = UserSessionController.getInstance().getUserSession();
-                GleapUser gleapUser = UserSessionController.getInstance().getGleapUserSession();
-                JSONObject sessionData = new JSONObject();
-                sessionData.put("gleapId", userSession.getId());
-                sessionData.put("gleapHash", userSession.getHash());
-
-                sessionData.put("userId", gleapUser.getUserId());
-                GleapUserProperties gleapUserProperties = gleapUser.getGleapUserProperties();
-                if (gleapUserProperties != null) {
-                    sessionData.put("name", gleapUserProperties.getName());
-                    sessionData.put("email", gleapUserProperties.getEmail());
-
-                    sessionData.put("value", gleapUserProperties.getValue());
-
-                    if (gleapUserProperties.getPhoneNumber() != null) {
-                        sessionData.put("phone", gleapUserProperties.getPhoneNumber());
-                    }
-                }
-
-                JSONObject data = new JSONObject();
-                data.put("sessionData", sessionData);
-                data.put("apiUrl", GleapConfig.getInstance().getApiUrl());
-                data.put("sdkKey", GleapConfig.getInstance().getSdkKey());
-
-                sendMessage(generateGleapMessage("session-update", data));
-            } catch (Exception exception) {
-
-            }
-        }
-
         @Override
         public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
             return true;
@@ -397,8 +371,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                                         } catch (JSONException e) {
                                             e.printStackTrace();
                                         }
-
-
                                     }
                                 }, 100);
                                 webView.setVisibility(View.VISIBLE);
@@ -669,11 +641,12 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
             if (httpResponse.has("response")) {
                 JSONObject response = httpResponse.getJSONObject("response");
-                if(response.has("shareToken")) {
+                if (response.has("shareToken")) {
                     return response.getString("shareToken");
                 }
             }
-        }catch (Exception ignore) {}
+        } catch (Exception ignore) {
+        }
 
 
         return "";

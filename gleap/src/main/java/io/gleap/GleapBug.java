@@ -37,6 +37,7 @@ class GleapBug {
     private JSONObject data;
     private String spamToken;
     private String outboubdId;
+    private String[] tags;
 
     private @Nullable
     PhoneMeta phoneMeta;
@@ -263,5 +264,13 @@ class GleapBug {
 
     public NetworkBuffer getNetworkBuffer() {
         return networkBuffer;
+    }
+
+    public String[] getTags() {
+        return tags;
+    }
+
+    public void setTags(String[] tags) {
+        this.tags = tags;
     }
 }

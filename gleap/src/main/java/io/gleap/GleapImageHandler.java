@@ -7,10 +7,12 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.graphics.drawable.GradientDrawable;
 import android.os.AsyncTask;
 import android.widget.ImageView;
 
@@ -37,7 +39,7 @@ class GleapImageHandler extends AsyncTask<Void, Void, Bitmap> {
     @Override
     protected Bitmap doInBackground(Void... params) {
         try {
-            if(bitmap == null) {
+            if (bitmap == null) {
                 URL urlConnection = new URL(url);
                 HttpURLConnection connection = (HttpURLConnection) urlConnection
                         .openConnection();
@@ -46,7 +48,7 @@ class GleapImageHandler extends AsyncTask<Void, Void, Bitmap> {
                 InputStream input = connection.getInputStream();
                 bitmap = BitmapFactory.decodeStream(input);
             }
-            return  bitmap;
+            return bitmap;
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -57,44 +59,11 @@ class GleapImageHandler extends AsyncTask<Void, Void, Bitmap> {
     protected void onPostExecute(Bitmap result) {
         super.onPostExecute(result);
         try {
-            imageView.setImageBitmap(getRoundedBitmap(result,20, Color.RED));
+            imageView.setImageBitmap(result);
             imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
             gleapImageLoaded.invoke();
-        }catch (Exception ex) {
+        } catch (Exception ex) {
 
         }
-    }
-
-    public static Bitmap getRoundedBitmap(Bitmap bitmap, int pixels, int color) {
-
-        Bitmap inpBitmap = bitmap;
-        int width = 0;
-        int height = 0;
-        width = inpBitmap.getWidth();
-        height = inpBitmap.getHeight();
-
-        if (width <= height) {
-            height = width;
-        } else {
-            width = height;
-        }
-
-        Bitmap output = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(output);
-
-        final Paint paint = new Paint();
-        final Rect rect = new Rect(0, 0, width, height);
-        final RectF rectF = new RectF(rect);
-        final float roundPx = pixels;
-
-        paint.setAntiAlias(true);
-        canvas.drawARGB(0, 0, 0, 0);
-        paint.setColor(color);
-        canvas.drawRoundRect(rectF, roundPx, roundPx, paint);
-
-        paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
-        canvas.drawBitmap(inpBitmap, rect, rect, paint);
-
-        return output;
     }
 }
