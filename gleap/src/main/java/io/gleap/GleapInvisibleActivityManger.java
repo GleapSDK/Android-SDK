@@ -493,16 +493,22 @@ class GleapInvisibleActivityManger {
                             set.connect(relativeLayout.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, convertDpToPixel(20, local));
                             set.connect(relativeLayout.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, convertDpToPixel(0, local));
                         } else if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.CLASSIC_LEFT) {
-                            set.connect(relativeLayout.getId(), ConstraintSet.START, layout.getId(), ConstraintSet.START, (width / -2 + height / 2) - 2);
+                            int offset = (width / -2 + height / 2);
+                            if(GleapBug.getInstance().getApplicationtype() != APPLICATIONTYPE.NATIVE) {
+                                offset = offset * -1;
+                            }
+                            set.connect(relativeLayout.getId(), ConstraintSet.START, layout.getId(), ConstraintSet.START, offset- 2);
                             set.connect(relativeLayout.getId(), ConstraintSet.TOP, layout.getId(), ConstraintSet.TOP, convertDpToPixel(0, local));
                             set.connect(relativeLayout.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, convertDpToPixel(0, local));
                         } else if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.CLASSIC_RIGHT) {
-                            set.connect(relativeLayout.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, (width / -2 + height / 2));
+                            int offset = (width / -2 + height / 2);
+                            if(GleapBug.getInstance().getApplicationtype() != APPLICATIONTYPE.NATIVE) {
+                                offset = offset * -1;
+                            }
+                            set.connect(relativeLayout.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, offset);
                             set.connect(relativeLayout.getId(), ConstraintSet.TOP, layout.getId(), ConstraintSet.TOP, convertDpToPixel(0, local));
                             set.connect(relativeLayout.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, convertDpToPixel(0, local));
                         }
-
-                        set.applyTo(layout);
 
                         set.applyTo(layout);
                     }
