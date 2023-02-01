@@ -29,7 +29,7 @@ public class MainActivity extends AppCompatActivity {
                         Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE
                 };
                 ActivityCompat.requestPermissions(MainActivity.this, permissions, 101);*/
-               Gleap.getInstance().clearIdentity();
+               Gleap.getInstance().open();
             }
         });
 
