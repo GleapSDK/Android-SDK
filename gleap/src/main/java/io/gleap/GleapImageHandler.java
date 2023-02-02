@@ -27,7 +27,7 @@ class GleapImageHandler extends AsyncTask<Void, Void, Bitmap> {
 
     private String url;
     private ImageView imageView;
-    private Bitmap bitmap;
+
     private GleapImageLoaded gleapImageLoaded;
 
     public GleapImageHandler(String url, ImageView imageView, GleapImageLoaded gleapImageLoaded) {
@@ -39,15 +39,14 @@ class GleapImageHandler extends AsyncTask<Void, Void, Bitmap> {
     @Override
     protected Bitmap doInBackground(Void... params) {
         try {
-            if (bitmap == null) {
-                URL urlConnection = new URL(url);
-                HttpURLConnection connection = (HttpURLConnection) urlConnection
-                        .openConnection();
-                connection.setDoInput(true);
-                connection.connect();
-                InputStream input = connection.getInputStream();
-                bitmap = BitmapFactory.decodeStream(input);
-            }
+            Bitmap bitmap;
+            URL urlConnection = new URL(url);
+            HttpURLConnection connection = (HttpURLConnection) urlConnection
+                    .openConnection();
+            connection.setDoInput(true);
+            connection.connect();
+            InputStream input = connection.getInputStream();
+            bitmap = BitmapFactory.decodeStream(input);
             return bitmap;
         } catch (Exception e) {
             e.printStackTrace();
@@ -61,7 +60,7 @@ class GleapImageHandler extends AsyncTask<Void, Void, Bitmap> {
         try {
             imageView.setImageBitmap(result);
             imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
-            gleapImageLoaded.invoke();
+            gleapImageLoaded.invoke(result);
         } catch (Exception ex) {
 
         }

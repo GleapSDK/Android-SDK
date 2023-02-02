@@ -42,6 +42,7 @@ class GleapInvisibleActivityManger {
     private int messageCounter = 0;
     private int prevMessageCounter = -1;
     boolean showFab = false;
+    boolean isForce = true;
 
     private GleapInvisibleActivityManger() {
         messages = new LinkedList<>();
@@ -69,6 +70,9 @@ class GleapInvisibleActivityManger {
     }
 
     public void render(Activity activity, boolean force) {
+        if(force) {
+            isForce = true;
+        }
         if (activity == null) {
             activity = ActivityUtil.getCurrentActivity();
         }
@@ -80,9 +84,10 @@ class GleapInvisibleActivityManger {
             return;
         }
 
-        LayoutInflater inflater = activity.getLayoutInflater();
+
 
         if (this.layout == null) {
+            LayoutInflater inflater = activity.getLayoutInflater();
             this.layout = (ConstraintLayout) inflater.inflate(R.layout.activity_gleap_fab, null);
             this.layout.setLayoutParams(new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         }
@@ -92,7 +97,11 @@ class GleapInvisibleActivityManger {
             @Override
             public void run() {
                 try {
-                    if (chatMessages == null) {
+                    if (messages.size() == 0) {
+                        return;
+                    }
+
+                    if (chatMessages == null ) {
                         chatMessages = new LinearLayout(local);
                         chatMessages.setId(View.generateViewId());
                         chatMessages.setOrientation(LinearLayout.VERTICAL);
@@ -177,7 +186,6 @@ class GleapInvisibleActivityManger {
                         listMessage.setGravity(Gravity.RIGHT);
                         for (GleapChatMessage comment :
                                 messages) {
-
                             LinearLayout commentComponent = comment.getComponent(local);
                             if (commentComponent != null) {
                                 if (comment.getType().equals("news")) {
@@ -195,8 +203,6 @@ class GleapInvisibleActivityManger {
                                 } else {
                                     listMessage.addView(commentComponent);
                                 }
-
-
                             }
                         }
 
@@ -209,6 +215,10 @@ class GleapInvisibleActivityManger {
 
                     if (layout.indexOfChild(chatMessages) < 0) {
                         layout.addView(chatMessages);
+                    }
+
+                    if(isForce) {
+                        isForce = false;
                         addLayout(local);
                     }
                 } catch (Exception ex) {
@@ -221,6 +231,9 @@ class GleapInvisibleActivityManger {
         GleapArrayHelper<GleapChatMessage> helper = new GleapArrayHelper<>();
 
         if (this.messages.size() >= 3) {
+            GleapChatMessage oldMessage = this.messages.get(0);
+            oldMessage.clearComponent();
+
             this.messages = helper.shiftArray(this.messages);
         }
 
@@ -237,9 +250,8 @@ class GleapInvisibleActivityManger {
             return;
         }
 
-        LayoutInflater inflater = activity.getLayoutInflater();
-
         if (this.layout == null) {
+            LayoutInflater inflater = activity.getLayoutInflater();
             this.layout = (ConstraintLayout) inflater.inflate(R.layout.activity_gleap_fab, null);
             this.layout.setLayoutParams(new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         }
@@ -302,6 +314,10 @@ class GleapInvisibleActivityManger {
     }
 
     void clearMessages() {
+        for (GleapChatMessage message :
+                this.messages) {
+            message.clearComponent();
+        }
         this.messages = new LinkedList<>();
         this.showFab = true;
         addFab(null);
@@ -375,6 +391,7 @@ class GleapInvisibleActivityManger {
                 relativeLayout.setVisibility(View.VISIBLE);
             } else {
                 relativeLayout.setVisibility(View.GONE);
+                return;
             }
 
             relativeLayout.removeAllViews();
@@ -424,10 +441,7 @@ class GleapInvisibleActivityManger {
             } else {
                 set.connect(relativeLayout.getId(), ConstraintSet.START, layout.getId(), ConstraintSet.START, convertDpToPixel(offsetX, local));
             }
-
             set.connect(relativeLayout.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, convertDpToPixel(offsetY, local));
-
-
             set.applyTo(layout);
 
         } catch (Exception ex) {
@@ -437,6 +451,15 @@ class GleapInvisibleActivityManger {
 
     private void renderSquareWidget(Activity local) {
         try {
+            boolean manualHidden = GleapConfig.getInstance().isHideWidget();
+
+            if (showFab && !manualHidden) {
+                relativeLayout.setVisibility(View.VISIBLE);
+            } else {
+                relativeLayout.setVisibility(View.GONE);
+                return;
+            }
+
             if (squareButton == null) {
                 squareButton = new Button(local);
                 squareButton.setId(View.generateViewId());
@@ -465,63 +488,27 @@ class GleapInvisibleActivityManger {
                     public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
                         int width = squareButton.getWidth();
                         int height = squareButton.getHeight();
-                        //TODO: counter missing
-                        GradientDrawable gdDefaultText = new GradientDrawable();
-                        gdDefaultText.setColor(Color.RED);
-
-                        gdDefaultText.setCornerRadius(1000);
-                        TextView textView = new TextView(local);
-                        textView.setId(View.generateViewId());
-                        textView.setBackground(gdDefaultText);
-                        textView.setTextColor(Color.WHITE);
-                        textView.setTextSize(10);
-
-                        textView.setText(String.valueOf(messageCounter));
-                        textView.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-                        relativeLayout.addView(textView, convertDpToPixel(16, local), convertDpToPixel(16, local));
-                        ConstraintSet setCounter = new ConstraintSet();
-                        setCounter.clone(relativeLayout);
-                        setCounter.connect(textView.getId(), ConstraintSet.END, relativeLayout.getId(), ConstraintSet.END, 0);
-                        setCounter.applyTo(relativeLayout);
-
-                        textView.bringToFront();
-
                         ConstraintSet set = new ConstraintSet();
                         set.clone(layout);
 
                         if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.CLASSIC_BOTTOM) {
                             set.connect(relativeLayout.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, convertDpToPixel(20, local));
-                            set.connect(relativeLayout.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, convertDpToPixel(0, local));
+                            set.connect(relativeLayout.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, 0);
                         } else if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.CLASSIC_LEFT) {
-                            int offset = (width / -2 + height / 2);
-                            if(GleapBug.getInstance().getApplicationtype() != APPLICATIONTYPE.NATIVE) {
-                                offset = offset * -1;
-                            }
-                            set.connect(relativeLayout.getId(), ConstraintSet.START, layout.getId(), ConstraintSet.START, offset- 2);
-                            set.connect(relativeLayout.getId(), ConstraintSet.TOP, layout.getId(), ConstraintSet.TOP, convertDpToPixel(0, local));
-                            set.connect(relativeLayout.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, convertDpToPixel(0, local));
+                            relativeLayout.setPadding(0, height,0,0);
+                            set.connect(relativeLayout.getId(), ConstraintSet.START, layout.getId(), ConstraintSet.START, 0);
+                            set.connect(relativeLayout.getId(), ConstraintSet.TOP, layout.getId(), ConstraintSet.TOP, 0);
+                            set.connect(relativeLayout.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, 0);
                         } else if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.CLASSIC_RIGHT) {
-                            int offset = (width / -2 + height / 2);
-                            if(GleapBug.getInstance().getApplicationtype() != APPLICATIONTYPE.NATIVE) {
-                                offset = offset * -1;
-                            }
-                            set.connect(relativeLayout.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, offset);
-                            set.connect(relativeLayout.getId(), ConstraintSet.TOP, layout.getId(), ConstraintSet.TOP, convertDpToPixel(0, local));
-                            set.connect(relativeLayout.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, convertDpToPixel(0, local));
+                            relativeLayout.setPadding(0, height,0,0);
+                            set.connect(relativeLayout.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, 0);
+                            set.connect(relativeLayout.getId(), ConstraintSet.TOP, layout.getId(), ConstraintSet.TOP, 0);
+                            set.connect(relativeLayout.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, 0);
                         }
 
                         set.applyTo(layout);
                     }
                 });
-            }
-
-
-            boolean manualHidden = GleapConfig.getInstance().isHideWidget();
-
-            if (showFab && !manualHidden) {
-                relativeLayout.setVisibility(View.VISIBLE);
-            } else {
-                relativeLayout.setVisibility(View.GONE);
             }
 
             relativeLayout.removeAllViews();

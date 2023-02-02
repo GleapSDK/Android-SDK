@@ -33,7 +33,7 @@ class GleapEventService {
     private GleapEventService() {
         gleapArrayHelper = new GleapArrayHelper<>();
 
-        try{
+        try {
             Activity activity = ActivityUtil.getCurrentActivity();
 
             JSONObject sessiontStarted = new JSONObject();
@@ -46,7 +46,8 @@ class GleapEventService {
             pageView.put("name", "pageView");
             pageView.put("data", page);
             eventsToBeSent.add(pageView);
-        }catch (Exception ex) {}
+        } catch (Exception ex) {
+        }
 
         sendInitialMessage();
     }
@@ -61,7 +62,8 @@ class GleapEventService {
     public void refresh() {
         try {
             new EventHttpHelper().execute();
-        }catch (Exception ignore) {}
+        } catch (Exception ignore) {
+        }
     }
 
     public void sendInitialMessage() {
@@ -99,7 +101,8 @@ class GleapEventService {
                         time = GleapConfig.getInstance().getResceduleEventStreamDurationShort();
                     }
                     h.postDelayed(this, time);
-                }catch (Exception ignore) {}
+                } catch (Exception ignore) {
+                }
             }
         }, time);
     }
@@ -171,7 +174,7 @@ class GleapEventService {
                     processData(result);
                 }
             } catch (Error | Exception e) {
-               // e.printStackTrace();
+                // e.printStackTrace();
             }
 
             conn.getInputStream().close();
@@ -234,25 +237,15 @@ class GleapEventService {
             }
         }
 
-        if(messageData.has("coverImageUrl")) {
+        if (messageData.has("coverImageUrl")) {
             coverImageUrl = messageData.getString("coverImageUrl");
         }
 
         GleapSender sender = new GleapSender(senderName, profileImageUrl);
-        return new GleapChatMessage(type, text, shareToken, sender, newsId,coverImageUrl);
+        return new GleapChatMessage(type, text, shareToken, sender, newsId, coverImageUrl);
     }
 
     private void processData(JSONObject data) throws Exception {
-/*
-        GleapInvisibleActivityManger.getInstance().addComment(
-                new GleapChatMessage("news","Release update: MONTH", "", new GleapSender("Niklas F", "https://www.gravatar.com/avatar/d4380f9b4c1efb0440253e1a8d234cd0?d=https://api.gleap.io/identicon/d4380f9b4c1efb0440253e1a8d234cd0"),"63d915874213e551e0c7fc66","https://cdn.gleap.io/static/1675171265509-3be99794-2586-4a51-bd07-4efe42e068a1.jpeg"));
-
-        GleapInvisibleActivityManger.getInstance().addComment(
-                new GleapChatMessage("chat","Release update: MONTH", "", new GleapSender("Niklas F", "https://www.gravatar.com/avatar/d4380f9b4c1efb0440253e1a8d234cd0?d=https://api.gleap.io/identicon/d4380f9b4c1efb0440253e1a8d234cd0"),"63d915874213e551e0c7fc66","https://cdn.gleap.io/static/1675171265509-3be99794-2586-4a51-bd07-4efe42e068a1.jpeg"));
-
-        GleapInvisibleActivityManger.getInstance().addComment(
-                new GleapChatMessage("chat","Release update: MONTH", "", new GleapSender("Niklas F", "https://www.gravatar.com/avatar/d4380f9b4c1efb0440253e1a8d234cd0?d=https://api.gleap.io/identicon/d4380f9b4c1efb0440253e1a8d234cd0"),"63d915874213e551e0c7fc66","https://cdn.gleap.io/static/1675171265509-3be99794-2586-4a51-bd07-4efe42e068a1.jpeg"));
-*/
         if (data.has("u")) {
             GleapInvisibleActivityManger.getInstance().setMessageCounter(data.getInt("u"));
             GleapInvisibleActivityManger.getInstance().addFab(null);
@@ -260,10 +253,10 @@ class GleapEventService {
 
         if (data.has("a") && data.get("a") instanceof JSONArray) {
             JSONArray actions = data.getJSONArray("a");
+
             for (int i = 0; i < actions.length(); i++) {
                 JSONObject currentAction = actions.getJSONObject(i);
                 if (currentAction.has("actionType")) {
-
                     if (currentAction.getString("format").contains("survey")) {
                         JSONObject jsonObject = new JSONObject();
                         try {
@@ -274,10 +267,10 @@ class GleapEventService {
                         } catch (Exception ex) {
                         }
                         //check if it isopen
-                        GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("start-survey",jsonObject));
+                        GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("start-survey", jsonObject));
                         Gleap.getInstance().open(SurveyType.SURVEY);
 
-                    } else if (!currentAction.getString("format").contains("widget")){
+                    } else if (!currentAction.getString("format").contains("widget")) {
                         JSONObject jsonObject = new JSONObject();
                         try {
                             jsonObject.put("isSurvey", false);
@@ -286,7 +279,7 @@ class GleapEventService {
                             jsonObject.put("flow", currentAction.getString("actionType"));
                         } catch (Exception ex) {
                         }
-                        GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("start-feedbackflow",jsonObject));
+                        GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("start-feedbackflow", jsonObject));
                         Gleap.getInstance().open();
                     }
                     if (currentAction.getString("actionType").contains("notification")) {
@@ -294,7 +287,6 @@ class GleapEventService {
                         JSONObject messageData = currentAction.getJSONObject("data");
                         GleapChatMessage comment = createComment(messageData);
                         GleapInvisibleActivityManger.getInstance().addComment(comment);
-
                     }
                 }
             }

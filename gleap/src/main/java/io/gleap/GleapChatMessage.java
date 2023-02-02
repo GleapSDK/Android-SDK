@@ -4,6 +4,7 @@ import static io.gleap.GleapHelper.convertDpToPixel;
 
 import android.app.Activity;
 import android.content.res.Resources;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
@@ -21,6 +22,9 @@ import androidx.cardview.widget.CardView;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import gleap.io.gleap.R;
 
 class GleapChatMessage {
@@ -29,8 +33,9 @@ class GleapChatMessage {
     private String shareToken;
     private String newsId;
     private String image;
-
     private GleapSender sender;
+    private Bitmap avatarBitmap = null;
+    private Bitmap topImageBitmap = null;
 
 
     public GleapChatMessage(String type, String text, String shareToken, GleapSender sender, String newsId, String image) {
@@ -66,6 +71,18 @@ class GleapChatMessage {
         return getPlainMessage(local);
     }
 
+    public void clearComponent() {
+        if(this.avatarBitmap != null) {
+            this.avatarBitmap.recycle();
+            this.avatarBitmap = null;
+        }
+
+        if(this.topImageBitmap != null) {
+            this.topImageBitmap.recycle();
+            this.topImageBitmap = null;
+        }
+    }
+
     public LinearLayout getNews(Activity local) {
         Activity activity = ActivityUtil.getCurrentActivity();
         LinearLayout completeMessage = new LinearLayout(local.getApplication().getApplicationContext());
@@ -78,7 +95,8 @@ class GleapChatMessage {
         topImage.setAdjustViewBounds(true);
         new GleapImageHandler(image, topImage, new GleapImageLoaded() {
             @Override
-            public void invoke() {
+            public void invoke(Bitmap bitmap) {
+                topImageBitmap = bitmap;
                 completeMessage.setVisibility(View.VISIBLE);
             }
         }).execute();
@@ -95,7 +113,13 @@ class GleapChatMessage {
         avatarParams.setMargins(convertDpToPixel(5, local), convertDpToPixel(7, local), convertDpToPixel(5, local), convertDpToPixel(7, local));
 
         avatarImage.setLayoutParams(avatarParams);
-        new GleapRoundImageHandler(getSender().getProfileImageUrl(), avatarImage).execute();
+        new GleapRoundImageHandler(getSender().getProfileImageUrl(), avatarImage,new GleapImageLoaded() {
+            @Override
+            public void invoke(Bitmap bitmap) {
+                avatarBitmap = bitmap;
+                completeMessage.setVisibility(View.VISIBLE);
+            }
+        }).execute();
 
         float width = getScreenWidth() * 9 / 10;
         if (width > convertDpToPixel(320, activity)) {
@@ -133,7 +157,7 @@ class GleapChatMessage {
         bottomPart.addView(userLayout);
         completeMessage.addView(bottomPart);
         completeMessage.setBackgroundColor(Color.WHITE);
-        
+
         completeMessage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -179,14 +203,10 @@ class GleapChatMessage {
         completeMessage.addView(titleComponent);
         completeMessage.addView(messageComponent);
 
-
-
         completeMessage.setBackgroundResource(R.drawable.chatbubble);
-
 
         completeMessage.setBaselineAligned(true);
         completeMessage.setPadding(convertDpToPixel(15, local), convertDpToPixel(10, local), convertDpToPixel(15, local), convertDpToPixel(10, local));
-
 
         CardView cardView = new CardView(local.getApplication().getApplicationContext());
 
@@ -202,7 +222,17 @@ class GleapChatMessage {
         avatarImage.setPadding(0, 0, convertDpToPixel(7, local), 0);
 
         avatarImage.setLayoutParams(paramsBubble);
-        new GleapRoundImageHandler(getSender().getProfileImageUrl(), avatarImage).execute();
+        if(this.avatarBitmap == null) {
+            new GleapRoundImageHandler(getSender().getProfileImageUrl(), avatarImage, new GleapImageLoaded() {
+                @Override
+                public void invoke(Bitmap bitmap) {
+                    avatarBitmap = bitmap;
+                    completeMessage.setVisibility(View.VISIBLE);
+                }
+            }).execute();
+        }else {
+            avatarImage.setImageBitmap(avatarBitmap);
+        }
 
         completeMessage.setOnClickListener(new View.OnClickListener() {
             @Override

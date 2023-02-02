@@ -1,5 +1,7 @@
 package io.gleap;
 
+import android.graphics.Bitmap;
+
 interface GleapImageLoaded {
-    void invoke();
+    void invoke(Bitmap bitmap);
 }

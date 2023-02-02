@@ -18,26 +18,30 @@ class GleapRoundImageHandler extends AsyncTask<Void, Void, Bitmap> {
 
     private String url;
     private ImageView imageView;
-    private Bitmap bitmap;
+    private GleapImageLoaded imageLoaded;
+
 
     public GleapRoundImageHandler(String url, ImageView imageView) {
         this.url = url;
         this.imageView = imageView;
     }
 
+    public GleapRoundImageHandler(String url, ImageView imageView, GleapImageLoaded imageLoaded) {
+        this.url = url;
+        this.imageView = imageView;
+        this.imageLoaded = imageLoaded;
+    }
+
     @Override
     protected Bitmap doInBackground(Void... params) {
         try {
-            if(bitmap == null) {
                 URL urlConnection = new URL(url);
                 HttpURLConnection connection = (HttpURLConnection) urlConnection
                         .openConnection();
                 connection.setDoInput(true);
                 connection.connect();
                 InputStream input = connection.getInputStream();
-                bitmap = BitmapFactory.decodeStream(input);
-            }
-            return  bitmap;
+                return BitmapFactory.decodeStream(input);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -48,7 +52,12 @@ class GleapRoundImageHandler extends AsyncTask<Void, Void, Bitmap> {
     protected void onPostExecute(Bitmap result) {
         super.onPostExecute(result);
         try {
-            imageView.setImageBitmap(getRoundedCroppedBitmap(result, 500));
+            Bitmap croppedBitmap = getRoundedCroppedBitmap(result, 500);
+            if(this.imageLoaded != null) {
+                this.imageLoaded.invoke(croppedBitmap);
+            }
+            result.recycle();
+            imageView.setImageBitmap(croppedBitmap);
         }catch (Exception ex) {
 
         }
