@@ -1,9 +1,9 @@
 package io.gleap;
 
 import static io.gleap.GleapHelper.convertDpToPixel;
-
 import android.app.Activity;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -462,18 +462,24 @@ class GleapInvisibleActivityManger {
                 squareButton = new Button(local);
                 squareButton.setVisibility(View.INVISIBLE);
                 squareButton.setId(View.generateViewId());
-                squareButton.setPadding(100, 0, 100, 0);
+                int padding = 22;
+                squareButton.setPadding(convertDpToPixel(padding, local), 0, convertDpToPixel(padding, local), 0);
 
                 GradientDrawable gdDefault = new GradientDrawable();
                 gdDefault.setColor(Color.parseColor(GleapConfig.getInstance().getButtonColor()));
+                int corner = convertDpToPixel(10, local);
                 float[] corners = {
-                        20, 20, 20, 20, 0, 0, 0, 0
+                        corner, corner, corner, corner, 0, 0, 0, 0
                 };
                 gdDefault.setCornerRadii(corners);
 
+                squareButton.setAllCaps(false);
                 squareButton.setBackground(gdDefault);
                 squareButton.setText(GleapConfig.getInstance().getWidgetButtonText());
                 squareButton.setTextColor(Color.WHITE);
+                squareButton.setTypeface(Typeface.DEFAULT);
+
+
                 squareButton.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
@@ -497,12 +503,12 @@ class GleapInvisibleActivityManger {
                                 set.connect(relativeLayout.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, convertDpToPixel(20, local));
                                 set.connect(relativeLayout.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, 0);
                             } else if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.CLASSIC_LEFT) {
-                                relativeLayout.setPadding(0, width / 2 - height / 2, 0, 0);
+                                relativeLayout.setPadding(0, (width / 2 - height / 2) + 1, 0, 0);
                                 set.connect(relativeLayout.getId(), ConstraintSet.START, layout.getId(), ConstraintSet.START, 0);
                                 set.connect(relativeLayout.getId(), ConstraintSet.TOP, layout.getId(), ConstraintSet.TOP, width / 2);
                                 set.connect(relativeLayout.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, 0);
                             } else if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.CLASSIC_RIGHT) {
-                                relativeLayout.setPadding(0, width / 2 - height / 2, 0, 0);
+                                relativeLayout.setPadding(0, (width / 2 - height / 2) + 1, 0, 0);
                                 set.connect(relativeLayout.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, 0);
                                 set.connect(relativeLayout.getId(), ConstraintSet.TOP, layout.getId(), ConstraintSet.TOP, width / 2);
                                 set.connect(relativeLayout.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, 0);
@@ -522,16 +528,18 @@ class GleapInvisibleActivityManger {
                 } else if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.CLASSIC_LEFT) {
                     relativeLayout.setRotation(90);
                 }
+
                 //display button when its loaded
-                if (squareButton.getWidth() != 0) {
+                if (squareButton.getWidth() > 0) {
                     squareButton.setVisibility(View.VISIBLE);
                 }
+
                 layout.addView(relativeLayout);
                 addLayout(local);
             }
 
             if (relativeLayout.indexOfChild(imageButton) < 0) {
-                relativeLayout.addView(squareButton, 0, 100);
+                relativeLayout.addView(squareButton, 0, convertDpToPixel(36, local));
             }
         } catch (Exception ex) {
         }
