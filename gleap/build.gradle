@@ -32,7 +32,7 @@ android {
         minSdkVersion 21
         targetSdkVersion 31
         versionCode 80603
-        versionName "8.6.3-Beta"
+        versionName "8.6.3"
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }

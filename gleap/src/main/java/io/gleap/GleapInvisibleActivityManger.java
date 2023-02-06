@@ -65,13 +65,12 @@ class GleapInvisibleActivityManger {
     public void setVisible() {
         if (relativeLayout != null && !GleapConfig.getInstance().isHideWidget()) {
             relativeLayout.setVisibility(View.VISIBLE);
-            relativeLayout.setVisibility(View.VISIBLE);
             render(null, true);
         }
     }
 
     public void render(Activity activity, boolean force) {
-        if(force) {
+        if (force) {
             isForce = true;
         }
         if (activity == null) {
@@ -84,7 +83,6 @@ class GleapInvisibleActivityManger {
         if (activity.getClass().getSimpleName().contains("Gleap")) {
             return;
         }
-
 
 
         if (this.layout == null) {
@@ -102,7 +100,7 @@ class GleapInvisibleActivityManger {
                         return;
                     }
 
-                    if (chatMessages == null ) {
+                    if (chatMessages == null) {
                         chatMessages = new LinearLayout(local);
                         chatMessages.setId(View.generateViewId());
                         chatMessages.setOrientation(LinearLayout.VERTICAL);
@@ -180,7 +178,7 @@ class GleapInvisibleActivityManger {
                         RelativeLayout view = new RelativeLayout(local.getApplication().getApplicationContext());
                         view.addView(close, convertDpToPixel(18, local), convertDpToPixel(18, local));
                         view.setBackground(gradientDrawable);
-                        view.setPadding(15,15,15,15);
+                        view.setPadding(15, 15, 15, 15);
                         buttonContainer.addView(view);
 
                         chatMessages.addView(buttonContainer);
@@ -218,7 +216,7 @@ class GleapInvisibleActivityManger {
                         layout.addView(chatMessages);
                     }
 
-                    if(isForce) {
+                    if (isForce) {
                         isForce = false;
                         addLayout(local);
                     }
@@ -343,12 +341,12 @@ class GleapInvisibleActivityManger {
                             }
                         } else {
                             if (relativeLayout != null) {
-                                relativeLayout.setVisibility(View.GONE);
+                                relativeLayout.setVisibility(View.INVISIBLE);
                             }
                         }
                     } else {
                         if (relativeLayout != null) {
-                            relativeLayout.setVisibility(View.GONE);
+                            relativeLayout.setVisibility(View.INVISIBLE);
                         }
                     }
                 }
@@ -462,6 +460,7 @@ class GleapInvisibleActivityManger {
 
             if (squareButton == null) {
                 squareButton = new Button(local);
+                squareButton.setVisibility(View.INVISIBLE);
                 squareButton.setId(View.generateViewId());
                 squareButton.setPadding(100, 0, 100, 0);
 
@@ -474,6 +473,7 @@ class GleapInvisibleActivityManger {
 
                 squareButton.setBackground(gdDefault);
                 squareButton.setText(GleapConfig.getInstance().getWidgetButtonText());
+                squareButton.setTextColor(Color.WHITE);
                 squareButton.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
@@ -487,7 +487,7 @@ class GleapInvisibleActivityManger {
                 squareButton.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
                     @Override
                     public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
-                        if(!attached) {
+                        if (!attached) {
                             int height = squareButton.getHeight();
                             int width = squareButton.getWidth();
                             ConstraintSet set = new ConstraintSet();
@@ -507,7 +507,6 @@ class GleapInvisibleActivityManger {
                                 set.connect(relativeLayout.getId(), ConstraintSet.TOP, layout.getId(), ConstraintSet.TOP, width / 2);
                                 set.connect(relativeLayout.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, 0);
                             }
-
                             set.applyTo(layout);
                             attached = true;
                         }
@@ -520,9 +519,13 @@ class GleapInvisibleActivityManger {
             if (layout.indexOfChild(relativeLayout) < 0) {
                 if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.CLASSIC_RIGHT) {
                     relativeLayout.setRotation(-90);
-                }
-                if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.CLASSIC_LEFT) {
+                } else if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.CLASSIC_LEFT) {
                     relativeLayout.setRotation(90);
+                } else {
+                    //trigger only when the button is layouted
+                    if (squareButton.getWidth() != 0) {
+                        squareButton.setVisibility(View.VISIBLE);
+                    }
                 }
 
                 layout.addView(relativeLayout);
