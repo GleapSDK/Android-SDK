@@ -43,6 +43,7 @@ class GleapInvisibleActivityManger {
     private int prevMessageCounter = -1;
     boolean showFab = false;
     boolean isForce = true;
+    boolean attached = false;
 
     private GleapInvisibleActivityManger() {
         messages = new LinkedList<>();
@@ -339,7 +340,6 @@ class GleapInvisibleActivityManger {
                         if (showFabIn) {
                             if (relativeLayout != null) {
                                 relativeLayout.setVisibility(View.VISIBLE);
-                                //GleapConfig.getInstance().setHideWidget(false);
                             }
                         } else {
                             if (relativeLayout != null) {
@@ -483,30 +483,34 @@ class GleapInvisibleActivityManger {
                         }
                     }
                 });
+
                 squareButton.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
                     @Override
                     public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
-                        int width = squareButton.getWidth();
-                        int height = squareButton.getHeight();
-                        ConstraintSet set = new ConstraintSet();
-                        set.clone(layout);
+                        if(!attached) {
+                            int height = squareButton.getHeight();
+                            int width = squareButton.getWidth();
+                            ConstraintSet set = new ConstraintSet();
+                            set.clone(layout);
 
-                        if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.CLASSIC_BOTTOM) {
-                            set.connect(relativeLayout.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, convertDpToPixel(20, local));
-                            set.connect(relativeLayout.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, 0);
-                        } else if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.CLASSIC_LEFT) {
-                            relativeLayout.setPadding(0, height,0,0);
-                            set.connect(relativeLayout.getId(), ConstraintSet.START, layout.getId(), ConstraintSet.START, 0);
-                            set.connect(relativeLayout.getId(), ConstraintSet.TOP, layout.getId(), ConstraintSet.TOP, 0);
-                            set.connect(relativeLayout.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, 0);
-                        } else if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.CLASSIC_RIGHT) {
-                            relativeLayout.setPadding(0, height,0,0);
-                            set.connect(relativeLayout.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, 0);
-                            set.connect(relativeLayout.getId(), ConstraintSet.TOP, layout.getId(), ConstraintSet.TOP, 0);
-                            set.connect(relativeLayout.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, 0);
+                            if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.CLASSIC_BOTTOM) {
+                                set.connect(relativeLayout.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, convertDpToPixel(20, local));
+                                set.connect(relativeLayout.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, 0);
+                            } else if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.CLASSIC_LEFT) {
+                                relativeLayout.setPadding(0, width / 2 - height / 2, 0, 0);
+                                set.connect(relativeLayout.getId(), ConstraintSet.START, layout.getId(), ConstraintSet.START, 0);
+                                set.connect(relativeLayout.getId(), ConstraintSet.TOP, layout.getId(), ConstraintSet.TOP, width / 2);
+                                set.connect(relativeLayout.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, 0);
+                            } else if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.CLASSIC_RIGHT) {
+                                relativeLayout.setPadding(0, width / 2 - height / 2, 0, 0);
+                                set.connect(relativeLayout.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, 0);
+                                set.connect(relativeLayout.getId(), ConstraintSet.TOP, layout.getId(), ConstraintSet.TOP, width / 2);
+                                set.connect(relativeLayout.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, 0);
+                            }
+
+                            set.applyTo(layout);
+                            attached = true;
                         }
-
-                        set.applyTo(layout);
                     }
                 });
             }
@@ -525,10 +529,9 @@ class GleapInvisibleActivityManger {
                 addLayout(local);
             }
 
-
-            relativeLayout.addView(squareButton);
-
-
+            if (relativeLayout.indexOfChild(imageButton) < 0) {
+                relativeLayout.addView(squareButton, 0, 100);
+            }
         } catch (Exception ex) {
         }
     }
