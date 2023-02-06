@@ -521,13 +521,11 @@ class GleapInvisibleActivityManger {
                     relativeLayout.setRotation(-90);
                 } else if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.CLASSIC_LEFT) {
                     relativeLayout.setRotation(90);
-                } else {
-                    //trigger only when the button is layouted
-                    if (squareButton.getWidth() != 0) {
-                        squareButton.setVisibility(View.VISIBLE);
-                    }
                 }
-
+                //display button when its loaded
+                if (squareButton.getWidth() != 0) {
+                    squareButton.setVisibility(View.VISIBLE);
+                }
                 layout.addView(relativeLayout);
                 addLayout(local);
             }
