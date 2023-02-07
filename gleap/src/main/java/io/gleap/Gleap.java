@@ -125,6 +125,7 @@ public class Gleap implements iGleap {
      *
      * @author Gleap
      */
+    @Override
     public void setDisableInAppNotifications(boolean disableInAppNotifications) {
         GleapEventService.getInstance().setDisableInAppNotifications(disableInAppNotifications);
     }

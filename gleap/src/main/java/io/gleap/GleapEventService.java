@@ -262,7 +262,20 @@ class GleapEventService {
             for (int i = 0; i < actions.length(); i++) {
                 JSONObject currentAction = actions.getJSONObject(i);
                 if (currentAction.has("actionType")) {
-                    if (currentAction.getString("format").contains("survey")) {
+                    if (currentAction.getString("actionType").contains("notification")) {
+                        // In app notification.
+                        if (!this.disableInAppNotifications) {
+                            JSONObject messageData = currentAction.getJSONObject("data");
+                            GleapChatMessage comment = createComment(messageData);
+                            GleapInvisibleActivityManger.getInstance().addComment(comment);
+                        }
+                    } else if (currentAction.getString("actionType").contains("survey")) {
+                        // Survey.
+                        SurveyType surveyType = SurveyType.SURVEY;
+                        if (currentAction.getString("format").contains("survey_full")) {
+                            surveyType = SurveyType.SURVEY_FULL;
+                        }
+
                         JSONObject jsonObject = new JSONObject();
                         try {
                             jsonObject.put("isSurvey", true);
@@ -271,29 +284,12 @@ class GleapEventService {
                             jsonObject.put("flow", currentAction.getString("actionType"));
                         } catch (Exception ex) {
                         }
-                        
+
                         // Check if it is open
                         GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("start-survey", jsonObject));
-                        Gleap.getInstance().open(SurveyType.SURVEY);
-
-                    } else if (!currentAction.getString("format").contains("widget")) {
-                        JSONObject jsonObject = new JSONObject();
-                        try {
-                            jsonObject.put("isSurvey", false);
-                            jsonObject.put("hideBackButton", true);
-                            jsonObject.put("format", currentAction.getString("format"));
-                            jsonObject.put("flow", currentAction.getString("actionType"));
-                        } catch (Exception ex) {
-                        }
-                        GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("start-feedbackflow", jsonObject));
-                        Gleap.getInstance().open();
-                    }
-                    
-                    // Generates comment based on incoming message
-                    if (!this.disableInAppNotifications && currentAction.getString("actionType").contains("notification")) {
-                        JSONObject messageData = currentAction.getJSONObject("data");
-                        GleapChatMessage comment = createComment(messageData);
-                        GleapInvisibleActivityManger.getInstance().addComment(comment);
+                        Gleap.getInstance().open(surveyType);
+                    } else {
+                        // Unknown action.
                     }
                 }
             }

@@ -35,6 +35,13 @@ interface iGleap {
     void open() throws GleapNotInitialisedException;
 
     /**
+     * Disable in-app notifications. This is useful, when you want to use your own in-app notifications UI.
+     *
+     * @author Gleap
+     */
+    void setDisableInAppNotifications(boolean disableInAppNotifications);
+
+    /**
      * Manually shows the news section
      *
      * @throws GleapNotInitialisedException thrown when Gleap is not initialised
