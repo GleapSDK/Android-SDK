@@ -17,6 +17,7 @@ import android.os.Looper;
 import android.util.Base64;
 import android.view.View;
 import android.view.Window;
+import android.view.WindowManager;
 import android.webkit.ConsoleMessage;
 import android.webkit.JavascriptInterface;
 import android.webkit.JsPromptResult;
@@ -89,6 +90,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
     protected void onCreate(Bundle savedInstanceState) {
         try {
             this.requestWindowFeature(Window.FEATURE_NO_TITLE);
+            getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
             try {
                 if (getSupportActionBar() != null) {
                     getSupportActionBar().hide();
