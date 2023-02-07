@@ -27,6 +27,7 @@ import javax.net.ssl.HttpsURLConnection;
 class GleapEventService {
     private GleapArrayHelper<JSONObject> gleapArrayHelper;
     private static GleapEventService instance;
+    private boolean disableInAppNotifications = false;
     private int time = GleapConfig.getInstance().getResceduleEventStreamDurationShort();
     private List<JSONObject> eventsToBeSent = new ArrayList<>();
 
@@ -51,12 +52,16 @@ class GleapEventService {
 
         sendInitialMessage();
     }
-
+    
     public static GleapEventService getInstance() {
         if (instance == null) {
             instance = new GleapEventService();
         }
         return instance;
+    }
+
+    public void setDisableInAppNotifications(boolean disableInAppNotifications) {
+        this.disableInAppNotifications = disableInAppNotifications;
     }
 
     public void refresh() {
@@ -266,7 +271,8 @@ class GleapEventService {
                             jsonObject.put("flow", currentAction.getString("actionType"));
                         } catch (Exception ex) {
                         }
-                        //check if it isopen
+                        
+                        // Check if it is open
                         GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("start-survey", jsonObject));
                         Gleap.getInstance().open(SurveyType.SURVEY);
 
@@ -282,8 +288,9 @@ class GleapEventService {
                         GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("start-feedbackflow", jsonObject));
                         Gleap.getInstance().open();
                     }
-                    if (currentAction.getString("actionType").contains("notification")) {
-                        //generates comment based on incoming message
+                    
+                    // Generates comment based on incoming message
+                    if (!this.disableInAppNotifications && currentAction.getString("actionType").contains("notification")) {
                         JSONObject messageData = currentAction.getJSONObject("data");
                         GleapChatMessage comment = createComment(messageData);
                         GleapInvisibleActivityManger.getInstance().addComment(comment);

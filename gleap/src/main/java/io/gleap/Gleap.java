@@ -120,6 +120,15 @@ public class Gleap implements iGleap {
         open(SurveyType.NONE);
     }
 
+    /**
+     * Disable in-app notifications. This is useful, when you want to use your own in-app notifications UI.
+     *
+     * @author Gleap
+     */
+    public void setDisableInAppNotifications(boolean disableInAppNotifications) {
+        GleapEventService.getInstance().setDisableInAppNotifications(disableInAppNotifications);
+    }
+
     protected void open(SurveyType type) {
         try {
             ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
