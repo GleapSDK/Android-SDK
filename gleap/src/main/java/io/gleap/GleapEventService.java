@@ -269,7 +269,7 @@ class GleapEventService {
                             GleapChatMessage comment = createComment(messageData);
                             GleapInvisibleActivityManger.getInstance().addComment(comment);
                         }
-                    } else if (currentAction.getString("actionType").contains("survey")) {
+                    } else if (currentAction.getString("format").contains("survey")) {
                         // Survey.
                         SurveyType surveyType = SurveyType.SURVEY;
                         if (currentAction.getString("format").contains("survey_full")) {
