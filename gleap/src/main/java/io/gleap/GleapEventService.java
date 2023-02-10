@@ -251,6 +251,9 @@ class GleapEventService {
     }
 
     private void processData(JSONObject data) throws Exception {
+        //String type, String text, String shareToken, GleapSender sender, String newsId, String image
+        GleapChatMessage message = new GleapChatMessage("notification", "HEy you", "", new GleapSender("Niklas", "https://cdn.gleap.io/static/1676013997685-2b196f6b-a7d7-49bd-a9eb-bc6d56cd0d85.jpeg"), "","");
+        GleapInvisibleActivityManger.getInstance().addComment(message);
         if (data.has("u")) {
             GleapInvisibleActivityManger.getInstance().setMessageCounter(data.getInt("u"));
             GleapInvisibleActivityManger.getInstance().addFab(null);

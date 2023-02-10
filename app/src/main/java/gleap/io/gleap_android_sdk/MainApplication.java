@@ -29,7 +29,6 @@ public class MainApplication extends Application {
                 "#Beste"
         });
 
-
         Gleap.getInstance().setRegisterPushMessageGroupCallback(new RegisterPushMessageGroupCallback() {
             @Override
             public void invoke(String pushMessageGroup) {

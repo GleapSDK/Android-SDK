@@ -173,6 +173,7 @@ class GleapConfig {
                             GleapInvisibleActivityManger.getInstance().setShowFab(true);
                             break;
                         default:
+                            this.widgetPosition = WidgetPosition.HIDDEN;
                             GleapInvisibleActivityManger.getInstance().setShowFab(false);
                             hideWidget = true;
                             break;

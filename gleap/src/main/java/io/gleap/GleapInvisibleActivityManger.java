@@ -1,6 +1,7 @@
 package io.gleap;
 
 import static io.gleap.GleapHelper.convertDpToPixel;
+
 import android.app.Activity;
 import android.graphics.Color;
 import android.graphics.Typeface;
@@ -114,28 +115,29 @@ class GleapInvisibleActivityManger {
                         int offsetX = GleapConfig.getInstance().getButtonX();
                         int offsetY = GleapConfig.getInstance().getButtonY();
 
-                        if (relativeLayout != null) {
-                            if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.CLASSIC_LEFT || GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.CLASSIC_RIGHT) {
-                                set.connect(chatMessages.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, convertDpToPixel(offsetY, local));
-                            } else {
-                                set.connect(chatMessages.getId(), ConstraintSet.BOTTOM, relativeLayout.getId(), ConstraintSet.TOP, convertDpToPixel(10, ActivityUtil.getCurrentActivity()));
-                            }
-                        } else {
+                        if(relativeLayout == null) {
                             set.connect(chatMessages.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, 0);
-                        }
-
-                        if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.BOTTOM_RIGHT || GleapConfig.getInstance().getWidgetPositionType() == WidgetPositionType.CLASSIC) {
-                            chatMessages.setGravity(Gravity.RIGHT);
-                            if (relativeLayout != null) {
-                                //TODO: pass the offset??
+                        }else {
+                            if(GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.BOTTOM_LEFT) {
+                                set.connect(chatMessages.getId(), ConstraintSet.BOTTOM, relativeLayout.getId(), ConstraintSet.TOP, convertDpToPixel(10, local));
+                                set.connect(chatMessages.getId(), ConstraintSet.START, layout.getId(), ConstraintSet.START, convertDpToPixel(offsetX, local));
+                            } else if(GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.BOTTOM_RIGHT) {
+                                set.connect(chatMessages.getId(), ConstraintSet.BOTTOM, relativeLayout.getId(), ConstraintSet.TOP, convertDpToPixel(10, local));
+                                set.connect(chatMessages.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, convertDpToPixel(offsetX - 20, local));
+                            } else if(GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.CLASSIC_LEFT) {
+                                set.connect(chatMessages.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, convertDpToPixel(offsetY, local));
+                                set.connect(chatMessages.getId(), ConstraintSet.START, layout.getId(), ConstraintSet.START, convertDpToPixel(offsetY, local));
+                                chatMessages.setGravity(Gravity.RIGHT);
+                            } else if(GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.CLASSIC_BOTTOM) {
+                                set.connect(chatMessages.getId(), ConstraintSet.BOTTOM, relativeLayout.getId(), ConstraintSet.TOP, convertDpToPixel(10, local));
                                 set.connect(chatMessages.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, 0);
-                            } else {
-                                set.connect(chatMessages.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, convertDpToPixel(0, local));
+                            }else {
+                                //for hidden and Bottom right classic view
+                                set.connect(chatMessages.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, convertDpToPixel(offsetY, local));
+                                set.connect(chatMessages.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, 0);
+                                chatMessages.setGravity(Gravity.RIGHT);
                             }
-                        } else {
-                            set.connect(chatMessages.getId(), ConstraintSet.START, layout.getId(), ConstraintSet.START, convertDpToPixel(offsetX + 5, local));
                         }
-
                         set.applyTo(layout);
                     }
 
@@ -192,7 +194,7 @@ class GleapInvisibleActivityManger {
 
                                     cardView.setBackgroundResource(R.drawable.rounded_corner);
                                     LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-                                    params.setMargins(convertDpToPixel(20, local), convertDpToPixel(0, local), convertDpToPixel(20, local), convertDpToPixel(15, local));
+                                    params.setMargins(convertDpToPixel(1, local), convertDpToPixel(0, local), convertDpToPixel(20, local), convertDpToPixel(15, local));
                                     cardView.setLayoutParams(params);
 
                                     cardView.setElevation(4f);
@@ -204,7 +206,6 @@ class GleapInvisibleActivityManger {
                                 }
                             }
                         }
-
                         chatMessages.addView(listMessage);
                     }
 
@@ -431,13 +432,13 @@ class GleapInvisibleActivityManger {
             ConstraintSet set = new ConstraintSet();
             set.clone(layout);
 
-            int offsetX = GleapConfig.getInstance().getButtonX();
+            int offsetX = GleapConfig.getInstance().getButtonX() + 20;
             int offsetY = GleapConfig.getInstance().getButtonY();
 
             if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.BOTTOM_RIGHT) {
-                set.connect(relativeLayout.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, convertDpToPixel(offsetX, local));
+                set.connect(relativeLayout.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, convertDpToPixel(offsetX - 20, local));
             } else {
-                set.connect(relativeLayout.getId(), ConstraintSet.START, layout.getId(), ConstraintSet.START, convertDpToPixel(offsetX, local));
+                set.connect(relativeLayout.getId(), ConstraintSet.START, layout.getId(), ConstraintSet.START, convertDpToPixel(offsetX - 20, local));
             }
             set.connect(relativeLayout.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, convertDpToPixel(offsetY, local));
             set.applyTo(layout);

@@ -219,9 +219,7 @@ class GleapChatMessage {
         cardView.addView(completeMessage);
 
         ImageView avatarImage = new ImageView(local.getApplication().getApplicationContext());
-        avatarImage.setPadding(0, 0, convertDpToPixel(7, local), 0);
 
-        avatarImage.setLayoutParams(paramsBubble);
         if(this.avatarBitmap == null) {
             new GleapRoundImageHandler(getSender().getProfileImageUrl(), avatarImage, new GleapImageLoaded() {
                 @Override
@@ -257,15 +255,26 @@ class GleapChatMessage {
         });
 
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        params.setMargins(convertDpToPixel(0, local), convertDpToPixel(5, local), convertDpToPixel(0, local), convertDpToPixel(5, local));
 
         LinearLayout messageContainer = new LinearLayout(local.getApplication().getApplicationContext());
-        messageContainer.addView(avatarImage, convertDpToPixel(40, local), convertDpToPixel(40, local));
+        CardView rounded = new CardView(local.getApplication().getApplicationContext());
+        rounded.setRadius(convertDpToPixel(40, local)/2);
+        avatarImage.setAdjustViewBounds(true);
+        avatarImage.setScaleType(ImageView.ScaleType.FIT_XY);
+        rounded.addView(avatarImage, convertDpToPixel(40, local), convertDpToPixel(40, local));
+
+        messageContainer.addView(rounded);
         messageContainer.addView(cardView);
+        rounded.setElevation(4f);
+        LinearLayout.LayoutParams paramsAvatar = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        paramsAvatar.setMargins(convertDpToPixel(1, local), convertDpToPixel(10, local), 0, convertDpToPixel(10, local));
+        rounded.setLayoutParams(paramsAvatar);
 
         messageContainer.setGravity(Gravity.RIGHT | Gravity.BOTTOM);
         messageContainer.setOrientation(LinearLayout.HORIZONTAL);
-        params.setMargins(convertDpToPixel(20, local), convertDpToPixel(0, local), convertDpToPixel(5, local), convertDpToPixel(0, local));
+        if(GleapConfig.getInstance().getWidgetPosition() != WidgetPosition.CLASSIC_LEFT && GleapConfig.getInstance().getWidgetPosition() != WidgetPosition.BOTTOM_LEFT) {
+            params.setMargins(convertDpToPixel(20, local), convertDpToPixel(0, local), convertDpToPixel(5, local), convertDpToPixel(0, local));
+        }
         messageContainer.setLayoutParams(params);
 
         return messageContainer;
