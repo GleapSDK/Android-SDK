@@ -185,6 +185,9 @@ class HttpHelper extends AsyncTask<GleapBug, Void, JSONObject> {
         }
 */
         body.put("outbound", gleapBug.getOutboubdId());
+        if(!gleapBug.getOutboubdId().equals("")) {
+            gleapBug.setOutboubdId("bugreporting");
+        }
         body.put("spamToken", gleapBug.getSpamToken());
 
         if (!stripImages) {
