@@ -37,7 +37,6 @@ class GleapChatMessage {
     private Bitmap avatarBitmap = null;
     private Bitmap topImageBitmap = null;
 
-
     public GleapChatMessage(String type, String text, String shareToken, GleapSender sender, String newsId, String image) {
         this.sender = sender;
         this.type = type;
@@ -112,14 +111,20 @@ class GleapChatMessage {
         LinearLayout.LayoutParams avatarParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         avatarParams.setMargins(convertDpToPixel(5, local), convertDpToPixel(7, local), convertDpToPixel(5, local), convertDpToPixel(7, local));
 
-        avatarImage.setLayoutParams(avatarParams);
-        new GleapRoundImageHandler(getSender().getProfileImageUrl(), avatarImage,new GleapImageLoaded() {
-            @Override
-            public void invoke(Bitmap bitmap) {
-                avatarBitmap = bitmap;
-                completeMessage.setVisibility(View.VISIBLE);
-            }
-        }).execute();
+        if(avatarBitmap == null) {
+            avatarImage.setLayoutParams(avatarParams);
+            new GleapRoundImageHandler(getSender().getProfileImageUrl(), avatarImage, new GleapImageLoaded() {
+                @Override
+                public void invoke(Bitmap bitmap) {
+                    avatarBitmap = bitmap;
+                    completeMessage.setVisibility(View.VISIBLE);
+                }
+            }).execute();
+
+        }else{
+            avatarImage.setImageBitmap(this.avatarBitmap);
+            completeMessage.setVisibility(View.VISIBLE);
+        }
 
         float width = getScreenWidth() * 9 / 10;
         if (width > convertDpToPixel(320, activity)) {
@@ -197,7 +202,7 @@ class GleapChatMessage {
         TextView messageComponent = new TextView(local.getApplication().getApplicationContext());
         messageComponent.setId(View.generateViewId());
         messageComponent.setText(getText().replace("{{name}}", getName()));
-        messageComponent.setTextSize(13);
+        messageComponent.setTextSize(14);
 
         completeMessage.setOrientation(LinearLayout.VERTICAL);
         completeMessage.addView(titleComponent);
@@ -206,13 +211,13 @@ class GleapChatMessage {
         completeMessage.setBackgroundResource(R.drawable.chatbubble);
 
         completeMessage.setBaselineAligned(true);
-        completeMessage.setPadding(convertDpToPixel(15, local), convertDpToPixel(10, local), convertDpToPixel(15, local), convertDpToPixel(10, local));
+        completeMessage.setPadding(convertDpToPixel(17, local), convertDpToPixel(13, local), convertDpToPixel(17, local), convertDpToPixel(13, local));
 
         CardView cardView = new CardView(local.getApplication().getApplicationContext());
 
         cardView.setBackgroundResource(R.drawable.rounded_corner);
         LinearLayout.LayoutParams paramsBubble = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        paramsBubble.setMargins(convertDpToPixel(5, local), convertDpToPixel(10, local), convertDpToPixel(15, local), convertDpToPixel(10, local));
+        paramsBubble.setMargins(convertDpToPixel(5, local), convertDpToPixel(9, local), convertDpToPixel(15, local), convertDpToPixel(1, local));
         cardView.setLayoutParams(paramsBubble);
 
         cardView.setElevation(4f);
@@ -220,17 +225,15 @@ class GleapChatMessage {
 
         ImageView avatarImage = new ImageView(local.getApplication().getApplicationContext());
 
-        if(this.avatarBitmap == null) {
-            new GleapRoundImageHandler(getSender().getProfileImageUrl(), avatarImage, new GleapImageLoaded() {
+            avatarImage.setAdjustViewBounds(true);
+            new GleapImageHandler(getSender().getProfileImageUrl(), avatarImage, new GleapImageLoaded() {
                 @Override
                 public void invoke(Bitmap bitmap) {
                     avatarBitmap = bitmap;
                     completeMessage.setVisibility(View.VISIBLE);
                 }
             }).execute();
-        }else {
-            avatarImage.setImageBitmap(avatarBitmap);
-        }
+
 
         completeMessage.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -258,16 +261,14 @@ class GleapChatMessage {
 
         LinearLayout messageContainer = new LinearLayout(local.getApplication().getApplicationContext());
         CardView rounded = new CardView(local.getApplication().getApplicationContext());
-        rounded.setRadius(convertDpToPixel(40, local)/2);
-        avatarImage.setAdjustViewBounds(true);
-        avatarImage.setScaleType(ImageView.ScaleType.FIT_XY);
-        rounded.addView(avatarImage, convertDpToPixel(40, local), convertDpToPixel(40, local));
+        rounded.setRadius(convertDpToPixel(32, local)/2);
+        rounded.addView(avatarImage, convertDpToPixel(28, local), convertDpToPixel(28, local));
 
         messageContainer.addView(rounded);
         messageContainer.addView(cardView);
         rounded.setElevation(4f);
         LinearLayout.LayoutParams paramsAvatar = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        paramsAvatar.setMargins(convertDpToPixel(1, local), convertDpToPixel(10, local), 0, convertDpToPixel(10, local));
+        paramsAvatar.setMargins(convertDpToPixel(1, local), convertDpToPixel(10, local), convertDpToPixel(6, local), convertDpToPixel(1, local));
         rounded.setLayoutParams(paramsAvatar);
 
         messageContainer.setGravity(Gravity.RIGHT | Gravity.BOTTOM);
@@ -275,8 +276,8 @@ class GleapChatMessage {
         if(GleapConfig.getInstance().getWidgetPosition() != WidgetPosition.CLASSIC_LEFT && GleapConfig.getInstance().getWidgetPosition() != WidgetPosition.BOTTOM_LEFT) {
             params.setMargins(convertDpToPixel(20, local), convertDpToPixel(0, local), convertDpToPixel(5, local), convertDpToPixel(0, local));
         }
-        messageContainer.setLayoutParams(params);
 
+        messageContainer.setLayoutParams(params);
         return messageContainer;
     }
 

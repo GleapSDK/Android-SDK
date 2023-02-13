@@ -164,7 +164,7 @@ class GleapInvisibleActivityManger {
                         buttonContainer.setGravity(Gravity.RIGHT);
 
                         LinearLayout.LayoutParams closeContainerParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
-                        closeContainerParams.setMargins(convertDpToPixel(20, local), convertDpToPixel(0, local), convertDpToPixel(20, local), convertDpToPixel(15, local));
+                        closeContainerParams.setMargins(convertDpToPixel(20, local), convertDpToPixel(0, local), convertDpToPixel(20, local),0);
                         buttonContainer.setLayoutParams(closeContainerParams);
 
                         close.setBackgroundResource(R.drawable.close_white);
@@ -185,6 +185,8 @@ class GleapInvisibleActivityManger {
 
                         chatMessages.addView(buttonContainer);
                         listMessage.setGravity(Gravity.RIGHT);
+                        //counter if first message
+                        int counter = 0;
                         for (GleapChatMessage comment :
                                 messages) {
                             LinearLayout commentComponent = comment.getComponent(local);
@@ -194,7 +196,12 @@ class GleapInvisibleActivityManger {
 
                                     cardView.setBackgroundResource(R.drawable.rounded_corner);
                                     LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-                                    params.setMargins(convertDpToPixel(1, local), convertDpToPixel(0, local), convertDpToPixel(20, local), convertDpToPixel(15, local));
+                                    if(counter == 0) {
+                                        params.setMargins(convertDpToPixel(1, local), convertDpToPixel(10, local), convertDpToPixel(20, local), convertDpToPixel(15, local));
+                                    }else {
+                                        params.setMargins(convertDpToPixel(1, local), convertDpToPixel(0, local), convertDpToPixel(20, local), convertDpToPixel(15, local));
+                                    }
+                                    counter++;
                                     cardView.setLayoutParams(params);
 
                                     cardView.setElevation(4f);

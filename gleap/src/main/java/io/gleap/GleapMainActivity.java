@@ -90,8 +90,8 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
     protected void onCreate(Bundle savedInstanceState) {
         try {
             this.requestWindowFeature(Window.FEATURE_NO_TITLE);
-            getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
             try {
+                getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
                 if (getSupportActionBar() != null) {
                     getSupportActionBar().hide();
                 }
