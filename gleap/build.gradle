@@ -26,13 +26,13 @@ android {
     lintOptions {
         abortOnError false
     }
-    compileSdkVersion 31
+    compileSdkVersion 33
 
     defaultConfig {
         minSdkVersion 21
-        targetSdkVersion 31
-        versionCode 90001
-        versionName "9.0.1"
+        targetSdkVersion 33
+        versionCode 90003
+        versionName "9.0.3"
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }

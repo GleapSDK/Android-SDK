@@ -10,6 +10,8 @@ import android.os.Build;
 import android.os.Handler;
 import android.provider.MediaStore;
 
+import androidx.annotation.RequiresApi;
+
 import java.util.Locale;
 
 class ScreenshotGestureDetector extends GleapDetector {
@@ -42,6 +44,23 @@ class ScreenshotGestureDetector extends GleapDetector {
         this.takeScreenshot();
     }
 
+    private static String storge_permissions =
+            Manifest.permission.READ_EXTERNAL_STORAGE;
+
+    @RequiresApi(api = Build.VERSION_CODES.TIRAMISU)
+    private static String storge_permissions_33 =
+            Manifest.permission.READ_MEDIA_IMAGES;
+
+    private static String permissions() {
+        String p;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            p = storge_permissions_33;
+        } else {
+            p = storge_permissions;
+        }
+        return p;
+    }
+
     private final ContentObserver contentObserver = new ContentObserver(new Handler()) {
         @Override
         public boolean deliverSelfNotifications() {
@@ -52,8 +71,8 @@ class ScreenshotGestureDetector extends GleapDetector {
         public void onChange(boolean selfChange) {
             super.onChange(selfChange);
             try {
-           //     startBugReporting();
-            }catch (Exception ex) {
+                //  startBugReporting();
+            } catch (Exception ex) {
                 ex.printStackTrace();
                 GleapDetectorUtil.resumeAllDetectors();
             }
@@ -63,7 +82,7 @@ class ScreenshotGestureDetector extends GleapDetector {
         public void onChange(boolean selfChange, Uri uri) {
             super.onChange(selfChange, uri);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                if(application.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+                if (application.checkSelfPermission(permissions()) == PackageManager.PERMISSION_GRANTED) {
                     try {
                         if (uri.toString().matches(MediaStore.Images.Media.EXTERNAL_CONTENT_URI.toString() + "/[0-9]+")) {
 
@@ -74,8 +93,8 @@ class ScreenshotGestureDetector extends GleapDetector {
                                         MediaStore.Images.Media.DATA
                                 }, null, null, null);
                                 if (cursor != null && cursor.moveToFirst()) {
-                                     final String path = cursor.getString(Math.max(cursor.getColumnIndex(MediaStore.Images.Media.DATA), 0));
-                                    if(path.toLowerCase(Locale.ROOT).contains("screenshot")) {
+                                    final String path = cursor.getString(Math.max(cursor.getColumnIndex(MediaStore.Images.Media.DATA), 0));
+                                    if (path.toLowerCase(Locale.ROOT).contains("screenshot")) {
                                         startBugReporting();
                                     }
                                 }
@@ -91,9 +110,10 @@ class ScreenshotGestureDetector extends GleapDetector {
                 } else {
                     try {
                         startBugReporting();
-                    }catch (Exception ex) {}
+                    } catch (Exception ex) {
+                    }
                 }
             }
-            }
-        };
+        }
+    };
 }

@@ -1,20 +1,50 @@
 package gleap.io.gleap_android_sdk;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.view.View;
+import android.widget.Toast;
+
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.charset.Charset;
 
 import io.gleap.Gleap;
 import io.gleap.SurveyType;
 
 
 public class MainActivity extends AppCompatActivity {
+    public static String[] storge_permissions = {
+            Manifest.permission.READ_EXTERNAL_STORAGE
+    };
+
+    @RequiresApi(api = Build.VERSION_CODES.TIRAMISU)
+    public static String[] storge_permissions_33 = {
+            Manifest.permission.READ_MEDIA_IMAGES,
+    };
+
+    public static String[] permissions() {
+        String[] p;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            p = storge_permissions_33;
+        } else {
+            p = storge_permissions;
+        }
+        return p;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,15 +59,31 @@ public class MainActivity extends AppCompatActivity {
                         Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE
                 };
                 ActivityCompat.requestPermissions(MainActivity.this, permissions, 101);*/
-               Gleap.getInstance().open();
+
+                String fileName = "random.txt";
+                try {
+                    FileOutputStream fileOutputStream;
+                    if (false) {
+                        fileOutputStream = MainActivity.this.openFileOutput(fileName.toString(), Context.MODE_PRIVATE);
+                    } else {
+                        File file = new File(MainActivity.this.getCacheDir(), fileName);
+                        fileOutputStream = new FileOutputStream(file);
+                    }
+                    fileOutputStream.write("fileContents.getText().toString()".getBytes(Charset.forName("UTF-8")));
+                    Toast.makeText(MainActivity.this, String.format("Write to file %s sucess", fileName), Toast.LENGTH_SHORT).show();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    Toast.makeText(MainActivity.this, String.format("Write to file %s failed", fileName), Toast.LENGTH_SHORT).show();
+                }
             }
         });
 
         findViewById(R.id.crash).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(MainActivity.this, SilentCrashReport.class);
-                startActivity(intent);
+                ActivityCompat.requestPermissions(MainActivity.this,
+                        permissions(),
+                        1);
             }
         });
 
