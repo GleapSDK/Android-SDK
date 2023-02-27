@@ -109,6 +109,66 @@ public class Gleap implements iGleap {
         }
     }
 
+    @Override
+    public void handlePushNotification(JSONObject notificationData) {
+        try {
+            String type ="";
+            String id = "";
+            if (notificationData.has("type")) {
+                type = notificationData.getString("type");
+            }
+            if (notificationData.has("id")) {
+                id = notificationData.getString("id");
+            }
+
+            switch (type) {
+                case "news":
+                    this.openNewsArticle(id, false);
+                    break;
+                case "conversation":
+                    this.openConversation(id);
+                    break;
+            }
+
+        }catch (Exception ex) {}
+    }
+
+    @Override
+    public void openConversation(String shareToken) {
+        try {
+            ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Handler mainHandler = new Handler(Looper.getMainLooper());
+                    Runnable gleapRunnable = new Runnable() {
+                        @Override
+                        public void run() throws RuntimeException {
+                            try {
+                                if (!GleapDetectorUtil.isIsRunning() && UserSessionController.getInstance() != null &&
+                                        UserSessionController.getInstance().isSessionLoaded() && instance != null) {
+                                    try {
+                                        if (screenshotTaker != null) {
+                                            JSONObject message = new JSONObject();
+                                            message.put("hideBackButton", false);
+                                            message.put("shareToken", shareToken);
+                                            GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("open-conversation", message));
+                                            screenshotTaker.takeScreenshot();
+                                        }
+                                    } catch (Exception e) {
+                                    }
+                                }
+                            } catch (Error | Exception ignore) {
+                            }
+                        }
+                    };
+                    mainHandler.post(gleapRunnable);
+                }
+            });
+        } catch (Error | Exception ignore) {
+        }
+
+    }
+
     /**
      * Manually shows the feedback menu or default feedback flow. This is used, when you use the activation method "NONE".
      *
@@ -569,13 +629,18 @@ public class Gleap implements iGleap {
                 });
             } catch (Exception ignore) {
             }
-            new GleapUserSessionLoader().execute();
-
+            GleapEventService.getInstance().stop();
+            GleapUserSessionLoader sessionLoader = new GleapUserSessionLoader();
+            sessionLoader.setCallback(new GleapUserSessionLoader.UserSessionLoadedCallback() {
+                @Override
+                public void invoke() {
+                    GleapEventService.getInstance().start();
+                }
+            });
+            sessionLoader.execute();
         } catch (Error | Exception ignore) {
+            System.out.println(ignore);
         }
-        GleapUserSessionLoader sessionLoader = new GleapUserSessionLoader();
-        sessionLoader.execute();
-
     }
 
     /**

@@ -10,6 +10,7 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -37,6 +38,7 @@ class GleapInvisibleActivityManger {
     private LinearLayout chatMessages;
     private ViewGroup prev;
     private ImageButton imageButton;
+    private RelativeLayout closeButtonContainer;
     private Button squareButton;
     private ConstraintLayout relativeLayout;
     private int prevSize = 0;
@@ -85,7 +87,6 @@ class GleapInvisibleActivityManger {
             return;
         }
 
-
         if (this.layout == null) {
             LayoutInflater inflater = activity.getLayoutInflater();
             this.layout = (ConstraintLayout) inflater.inflate(R.layout.activity_gleap_fab, null);
@@ -115,23 +116,23 @@ class GleapInvisibleActivityManger {
                         int offsetX = GleapConfig.getInstance().getButtonX();
                         int offsetY = GleapConfig.getInstance().getButtonY();
 
-                        if(relativeLayout == null) {
+                        if (relativeLayout == null) {
                             set.connect(chatMessages.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, 0);
-                        }else {
-                            if(GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.BOTTOM_LEFT) {
+                        } else {
+                            if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.BOTTOM_LEFT) {
                                 set.connect(chatMessages.getId(), ConstraintSet.BOTTOM, relativeLayout.getId(), ConstraintSet.TOP, convertDpToPixel(10, local));
                                 set.connect(chatMessages.getId(), ConstraintSet.START, layout.getId(), ConstraintSet.START, convertDpToPixel(offsetX, local));
-                            } else if(GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.BOTTOM_RIGHT) {
+                            } else if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.BOTTOM_RIGHT) {
                                 set.connect(chatMessages.getId(), ConstraintSet.BOTTOM, relativeLayout.getId(), ConstraintSet.TOP, convertDpToPixel(10, local));
                                 set.connect(chatMessages.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, convertDpToPixel(offsetX - 20, local));
-                            } else if(GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.CLASSIC_LEFT) {
+                            } else if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.CLASSIC_LEFT) {
                                 set.connect(chatMessages.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, convertDpToPixel(offsetY, local));
                                 set.connect(chatMessages.getId(), ConstraintSet.START, layout.getId(), ConstraintSet.START, convertDpToPixel(offsetY, local));
                                 chatMessages.setGravity(Gravity.RIGHT);
-                            } else if(GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.CLASSIC_BOTTOM) {
+                            } else if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.CLASSIC_BOTTOM) {
                                 set.connect(chatMessages.getId(), ConstraintSet.BOTTOM, relativeLayout.getId(), ConstraintSet.TOP, convertDpToPixel(10, local));
                                 set.connect(chatMessages.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, 0);
-                            }else {
+                            } else {
                                 //for hidden and Bottom right classic view
                                 set.connect(chatMessages.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, convertDpToPixel(offsetY, local));
                                 set.connect(chatMessages.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, 0);
@@ -151,65 +152,71 @@ class GleapInvisibleActivityManger {
                         }
                         prevSize = messages.size();
                         //parent.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-                        chatMessages.removeAllViews();
 
-                        ImageButton close = new ImageButton(local.getApplication().getApplicationContext());
+                        if (closeButtonContainer == null || closeButtonContainer.getParent() == null) {
+                            ImageButton closeButton = new ImageButton(local.getApplication().getApplicationContext());
 
-                        GradientDrawable gradientDrawable = new GradientDrawable();
-                        gradientDrawable.setCornerRadius(1000);
-                        gradientDrawable.setColor(Color.parseColor("#878787"));
+                            GradientDrawable gradientDrawable = new GradientDrawable();
+                            gradientDrawable.setCornerRadius(1000);
+                            gradientDrawable.setColor(Color.parseColor("#878787"));
 
-                        RelativeLayout buttonContainer = new RelativeLayout(local.getApplication().getApplicationContext());
+                            closeButtonContainer = new RelativeLayout(local.getApplication().getApplicationContext());
 
-                        buttonContainer.setGravity(Gravity.RIGHT);
+                            closeButtonContainer.setGravity(Gravity.RIGHT);
 
-                        LinearLayout.LayoutParams closeContainerParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
-                        closeContainerParams.setMargins(convertDpToPixel(20, local), convertDpToPixel(0, local), convertDpToPixel(20, local),0);
-                        buttonContainer.setLayoutParams(closeContainerParams);
+                            LinearLayout.LayoutParams closeContainerParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
+                            closeContainerParams.setMargins(convertDpToPixel(20, local), convertDpToPixel(0, local), convertDpToPixel(20, local), 0);
+                            closeButtonContainer.setLayoutParams(closeContainerParams);
 
-                        close.setBackgroundResource(R.drawable.close_white);
+                            closeButton.setBackgroundResource(R.drawable.close_white);
 
-                        close.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View v) {
-                                clearMessages();
-                            }
-                        });
+                            closeButton.setOnClickListener(new View.OnClickListener() {
+                                @Override
+                                public void onClick(View v) {
+                                    clearMessages();
+                                }
+                            });
 
 
-                        RelativeLayout view = new RelativeLayout(local.getApplication().getApplicationContext());
-                        view.addView(close, convertDpToPixel(18, local), convertDpToPixel(18, local));
-                        view.setBackground(gradientDrawable);
-                        view.setPadding(15, 15, 15, 15);
-                        buttonContainer.addView(view);
+                            RelativeLayout view = new RelativeLayout(local.getApplication().getApplicationContext());
+                            view.addView(closeButton, convertDpToPixel(18, local), convertDpToPixel(18, local));
+                            view.setBackground(gradientDrawable);
+                            view.setPadding(15, 15, 15, 15);
+                            closeButtonContainer.addView(view);
 
-                        chatMessages.addView(buttonContainer);
+                            chatMessages.addView(closeButtonContainer);
+                        }
+
                         listMessage.setGravity(Gravity.RIGHT);
+
                         //counter if first message
                         int counter = 0;
                         for (GleapChatMessage comment :
                                 messages) {
-                            LinearLayout commentComponent = comment.getComponent(local);
+                            LinearLayout commentComponent = comment.getComponent();
                             if (commentComponent != null) {
                                 if (comment.getType().equals("news")) {
                                     CardView cardView = new CardView(local.getApplication().getApplicationContext());
 
                                     cardView.setBackgroundResource(R.drawable.rounded_corner);
                                     LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-                                    if(counter == 0) {
+                                    if (counter == 0) {
                                         params.setMargins(convertDpToPixel(1, local), convertDpToPixel(10, local), convertDpToPixel(20, local), convertDpToPixel(15, local));
-                                    }else {
+                                    } else {
                                         params.setMargins(convertDpToPixel(1, local), convertDpToPixel(0, local), convertDpToPixel(20, local), convertDpToPixel(15, local));
                                     }
                                     counter++;
                                     cardView.setLayoutParams(params);
 
                                     cardView.setElevation(4f);
-                                    cardView.addView(commentComponent);
-
-                                    listMessage.addView(cardView);
+                                    if(commentComponent.getParent() == null) {
+                                        cardView.addView(commentComponent);
+                                        listMessage.addView(cardView);
+                                    }
                                 } else {
-                                    listMessage.addView(commentComponent);
+                                    if (commentComponent.getParent() == null) {
+                                        listMessage.addView(commentComponent);
+                                    }
                                 }
                             }
                         }
@@ -229,16 +236,26 @@ class GleapInvisibleActivityManger {
                         addLayout(local);
                     }
                 } catch (Exception ex) {
+                    System.out.println(ex);
                 }
             }
         });
     }
 
     public void addComment(GleapChatMessage comment) {
+        for(GleapChatMessage message : this.messages) {
+            if(message.getOutboundId().equals(comment.getOutboundId())) {
+                return;
+            }
+        }
         GleapArrayHelper<GleapChatMessage> helper = new GleapArrayHelper<>();
 
         if (this.messages.size() >= 3) {
             GleapChatMessage oldMessage = this.messages.get(0);
+            LinearLayout layout = oldMessage.getComponent();
+            LinearLayout parent = (LinearLayout) layout.getParent();
+            parent.removeView(layout);
+
             oldMessage.clearComponent();
 
             this.messages = helper.shiftArray(this.messages);
@@ -323,12 +340,26 @@ class GleapInvisibleActivityManger {
     void clearMessages() {
         for (GleapChatMessage message :
                 this.messages) {
+            LinearLayout oldMessage = (LinearLayout) message.getComponent();
+            ViewGroup parent = null;
+            try{
+                parent = (LinearLayout) oldMessage.getParent();
+            }catch (Exception err) {}
+
+            try{
+                parent = (CardView) oldMessage.getParent();
+            }catch (Exception err) {}
+
+            parent.removeView(layout);
+
             message.clearComponent();
+
         }
         this.messages = new LinkedList<>();
         this.showFab = true;
+        chatMessages.removeAllViews();
         addFab(null);
-        //  render(null, true);
+         //render(null, true);
     }
 
     public void setMessageCounter(int messageCounter) {

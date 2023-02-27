@@ -48,9 +48,9 @@ public class UserSessionController {
                 Runnable gleapRunnable = new Runnable() {
                     @Override
                     public void run() throws RuntimeException {
-                        if(GleapConfig.getInstance().getUnRegisterPushMessageGroupCallback() != null && userSession != null) {
+                        if (GleapConfig.getInstance().getUnRegisterPushMessageGroupCallback() != null && userSession != null) {
                             String hash = userSession.getHash();
-                            if(!hash.equals("")) {
+                            if (!hash.equals("")) {
                                 GleapConfig.getInstance().getUnRegisterPushMessageGroupCallback().invoke("gleapuser-" + hash);
                             }
                         }
@@ -88,6 +88,14 @@ public class UserSessionController {
     }
 
     public void setGleapUserSession(GleapUser gleapUser) {
+        if (this.gleapUser != null && !this.gleapUser.equals(gleapUser)) {
+            gleapUser.setNew(true);
+        }
+
+        if (this.gleapUser == null) {
+            gleapUser.setNew(true);
+        }
+
 
         this.gleapUser = gleapUser;
 
@@ -96,7 +104,9 @@ public class UserSessionController {
         if (gleapUser.getGleapUserProperties() != null) {
             sharedPreferences.edit().putString("userId.name", gleapUser.getGleapUserProperties().getName()).apply();
             sharedPreferences.edit().putString("userId.email", gleapUser.getGleapUserProperties().getEmail()).apply();
-            sharedPreferences.edit().putString("userId.phonenumber", gleapUser.getGleapUserProperties().getPhoneNumber()).apply();
+            if(gleapUser.getGleapUserProperties().getPhoneNumber() != null) {
+                sharedPreferences.edit().putString("userId.phonenumber", gleapUser.getGleapUserProperties().getPhoneNumber()).apply();
+            }
             sharedPreferences.edit().putFloat("userId.value", (float) gleapUser.getGleapUserProperties().getValue()).apply();
             if (gleapUser.getGleapUserProperties().getHash() != null && !gleapUser.getGleapUserProperties().getHash().equals("")) {
                 sharedPreferences.edit().putString("userId.hash", gleapUser.getGleapUserProperties().getHash()).apply();

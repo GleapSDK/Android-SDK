@@ -21,6 +21,17 @@ import io.gleap.callbacks.WidgetOpenedCallback;
 
 interface iGleap {
 
+    /**
+     * Open news or conversations by passing the notification
+     * @param notificationData push notitification
+     */
+    void handlePushNotification(JSONObject notificationData);
+
+    /**
+     * Open a conversation with the given sharetoken
+     * @param shareToken token for the conversation
+     */
+    void openConversation(String shareToken);
 
     /**
      * Invoke Bug Reporting

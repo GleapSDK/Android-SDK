@@ -72,18 +72,20 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                 }
             }
             try {
-                ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
+               /* ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         GleapInvisibleActivityManger.getInstance().clearMessages();
                     }
-                });
+                });*/
             } catch (Exception ingore) {
             }
 
             try {
                 GleapUser gleapUser = UserSessionController.getInstance().getGleapUserSession();
-
+                if(gleapUser != null && !gleapUser.isNew()) {
+                    return 200;
+                }
                 URL url = new URL(httpsUrl);
                 HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
                 conn.setRequestProperty("Api-Token", GleapConfig.getInstance().getSdkKey());
@@ -197,7 +199,10 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                             }
                         });
                     }
-
+                    //send session started
+                    gleapUser.setNew(false);
+                    GleapEventService.getInstance().stop(false);
+                    GleapEventService.getInstance().start();
                 } catch (Exception e) {
                     UserSessionController.getInstance().setSessionLoaded(true);
 

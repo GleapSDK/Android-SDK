@@ -2,6 +2,8 @@ package io.gleap;
 
 import org.json.JSONObject;
 
+import java.util.Objects;
+
 public class GleapUserProperties {
     private String userId;
     private String name;

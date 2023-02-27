@@ -27,29 +27,14 @@ import javax.net.ssl.HttpsURLConnection;
 class GleapEventService {
     private GleapArrayHelper<JSONObject> gleapArrayHelper;
     private static GleapEventService instance;
+    private EventsSentCallback eventsSentCallback;
     private boolean disableInAppNotifications = false;
     private int time = GleapConfig.getInstance().getResceduleEventStreamDurationShort();
     private List<JSONObject> eventsToBeSent = new ArrayList<>();
+    private Handler intervalHandler;
 
     private GleapEventService() {
         gleapArrayHelper = new GleapArrayHelper<>();
-
-        try {
-            Activity activity = ActivityUtil.getCurrentActivity();
-
-            JSONObject sessiontStarted = new JSONObject();
-            sessiontStarted.put("name", "sessionStarted");
-            eventsToBeSent.add(sessiontStarted);
-
-            JSONObject pageView = new JSONObject();
-            JSONObject page = new JSONObject();
-            page.put("page", activity.getClass().getSimpleName());
-            pageView.put("name", "pageView");
-            pageView.put("data", page);
-            eventsToBeSent.add(pageView);
-        } catch (Exception ex) {
-        }
-
         sendInitialMessage();
     }
     
@@ -62,13 +47,6 @@ class GleapEventService {
 
     public void setDisableInAppNotifications(boolean disableInAppNotifications) {
         this.disableInAppNotifications = disableInAppNotifications;
-    }
-
-    public void refresh() {
-        try {
-            new EventHttpHelper().execute();
-        } catch (Exception ignore) {
-        }
     }
 
     public void sendInitialMessage() {
@@ -92,8 +70,22 @@ class GleapEventService {
     }
 
     public void start() {
-        final Handler h = new Handler(Looper.getMainLooper());
-        h.postDelayed(new Runnable() {
+        try {
+            JSONObject sessiontStarted = new JSONObject();
+            sessiontStarted.put("name", "sessionStarted");
+            eventsToBeSent.add(sessiontStarted);
+
+            Activity activity = ActivityUtil.getCurrentActivity();
+            JSONObject pageView = new JSONObject();
+            JSONObject page = new JSONObject();
+            page.put("page", activity.getClass().getSimpleName());
+            pageView.put("name", "pageView");
+            pageView.put("data", page);
+            eventsToBeSent.add(pageView);
+        }catch (Exception ex) {}
+
+        intervalHandler = new Handler(Looper.getMainLooper());
+        intervalHandler.postDelayed(new Runnable() {
             private long time = 0;
 
             @Override
@@ -105,11 +97,22 @@ class GleapEventService {
                     } else {
                         time = GleapConfig.getInstance().getResceduleEventStreamDurationShort();
                     }
-                    h.postDelayed(this, time);
+                    intervalHandler.postDelayed(this, time);
                 } catch (Exception ignore) {
                 }
             }
         }, time);
+    }
+
+    public void stop() {
+        stop(true);
+    }
+
+    public void stop(Boolean clear) {
+        if(clear) {
+            eventsToBeSent.clear();
+        }
+        intervalHandler.removeCallbacksAndMessages(null);
     }
 
     public void addEvent(JSONObject event) {
@@ -185,6 +188,9 @@ class GleapEventService {
             conn.getInputStream().close();
             int status = conn.getResponseCode();
             conn.disconnect();
+            if(GleapEventService.getInstance().eventsSentCallback != null) {
+                GleapEventService.getInstance().eventsSentCallback.invoked();
+            }
             return status;
         }
     }
@@ -199,7 +205,7 @@ class GleapEventService {
         return result;
     }
 
-    private GleapChatMessage createComment(JSONObject messageData) throws Exception {
+    private GleapChatMessage createComment(String outboundId, JSONObject messageData) throws Exception {
         String senderName = "";
         String profileImageUrl = "";
         String text = "";
@@ -247,7 +253,7 @@ class GleapEventService {
         }
 
         GleapSender sender = new GleapSender(senderName, profileImageUrl);
-        return new GleapChatMessage(type, text, shareToken, sender, newsId, coverImageUrl);
+        return new GleapChatMessage(outboundId, type, text, shareToken, sender, newsId, coverImageUrl);
     }
 
     private void processData(JSONObject data) throws Exception {
@@ -265,8 +271,12 @@ class GleapEventService {
                     if (currentAction.getString("actionType").contains("notification")) {
                         // In app notification.
                         if (!this.disableInAppNotifications) {
+                            String outboundId = "";
+                            if(currentAction.has("outbound")){
+                                outboundId = currentAction.getString("outbound");
+                            }
                             JSONObject messageData = currentAction.getJSONObject("data");
-                            GleapChatMessage comment = createComment(messageData);
+                            GleapChatMessage comment = createComment(outboundId, messageData);
                             GleapInvisibleActivityManger.getInstance().addComment(comment);
                         }
                     } else if (currentAction.getString("format").contains("survey")) {
@@ -295,5 +305,17 @@ class GleapEventService {
             }
             GleapInvisibleActivityManger.getInstance().render(null, false);
         }
+    }
+
+    interface EventsSentCallback {
+        void invoked();
+    }
+
+    public EventsSentCallback getEventsSentCallback() {
+        return eventsSentCallback;
+    }
+
+    public void setEventsSentCallback(EventsSentCallback eventsSentCallback) {
+        this.eventsSentCallback = eventsSentCallback;
     }
 }

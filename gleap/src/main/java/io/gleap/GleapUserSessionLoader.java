@@ -28,7 +28,6 @@ class GleapUserSessionLoader extends AsyncTask<Void, Void, Integer> {
     @Override
     protected Integer doInBackground(Void... voids) {
         try {
-
             URL url = new URL(httpsUrl);
             HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
             conn.setRequestProperty("Api-Token", GleapConfig.getInstance().getSdkKey());
@@ -79,11 +78,21 @@ class GleapUserSessionLoader extends AsyncTask<Void, Void, Integer> {
                         gleapUserProperties.setEmail(result.getString("email"));
                     }
 
-                    String userId="";
+                    if(result.has("value")) {
+                        gleapUserProperties.setValue(result.getDouble("value"));
+                    }
 
+                    if(result.has("customData")) {
+                        gleapUserProperties.setCustomData(result.getJSONObject("customData"));
+                    }
+
+                    String userId ="";
                     if(result.has("userId")) {
                         userId = result.getString("userId");
                     }
+
+                    UserSessionController.getInstance().setGleapUserSession(new GleapUser(userId, gleapUserProperties));
+                    UserSessionController.getInstance().getGleapUserSession().setNew(false);
 
                     ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
                         @Override
@@ -104,7 +113,6 @@ class GleapUserSessionLoader extends AsyncTask<Void, Void, Integer> {
                         }
                     });
                     if(GleapConfig.getInstance().getRegisterPushMessageGroupCallback() != null) {
-
                         GleapConfig.getInstance().getRegisterPushMessageGroupCallback().invoke("gleapuser-" + hash);
                     }
                     GleapInvisibleActivityManger.getInstance().render(null, true);
@@ -114,13 +122,10 @@ class GleapUserSessionLoader extends AsyncTask<Void, Void, Integer> {
                     GleapConfig.getInstance().getInitializationDoneCallback().invoke();
                 }
 
-                GleapUser gleapUser = UserSessionController.getInstance().getGleapUserSession();
-
-                if(this.callback != null && !gleapUser.compareTo(UserSessionController.getInstance().getStoredGleapUser())) {
+                if(this.callback != null) {
                     this.callback.invoke();
                     this.callback = null;
                 }
-
             } catch (Exception e) {
                 UserSessionController.getInstance().setSessionLoaded(true);
             }

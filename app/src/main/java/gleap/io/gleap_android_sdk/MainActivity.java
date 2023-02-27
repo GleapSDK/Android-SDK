@@ -15,6 +15,8 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
+import org.json.JSONObject;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
@@ -28,22 +30,24 @@ import io.gleap.SurveyType;
 
 public class MainActivity extends AppCompatActivity {
     public static String[] storge_permissions = {
+            // ... already existing permissions
             Manifest.permission.READ_EXTERNAL_STORAGE
     };
 
     @RequiresApi(api = Build.VERSION_CODES.TIRAMISU)
     public static String[] storge_permissions_33 = {
+            // ... already existing permissions
             Manifest.permission.READ_MEDIA_IMAGES,
     };
 
     public static String[] permissions() {
-        String[] p;
+        String[] permissionsToRequest;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            p = storge_permissions_33;
+            permissionsToRequest = storge_permissions_33;
         } else {
-            p = storge_permissions;
+            permissionsToRequest = storge_permissions;
         }
-        return p;
+        return permissionsToRequest;
     }
 
     @Override
@@ -81,9 +85,12 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.crash).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                ActivityCompat.requestPermissions(MainActivity.this,
-                        permissions(),
-                        1);
+                JSONObject obj  = new JSONObject();
+                try{
+                    obj.put("id", "lAEhlcHvGvQFf9QClHnV6yFBTlxdcXVPpaW2MG4VdGLTJ40H6yJLdRpXq17gKPK0x9eDAy");
+                    obj.put("type","conversation");
+                }catch (Exception ex) {}
+                Gleap.getInstance().handlePushNotification(obj);
             }
         });
 
