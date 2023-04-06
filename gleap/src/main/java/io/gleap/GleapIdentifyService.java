@@ -28,6 +28,11 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                 return 200;
             }
 
+            GleapUser gleapUser = UserSessionController.getInstance().getGleapUserSession();
+            if(gleapUser != null && !gleapUser.isNew() ) {
+                return 200;
+            }
+
             UserSession userSession = UserSessionController.getInstance().getUserSession();
             if (userSession == null) {
                 try {
@@ -82,10 +87,7 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
             }
 
             try {
-                GleapUser gleapUser = UserSessionController.getInstance().getGleapUserSession();
-                if(gleapUser != null && !gleapUser.isNew()) {
-                    return 200;
-                }
+
                 URL url = new URL(httpsUrl);
                 HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
                 conn.setRequestProperty("Api-Token", GleapConfig.getInstance().getSdkKey());
@@ -122,13 +124,13 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                             }
                         }
 
-                        jsonObject.put("lang", GleapConfig.getInstance().getLanguage());
+                       jsonObject.put("lang", GleapConfig.getInstance().getLanguage());
                     } catch (Exception ex) {
 
                     }
                 }
 
-                if (!jsonObject.has("userId")) {
+                if (!jsonObject.has( "userId")) {
                     return 200;
                 }
 
@@ -165,6 +167,10 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
 
                         if (result.has("email")) {
                             gleapUserProperties.setEmail(result.getString("email"));
+                        }
+
+                        if(result.has("value")) {
+                            gleapUserProperties.setValue(result.getDouble("value"));
                         }
 
                         String userId = "";

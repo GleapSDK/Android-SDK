@@ -90,6 +90,8 @@ class GleapUserSessionLoader extends AsyncTask<Void, Void, Integer> {
                     }
 
                     if(result.has("customData")) {
+                        JSONObject customData = result.getJSONObject("customData");
+                        customData.remove("lang");
                         gleapUserProperties.setCustomData(result.getJSONObject("customData"));
                     }
 

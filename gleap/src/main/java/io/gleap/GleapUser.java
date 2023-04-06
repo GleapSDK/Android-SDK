@@ -77,9 +77,9 @@ public class GleapUser {
                 Iterator<String> keys = customData.keys();
                 while (keys.hasNext()) {
                     String key = keys.next();
-                    if (otherUserData.has("key")) {
+                    if (otherUserData.has(key)) {
                         try {
-                            if (customData.get(key) != otherUserData.get(key)) {
+                            if (!customData.get(key).equals(otherUserData.get(key))) {
                                 match = false;
                             }
                         } catch (JSONException e) {
@@ -100,6 +100,7 @@ public class GleapUser {
             }
         }
 
+        System.out.println(match);
         return match;
     }
 }
