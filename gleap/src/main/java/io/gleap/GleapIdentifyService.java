@@ -121,6 +121,8 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                                 jsonObject = JsonUtil.mergeJSONObjects(jsonObject, customData);
                             }
                         }
+
+                        jsonObject.put("lang", GleapConfig.getInstance().getLanguage());
                     } catch (Exception ex) {
 
                     }

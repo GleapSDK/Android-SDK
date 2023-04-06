@@ -453,6 +453,7 @@ class GleapInvisibleActivityManger {
 
             textView.setText(String.valueOf(messageCounter));
             textView.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+            textView.setGravity(Gravity.CENTER);
             if (messageCounter > 0) {
                 relativeLayout.addView(textView, convertDpToPixel(16, local), convertDpToPixel(16, local));
                 ConstraintSet set = new ConstraintSet();

@@ -43,6 +43,13 @@ class GleapUserSessionLoader extends AsyncTask<Void, Void, Integer> {
                 conn.setRequestProperty("Gleap-Hash", userSession.getHash());
             }
 
+            try (OutputStream os = conn.getOutputStream()) {
+                JSONObject body = new JSONObject();
+                body.put("lang", GleapConfig.getInstance().getLanguage());
+                byte[] input = body.toString().getBytes(StandardCharsets.UTF_8);
+                os.write(input, 0, input.length);
+            }
+
             try (BufferedReader br = new BufferedReader(
                     new InputStreamReader(conn.getInputStream(), "utf-8"))) {
                 JSONObject result = null;
