@@ -120,8 +120,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
                 findViewById(R.id.gleap_progressBarHeader).setBackground(gradientDrawable);
 
-
-
                 exitAfterFifteenSeconds = new Runnable() {
                     @Override
                     public void run() {
@@ -130,7 +128,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                         }
                     }
                 };
-
 
                 //if it is no survey preload with shadow
                 boolean isSurvey = getIntent().getBooleanExtra("IS_SURVEY", false);

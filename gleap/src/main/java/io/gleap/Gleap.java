@@ -271,6 +271,44 @@ public class Gleap implements iGleap {
         }
     }
 
+    public void startBot(String botId) {
+        startBot(botId, false);
+    }
+
+    public void startBot(String botId, boolean showBackButton) {
+        try {
+            ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Handler mainHandler = new Handler(Looper.getMainLooper());
+                    Runnable gleapRunnable = new Runnable() {
+                        @Override
+                        public void run() throws RuntimeException {
+                            try {
+                                if (!GleapDetectorUtil.isIsRunning() && UserSessionController.getInstance() != null &&
+                                        UserSessionController.getInstance().isSessionLoaded() && instance != null) {
+                                    try {
+                                        if (screenshotTaker != null) {
+                                            JSONObject message = new JSONObject();
+                                            message.put("hideBackButton", !showBackButton);
+                                            message.put("botId", botId);
+                                            GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("start-bot", message));
+                                            screenshotTaker.takeScreenshot();
+                                        }
+                                    } catch (Exception e) {
+                                    }
+                                }
+                            } catch (Error | Exception ignore) {
+                            }
+                        }
+                    };
+                    mainHandler.post(gleapRunnable);
+                }
+            });
+        } catch (Error | Exception ignore) {
+        }
+    }
+
     public void openNewsArticle(String articleId) {
         openNewsArticle(articleId, false);
     }

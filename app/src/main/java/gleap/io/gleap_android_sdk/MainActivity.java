@@ -58,39 +58,17 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.feedback).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //Gleap.getInstance().open();
-            /*    String[] permissions = new String[]{
-                        Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE
-                };
-                ActivityCompat.requestPermissions(MainActivity.this, permissions, 101);*/
-
-                String fileName = "random.txt";
-                try {
-                    FileOutputStream fileOutputStream;
-                    if (false) {
-                        fileOutputStream = MainActivity.this.openFileOutput(fileName.toString(), Context.MODE_PRIVATE);
-                    } else {
-                        File file = new File(MainActivity.this.getCacheDir(), fileName);
-                        fileOutputStream = new FileOutputStream(file);
-                    }
-                    fileOutputStream.write("fileContents.getText().toString()".getBytes(Charset.forName("UTF-8")));
-                    Toast.makeText(MainActivity.this, String.format("Write to file %s sucess", fileName), Toast.LENGTH_SHORT).show();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    Toast.makeText(MainActivity.this, String.format("Write to file %s failed", fileName), Toast.LENGTH_SHORT).show();
-                }
+             //   Gleap.getInstance().open();
+                 Gleap.getInstance().startBot("643521e69a18f2be5f3a4865");
+               //Gleap.getInstance().openNews();
             }
         });
 
         findViewById(R.id.crash).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                JSONObject obj  = new JSONObject();
-                try{
-                    obj.put("id", "lAEhlcHvGvQFf9QClHnV6yFBTlxdcXVPpaW2MG4VdGLTJ40H6yJLdRpXq17gKPK0x9eDAy");
-                    obj.put("type","conversation");
-                }catch (Exception ex) {}
-                Gleap.getInstance().handlePushNotification(obj);
+                Intent intent = new Intent(MainActivity.this, SilentCrashReport.class);
+                startActivity(intent);
             }
         });
 
