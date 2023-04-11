@@ -338,28 +338,35 @@ class GleapInvisibleActivityManger {
     }
 
     void clearMessages() {
-        for (GleapChatMessage message :
-                this.messages) {
-            LinearLayout oldMessage = (LinearLayout) message.getComponent();
-            ViewGroup parent = null;
-            try{
-                parent = (LinearLayout) oldMessage.getParent();
-            }catch (Exception err) {}
+        try {
+            for (GleapChatMessage message :
+                    this.messages) {
+                LinearLayout oldMessage = (LinearLayout) message.getComponent();
+                ViewGroup parent = null;
+                try {
+                    parent = (LinearLayout) oldMessage.getParent();
+                } catch (Exception err) {
+                }
 
-            try{
-                parent = (CardView) oldMessage.getParent();
-            }catch (Exception err) {}
+                try {
+                    parent = (CardView) oldMessage.getParent();
 
-            parent.removeView(layout);
 
-            message.clearComponent();
-
-        }
-        this.messages = new LinkedList<>();
-        this.showFab = true;
-        chatMessages.removeAllViews();
-        addFab(null);
-         //render(null, true);
+                    if (parent != null) {
+                        parent.removeView(layout);
+                    }
+                    message.clearComponent();
+                } catch (Exception err) {
+                }
+            }
+            this.messages = new LinkedList<>();
+            this.showFab = true;
+            if (chatMessages != null) {
+                chatMessages.removeAllViews();
+            }
+            addFab(null);
+            //render(null, true);
+        }catch (Exception ex) {}
     }
 
     public void setMessageCounter(int messageCounter) {
