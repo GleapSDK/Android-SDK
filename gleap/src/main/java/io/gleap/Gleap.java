@@ -675,9 +675,9 @@ public class Gleap implements iGleap {
                     GleapEventService.getInstance().start();
                 }
             });
+
             sessionLoader.execute();
         } catch (Error | Exception ignore) {
-            System.out.println(ignore);
         }
     }
 

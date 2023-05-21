@@ -22,7 +22,7 @@ public class MainApplication extends Application {
         super.onCreate();
         //GleapUserProperties gleapUserProperties = new GleapUserProperties("12", "Test User", "test@email.com");
         //Gleap.getInstance().identifyUser("12", gleapUserProperties);
-        Gleap.initialize("DUPaIr7s689BBblcFI4pc5aBgYJTm7Sc", this);
+        Gleap.initialize("ZHEeOBfmcGvkB63liD8iFU1y7rvCxYPe", this);
         Gleap.getInstance().setTags(new String[] {
                 "Android",
                 "Tags",
@@ -32,14 +32,14 @@ public class MainApplication extends Application {
         Gleap.getInstance().setRegisterPushMessageGroupCallback(new RegisterPushMessageGroupCallback() {
             @Override
             public void invoke(String pushMessageGroup) {
-                System.err.println(pushMessageGroup);
+                System.err.println("Subscribe: "+pushMessageGroup);
             }
         });
 
         Gleap.getInstance().setUnRegisterPushMessageGroupCallback(new UnRegisterPushMessageGroupCallback() {
             @Override
             public void invoke(String pushMessageGroup) {
-                System.err.println(pushMessageGroup);
+                System.err.println("Unsubscribe: "+pushMessageGroup);
             }
         });
      //   Gleap.getInstance().setLanguage("pt");
