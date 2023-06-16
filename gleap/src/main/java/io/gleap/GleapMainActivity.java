@@ -40,6 +40,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -377,6 +378,34 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                                 break;
                             case "cleanup-drawings":
                                 GleapBug.getInstance().setScreenshot(null);
+                                break;
+                            case "collect-ticket-data":
+                                try {
+                                    GleapBug gleapBug = GleapBug.getInstance();
+
+                                    JSONObject data = new JSONObject();
+                                    data.put("customData", gleapBug.getCustomData());
+                                    data.put("networkLogs", gleapBug.getNetworklogs());
+                                    data.put("customEventLog", gleapBug.getCustomEventLog());
+
+                                    PhoneMeta phoneMeta = gleapBug.getPhoneMeta();
+                                    if (phoneMeta != null) {
+                                        data.put("metaData", phoneMeta.getJSONObj());
+                                    }
+
+                                    if (GleapConfig.getInstance().isEnableConsoleLogs()) {
+                                        data.put("consoleLog", gleapBug.getLogs());
+                                    }
+
+                                    try {
+                                        data.put("tags", new JSONArray(gleapBug.getTags()));
+                                    } catch (Exception ex) {
+                                    }
+
+                                    sendMessage(generateGleapMessage("collect-ticket-data", data));
+                                } catch (Error | Exception ignore) {
+
+                                }
                                 break;
                             case "close-widget":
                                 closeGleap();

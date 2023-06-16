@@ -217,7 +217,6 @@ class HttpHelper extends AsyncTask<GleapBug, Void, JSONObject> {
         body.put("isSilent", gleapBug.isSilent() ? "true" : "false");
 
         PhoneMeta phoneMeta = gleapBug.getPhoneMeta();
-
         if (phoneMeta != null) {
             body.put("metaData", phoneMeta.getJSONObj());
         }

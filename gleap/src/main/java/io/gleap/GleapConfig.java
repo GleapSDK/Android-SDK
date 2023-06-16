@@ -37,7 +37,7 @@ class GleapConfig {
 
     //bb config
     private String apiUrl = "https://api.gleap.io";
-    private String iFrameUrl = "https://messenger.gleap.io/appnew";
+    private String iFrameUrl = "https://messenger-app.gleap.io/appnew";
     private String sdkKey = "";
     private String feedbackFlow = "";
     private ValueCallback<Uri[]> mUploadMessage;
@@ -182,7 +182,7 @@ class GleapConfig {
             }
 
             if (flowConfigs.has("widgetButtonText")) {
-                this.widgetButtonText =  localizedString(flowConfigs, flowConfigs.getString("widgetButtonText"));
+                this.widgetButtonText =  flowConfigs.getString("widgetButtonText");
             }
 
             if (flowConfigs.has("buttonLogo") && !flowConfigs.getString("buttonLogo").equals("")) {
@@ -619,27 +619,5 @@ class GleapConfig {
 
     public WidgetPositionType getWidgetPositionType() {
         return widgetPositionType;
-    }
-
-    public String localizedString(JSONObject config, String key) {
-
-        if (config != null && config.has("customTranslations")) {
-            try {
-                JSONObject translation = null;
-                JSONObject tranlsations = config.getJSONObject("customTranslations");
-                if (tranlsations.has(this.language)) {
-                    translation = tranlsations.getJSONObject(this.language);
-                } else if (tranlsations.has(this.language.split("-")[0])) {
-                    translation = tranlsations.getJSONObject(this.language.split("-")[0]);
-                }
-
-                if(translation != null && translation.has(key)) {
-                    return translation.getString(key);
-                }
-            } catch (Exception ex) {
-            }
-        }
-
-        return key;
     }
 }
