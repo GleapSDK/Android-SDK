@@ -39,6 +39,7 @@ class GleapUserSessionLoader extends AsyncTask<Void, Void, Integer> {
             if (userSession != null && userSession.getId() != null && !userSession.getId().equals("")) {
                 conn.setRequestProperty("Gleap-Id", userSession.getId());
             }
+
             if(userSession != null && userSession.getHash() != null && !userSession.getHash().equals("")) {
                 conn.setRequestProperty("Gleap-Hash", userSession.getHash());
             }
@@ -74,6 +75,7 @@ class GleapUserSessionLoader extends AsyncTask<Void, Void, Integer> {
                     if (id != null && hash != null) {
                         UserSessionController.getInstance().mergeUserSession(id, hash);
                         UserSessionController.getInstance().setSessionLoaded(true);
+                        userSession = UserSessionController.getInstance().getUserSession();
                     }
 
                     GleapUserProperties gleapUserProperties = new GleapUserProperties();
@@ -103,6 +105,7 @@ class GleapUserSessionLoader extends AsyncTask<Void, Void, Integer> {
                     UserSessionController.getInstance().setGleapUserSession(new GleapUser(userId, gleapUserProperties));
                     UserSessionController.getInstance().getGleapUserSession().setNew(false);
 
+                    UserSession finalUserSession = userSession;
                     ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
@@ -110,8 +113,8 @@ class GleapUserSessionLoader extends AsyncTask<Void, Void, Integer> {
                             Runnable gleapRunnable = new Runnable() {
                                 @Override
                                 public void run() throws RuntimeException {
-                                    if (GleapConfig.getInstance().getRegisterPushMessageGroupCallback() != null && userSession != null) {
-                                        String hash = userSession.getHash();
+                                    if (GleapConfig.getInstance().getRegisterPushMessageGroupCallback() != null && finalUserSession != null) {
+                                        String hash = finalUserSession.getHash();
                                         if(!hash.equals("")) {
                                             GleapConfig.getInstance().getRegisterPushMessageGroupCallback().invoke("gleapuser-" + hash);
                                         }
@@ -121,9 +124,7 @@ class GleapUserSessionLoader extends AsyncTask<Void, Void, Integer> {
                             mainHandler.post(gleapRunnable);
                         }
                     });
-                    if(GleapConfig.getInstance().getRegisterPushMessageGroupCallback() != null) {
-                        GleapConfig.getInstance().getRegisterPushMessageGroupCallback().invoke("gleapuser-" + hash);
-                    }
+
                     GleapInvisibleActivityManger.getInstance().render(null, true);
                 }
 

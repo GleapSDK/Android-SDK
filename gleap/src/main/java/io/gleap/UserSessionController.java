@@ -50,22 +50,21 @@ public class UserSessionController {
                 Runnable gleapRunnable = new Runnable() {
                     @Override
                     public void run() throws RuntimeException {
-                        if (GleapConfig.getInstance().getUnRegisterPushMessageGroupCallback() != null && userSession != null) {
-                            String hash = userSession.getHash();
-                            if (!hash.equals("")) {
-                                GleapConfig.getInstance().getUnRegisterPushMessageGroupCallback().invoke("gleapuser-" + hash);
-                            }
-                        }
+
                     }
                 };
                 mainHandler.post(gleapRunnable);
             }
         });
-
-        this.gleapUser = null;
-        this.userSession = null;
-        this.isSessionLoaded = false;
-
+        if (GleapConfig.getInstance().getUnRegisterPushMessageGroupCallback() != null && userSession != null) {
+            String hash = userSession.getHash();
+            if (!hash.equals("")) {
+                GleapConfig.getInstance().getUnRegisterPushMessageGroupCallback().invoke("gleapuser-" + hash);
+            }
+        }
+        gleapUser = null;
+        userSession = null;
+        isSessionLoaded = false;
     }
 
     public void clearUser() {

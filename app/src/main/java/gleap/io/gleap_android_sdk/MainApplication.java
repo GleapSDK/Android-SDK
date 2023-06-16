@@ -32,14 +32,14 @@ public class MainApplication extends Application {
         Gleap.getInstance().setRegisterPushMessageGroupCallback(new RegisterPushMessageGroupCallback() {
             @Override
             public void invoke(String pushMessageGroup) {
-                System.err.println(pushMessageGroup);
+                System.err.println("Subscribe: "+pushMessageGroup);
             }
         });
 
         Gleap.getInstance().setUnRegisterPushMessageGroupCallback(new UnRegisterPushMessageGroupCallback() {
             @Override
             public void invoke(String pushMessageGroup) {
-                System.err.println(pushMessageGroup);
+                System.err.println("Unsubscribe: "+pushMessageGroup);
             }
         });
      //   Gleap.getInstance().setLanguage("pt");

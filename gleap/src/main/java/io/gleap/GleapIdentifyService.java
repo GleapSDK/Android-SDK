@@ -55,7 +55,8 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                 }
                 return 200;
             }
-            if (GleapConfig.getInstance().getUnRegisterPushMessageGroupCallback() != null) {
+
+            if (GleapConfig.getInstance().getUnRegisterPushMessageGroupCallback() != null && userSession != null) {
                 String hash = userSession.getHash();
                 if (!hash.equals("")) {
                     try {
@@ -75,15 +76,6 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                     } catch (Exception ignore) {
                     }
                 }
-            }
-            try {
-               /* ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        GleapInvisibleActivityManger.getInstance().clearMessages();
-                    }
-                });*/
-            } catch (Exception ingore) {
             }
 
             try {
@@ -186,6 +178,7 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                             UserSessionController.getInstance().mergeUserSession(id, hash);
                             isLoaded = true;
                         }
+
                         GleapInvisibleActivityManger.getInstance().render(null, true);
                         UserSessionController.getInstance().setSessionLoaded(true);
                         ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
@@ -207,6 +200,7 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                             }
                         });
                     }
+
                     //send session started
                     gleapUser.setNew(false);
                     GleapEventService.getInstance().stop(false);
