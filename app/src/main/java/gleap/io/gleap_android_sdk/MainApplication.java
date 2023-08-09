@@ -22,7 +22,7 @@ public class MainApplication extends Application {
         super.onCreate();
         //GleapUserProperties gleapUserProperties = new GleapUserProperties("12", "Test User", "test@email.com");
         //Gleap.getInstance().identifyUser("12", gleapUserProperties);
-        Gleap.initialize("ogWhNhuiZcGWrva5nlDS8l7a78OfaLlV", this);
+        Gleap.initialize("hciNpT8z64tsHATINYZjWBvbirVWCKWt", this);
         Gleap.getInstance().setTags(new String[] {
                 "Android",
                 "Tags",

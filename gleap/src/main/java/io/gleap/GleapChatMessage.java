@@ -7,23 +7,16 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Typeface;
-import android.graphics.drawable.GradientDrawable;
 import android.text.TextUtils;
 import android.view.Gravity;
 import android.view.View;
-import android.webkit.WebView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import androidx.cardview.widget.CardView;
 
-import org.json.JSONException;
 import org.json.JSONObject;
-
-import java.util.LinkedList;
-import java.util.List;
 
 import gleap.io.gleap.R;
 
@@ -316,18 +309,6 @@ class GleapChatMessage {
         } catch (Exception exp) {
             return "";
         }
-    }
-
-    private void sendMessage(WebView webView, String message) {
-        webView.evaluateJavascript("sendMessage(" + message + ");", null);
-    }
-
-    private String generateGleapMessage(String name, JSONObject data) throws JSONException {
-        JSONObject message = new JSONObject();
-        message.put("name", name);
-        message.put("data", data);
-
-        return message.toString();
     }
 
     public String getNewsId() {

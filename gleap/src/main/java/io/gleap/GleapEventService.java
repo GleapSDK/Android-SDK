@@ -24,6 +24,8 @@ import java.util.List;
 
 import javax.net.ssl.HttpsURLConnection;
 
+import gleap.io.gleap.BuildConfig;
+
 class GleapEventService {
     private GleapArrayHelper<JSONObject> gleapArrayHelper;
     private static GleapEventService instance;
@@ -162,6 +164,7 @@ class GleapEventService {
             body.put("events", arrayToJSONArray(eventsToBeSent));
             body.put("time", PhoneMeta.calculateDurationInDouble());
             body.put("opened", Gleap.getInstance().isOpened());
+            body.put("sdkVersion", BuildConfig.VERSION_NAME);
 
             try (OutputStream os = conn.getOutputStream()) {
                 byte[] input = body.toString().getBytes(StandardCharsets.UTF_8);
@@ -298,6 +301,9 @@ class GleapEventService {
                         // Check if it is open
                         GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("start-survey", jsonObject));
                         Gleap.getInstance().open(surveyType);
+                    } if (currentAction.getString("actionType").contains("banner")) {
+                        GleapBanner banner = new GleapBanner(currentAction);
+                        GleapInvisibleActivityManger.getInstance().showBanner(banner);
                     } else {
                         // Unknown action.
                     }

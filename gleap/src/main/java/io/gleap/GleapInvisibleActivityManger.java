@@ -36,10 +36,12 @@ class GleapInvisibleActivityManger {
     private List<GleapChatMessage> messages;
     private ConstraintLayout layout;
     private LinearLayout chatMessages;
+    private LinearLayout bannerLayout;
     private ViewGroup prev;
     private ImageButton imageButton;
     private RelativeLayout closeButtonContainer;
     private Button squareButton;
+    private GleapBanner banner;
     private ConstraintLayout relativeLayout;
     private int prevSize = 0;
     private int messageCounter = 0;
@@ -94,6 +96,37 @@ class GleapInvisibleActivityManger {
         }
 
         Activity local = activity;
+
+        local.runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    bannerLayout = new LinearLayout(local);
+                                    bannerLayout.setId(View.generateViewId());
+                                    bannerLayout.setOrientation(LinearLayout.VERTICAL);
+                                    layout.removeView(bannerLayout);
+
+                                    if (banner != null) {
+                                        LinearLayout innerBannerLayoutbanner = banner.getComponent();
+                                        if (innerBannerLayoutbanner != null) {
+                                            layout.addView(bannerLayout);
+
+                                            bannerLayout.setBackgroundColor(Color.parseColor("#FF4081")); // Use your desired color code
+                                            bannerLayout.addView(innerBannerLayoutbanner);
+
+                                            ConstraintLayout.LayoutParams params = new ConstraintLayout.LayoutParams(
+                                                    ConstraintLayout.LayoutParams.MATCH_PARENT, // Width
+                                                    ConstraintLayout.LayoutParams.WRAP_CONTENT); // Height
+
+                                            params.topToTop = ConstraintLayout.LayoutParams.PARENT_ID; // Pin to top
+                                            params.startToStart = ConstraintLayout.LayoutParams.PARENT_ID; // Pin to start (left for LTR layouts)
+                                            params.endToEnd = ConstraintLayout.LayoutParams.PARENT_ID; // Pin to end (right for LTR layouts)
+
+                                            bannerLayout.setLayoutParams(params);
+                                        }
+                                    }
+                                }
+                            });
+
         local.runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -240,6 +273,20 @@ class GleapInvisibleActivityManger {
                 }
             }
         });
+    }
+
+    public void showBanner(GleapBanner banner) {
+        if (this.banner != null) {
+            LinearLayout layout = this.banner.getComponent();
+            LinearLayout parent = (LinearLayout) layout.getParent();
+            parent.removeView(layout);
+
+            this.banner.clearComponent();
+            this.banner = null;
+        }
+
+        this.banner = banner;
+        render(null, true);
     }
 
     public void addComment(GleapChatMessage comment) {
@@ -492,7 +539,6 @@ class GleapInvisibleActivityManger {
         } catch (Exception ex) {
         }
     }
-
 
     private void renderSquareWidget(Activity local) {
         try {
