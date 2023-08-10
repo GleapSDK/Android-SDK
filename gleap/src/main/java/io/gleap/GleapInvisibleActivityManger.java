@@ -6,6 +6,7 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
 import android.app.Activity;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
@@ -46,6 +47,7 @@ class GleapInvisibleActivityManger {
     private LinearLayout notificationContainerLayout;
     private LinearLayout notificationListContainer;
     private ImageButton imageButton;
+    private Bitmap fabIcon;
     private RelativeLayout closeButtonContainer;
     private Button squareButton;
     private GleapBanner banner;
@@ -569,9 +571,9 @@ class GleapInvisibleActivityManger {
                     layout.addView(feedbackButtonRelativeLayout);
 
                     if (GleapConfig.getInstance().getWidgetPositionType() == WidgetPositionType.CLASSIC) {
-                        renderSquareWidget(finalActivity);
+                        renderClassicFeedbackButton(finalActivity);
                     } else {
-                        renderCircularWidget(finalActivity);
+                        renderModernFeedbackButton(finalActivity);
                     }
                 }
             });
@@ -636,7 +638,7 @@ class GleapInvisibleActivityManger {
         }
     }
 
-    private void renderCircularWidget(Activity local) {
+    private void renderModernFeedbackButton(Activity local) {
         try {
             if (imageButton == null) {
                 imageButton = new ImageButton(local);
@@ -649,8 +651,7 @@ class GleapInvisibleActivityManger {
                 imageButton.setBackground(gdDefault);
                 imageButton.setAdjustViewBounds(true);
                 imageButton.setScaleType(ImageView.ScaleType.FIT_CENTER);
-
-                new GleapRoundImageHandler(GleapConfig.getInstance().getButtonLogo(), imageButton).execute();
+                imageButton.setVisibility(View.INVISIBLE);
 
                 imageButton.setOnClickListener(new View.OnClickListener() {
                     @Override
@@ -679,6 +680,7 @@ class GleapInvisibleActivityManger {
             gdDefaultText.setColor(Color.RED);
 
             gdDefaultText.setCornerRadius(1000);
+
             notificationCountTextView = new TextView(local);
             notificationCountTextView.setId(View.generateViewId());
             notificationCountTextView.setBackground(gdDefaultText);
@@ -687,6 +689,7 @@ class GleapInvisibleActivityManger {
             notificationCountTextView.setText(String.valueOf(messageCounter));
             notificationCountTextView.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
             notificationCountTextView.setGravity(Gravity.CENTER);
+            notificationCountTextView.setVisibility(View.GONE);
 
             ConstraintSet feedbackButtonRelativeLayoutSet = new ConstraintSet();
             feedbackButtonRelativeLayoutSet.clone(feedbackButtonRelativeLayout);
@@ -695,8 +698,27 @@ class GleapInvisibleActivityManger {
             notificationCountTextView.bringToFront();
             feedbackButtonRelativeLayout.addView(notificationCountTextView, convertDpToPixel(16, local), convertDpToPixel(16, local));
 
-            if (messageCounter <= 0) {
-                notificationCountTextView.setVisibility(View.GONE);
+            if (fabIcon == null) {
+                new GleapRoundImageHandler(GleapConfig.getInstance().getButtonLogo(), imageButton, new GleapImageLoaded() {
+                    @Override
+                    public void invoke(Bitmap bitmap) {
+                        fabIcon = bitmap;
+
+                        local.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                // Update counter and show FAB.
+                                setMessageCounter(messageCounter);
+                                GleapInvisibleActivityManger.animateViewInOut(imageButton, true);
+                            }
+                        });
+                    }
+                }).execute();
+            } else {
+                // Instantly show FAB if icon is already loaded.
+                imageButton.setImageBitmap(fabIcon);
+                imageButton.setVisibility(View.VISIBLE);
+                setMessageCounter(messageCounter);
             }
 
             int offsetX = GleapConfig.getInstance().getButtonX() + 20;
@@ -714,7 +736,7 @@ class GleapInvisibleActivityManger {
         } catch (Exception ex) {}
     }
 
-    private void renderSquareWidget(Activity local) {
+    private void renderClassicFeedbackButton(Activity local) {
         try {
             boolean manualHidden = GleapConfig.getInstance().isHideWidget();
             if (showFab && !manualHidden) {

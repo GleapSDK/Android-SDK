@@ -48,6 +48,9 @@ class GleapBanner {
 
     public void clearComponent() {
         this.layout = null;
+        if (this.webView != null) {
+            this.webView.destroy();
+        }
         this.webView = null;
         this.bannerData = null;
     }

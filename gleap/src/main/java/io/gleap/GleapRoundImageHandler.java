@@ -9,6 +9,7 @@ import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.os.AsyncTask;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -19,7 +20,6 @@ class GleapRoundImageHandler extends AsyncTask<Void, Void, Bitmap> {
     private String url;
     private ImageView imageView;
     private GleapImageLoaded imageLoaded;
-
 
     public GleapRoundImageHandler(String url, ImageView imageView) {
         this.url = url;
