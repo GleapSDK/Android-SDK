@@ -102,6 +102,7 @@ class GleapChatMessage {
             public void invoke(Bitmap bitmap) {
                 topImageBitmap = bitmap;
                 completeMessage.setVisibility(View.VISIBLE);
+                GleapInvisibleActivityManger.getInstance().updateCloseButtonState();
             }
         }).execute();
 
@@ -122,7 +123,7 @@ class GleapChatMessage {
                 @Override
                 public void invoke(Bitmap bitmap) {
                     avatarBitmap = bitmap;
-                    completeMessage.setVisibility(View.VISIBLE);
+                    GleapInvisibleActivityManger.animateViewInOut(completeMessage, true);
                 }
             }).execute();
 
@@ -238,6 +239,7 @@ class GleapChatMessage {
             public void invoke(Bitmap bitmap) {
                 avatarBitmap = bitmap;
                 GleapInvisibleActivityManger.animateViewInOut(messageContainer, true);
+                GleapInvisibleActivityManger.getInstance().updateCloseButtonState();
             }
         }).execute();
 

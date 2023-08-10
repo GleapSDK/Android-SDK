@@ -65,13 +65,21 @@ class GleapInvisibleActivityManger {
             return;
         }
 
+        if (show && view.getVisibility() == View.VISIBLE) {
+            return;
+        }
+
+        if (!show && (view.getVisibility() == View.GONE || view.getVisibility() == View.INVISIBLE)) {
+            return;
+        }
+
         view.setAlpha(show ? 0f : 1f);
         if (show) {
             view.setVisibility(View.VISIBLE);
         }
 
         ObjectAnimator fadeInAnimation = ObjectAnimator.ofFloat(view, "alpha", show ? 0f : 1f, show ? 1f : 0f);
-        fadeInAnimation.setDuration(300);
+        fadeInAnimation.setDuration(200);
         fadeInAnimation.addListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationEnd(Animator animation) {
@@ -264,9 +272,13 @@ class GleapInvisibleActivityManger {
         // Remove from list.
         this.messages.remove(notification);
 
+        updateCloseButtonState();
+    }
+
+    public void updateCloseButtonState() {
         if (closeButtonContainer != null) {
             if (this.messages.size() > 0) {
-                closeButtonContainer.setVisibility(View.VISIBLE);
+                animateViewInOut(closeButtonContainer, true);
             } else {
                 closeButtonContainer.setVisibility(View.GONE);
             }
@@ -308,11 +320,6 @@ class GleapInvisibleActivityManger {
                     notificationListContainer.addView(commentComponent);
                 }
             }
-        }
-
-        // Show close button.
-        if (closeButtonContainer != null) {
-            closeButtonContainer.setVisibility(View.VISIBLE);
         }
     }
 
