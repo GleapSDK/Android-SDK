@@ -124,8 +124,6 @@ class GleapUserSessionLoader extends AsyncTask<Void, Void, Integer> {
                             mainHandler.post(gleapRunnable);
                         }
                     });
-
-                    GleapInvisibleActivityManger.getInstance().render(null, true);
                 }
 
                 if(GleapConfig.getInstance().getInitializationDoneCallback() != null) {

@@ -37,7 +37,8 @@ class GleapActivityManager {
                 @Override
                 public void onActivityStarted(@NonNull Activity activity) {
                     checkPage(activity);
-                    generateFab(activity);
+
+                    GleapInvisibleActivityManger.getInstance().addLayoutToActivity(activity);
                   }
 
                 @Override
@@ -94,13 +95,11 @@ class GleapActivityManager {
         }catch (Exception ex){}
     }
 
-
-    private void generateFab(Activity activity) {
-        GleapDetector detector =  GleapDetectorUtil.getDetectorByClassName("FABGesture");
-
+    /*private void generateFab(Activity activity) {
+        GleapDetector detector = GleapDetectorUtil.getDetectorByClassName("FABGesture");
         if(detector != null) {
             FABGesture fabGesture = (FABGesture) detector;
             fabGesture.attachFAB(activity);
         }
-    }
+    }*/
 }

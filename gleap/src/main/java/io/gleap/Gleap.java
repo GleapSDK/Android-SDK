@@ -982,7 +982,6 @@ public class Gleap implements iGleap {
 
         public GleapListener() {
             try {
-
                 new ConfigLoader(this).execute(GleapBug.getInstance());
 
                 GleapUserSessionLoader sessionLoader = new GleapUserSessionLoader();

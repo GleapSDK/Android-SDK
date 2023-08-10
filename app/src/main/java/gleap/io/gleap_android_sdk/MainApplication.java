@@ -43,9 +43,6 @@ public class MainApplication extends Application {
             }
         });
      //   Gleap.getInstance().setLanguage("pt");
-     //   Gleap.getInstance().showFeedbackButton(false);
-
-
 
        /*   GleapUserProperties userProperties = new GleapUserProperties("Test User", "niklas@gmail.com" );
         //userProperties.setHash();

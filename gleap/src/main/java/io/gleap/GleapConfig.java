@@ -246,7 +246,6 @@ class GleapConfig {
             if (flowConfigs.has("networkLogBlacklist")) {
                 this.blackList = flowConfigs.getJSONArray("networkLogBlacklist");
             }
-
         } catch (JSONException e) {
             e.printStackTrace();
         }

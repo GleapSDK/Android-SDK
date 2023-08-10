@@ -1,6 +1,8 @@
 package io.gleap;
 
 import android.os.AsyncTask;
+import android.os.Handler;
+import android.os.Looper;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -52,7 +54,6 @@ class ConfigLoader extends AsyncTask<GleapBug, Void, JSONObject> {
     }
 
     private void readResponse(HttpURLConnection con) throws IOException {
-
         if (con != null) {
 
             try {
@@ -67,7 +68,20 @@ class ConfigLoader extends AsyncTask<GleapBug, Void, JSONObject> {
                 br.close();
 
                 if (result != null) {
+                    Handler mainThreadHandler = new Handler(Looper.getMainLooper());
+
                     GleapConfig.getInstance().initConfig(result);
+
+                    if(result.has("flowConfig")) {
+                        mainThreadHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                // Config loaded. Add layout.
+                                GleapInvisibleActivityManger.getInstance().addLayoutToActivity(null);
+                            }
+                        });
+                    }
+
                     if(GleapConfig.getInstance().getConfigLoadedCallback() != null) {
                         if(result.has("flowConfig")) {
                             GleapConfig.getInstance().getConfigLoadedCallback().configLoaded(result.getJSONObject("flowConfig"));

@@ -6,11 +6,9 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import android.graphics.PorterDuff;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.net.http.SslError;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -436,9 +434,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         private void customActionCalled(JSONObject object) {
             try {
                 String data = object.getString("data");
-
                 if (GleapConfig.getInstance().getCustomActions() != null) {
-
                     GleapConfig.getInstance().getCustomActions().invoke(data);
                 }
                 finish();
@@ -446,7 +442,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 e.printStackTrace();
             }
         }
-
 
         private void openExternalURL(JSONObject object) {
             try {

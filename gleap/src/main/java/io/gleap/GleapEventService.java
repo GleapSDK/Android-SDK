@@ -1,7 +1,5 @@
 package io.gleap;
 
-import static io.gleap.DateUtil.dateToString;
-
 import android.app.Activity;
 import android.os.AsyncTask;
 import android.os.Handler;
@@ -19,7 +17,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -260,9 +257,17 @@ class GleapEventService {
     }
 
     private void processData(JSONObject data) throws Exception {
+        Handler mainThreadHandler = new Handler(Looper.getMainLooper());
+
         if (data.has("u")) {
-            GleapInvisibleActivityManger.getInstance().setMessageCounter(data.getInt("u"));
-            GleapInvisibleActivityManger.getInstance().addFab(null);
+            mainThreadHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        GleapInvisibleActivityManger.getInstance().setMessageCounter(data.getInt("u"));
+                    } catch (JSONException e) {}
+                }
+            });
         }
 
         if (data.has("a") && data.get("a") instanceof JSONArray) {
@@ -274,21 +279,26 @@ class GleapEventService {
                     if (currentAction.getString("actionType").contains("notification")) {
                         // In app notification.
                         if (!this.disableInAppNotifications) {
-                            String outboundId = "";
-                            if(currentAction.has("outbound")){
-                                outboundId = currentAction.getString("outbound");
-                            }
-                            JSONObject messageData = currentAction.getJSONObject("data");
-                            GleapChatMessage comment = createComment(outboundId, messageData);
-                            GleapInvisibleActivityManger.getInstance().addComment(comment);
+                            mainThreadHandler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    try {
+                                        String outboundId = "";
+                                        if(currentAction.has("outbound")){
+                                            outboundId = currentAction.getString("outbound");
+                                        }
+                                        JSONObject messageData = currentAction.getJSONObject("data");
+                                        GleapChatMessage comment = createComment(outboundId, messageData);
+                                        GleapInvisibleActivityManger.getInstance().addNotification(comment, null);
+                                    } catch (JSONException e) {
+
+                                    } catch (Exception e) {
+
+                                    }
+                                }
+                            });
                         }
                     } else if (currentAction.getString("format").contains("survey")) {
-                        // Survey.
-                        SurveyType surveyType = SurveyType.SURVEY;
-                        if (currentAction.getString("format").contains("survey_full")) {
-                            surveyType = SurveyType.SURVEY_FULL;
-                        }
-
                         JSONObject jsonObject = new JSONObject();
                         try {
                             jsonObject.put("isSurvey", true);
@@ -298,18 +308,35 @@ class GleapEventService {
                         } catch (Exception ex) {
                         }
 
-                        // Check if it is open
-                        GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("start-survey", jsonObject));
-                        Gleap.getInstance().open(surveyType);
+                        mainThreadHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                SurveyType surveyType = SurveyType.SURVEY;
+                                try {
+                                    if (currentAction.getString("format").contains("survey_full")) {
+                                        surveyType = SurveyType.SURVEY_FULL;
+                                    }
+                                } catch (JSONException e) {
+
+                                }
+
+                                // Check if it is open
+                                GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("start-survey", jsonObject));
+                                Gleap.getInstance().open(surveyType);
+                            }
+                        });
                     } if (currentAction.getString("actionType").contains("banner")) {
-                        GleapBanner banner = new GleapBanner(currentAction);
-                        GleapInvisibleActivityManger.getInstance().showBanner(banner);
+                        mainThreadHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                GleapInvisibleActivityManger.getInstance().showBanner(currentAction, null);
+                            }
+                        });
                     } else {
                         // Unknown action.
                     }
                 }
             }
-            GleapInvisibleActivityManger.getInstance().render(null, false);
         }
     }
 

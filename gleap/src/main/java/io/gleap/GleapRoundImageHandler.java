@@ -82,7 +82,6 @@ class GleapRoundImageHandler extends AsyncTask<Void, Void, Bitmap> {
         paint.setFilterBitmap(true);
         paint.setDither(true);
         canvas.drawARGB(0, 0, 0, 0);
-       // paint.setColor(Color.parseColor("#BAB399"));
         canvas.drawCircle(finalBitmap.getWidth() / 2 + 0.7f,
                 finalBitmap.getHeight() / 2 + 0.7f,
                 finalBitmap.getWidth() / 2 + 0.1f, paint);

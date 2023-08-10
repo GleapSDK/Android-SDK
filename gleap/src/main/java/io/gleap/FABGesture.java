@@ -41,7 +41,7 @@ class FABGesture extends GleapDetector {
 
     @Override
     public void initialize() {
-        attachFAB(null);
+        //attachFAB(null);
     }
 
     @Override
@@ -65,9 +65,5 @@ class FABGesture extends GleapDetector {
 
     private void run() {
 
-    }
-
-    public void attachFAB(Activity activity) {
-       GleapInvisibleActivityManger.getInstance().addFab(activity);
     }
 }

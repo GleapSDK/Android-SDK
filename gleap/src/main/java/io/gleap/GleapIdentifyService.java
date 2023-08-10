@@ -179,7 +179,6 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                             isLoaded = true;
                         }
 
-                        GleapInvisibleActivityManger.getInstance().render(null, true);
                         UserSessionController.getInstance().setSessionLoaded(true);
                         ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
                             @Override
@@ -201,14 +200,12 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                         });
                     }
 
-                    //send session started
+                    // Send session started
                     gleapUser.setNew(false);
                     GleapEventService.getInstance().stop(false);
                     GleapEventService.getInstance().start();
                 } catch (Exception e) {
                     UserSessionController.getInstance().setSessionLoaded(true);
-
-
                     if (UserSessionController.getInstance() != null) {
                         UserSessionController.getInstance().clearUserSession();
                         UserSessionController.getInstance().setSessionLoaded(true);
