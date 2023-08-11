@@ -24,6 +24,7 @@ import io.gleap.callbacks.FeedbackWillBeSentCallback;
 import io.gleap.callbacks.GetActivityCallback;
 import io.gleap.callbacks.GetBitmapCallback;
 import io.gleap.callbacks.InitializationDoneCallback;
+import io.gleap.callbacks.InitializedCallback;
 import io.gleap.callbacks.RegisterPushMessageGroupCallback;
 import io.gleap.callbacks.UnRegisterPushMessageGroupCallback;
 import io.gleap.callbacks.WidgetClosedCallback;
@@ -46,6 +47,7 @@ class GleapConfig {
     private JSONObject stripModel = new JSONObject();
     private JSONObject crashStripModel = new JSONObject();
     private ConfigLoadedCallback configLoadedCallback;
+    private InitializedCallback initializedCallback;
     private FeedbackSentCallback feedbackSentCallback;
     private FeedbackSentCallback crashFeedbackSentCallback;
     private FeedbackWillBeSentCallback feedbackWillBeSentCallback;
@@ -409,6 +411,14 @@ class GleapConfig {
         this.configLoadedCallback = configLoadedCallback;
     }
 
+    public InitializedCallback getInitializedCallback() {
+        return initializedCallback;
+    }
+
+    public void setInitializedCallback(InitializedCallback initializedCallback) {
+        this.initializedCallback = initializedCallback;
+    }
+
     public int getInterval() {
         return interval;
     }
@@ -575,7 +585,7 @@ class GleapConfig {
         return Color.WHITE;
     }
 
-    public boolean isHideWidget() {
+    public boolean isHideFeedbackButton() {
         return hideWidget;
     }
 

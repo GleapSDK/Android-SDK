@@ -87,6 +87,10 @@ class ConfigLoader extends AsyncTask<GleapBug, Void, JSONObject> {
                             GleapConfig.getInstance().getConfigLoadedCallback().configLoaded(result.getJSONObject("flowConfig"));
                         }
                     }
+
+                    if(GleapConfig.getInstance().getInitializedCallback() != null) {
+                        GleapConfig.getInstance().getInitializedCallback().initialized();
+                    }
                 }
 
                 con.disconnect();

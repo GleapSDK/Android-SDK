@@ -104,13 +104,13 @@ class GleapInvisibleActivityManger {
 
     public void setInvisible() {
         if (feedbackButtonRelativeLayout != null) {
-            //feedbackButtonRelativeLayout.setVisibility(View.INVISIBLE);
+            feedbackButtonRelativeLayout.setVisibility(View.INVISIBLE);
         }
     }
 
     public void setVisible() {
-        if (feedbackButtonRelativeLayout != null && !GleapConfig.getInstance().isHideWidget()) {
-            //feedbackButtonRelativeLayout.setVisibility(View.VISIBLE);
+        if (feedbackButtonRelativeLayout != null && !GleapConfig.getInstance().isHideFeedbackButton()) {
+            feedbackButtonRelativeLayout.setVisibility(View.VISIBLE);
         }
     }
 
@@ -148,10 +148,15 @@ class GleapInvisibleActivityManger {
 
                     int viewPadding = 20;
 
-                    set.connect(notificationContainerLayout.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, 0);
-                    if (feedbackButtonRelativeLayout == null) {
-                        set.connect(notificationContainerLayout.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, 0);
+                    boolean manualHidden = GleapConfig.getInstance().isHideFeedbackButton();
+                    boolean canShowFeedbackButton = showFab && !manualHidden;
+
+                    // Feedback button hidden - apply default constraints.
+                    if (feedbackButtonRelativeLayout == null || !canShowFeedbackButton) {
+                        set.connect(notificationContainerLayout.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, convertDpToPixel(20, finalActivity));
+                        set.connect(notificationContainerLayout.getId(), ConstraintSet.START, layout.getId(), ConstraintSet.START, convertDpToPixel(0, finalActivity));
                     } else {
+                        // Apply constraints based on feedback button type.
                         if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.BOTTOM_LEFT) {
                             set.connect(notificationContainerLayout.getId(), ConstraintSet.BOTTOM, feedbackButtonRelativeLayout.getId(), ConstraintSet.TOP, convertDpToPixel(15, finalActivity));
                             set.connect(notificationContainerLayout.getId(), ConstraintSet.START, layout.getId(), ConstraintSet.START, convertDpToPixel(offsetX, finalActivity));
@@ -200,7 +205,7 @@ class GleapInvisibleActivityManger {
                         closeButtonContainer.setGravity(Gravity.RIGHT);
 
                         LinearLayout.LayoutParams closeContainerParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
-                        closeContainerParams.setMargins(convertDpToPixel(15, finalActivity), convertDpToPixel(0, finalActivity), convertDpToPixel(15, finalActivity), 0);
+                        closeContainerParams.setMargins(convertDpToPixel(20, finalActivity), convertDpToPixel(0, finalActivity), convertDpToPixel(20, finalActivity), 0);
                         closeButtonContainer.setLayoutParams(closeContainerParams);
 
                         closeButton.setBackgroundResource(R.drawable.close_white);
@@ -306,11 +311,7 @@ class GleapInvisibleActivityManger {
                 CardView cardView = new CardView(activity.getApplication().getApplicationContext());
                 cardView.setBackgroundResource(R.drawable.rounded_corner);
                 LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-                if (notificationListContainer.getChildCount() == 0) {
-                    params.setMargins(convertDpToPixel(1, activity), convertDpToPixel(10, activity), convertDpToPixel(20, activity), convertDpToPixel(15, activity));
-                } else {
-                    params.setMargins(convertDpToPixel(1, activity), convertDpToPixel(0, activity), convertDpToPixel(20, activity), convertDpToPixel(15, activity));
-                }
+                params.setMargins(convertDpToPixel(1, activity), convertDpToPixel(10, activity), convertDpToPixel(20, activity), convertDpToPixel(4, activity));
                 cardView.setLayoutParams(params);
                 cardView.setElevation(4f);
                 if(commentComponent.getParent() == null) {
@@ -388,7 +389,7 @@ class GleapInvisibleActivityManger {
 
         // Check notification limit.
         GleapArrayHelper<GleapChatMessage> helper = new GleapArrayHelper<>();
-        if (this.messages.size() >= 2) {
+        if (this.messages.size() >= 3) {
             // Remove from layout.
             GleapChatMessage notificationToRemove = this.messages.get(0);
             removeNotificationViewFromLayout(notificationToRemove);
@@ -516,6 +517,11 @@ class GleapInvisibleActivityManger {
             this.imageButton = null;
         }
 
+        if (this.fabIcon != null) {
+            this.fabIcon.recycle();
+            this.fabIcon = null;
+        }
+
         if (this.notificationCountTextView != null) {
             this.notificationCountTextView = null;
         }
@@ -616,7 +622,7 @@ class GleapInvisibleActivityManger {
             ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    boolean manualHidden = GleapConfig.getInstance().isHideWidget();
+                    boolean manualHidden = GleapConfig.getInstance().isHideFeedbackButton();
                     if (!manualHidden) {
                         if (showFabIn) {
                             if (feedbackButtonRelativeLayout != null) {
@@ -664,7 +670,7 @@ class GleapInvisibleActivityManger {
                 });
             }
 
-            boolean manualHidden = GleapConfig.getInstance().isHideWidget();
+            boolean manualHidden = GleapConfig.getInstance().isHideFeedbackButton();
             if (showFab && !manualHidden) {
                 feedbackButtonRelativeLayout.setVisibility(View.VISIBLE);
             } else {
@@ -685,18 +691,13 @@ class GleapInvisibleActivityManger {
             notificationCountTextView.setId(View.generateViewId());
             notificationCountTextView.setBackground(gdDefaultText);
             notificationCountTextView.setTextColor(Color.WHITE);
-            notificationCountTextView.setTextSize(10);
+            notificationCountTextView.setTextSize(12);
             notificationCountTextView.setText(String.valueOf(messageCounter));
             notificationCountTextView.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
             notificationCountTextView.setGravity(Gravity.CENTER);
             notificationCountTextView.setVisibility(View.GONE);
-
-            ConstraintSet feedbackButtonRelativeLayoutSet = new ConstraintSet();
-            feedbackButtonRelativeLayoutSet.clone(feedbackButtonRelativeLayout);
-            feedbackButtonRelativeLayoutSet.connect(notificationCountTextView.getId(), ConstraintSet.END, feedbackButtonRelativeLayout.getId(), ConstraintSet.END, 0);
-            feedbackButtonRelativeLayoutSet.applyTo(feedbackButtonRelativeLayout);
             notificationCountTextView.bringToFront();
-            feedbackButtonRelativeLayout.addView(notificationCountTextView, convertDpToPixel(16, local), convertDpToPixel(16, local));
+            feedbackButtonRelativeLayout.addView(notificationCountTextView, convertDpToPixel(18, local), convertDpToPixel(18, local));
 
             if (fabIcon == null) {
                 new GleapRoundImageHandler(GleapConfig.getInstance().getButtonLogo(), imageButton, new GleapImageLoaded() {
@@ -738,7 +739,7 @@ class GleapInvisibleActivityManger {
 
     private void renderClassicFeedbackButton(Activity local) {
         try {
-            boolean manualHidden = GleapConfig.getInstance().isHideWidget();
+            boolean manualHidden = GleapConfig.getInstance().isHideFeedbackButton();
             if (showFab && !manualHidden) {
                 feedbackButtonRelativeLayout.setVisibility(View.VISIBLE);
             } else {

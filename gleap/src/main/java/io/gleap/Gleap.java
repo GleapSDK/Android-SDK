@@ -24,6 +24,7 @@ import io.gleap.callbacks.FeedbackWillBeSentCallback;
 import io.gleap.callbacks.GetActivityCallback;
 import io.gleap.callbacks.GetBitmapCallback;
 import io.gleap.callbacks.InitializationDoneCallback;
+import io.gleap.callbacks.InitializedCallback;
 import io.gleap.callbacks.RegisterPushMessageGroupCallback;
 import io.gleap.callbacks.UnRegisterPushMessageGroupCallback;
 import io.gleap.callbacks.WidgetClosedCallback;
@@ -662,6 +663,7 @@ public class Gleap implements iGleap {
                 ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
+                        GleapInvisibleActivityManger.getInstance().destoryBanner(true);
                         GleapInvisibleActivityManger.getInstance().clearMessages();
                     }
                 });
@@ -858,6 +860,19 @@ public class Gleap implements iGleap {
     public void setConfigLoadedCallback(ConfigLoadedCallback configLoadedCallback) {
         try {
             GleapConfig.getInstance().setConfigLoadedCallback(configLoadedCallback);
+        } catch (Error | Exception ignore) {
+        }
+    }
+
+    /**
+     * This is called, when the config is received from the server;
+     *
+     * @param initializedCallback callback which is called
+     */
+    @Override
+    public void setInitializedCallback(InitializedCallback initializedCallback) {
+        try {
+            GleapConfig.getInstance().setInitializedCallback(initializedCallback);
         } catch (Error | Exception ignore) {
         }
     }

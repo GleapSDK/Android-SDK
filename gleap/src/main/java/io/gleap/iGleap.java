@@ -14,6 +14,7 @@ import io.gleap.callbacks.FeedbackSentCallback;
 import io.gleap.callbacks.FeedbackWillBeSentCallback;
 import io.gleap.callbacks.GetBitmapCallback;
 import io.gleap.callbacks.InitializationDoneCallback;
+import io.gleap.callbacks.InitializedCallback;
 import io.gleap.callbacks.RegisterPushMessageGroupCallback;
 import io.gleap.callbacks.UnRegisterPushMessageGroupCallback;
 import io.gleap.callbacks.WidgetClosedCallback;
@@ -314,6 +315,13 @@ interface iGleap {
      * @param configLoadedCallback callback which is called
      */
     void setConfigLoadedCallback(ConfigLoadedCallback configLoadedCallback);
+
+    /**
+     * This is called, when Gleap got initialized;
+     *
+     * @param initializedCallback callback which is called
+     */
+    void setInitializedCallback(InitializedCallback initializedCallback);
 
     /**
      * Called if actually a user is starting a flow, not only the widget opens
