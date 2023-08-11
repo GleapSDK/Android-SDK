@@ -96,20 +96,6 @@ class ScreenshotUtil {
         }
     }
 
-    public static Bitmap takeScreenshot(float downScale) {
-        Bitmap bitmap = null;
-        if (GleapConfig.getInstance().getGetBitmapCallback() != null) {
-            bitmap = GleapConfig.getInstance().getGetBitmapCallback().getBitmap();
-        } else {
-            bitmap = generateBitmap(ActivityUtil.getCurrentActivity());
-
-        }
-        if (bitmap != null) {
-            return getResizedBitmap(bitmap, downScale);
-        }
-        return null;
-    }
-
     private static Bitmap generateBitmap(Activity activity) {
         try {
             final List<ViewMeta> viewRoots = getAvailableViewsEnriched(activity);
