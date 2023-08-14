@@ -12,6 +12,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
+import io.gleap.Gleap;
+
 
 public class MainActivity extends AppCompatActivity {
     public static String[] storge_permissions = {
@@ -39,6 +41,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        Gleap.getInstance().showFeedbackButton(false);
 
         /*View decorView = getWindow().getDecorView();
         decorView.setOnSystemUiVisibilityChangeListener

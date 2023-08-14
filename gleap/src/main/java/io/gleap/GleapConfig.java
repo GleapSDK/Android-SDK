@@ -89,7 +89,7 @@ class GleapConfig {
     private WidgetPositionType widgetPositionType = WidgetPositionType.NEW;
     private WidgetPosition widgetPosition = WidgetPosition.BOTTOM_RIGHT;
     private String widgetButtonText = "Feedback";
-    private boolean hideWidget = false;
+    private boolean hideFeedbackButton = false;
 
     private int buttonX = 20; //horizontal
     private int buttonY = 20; //vertical
@@ -146,40 +146,35 @@ class GleapConfig {
             }
 
             if (flowConfigs.has("feedbackButtonPosition")) {
-                if (hideWidget) {
-                    GleapInvisibleActivityManger.getInstance().setShowFab(false);
-                } else {
-                    switch (flowConfigs.getString("feedbackButtonPosition")) {
-                        case "BOTTOM_RIGHT":
-                            this.widgetPosition = WidgetPosition.BOTTOM_RIGHT;
-                            GleapInvisibleActivityManger.getInstance().setShowFab(true);
-                            break;
-                        case "BOTTOM_LEFT":
-                            this.widgetPosition = WidgetPosition.BOTTOM_LEFT;
-                            GleapInvisibleActivityManger.getInstance().setShowFab(true);
-                            break;
-                        case "BUTTON_CLASSIC":
-                            //mid right
-                            this.widgetPosition = WidgetPosition.CLASSIC_RIGHT;
-                            this.widgetPositionType = WidgetPositionType.CLASSIC;
-                            GleapInvisibleActivityManger.getInstance().setShowFab(true);
-                            break;
-                        case "BUTTON_CLASSIC_LEFT":
-                            this.widgetPosition = WidgetPosition.CLASSIC_LEFT;
-                            this.widgetPositionType = WidgetPositionType.CLASSIC;
-                            GleapInvisibleActivityManger.getInstance().setShowFab(true);
-                            break;
-                        case "BUTTON_CLASSIC_BOTTOM":
-                            this.widgetPosition = WidgetPosition.CLASSIC_BOTTOM;
-                            this.widgetPositionType = WidgetPositionType.CLASSIC;
-                            GleapInvisibleActivityManger.getInstance().setShowFab(true);
-                            break;
-                        default:
-                            this.widgetPosition = WidgetPosition.HIDDEN;
-                            GleapInvisibleActivityManger.getInstance().setShowFab(false);
-                            hideWidget = true;
-                            break;
-                    }
+                switch (flowConfigs.getString("feedbackButtonPosition")) {
+                    case "BOTTOM_RIGHT":
+                        this.widgetPosition = WidgetPosition.BOTTOM_RIGHT;
+                        GleapInvisibleActivityManger.getInstance().setShowFab(true);
+                        break;
+                    case "BOTTOM_LEFT":
+                        this.widgetPosition = WidgetPosition.BOTTOM_LEFT;
+                        GleapInvisibleActivityManger.getInstance().setShowFab(true);
+                        break;
+                    case "BUTTON_CLASSIC":
+                        this.widgetPosition = WidgetPosition.CLASSIC_RIGHT;
+                        this.widgetPositionType = WidgetPositionType.CLASSIC;
+                        GleapInvisibleActivityManger.getInstance().setShowFab(true);
+                        break;
+                    case "BUTTON_CLASSIC_LEFT":
+                        this.widgetPosition = WidgetPosition.CLASSIC_LEFT;
+                        this.widgetPositionType = WidgetPositionType.CLASSIC;
+                        GleapInvisibleActivityManger.getInstance().setShowFab(true);
+                        break;
+                    case "BUTTON_CLASSIC_BOTTOM":
+                        this.widgetPosition = WidgetPosition.CLASSIC_BOTTOM;
+                        this.widgetPositionType = WidgetPositionType.CLASSIC;
+                        GleapInvisibleActivityManger.getInstance().setShowFab(true);
+                        break;
+                    default:
+                        this.widgetPosition = WidgetPosition.HIDDEN;
+                        GleapInvisibleActivityManger.getInstance().setShowFab(false);
+                        hideFeedbackButton = true;
+                        break;
                 }
             }
 
@@ -586,11 +581,11 @@ class GleapConfig {
     }
 
     public boolean isHideFeedbackButton() {
-        return hideWidget;
+        return hideFeedbackButton;
     }
 
-    public void setHideWidget(boolean hideWidget) {
-        this.hideWidget = hideWidget;
+    public void setHideFeedbackButton(boolean hideFeedbackButton) {
+        this.hideFeedbackButton = hideFeedbackButton;
     }
 
     public ValueCallback<Uri[]> getmUploadMessage() {

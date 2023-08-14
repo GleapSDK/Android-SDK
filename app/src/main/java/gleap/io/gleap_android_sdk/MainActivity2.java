@@ -18,6 +18,8 @@ public class MainActivity2 extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main2);
 
+        Gleap.getInstance().showFeedbackButton(false);
+
         findViewById(R.id.bck_btn).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {

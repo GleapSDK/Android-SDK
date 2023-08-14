@@ -1196,7 +1196,7 @@ public class Gleap implements iGleap {
     @Override
     public void showFeedbackButton(boolean show) {
         try {
-            GleapConfig.getInstance().setHideWidget(!show);
+            GleapConfig.getInstance().setHideFeedbackButton(!show);
             GleapInvisibleActivityManger.getInstance().setShowFab(show);
         } catch (Exception ignore) {
         }
