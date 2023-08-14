@@ -17,6 +17,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
+import android.view.WindowInsets;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -500,6 +501,19 @@ class GleapInvisibleActivityManger {
                     layout.setFocusable(false);
                     viewGroup.addView(layout);
                 }
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                this.layout.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
+                    @Override
+                    public WindowInsets onApplyWindowInsets(View v, WindowInsets insets) {
+                        int topPadding = insets.getSystemWindowInsetTop();
+                        int bottomPadding = insets.getSystemWindowInsetBottom();
+                        v.setPadding(0, topPadding, 0, bottomPadding);
+                        return insets.consumeSystemWindowInsets();
+                    }
+                });
+                this.layout.requestApplyInsets();
             }
         } catch (Error | Exception ignore) {
         }
