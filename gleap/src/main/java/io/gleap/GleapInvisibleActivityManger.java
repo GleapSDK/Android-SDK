@@ -689,7 +689,6 @@ class GleapInvisibleActivityManger {
                 feedbackButtonRelativeLayout.setVisibility(View.VISIBLE);
             } else {
                 feedbackButtonRelativeLayout.setVisibility(View.GONE);
-                return;
             }
 
             if (feedbackButtonRelativeLayout.indexOfChild(imageButton) < 0) {
@@ -741,7 +740,7 @@ class GleapInvisibleActivityManger {
 
             ConstraintSet set = new ConstraintSet();
             set.clone(layout);
-            if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.BOTTOM_RIGHT) {
+            if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.BOTTOM_RIGHT || GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.HIDDEN) {
                 set.connect(feedbackButtonRelativeLayout.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, convertDpToPixel(offsetX - 20, local));
             } else {
                 set.connect(feedbackButtonRelativeLayout.getId(), ConstraintSet.START, layout.getId(), ConstraintSet.START, convertDpToPixel(offsetX - 20, local));
