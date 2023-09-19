@@ -42,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Gleap.getInstance().showFeedbackButton(false);
+        Gleap.getInstance().showFeedbackButton(true);
 
         /*View decorView = getWindow().getDecorView();
         decorView.setOnSystemUiVisibilityChangeListener

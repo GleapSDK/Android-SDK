@@ -94,12 +94,4 @@ class GleapActivityManager {
             }
         }catch (Exception ex){}
     }
-
-    /*private void generateFab(Activity activity) {
-        GleapDetector detector = GleapDetectorUtil.getDetectorByClassName("FABGesture");
-        if(detector != null) {
-            FABGesture fabGesture = (FABGesture) detector;
-            fabGesture.attachFAB(activity);
-        }
-    }*/
 }

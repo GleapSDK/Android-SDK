@@ -42,6 +42,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.lang.ref.WeakReference;
 import java.util.List;
 import java.util.Locale;
 
@@ -171,10 +172,29 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
     @Override
     protected void onDestroy() {
+        webView.removeJavascriptInterface("GleapJSBridge");
+        webView.stopLoading();
+        webView.clearHistory();
+        webView.clearCache(true);
+        webView.onPause();
         webView.removeAllViews();
+        webView.destroyDrawingCache();
         webView.destroy();
+        webView = null;
+
+        if (openFileLauncher != null) {
+            openFileLauncher.unregister();
+            openFileLauncher = null;
+        }
+
         GleapConfig.getInstance().setCallCloseCallback(null);
-        this.handler.removeCallbacks(this.exitAfterFifteenSeconds);
+
+        if (this.exitAfterFifteenSeconds != null) {
+            this.handler.removeCallbacks(this.exitAfterFifteenSeconds);
+            this.exitAfterFifteenSeconds = null;
+        }
+        this.handler = null;
+
         super.onDestroy();
     }
 
@@ -332,15 +352,19 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
     }
 
     private class GleapJSBridge {
-        private final AppCompatActivity mContext;
+        private final WeakReference<AppCompatActivity> mContextRef;
 
         public GleapJSBridge(AppCompatActivity c) {
-            mContext = c;
+            mContextRef = new WeakReference<>(c);
         }
 
         @JavascriptInterface
         public void gleapCallback(String object) {
-            this.mContext.runOnUiThread(new Runnable() {
+            if (this.mContextRef.get() == null) {
+                return;
+            }
+
+            this.mContextRef.get().runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     try {
@@ -506,7 +530,11 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         }
 
         public void sendFeedback(JSONObject jsonObject) {
-            this.mContext.runOnUiThread(new Runnable() {
+            if (this.mContextRef.get() == null) {
+                return;
+            }
+
+            this.mContextRef.get().runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     try {
@@ -622,7 +650,11 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         }
 
         private void closeGleap() {
-            this.mContext.runOnUiThread(new Runnable() {
+            if (this.mContextRef.get() == null) {
+                return;
+            }
+
+            this.mContextRef.get().runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     GleapDetectorUtil.resumeAllDetectors();
