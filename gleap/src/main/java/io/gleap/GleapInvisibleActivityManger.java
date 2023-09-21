@@ -404,8 +404,8 @@ class GleapInvisibleActivityManger {
     public void destoryLayout() {
         if (this.layout != null) {
             this.layout.removeAllViews();
+            this.layout.setOnApplyWindowInsetsListener(null);
 
-            // Remove layout from parent.
             try {
                 ViewParent parent = this.layout.getParent();
                 if (parent != null) {
@@ -492,16 +492,8 @@ class GleapInvisibleActivityManger {
                 return;
             }
 
-            if (GleapBug.getInstance().getApplicationtype() != APPLICATIONTYPE.NATIVE) {
-                activity.addContentView(this.layout, new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT));
-            } else {
-                ViewGroup viewGroup = (ViewGroup) ((ViewGroup) activity
-                        .findViewById(android.R.id.content)).getChildAt(0);
-                if (viewGroup.indexOfChild(layout) < 0) {
-                    layout.setFocusable(false);
-                    viewGroup.addView(layout);
-                }
-            }
+            activity.addContentView(this.layout, new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT));
+            layout.setFocusable(false);
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 this.layout.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {

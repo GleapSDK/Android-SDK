@@ -9,6 +9,7 @@ import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.net.http.SslError;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -28,8 +29,8 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.ProgressBar;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResult;
 import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
@@ -50,6 +51,7 @@ import gleap.io.gleap.R;
 
 public class GleapMainActivity extends AppCompatActivity implements OnHttpResponseListener {
     private WebView webView;
+    private OnBackPressedCallback onBackPressedCallback;
     private String url = GleapConfig.getInstance().getiFrameUrl();
     public static final int REQUEST_SELECT_FILE = 100;
     private Runnable exitAfterFifteenSeconds;
@@ -82,13 +84,27 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
     @Override
     public void onBackPressed() {
-        GleapDetectorUtil.resumeAllDetectors();
+        if (onBackPressedCallback == null) {
+            GleapDetectorUtil.resumeAllDetectors();
+        }
         super.onBackPressed();
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                onBackPressedCallback = new OnBackPressedCallback(true) {
+                    @Override
+                    public void handleOnBackPressed() {
+                        GleapDetectorUtil.resumeAllDetectors();
+                        finish();
+                    }
+                };
+
+                getOnBackPressedDispatcher().addCallback(this, onBackPressedCallback);
+            }
+
             this.requestWindowFeature(Window.FEATURE_NO_TITLE);
             try {
                 getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
@@ -185,6 +201,11 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         if (openFileLauncher != null) {
             openFileLauncher.unregister();
             openFileLauncher = null;
+        }
+
+        if (onBackPressedCallback != null) {
+            onBackPressedCallback.remove();
+            onBackPressedCallback = null;
         }
 
         GleapConfig.getInstance().setCallCloseCallback(null);
