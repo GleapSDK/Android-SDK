@@ -79,7 +79,9 @@ class GleapEventService {
             public void run() {
                 try {
                     if (UserSessionController.getInstance() != null && UserSessionController.getInstance().isSessionLoaded()) {
-                        new EventHttpHelper().execute();
+                        if (eventsToBeSent.size() > 0) {
+                            new EventHttpHelper().execute();
+                        }
                     }
 
                     intervalHandler.postDelayed(this, 3000);
