@@ -173,7 +173,6 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
 
                         UserSessionController.getInstance().setGleapUserSession(new GleapUser(userId, gleapUserProperties));
 
-
                         if (id != null && hash != null) {
                             UserSessionController.getInstance().mergeUserSession(id, hash);
                             isLoaded = true;
@@ -202,8 +201,10 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
 
                     // Send session started
                     gleapUser.setNew(false);
+
+                    // Restart event service.
                     GleapEventService.getInstance().stop(false);
-                    GleapEventService.getInstance().start();
+                    GleapEventService.getInstance().startWebSocketListener();
                 } catch (Exception e) {
                     UserSessionController.getInstance().setSessionLoaded(true);
                     if (UserSessionController.getInstance() != null) {

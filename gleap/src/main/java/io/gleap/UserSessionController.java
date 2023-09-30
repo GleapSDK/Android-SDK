@@ -56,6 +56,7 @@ public class UserSessionController {
                 mainHandler.post(gleapRunnable);
             }
         });
+
         if (GleapConfig.getInstance().getUnRegisterPushMessageGroupCallback() != null && userSession != null) {
             String hash = userSession.getHash();
             if (!hash.equals("")) {
@@ -66,11 +67,6 @@ public class UserSessionController {
         userSession = null;
         isSessionLoaded = false;
     }
-
-    public void clearUser() {
-        this.gleapUser = null;
-    }
-
 
     public void mergeUserSession(String id, String hash) {
         if (userSession == null) {
@@ -96,7 +92,6 @@ public class UserSessionController {
         if (this.gleapUser == null) {
             gleapUser.setNew(true);
         }
-
 
         this.gleapUser = gleapUser;
 

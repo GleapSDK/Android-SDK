@@ -124,6 +124,10 @@ class GleapUserSessionLoader extends AsyncTask<Void, Void, Integer> {
                             mainHandler.post(gleapRunnable);
                         }
                     });
+
+                    // Restart event service.
+                    GleapEventService.getInstance().stop(false);
+                    GleapEventService.getInstance().startWebSocketListener();
                 }
 
                 if(GleapConfig.getInstance().getInitializationDoneCallback() != null) {

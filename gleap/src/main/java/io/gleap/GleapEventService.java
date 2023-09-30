@@ -26,15 +26,14 @@ import gleap.io.gleap.BuildConfig;
 class GleapEventService {
     private GleapArrayHelper<JSONObject> gleapArrayHelper;
     private static GleapEventService instance;
+    private static GleapWebSocketListener webSocketListener;
     private EventsSentCallback eventsSentCallback;
     private boolean disableInAppNotifications = false;
-    private int time = GleapConfig.getInstance().getResceduleEventStreamDurationShort();
     private List<JSONObject> eventsToBeSent = new ArrayList<>();
     private Handler intervalHandler;
 
     private GleapEventService() {
         gleapArrayHelper = new GleapArrayHelper<>();
-        sendInitialMessage();
     }
     
     public static GleapEventService getInstance() {
@@ -48,27 +47,18 @@ class GleapEventService {
         this.disableInAppNotifications = disableInAppNotifications;
     }
 
-    public void sendInitialMessage() {
-        final Handler h = new Handler(Looper.getMainLooper());
+    public void startWebSocketListener() {
+        clearWebsocketListener();
 
-        h.postDelayed(new Runnable() {
-            private long time = 0;
-
-            @Override
-            public void run() {
-                if (UserSessionController.getInstance() != null && UserSessionController.getInstance().isSessionLoaded()) {
-                    try {
-                        new EventHttpHelper().execute();
-                    } catch (Exception ex) {
-                    }
-                } else {
-                    h.postDelayed(this, time);
-                }
-            }
-        }, time);
+        webSocketListener = new GleapWebSocketListener();
+        webSocketListener.connect();
     }
 
     public void start() {
+        if (intervalHandler != null) {
+            intervalHandler.removeCallbacksAndMessages(null);
+        }
+
         try {
             JSONObject sessiontStarted = new JSONObject();
             sessiontStarted.put("name", "sessionStarted");
@@ -85,22 +75,18 @@ class GleapEventService {
 
         intervalHandler = new Handler(Looper.getMainLooper());
         intervalHandler.postDelayed(new Runnable() {
-            private long time = 0;
-
             @Override
             public void run() {
                 try {
                     if (UserSessionController.getInstance() != null && UserSessionController.getInstance().isSessionLoaded()) {
-                        time = GleapConfig.getInstance().getResceduleEventStreamDurationLong();
                         new EventHttpHelper().execute();
-                    } else {
-                        time = GleapConfig.getInstance().getResceduleEventStreamDurationShort();
                     }
-                    intervalHandler.postDelayed(this, time);
+
+                    intervalHandler.postDelayed(this, 3000);
                 } catch (Exception ignore) {
                 }
             }
-        }, time);
+        }, 0);
     }
 
     public void stop() {
@@ -111,7 +97,18 @@ class GleapEventService {
         if(clear) {
             eventsToBeSent.clear();
         }
-        intervalHandler.removeCallbacksAndMessages(null);
+        clearWebsocketListener();
+
+        if (intervalHandler != null) {
+            intervalHandler.removeCallbacksAndMessages(null);
+        }
+    }
+
+    private void clearWebsocketListener() {
+        if (webSocketListener != null) {
+            webSocketListener.destroy();
+            webSocketListener = null;
+        }
     }
 
     public void addEvent(JSONObject event) {
@@ -123,7 +120,6 @@ class GleapEventService {
     }
 
     private class EventHttpHelper extends AsyncTask {
-
         @Override
         protected Object doInBackground(Object[] objects) {
             try {
@@ -161,6 +157,7 @@ class GleapEventService {
             body.put("events", arrayToJSONArray(eventsToBeSent));
             body.put("time", PhoneMeta.calculateDurationInDouble());
             body.put("opened", Gleap.getInstance().isOpened());
+            body.put("ws", true);
             body.put("sdkVersion", BuildConfig.VERSION_NAME);
 
             try (OutputStream os = conn.getOutputStream()) {
@@ -173,17 +170,7 @@ class GleapEventService {
 
             try (BufferedReader br = new BufferedReader(
                     new InputStreamReader(conn.getInputStream(), "utf-8"))) {
-                JSONObject result = null;
-                String input;
-                while ((input = br.readLine()) != null) {
-                    result = new JSONObject(input);
-                }
-                if (result != null) {
-                    processData(result);
-                }
-            } catch (Error | Exception e) {
-                // e.printStackTrace();
-            }
+            } catch (Error | Exception e) {}
 
             conn.getInputStream().close();
             int status = conn.getResponseCode();
@@ -256,9 +243,13 @@ class GleapEventService {
         return new GleapChatMessage(outboundId, type, text, shareToken, sender, newsId, coverImageUrl);
     }
 
-    private void processData(JSONObject data) throws Exception {
-        Handler mainThreadHandler = new Handler(Looper.getMainLooper());
+    public void processEventData(JSONObject data) throws Exception {
+        if (data == null) {
+            return;
+        }
 
+        Handler mainThreadHandler = new Handler(Looper.getMainLooper());
+        
         if (data.has("u")) {
             mainThreadHandler.post(new Runnable() {
                 @Override

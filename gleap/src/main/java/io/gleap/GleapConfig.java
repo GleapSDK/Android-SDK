@@ -38,6 +38,7 @@ class GleapConfig {
 
     //bb config
     private String apiUrl = "https://api.gleap.io";
+    private String wsApiUrl = "wss://ws.gleap.io";
     private String iFrameUrl = "https://messenger-app.gleap.io/appnew";
     private String sdkKey = "";
     private String feedbackFlow = "";
@@ -96,8 +97,6 @@ class GleapConfig {
 
     //Streamedevent
     private int maxEventLength = 500;
-    private int resceduleEventStreamDurationShort = 1500;
-    private int resceduleEventStreamDurationLong = 10000;
 
     private LinkedList<GleapWebViewMessage> gleapWebViewMessages = new LinkedList<>();
 
@@ -262,6 +261,14 @@ class GleapConfig {
 
     public void setApiUrl(String apiUrl) {
         this.apiUrl = apiUrl;
+    }
+
+    public String getWsApiUrl() {
+        return wsApiUrl;
+    }
+
+    public void setWsApiUrl(String wsApiUrl) {
+        this.wsApiUrl = wsApiUrl;
     }
 
     public String getLanguage() {
@@ -444,14 +451,6 @@ class GleapConfig {
 
     public int getMaxEventLength() {
         return maxEventLength;
-    }
-
-    public int getResceduleEventStreamDurationShort() {
-        return resceduleEventStreamDurationShort;
-    }
-
-    public int getResceduleEventStreamDurationLong() {
-        return resceduleEventStreamDurationLong;
     }
 
     public JSONArray getNetworkLogPropsToIgnore() {

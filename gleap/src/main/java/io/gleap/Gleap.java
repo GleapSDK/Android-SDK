@@ -65,9 +65,8 @@ public class Gleap implements iGleap {
                 detectorList.add(replaysDetector);
             }
 
-            //start services
+            // Start services
             GleapActivityManager.getInstance().start(application);
-            GleapEventService.getInstance().start();
 
             GleapConfig.getInstance().setGestureDetectors(detectorList);
             GleapDetectorUtil.resumeAllDetectors();
@@ -669,15 +668,9 @@ public class Gleap implements iGleap {
                 });
             } catch (Exception ignore) {
             }
+
             GleapEventService.getInstance().stop();
             GleapUserSessionLoader sessionLoader = new GleapUserSessionLoader();
-            sessionLoader.setCallback(new GleapUserSessionLoader.UserSessionLoadedCallback() {
-                @Override
-                public void invoke() {
-                    GleapEventService.getInstance().start();
-                }
-            });
-
             sessionLoader.execute();
         } catch (Error | Exception ignore) {
         }
@@ -693,6 +686,14 @@ public class Gleap implements iGleap {
     public void setApiUrl(String apiUrl) {
         try {
             GleapConfig.getInstance().setApiUrl(apiUrl);
+        } catch (Error | Exception ignore) {
+        }
+    }
+
+    @Override
+    public void setWSApiUrl(String wsApiUrl) {
+        try {
+            GleapConfig.getInstance().setWsApiUrl(wsApiUrl);
         } catch (Error | Exception ignore) {
         }
     }

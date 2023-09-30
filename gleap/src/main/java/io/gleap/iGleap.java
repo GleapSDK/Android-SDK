@@ -202,9 +202,17 @@ interface iGleap {
      * Sets the API url to your internal Gleap server. Please make sure that the server is reachable within the network
      * If you use a http url pls add android:usesCleartextTraffic="true" to your main activity to allow cleartext traffic
      *
-     * @param apiUrl url of the internal Gleap server
+     * @param apiUrl url of the Gleap api server
      */
     void setApiUrl(String apiUrl);
+
+    /**
+     * Sets the ws server url to your internal Gleap server. Please make sure that the server is reachable within the network
+     * The ws url must start with the wss:// protocol, for a secure websocket server connection.
+     *
+     * @param wsApiUrl url of the Gleap websocket server
+     */
+    void setWSApiUrl(String wsApiUrl);
 
     /**
      * Sets a custom frame url.
