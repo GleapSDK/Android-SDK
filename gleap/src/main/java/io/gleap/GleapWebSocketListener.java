@@ -3,6 +3,7 @@ package io.gleap;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -17,11 +18,12 @@ public class GleapWebSocketListener extends WebSocketListener {
     private OkHttpClient client;
     private WebSocket webSocket;
     private String currentUrl;
-    private boolean isDestroyed = false;  // Flag to know when to stop the reconnection attempts.
+    private boolean isDestroyed = false;
 
     public boolean connect() {
         client = new OkHttpClient.Builder()
                 .readTimeout(0, TimeUnit.MILLISECONDS)
+                .pingInterval(40, TimeUnit.SECONDS)
                 .build();
 
         UserSession userSession = UserSessionController.getInstance().getUserSession();
@@ -68,7 +70,6 @@ public class GleapWebSocketListener extends WebSocketListener {
 
     @Override
     public void onMessage(WebSocket webSocket, String text) {
-        System.out.println("MESSAGE: " + text);
         if (isDestroyed) {
             return;
         }
@@ -85,25 +86,20 @@ public class GleapWebSocketListener extends WebSocketListener {
     }
 
     @Override
-    public void onMessage(WebSocket webSocket, ByteString bytes) {
-        System.out.println("MESSAGE: " + bytes.hex());
-    }
+    public void onMessage(WebSocket webSocket, ByteString bytes) {}
 
     @Override
     public void onClosing(WebSocket webSocket, int code, String reason) {
         webSocket.close(1000, null);
-        System.out.println("CLOSE: " + code + " " + reason);
     }
 
     @Override
     public void onFailure(WebSocket webSocket, Throwable t, Response response) {
-        t.printStackTrace();
         if (!isDestroyed) {
             reconnect();
         }
     }
 
-    // This function tries to reconnect to the server.
     private void reconnect() {
         if (client != null) {
             try {

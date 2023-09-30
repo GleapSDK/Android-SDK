@@ -249,7 +249,7 @@ class GleapEventService {
         }
 
         Handler mainThreadHandler = new Handler(Looper.getMainLooper());
-        
+
         if (data.has("u")) {
             mainThreadHandler.post(new Runnable() {
                 @Override
