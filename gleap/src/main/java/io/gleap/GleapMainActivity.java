@@ -482,7 +482,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 if (GleapConfig.getInstance().getCustomActions() != null) {
                     GleapConfig.getInstance().getCustomActions().invoke(data);
                 }
-                finish();
             } catch (JSONException e) {
                 e.printStackTrace();
             }

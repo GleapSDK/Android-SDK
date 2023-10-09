@@ -29,6 +29,13 @@ public class MainApplication extends Application {
                 "#Beste"
         });
 
+        Gleap.getInstance().registerCustomAction(new CustomActionCallback() {
+            @Override
+            public void invoke(String message) {
+                System.out.println(message);
+            }
+        });
+
         Gleap.getInstance().setRegisterPushMessageGroupCallback(new RegisterPushMessageGroupCallback() {
             @Override
             public void invoke(String pushMessageGroup) {
