@@ -308,7 +308,7 @@ class GleapInvisibleActivityManger {
 
         LinearLayout commentComponent = notification.getComponent(activity);
         if (commentComponent != null) {
-            if (notification.getType().equals("news")) {
+            if (notification.getType().equals("news") || notification.getType().equals("checklist")) {
                 CardView cardView = new CardView(activity.getApplication().getApplicationContext());
                 cardView.setBackgroundResource(R.drawable.rounded_corner);
                 LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);

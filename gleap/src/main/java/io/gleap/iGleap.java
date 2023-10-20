@@ -70,6 +70,54 @@ interface iGleap {
     void openNews(boolean showBackButton) throws GleapNotInitialisedException;
 
     /**
+     * Show the checklists overview
+     *
+     * @throws GleapNotInitialisedException thrown when Gleap is not initialised
+     * @author Gleap
+     */
+    void openChecklists() throws GleapNotInitialisedException;
+
+    /**
+     * Show the checklists overview
+     *
+     * @throws GleapNotInitialisedException thrown when Gleap is not initialised
+     * @author Gleap
+     */
+    void openChecklists(boolean showBackButton) throws GleapNotInitialisedException;
+
+    /**
+     * Open the checklist with checklistId.
+     *
+     * @throws GleapNotInitialisedException thrown when Gleap is not initialised
+     * @author Gleap
+     */
+    void openChecklist(String checklistId) throws GleapNotInitialisedException;
+
+    /**
+     * Open the checklist with checklistId.
+     *
+     * @throws GleapNotInitialisedException thrown when Gleap is not initialised
+     * @author Gleap
+     */
+    void openChecklist(String checklistId, boolean showBackButton) throws GleapNotInitialisedException;
+
+    /**
+     * Start the checklist with outboundId.
+     *
+     * @throws GleapNotInitialisedException thrown when Gleap is not initialised
+     * @author Gleap
+     */
+    void startChecklist(String outboundId) throws GleapNotInitialisedException;
+
+    /**
+     * Start the checklist with outboundId.
+     *
+     * @throws GleapNotInitialisedException thrown when Gleap is not initialised
+     * @author Gleap
+     */
+    void startChecklist(String outboundId, boolean showBackButton) throws GleapNotInitialisedException;
+
+    /**
      * Manually start the bug reporting workflow. This is used, when you use the activation method "NONE".
      *
      * @param feedbackFlow declares what you want to start. For example start directly a bugreport or a user rating.

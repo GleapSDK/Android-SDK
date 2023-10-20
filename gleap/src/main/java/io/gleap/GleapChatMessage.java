@@ -7,6 +7,7 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
 import android.text.TextUtils;
 import android.view.Gravity;
 import android.view.View;
@@ -24,15 +25,19 @@ class GleapChatMessage {
     private String outboundId;
     private String type = "comment";
     private String text;
+    private String checklistId;
     private String shareToken;
     private String newsId;
     private String image;
     private GleapSender sender;
+    private int currentStep;
+    private int totalSteps;
+    private String nextStepTitle;
     private Bitmap avatarBitmap = null;
     private Bitmap topImageBitmap = null;
     private LinearLayout layout;
 
-    public GleapChatMessage(String outboundId, String type, String text, String shareToken, GleapSender sender, String newsId, String image) {
+    public GleapChatMessage(String outboundId, String type, String text, String shareToken, GleapSender sender, String newsId, String image, int currentStep, int totalSteps, String nextStepTitle, String checklistId) {
         this.outboundId = outboundId;
         this.sender = sender;
         this.type = type;
@@ -40,11 +45,17 @@ class GleapChatMessage {
         this.shareToken = shareToken;
         this.newsId = newsId;
         this.image = image;
+        this.currentStep = currentStep;
+        this.totalSteps = totalSteps;
+        this.nextStepTitle = nextStepTitle;
+        this.checklistId = checklistId;
     }
 
     private void generateComponent(Activity activity) {
         if (type.equals("news")) {
             this.layout = getNews(activity);
+        } else if (type.equals("checklist")) {
+            this.layout = getChecklistCard(activity);
         } else {
             this.layout = getPlainMessage(activity);
         }
@@ -182,11 +193,14 @@ class GleapChatMessage {
                         JSONObject message = new JSONObject();
                         message.put("shareToken", getShareToken());
                         GleapConfig.getInstance().addGleapWebViewMessage(new GleapWebViewMessage("open-conversation", message));
-
                     } else if (!newsId.equals("")) {
                         JSONObject message = new JSONObject();
                         message.put("id", getNewsId());
                         GleapConfig.getInstance().addGleapWebViewMessage(new GleapWebViewMessage("open-news-article", message));
+                    } else if (!checklistId.equals("")) {
+                        JSONObject message = new JSONObject();
+                        message.put("id", getChecklistId());
+                        GleapConfig.getInstance().addGleapWebViewMessage(new GleapWebViewMessage("open-checklist", message));
                     }
                     Gleap.getInstance().open();
                 } catch (Exception ex) {
@@ -200,6 +214,118 @@ class GleapChatMessage {
         return completeMessage;
     }
 
+    private GradientDrawable createRoundedRectangleDrawable(int color, float topLeft, float topRight, float bottomRight, float bottomLeft) {
+        GradientDrawable gradientDrawable = new GradientDrawable();
+        gradientDrawable.setShape(GradientDrawable.RECTANGLE);
+        gradientDrawable.setColor(color);
+        gradientDrawable.setCornerRadii(new float[]{
+                topLeft, topLeft,   // Top-left radius
+                topRight, topRight, // Top-right radius
+                bottomRight, bottomRight, // Bottom-right radius
+                bottomLeft, bottomLeft    // Bottom-left radius
+        });
+        return gradientDrawable;
+    }
+
+    public LinearLayout getChecklistCard(Activity local) {
+        Activity activity = ActivityUtil.getCurrentActivity();
+
+        float width = (float) (getScreenWidth() * 0.8);
+        if (width > convertDpToPixel(280, activity)) {
+            width = convertDpToPixel(280, activity);
+        }
+
+        LinearLayout completeMessage = new LinearLayout(local.getApplication().getApplicationContext());
+        completeMessage.setId(View.generateViewId());
+        completeMessage.setOrientation(LinearLayout.VERTICAL);
+        completeMessage.setVisibility(View.VISIBLE);
+        completeMessage.setBackgroundColor(Color.WHITE);
+        completeMessage.setMinimumWidth((int) width);
+        LinearLayout.LayoutParams mainParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        completeMessage.setPadding(convertDpToPixel(16, local), convertDpToPixel(12, local), convertDpToPixel(16, local), convertDpToPixel(12, local));
+        completeMessage.setLayoutParams(mainParams);
+
+        TextView titleComponent = new TextView(local.getApplication().getApplicationContext());
+        titleComponent.setId(View.generateViewId());
+        titleComponent.setText(getText().replace("{{name}}", getName()));
+        titleComponent.setTextSize(16);
+        titleComponent.setTextColor(Color.BLACK);
+        titleComponent.setSingleLine();
+        titleComponent.setMaxWidth((int) width);
+        titleComponent.setWidth((int) width);
+        titleComponent.setMinWidth((int) width);
+        titleComponent.setEllipsize(TextUtils.TruncateAt.END);
+        titleComponent.setTypeface(Typeface.DEFAULT_BOLD);
+        titleComponent.setTextColor(Color.BLACK);
+        titleComponent.setPadding(convertDpToPixel(0, local), convertDpToPixel(0, local), convertDpToPixel(10, local), convertDpToPixel(0, local));
+        completeMessage.addView(titleComponent);
+
+        float cornerRadius = convertDpToPixel(4, local);
+
+        float progress = (float)getCurrentStep() / (float)getTotalSteps();
+        if (progress < 1.0) {
+            progress += 0.04;
+        }
+
+        // Progress Bar Container
+        LinearLayout progressBarContainer = new LinearLayout(local.getApplication().getApplicationContext());
+        LinearLayout.LayoutParams containerParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, convertDpToPixel(8, local));
+        containerParams.setMargins(0, convertDpToPixel(12, local), 0, convertDpToPixel(12, local));
+        progressBarContainer.setLayoutParams(containerParams);
+        GradientDrawable progressBarBgDrawable = createRoundedRectangleDrawable(Color.parseColor("#EEEEEE"), cornerRadius, cornerRadius, cornerRadius, cornerRadius);
+        progressBarContainer.setBackground(progressBarBgDrawable);
+        progressBarContainer.setOrientation(LinearLayout.HORIZONTAL); // Horizontal orientation
+        completeMessage.addView(progressBarContainer);
+
+        // Progress Bar
+        View progressBar = new View(local.getApplication().getApplicationContext());
+        LinearLayout.LayoutParams barParams = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, progress); // weight = progress
+        progressBar.setLayoutParams(barParams);
+        GradientDrawable progressBarDrawable = createRoundedRectangleDrawable(Color.parseColor(GleapConfig.getInstance().getColor()), cornerRadius, cornerRadius, cornerRadius, cornerRadius);
+        progressBar.setBackground(progressBarDrawable);
+        progressBarContainer.addView(progressBar);
+
+        // Progress Bar Background View
+        View progressBarBg = new View(local.getApplication().getApplicationContext());
+        LinearLayout.LayoutParams bgParams = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1-progress); // weight = 1-progress
+        progressBarBg.setLayoutParams(bgParams);
+        progressBarContainer.addView(progressBarBg);
+
+        TextView nextStepComponent = new TextView(local.getApplication().getApplicationContext());
+        nextStepComponent.setId(View.generateViewId());
+        nextStepComponent.setText(getNextStepTitle().replace("{{name}}", getName()));
+        nextStepComponent.setTextColor(Color.DKGRAY);
+        nextStepComponent.setTextSize(15);
+        LinearLayout.LayoutParams messageParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        nextStepComponent.setLayoutParams(messageParams);
+        completeMessage.addView(nextStepComponent);
+
+        completeMessage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                try {
+                    if (!checklistId.equals("")) {
+                        JSONObject message = new JSONObject();
+                        message.put("id", getChecklistId());
+                        GleapConfig.getInstance().addGleapWebViewMessage(new GleapWebViewMessage("open-checklist", message));
+                    }
+                    Gleap.getInstance().open();
+                } catch (Exception ex) {
+                }
+
+                GleapInvisibleActivityManger.getInstance().clearMessages();
+            }
+        });
+
+        layout = completeMessage;
+        return completeMessage;
+    }
 
     public LinearLayout getPlainMessage(Activity local) {
         LinearLayout messageContainer = new LinearLayout(local.getApplication().getApplicationContext());
@@ -322,15 +448,31 @@ class GleapChatMessage {
         }
     }
 
+    public int getCurrentStep() {
+        return currentStep;
+    }
+
+    public void setCurrentStep(int currentStep) {
+        this.currentStep = currentStep;
+    }
+
+    public int getTotalSteps() {
+        return totalSteps;
+    }
+
+    public String getNextStepTitle() {
+        return nextStepTitle;
+    }
+
     public String getNewsId() {
         return newsId;
     }
 
-    public String getOutboundId() {
-        return outboundId;
+    public String getChecklistId() {
+        return checklistId;
     }
 
-    public void setOutboundId(String outboundId) {
-        this.outboundId = outboundId;
+    public String getOutboundId() {
+        return outboundId;
     }
 }

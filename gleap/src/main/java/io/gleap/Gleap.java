@@ -123,7 +123,10 @@ public class Gleap implements iGleap {
 
             switch (type) {
                 case "news":
-                    this.openNewsArticle(id, false);
+                    this.openNewsArticle(id, true);
+                    break;
+                case "checklist":
+                    this.openChecklist(id, true);
                     break;
                 case "conversation":
                     this.openConversation(id);
@@ -205,6 +208,125 @@ public class Gleap implements iGleap {
                                     try {
                                         if (screenshotTaker != null) {
                                             screenshotTaker.takeScreenshot(type);
+                                        }
+                                    } catch (Exception e) {
+                                    }
+                                }
+                            } catch (Error | Exception ignore) {
+                            }
+                        }
+                    };
+                    mainHandler.post(gleapRunnable);
+                }
+            });
+        } catch (Error | Exception ignore) {
+        }
+    }
+
+    @Override
+    public void openChecklists() {
+        openChecklists(true);
+    }
+
+    @Override
+    public void openChecklists(boolean showBackButton) {
+        try {
+            ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Handler mainHandler = new Handler(Looper.getMainLooper());
+                    Runnable gleapRunnable = new Runnable() {
+                        @Override
+                        public void run() throws RuntimeException {
+                            try {
+                                if (!GleapDetectorUtil.isIsRunning() && UserSessionController.getInstance() != null &&
+                                        UserSessionController.getInstance().isSessionLoaded() && instance != null) {
+                                    try {
+                                        if (screenshotTaker != null) {
+                                            JSONObject message = new JSONObject();
+                                            message.put("hideBackButton", !showBackButton);
+                                            GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("open-checklists", message));
+                                            screenshotTaker.takeScreenshot();
+                                        }
+                                    } catch (Exception e) {
+                                    }
+                                }
+                            } catch (Error | Exception ignore) {
+                            }
+                        }
+                    };
+                    mainHandler.post(gleapRunnable);
+                }
+            });
+        } catch (Error | Exception ignore) {
+        }
+    }
+
+    @Override
+    public void openChecklist(String checklistId) {
+        openChecklist(checklistId, false);
+    }
+
+    @Override
+    public void openChecklist(String checklistId, boolean showBackButton) {
+        try {
+            ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Handler mainHandler = new Handler(Looper.getMainLooper());
+                    Runnable gleapRunnable = new Runnable() {
+                        @Override
+                        public void run() throws RuntimeException {
+                            try {
+                                if (!GleapDetectorUtil.isIsRunning() && UserSessionController.getInstance() != null &&
+                                        UserSessionController.getInstance().isSessionLoaded() && instance != null) {
+                                    try {
+                                        if (screenshotTaker != null) {
+                                            JSONObject message = new JSONObject();
+                                            message.put("hideBackButton", !showBackButton);
+                                            message.put("id", checklistId);
+                                            GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("open-checklist", message));
+                                            screenshotTaker.takeScreenshot();
+                                        }
+                                    } catch (Exception e) {
+                                    }
+                                }
+                            } catch (Error | Exception ignore) {
+                            }
+                        }
+                    };
+                    mainHandler.post(gleapRunnable);
+                }
+            });
+        } catch (Error | Exception ignore) {
+        }
+    }
+
+    @Override
+    public void startChecklist(String outboundId) {
+        startChecklist(outboundId, false);
+    }
+
+    @Override
+    public void startChecklist(String outboundId, boolean showBackButton) {
+        try {
+            ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Handler mainHandler = new Handler(Looper.getMainLooper());
+                    Runnable gleapRunnable = new Runnable() {
+                        @Override
+                        public void run() throws RuntimeException {
+                            try {
+                                if (!GleapDetectorUtil.isIsRunning() && UserSessionController.getInstance() != null &&
+                                        UserSessionController.getInstance().isSessionLoaded() && instance != null) {
+                                    try {
+                                        if (screenshotTaker != null) {
+                                            JSONObject message = new JSONObject();
+                                            message.put("hideBackButton", !showBackButton);
+                                            message.put("outboundId", outboundId);
+                                            GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("start-checklist", message));
+                                            screenshotTaker.takeScreenshot();
                                         }
                                     } catch (Exception e) {
                                     }

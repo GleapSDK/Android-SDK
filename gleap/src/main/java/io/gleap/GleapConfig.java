@@ -71,7 +71,7 @@ class GleapConfig {
     //user config
     private String buttonLogo = "https://sdk.gleap.io/res/chatbubble.png";
     private String buttonColor = "#485bff";
-
+    private String color = "#485bff";
     private String backgroundColor = "#ffffff";
     private String headerColor = "#485bff";
     private int loaderColor = Color.BLACK;
@@ -183,6 +183,10 @@ class GleapConfig {
 
             if (flowConfigs.has("buttonLogo") && !flowConfigs.getString("buttonLogo").equals("")) {
                 this.buttonLogo = flowConfigs.getString("buttonLogo");
+            }
+
+            if (flowConfigs.has("color")) {
+                this.color = flowConfigs.getString("color");
             }
 
             if (flowConfigs.has("buttonColor")) {
@@ -532,6 +536,10 @@ class GleapConfig {
 
     public String getButtonColor() {
         return buttonColor;
+    }
+
+    public String getColor() {
+        return color;
     }
 
     public WidgetPosition getWidgetPosition() {

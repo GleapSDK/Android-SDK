@@ -201,7 +201,11 @@ class GleapEventService {
         String type = "";
         String shareToken = "";
         String newsId = "";
+        String checklistId = "";
         String coverImageUrl = "";
+        String nextStepTitle = "";
+        int currentStep = 0;
+        int totalSteps = 0;
 
         if (messageData.has("type")) {
             type = messageData.getString("type");
@@ -237,12 +241,31 @@ class GleapEventService {
             }
         }
 
+        if (messageData.has("checklist")) {
+            JSONObject conversation = messageData.getJSONObject("checklist");
+            if (conversation.has("id")) {
+                checklistId = conversation.getString("id");
+            }
+        }
+
         if (messageData.has("coverImageUrl")) {
             coverImageUrl = messageData.getString("coverImageUrl");
         }
 
+        if (messageData.has("currentStep")) {
+            currentStep = messageData.getInt("currentStep");
+        }
+
+        if (messageData.has("totalSteps")) {
+            totalSteps = messageData.getInt("totalSteps");
+        }
+
+        if (messageData.has("nextStepTitle")) {
+            nextStepTitle = messageData.getString("nextStepTitle");
+        }
+
         GleapSender sender = new GleapSender(senderName, profileImageUrl);
-        return new GleapChatMessage(outboundId, type, text, shareToken, sender, newsId, coverImageUrl);
+        return new GleapChatMessage(outboundId, type, text, shareToken, sender, newsId, coverImageUrl, currentStep, totalSteps, nextStepTitle, checklistId);
     }
 
     public void processEventData(JSONObject data) throws Exception {
