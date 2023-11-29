@@ -56,7 +56,6 @@ class GleapBanner {
     }
 
     public void clearComponent() {
-        this.layout = null;
         if (this.webView != null) {
             this.webView.clearHistory();
             this.webView.clearCache(true);
@@ -65,6 +64,7 @@ class GleapBanner {
             this.webView.destroyDrawingCache();
             this.webView.destroy();
         }
+        this.layout = null;
         this.webView = null;
         this.bannerData = null;
     }

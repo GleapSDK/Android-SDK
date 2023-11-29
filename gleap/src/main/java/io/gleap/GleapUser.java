@@ -62,8 +62,23 @@ public class GleapUser {
             if (this.gleapUserProperties.getEmail() != null && otherUserPropterties.getEmail() != null && !this.gleapUserProperties.getEmail().equals(otherUserPropterties.getEmail())) {
                 match = false;
             }
-            if (this.gleapUserProperties.getPhoneNumber() != null && otherUserPropterties.getPhoneNumber() != null) {
-                if (!this.gleapUserProperties.getPhoneNumber().equals(otherUserPropterties.getPhoneNumber())) {
+            if (this.gleapUserProperties.getPhone() != null && otherUserPropterties.getPhone() != null) {
+                if (!this.gleapUserProperties.getPhone().equals(otherUserPropterties.getPhone())) {
+                    match = false;
+                }
+            }
+            if (this.gleapUserProperties.getPlan() != null && otherUserPropterties.getPlan() != null) {
+                if (!this.gleapUserProperties.getPlan().equals(otherUserPropterties.getPlan())) {
+                    match = false;
+                }
+            }
+            if (this.gleapUserProperties.getCompanyName() != null && otherUserPropterties.getCompanyName() != null) {
+                if (!this.gleapUserProperties.getCompanyName().equals(otherUserPropterties.getCompanyName())) {
+                    match = false;
+                }
+            }
+            if (this.gleapUserProperties.getCompanyId() != null && otherUserPropterties.getCompanyId() != null) {
+                if (!this.gleapUserProperties.getCompanyId().equals(otherUserPropterties.getCompanyId())) {
                     match = false;
                 }
             }

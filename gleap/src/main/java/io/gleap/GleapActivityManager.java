@@ -2,6 +2,9 @@ package io.gleap;
 
 import android.app.Activity;
 import android.app.Application;
+import android.content.Intent;
+import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -26,6 +29,35 @@ class GleapActivityManager {
         return gleapActivityManager;
     }
 
+    public void bringGleapToFront(Activity activity) {
+        try {
+            if (isGleapMainActivityActive() && requireActivityCheck()) {
+                Intent intent = new Intent(activity, GleapMainActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+                activity.startActivity(intent);
+            }
+        } catch (Exception exp) {}
+    }
+
+    public boolean isGleapMainActivityActive() {
+        return GleapMainActivity.isActive;
+    }
+
+    public boolean requireActivityCheck() {
+        Activity mainActivity = GleapMainActivity.callerActivity.get();
+        if (mainActivity != null) {
+            try {
+                PackageManager pm = mainActivity.getPackageManager();
+                ActivityInfo info = pm.getActivityInfo(mainActivity.getComponentName(), 0);
+
+                if (info.launchMode == ActivityInfo.LAUNCH_SINGLE_INSTANCE) {
+                    return true;
+                }
+            } catch (Exception e) {}
+        }
+        return false;
+    }
+
     public void start(Application application) {
         this.application = application;
         if (this.application != null) {
@@ -39,6 +71,9 @@ class GleapActivityManager {
                     checkPage(activity);
 
                     GleapInvisibleActivityManger.getInstance().addLayoutToActivity(activity);
+
+                    // Check if Gleap is still active. If so, bring Gleap to front.
+                    bringGleapToFront(activity);
                   }
 
                 @Override

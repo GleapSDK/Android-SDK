@@ -10,7 +10,10 @@ public class GleapUserProperties {
     private String email;
     private String hash;
     private double value;
-    private String phoneNumber;
+    private String phone;
+    private String plan;
+    private String companyId;
+    private String companyName;
     private JSONObject customData;
 
     /**
@@ -93,12 +96,36 @@ public class GleapUserProperties {
         this.value = value;
     }
 
-    public String getPhoneNumber() {
-        return phoneNumber;
+    public String getPhone() {
+        return phone;
     }
 
-    public void setPhoneNumber(String phoneNumber) {
-        this.phoneNumber = phoneNumber;
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public String getPlan() {
+        return plan;
+    }
+
+    public void setPlan(String plan) {
+        this.plan = plan;
+    }
+
+    public String getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(String companyId) {
+        this.companyId = companyId;
+    }
+
+    public String getCompanyName() {
+        return companyName;
+    }
+
+    public void setCompanyName(String companyName) {
+        this.companyName = companyName;
     }
 
     public JSONObject getCustomData() {

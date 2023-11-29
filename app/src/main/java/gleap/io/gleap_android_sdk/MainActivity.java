@@ -159,28 +159,5 @@ public class MainActivity extends AppCompatActivity {
 
         return 0;
     }
-
-    /*
-    @Override
-    public void onActivityResult(int requestCode, int resultCode,
-                                 Intent returnIntent) {
-        if (requestCode == 1) {
-            ValueCallback<Uri[]> mUploadMessage = Gleap.getInstance().getmUploadMessage();
-            if (mUploadMessage == null || intent == null || resultCode != RESULT_OK) {
-                return;
-            }
-
-            Uri[] result = null;
-            String dataString = intent.getDataString();
-
-            if (dataString != null) {
-                result = new Uri[]{Uri.parse(dataString)};
-            }
-
-            mUploadMessage.onReceiveValue(result);
-            GleapConfig.getInstance().setmUploadMessage(null);
-        }
-    }*/
-
 }
 

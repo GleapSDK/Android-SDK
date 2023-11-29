@@ -7,6 +7,7 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.util.Log;
 
+import java.lang.ref.WeakReference;
 import java.util.concurrent.ExecutionException;
 
 
@@ -68,9 +69,18 @@ class ScreenshotTaker {
                     SharedPreferences.Editor editor = pref.edit();
                     editor.putString("descriptionEditText", ""); // Storing the description
                     editor.apply();
-                    Intent intent = new Intent(ActivityUtil.getCurrentActivity(), GleapMainActivity.class);
+                    Activity activityToOpen = ActivityUtil.getCurrentActivity();
+                    if (activityToOpen == null) {
+                        return;
+                    }
+
+                    // Set the caller activity.
+                    GleapMainActivity.callerActivity = new WeakReference<>(activityToOpen);
+
+                    Intent intent = new Intent(activityToOpen, GleapMainActivity.class);
                     intent.putExtra("IS_SURVEY", type == SurveyType.SURVEY);
                     intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     gleapBug.setScreenshot(imageFile);
 
                     GleapInvisibleActivityManger.getInstance().clearMessages();
@@ -78,6 +88,7 @@ class ScreenshotTaker {
                     if(GleapConfig.getInstance().getWidgetOpenedCallback() != null) {
                         GleapConfig.getInstance().getWidgetOpenedCallback().invoke();
                     }
+
                     activity.startActivity(intent);
                 }
             }

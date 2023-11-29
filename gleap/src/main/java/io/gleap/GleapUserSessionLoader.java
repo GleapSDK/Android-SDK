@@ -91,6 +91,18 @@ class GleapUserSessionLoader extends AsyncTask<Void, Void, Integer> {
                         gleapUserProperties.setValue(result.getDouble("value"));
                     }
 
+                    if(result.has("companyName")) {
+                        gleapUserProperties.setCompanyName(result.getString("companyName"));
+                    }
+
+                    if(result.has("companyId")) {
+                        gleapUserProperties.setCompanyId(result.getString("companyId"));
+                    }
+
+                    if(result.has("plan")) {
+                        gleapUserProperties.setPlan(result.getString("plan"));
+                    }
+
                     if(result.has("customData")) {
                         JSONObject customData = result.getJSONObject("customData");
                         customData.remove("lang");

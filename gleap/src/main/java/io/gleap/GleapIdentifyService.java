@@ -109,7 +109,10 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                             if (gleapUser.getGleapUserProperties().getValue() != 0) {
                                 jsonObject.put("value", gleapUser.getGleapUserProperties().getValue());
                             }
-                            jsonObject.put("phone", gleapUser.getGleapUserProperties().getPhoneNumber());
+                            jsonObject.put("phone", gleapUser.getGleapUserProperties().getPhone());
+                            jsonObject.put("plan", gleapUser.getGleapUserProperties().getPlan());
+                            jsonObject.put("companyName", gleapUser.getGleapUserProperties().getCompanyName());
+                            jsonObject.put("companyId", gleapUser.getGleapUserProperties().getCompanyId());
                             JSONObject customData = gleapUser.getGleapUserProperties().getCustomData();
                             if (customData != null) {
                                 jsonObject = JsonUtil.mergeJSONObjects(jsonObject, customData);
@@ -163,6 +166,18 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
 
                         if(result.has("value")) {
                             gleapUserProperties.setValue(result.getDouble("value"));
+                        }
+
+                        if (result.has("plan")) {
+                            gleapUserProperties.setPlan(result.getString("plan"));
+                        }
+
+                        if (result.has("companyName")) {
+                            gleapUserProperties.setCompanyName(result.getString("companyName"));
+                        }
+
+                        if (result.has("companyId")) {
+                            gleapUserProperties.setCompanyId(result.getString("companyId"));
                         }
 
                         String userId = "";

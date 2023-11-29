@@ -20,8 +20,6 @@ public class MainApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        //GleapUserProperties gleapUserProperties = new GleapUserProperties("12", "Test User", "test@email.com");
-        //Gleap.getInstance().identifyUser("12", gleapUserProperties);
         Gleap.initialize("X5C0grjFCjUMbZKi131MjZLaGRwg2iKH", this);
         Gleap.getInstance().setTags(new String[] {
                 "Android",

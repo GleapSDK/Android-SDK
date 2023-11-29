@@ -48,6 +48,9 @@ public class IdentifyUser extends AppCompatActivity {
                 }catch (Exception custom) {
                     custom.printStackTrace();
                 }
+                gleapUserProperties.setCompanyId("COM12");
+                gleapUserProperties.setCompanyName("COMAAAAAA");
+                gleapUserProperties.setPlan("asdfasdfs");
                 Gleap.getInstance().identifyUser("1338", gleapUserProperties, null);
             }
         });
@@ -73,7 +76,7 @@ public class IdentifyUser extends AppCompatActivity {
             public void onClick(View view) {
                 GleapUserProperties gleapUserProperties = new GleapUserProperties("13", "VALUE boy", "test@email.com");
                 gleapUserProperties.setValue(20);
-                gleapUserProperties.setPhoneNumber("+436502425552");
+                gleapUserProperties.setPhone("+436502425552");
                 Gleap.getInstance().identifyUser("13", gleapUserProperties);
             }
         });

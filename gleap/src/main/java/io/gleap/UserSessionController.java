@@ -100,8 +100,17 @@ public class UserSessionController {
         if (gleapUser.getGleapUserProperties() != null) {
             sharedPreferences.edit().putString("userId.name", gleapUser.getGleapUserProperties().getName()).apply();
             sharedPreferences.edit().putString("userId.email", gleapUser.getGleapUserProperties().getEmail()).apply();
-            if (gleapUser.getGleapUserProperties().getPhoneNumber() != null) {
-                sharedPreferences.edit().putString("userId.phonenumber", gleapUser.getGleapUserProperties().getPhoneNumber()).apply();
+            if (gleapUser.getGleapUserProperties().getPhone() != null) {
+                sharedPreferences.edit().putString("userId.phone", gleapUser.getGleapUserProperties().getPhone()).apply();
+            }
+            if (gleapUser.getGleapUserProperties().getPlan() != null) {
+                sharedPreferences.edit().putString("userId.plan", gleapUser.getGleapUserProperties().getPlan()).apply();
+            }
+            if (gleapUser.getGleapUserProperties().getCompanyId() != null) {
+                sharedPreferences.edit().putString("userId.companyId", gleapUser.getGleapUserProperties().getCompanyId()).apply();
+            }
+            if (gleapUser.getGleapUserProperties().getCompanyName() != null) {
+                sharedPreferences.edit().putString("userId.companyName", gleapUser.getGleapUserProperties().getCompanyName()).apply();
             }
             sharedPreferences.edit().putFloat("userId.value", (float) gleapUser.getGleapUserProperties().getValue()).apply();
             if (gleapUser.getGleapUserProperties().getHash() != null && !gleapUser.getGleapUserProperties().getHash().equals("")) {
@@ -121,7 +130,10 @@ public class UserSessionController {
 
             String userName = sharedPreferences.getString("userId.name", "");
             String email = sharedPreferences.getString("userId.email", "");
-            String phoneNumber = sharedPreferences.getString("userId.phonenumber", "");
+            String phone = sharedPreferences.getString("userId.phone", "");
+            String plan = sharedPreferences.getString("userId.plan", "");
+            String companyId = sharedPreferences.getString("userId.companyId", "");
+            String companyName = sharedPreferences.getString("userId.companyName", "");
             JSONObject customData = new JSONObject();
             try {
                 String customDataString = sharedPreferences.getString("customData", "");
@@ -135,8 +147,11 @@ public class UserSessionController {
             GleapUserProperties gleapUserProperties = new GleapUserProperties();
             gleapUserProperties.setName(userName);
             gleapUserProperties.setEmail(email);
-            gleapUserProperties.setPhoneNumber(phoneNumber);
+            gleapUserProperties.setPhone(phone);
             gleapUserProperties.setValue(value);
+            gleapUserProperties.setPlan(plan);
+            gleapUserProperties.setCompanyName(companyName);
+            gleapUserProperties.setCompanyId(companyId);
 
             gleapUserProperties.setCustomData(customData);
 

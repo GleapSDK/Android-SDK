@@ -3,6 +3,8 @@ package io.gleap;
 import android.app.Activity;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -50,6 +52,8 @@ import java.util.Locale;
 import gleap.io.gleap.R;
 
 public class GleapMainActivity extends AppCompatActivity implements OnHttpResponseListener {
+    public static boolean isActive = false;
+    public static WeakReference<Activity> callerActivity;
     private WebView webView;
     private OnBackPressedCallback onBackPressedCallback;
     private String url = GleapConfig.getInstance().getiFrameUrl();
@@ -90,15 +94,42 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         super.onBackPressed();
     }
 
+    public void closeMainGleapActivity() {
+        Activity mainActivity = GleapMainActivity.callerActivity.get();
+        if (mainActivity != null) {
+            try {
+                isActive = false;
+
+                PackageManager pm = mainActivity.getPackageManager();
+                ActivityInfo info = pm.getActivityInfo(mainActivity.getComponentName(), 0);
+
+                if (info.launchMode == ActivityInfo.LAUNCH_SINGLE_INSTANCE) {
+                    // The main activity is singleInstance, proceed with navigation
+                    Intent intentToMain = new Intent(this, mainActivity.getClass());
+                    intentToMain.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                    startActivity(intentToMain);
+                    finish();
+                } else {
+                    finish();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                finish();
+            }
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        isActive = true;
+
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 onBackPressedCallback = new OnBackPressedCallback(true) {
                     @Override
                     public void handleOnBackPressed() {
                         GleapDetectorUtil.resumeAllDetectors();
-                        finish();
+                        closeMainGleapActivity();
                     }
                 };
 
@@ -140,7 +171,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     @Override
                     public void run() {
                         if (webView.getVisibility() == View.INVISIBLE) {
-                            finish();
+                            closeMainGleapActivity();
                         }
                     }
                 };
@@ -162,7 +193,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                         GleapDetectorUtil.resumeAllDetectors();
                         GleapBug.getInstance().setDisabled(false);
                         GleapInvisibleActivityManger.getInstance().setShowFab(true);
-                        GleapMainActivity.this.finish();
+                        GleapMainActivity.this.closeMainGleapActivity();
                     }
                 });
 
@@ -188,6 +219,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
     @Override
     protected void onDestroy() {
+        isActive = false;
         webView.removeJavascriptInterface("GleapJSBridge");
         webView.stopLoading();
         webView.clearHistory();
@@ -302,7 +334,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                         GleapConfig.getInstance().getWidgetClosedCallback().invoke();
                     }
                     GleapDetectorUtil.resumeAllDetectors();
-                    finish();
+                    closeMainGleapActivity();
 
                 }
             }).create();
@@ -635,11 +667,22 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     if (gleapUserProperties != null) {
                         sessionData.put("name", gleapUserProperties.getName());
                         sessionData.put("email", gleapUserProperties.getEmail());
-
                         sessionData.put("value", gleapUserProperties.getValue());
 
-                        if (gleapUserProperties.getPhoneNumber() != null) {
-                            sessionData.put("phone", gleapUserProperties.getPhoneNumber());
+                        if (gleapUserProperties.getPhone() != null) {
+                            sessionData.put("phone", gleapUserProperties.getPhone());
+                        }
+
+                        if (gleapUserProperties.getCompanyName() != null) {
+                            sessionData.put("companyName", gleapUserProperties.getCompanyName());
+                        }
+
+                        if (gleapUserProperties.getPlan() != null) {
+                            sessionData.put("plan", gleapUserProperties.getPlan());
+                        }
+
+                        if (gleapUserProperties.getCompanyId() != null) {
+                            sessionData.put("companyId", gleapUserProperties.getCompanyId());
                         }
                     }
                 }
@@ -686,7 +729,8 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     GleapInvisibleActivityManger.getInstance().clearMessages();
                     GleapInvisibleActivityManger.getInstance().setShowFab(true);
                     GleapConfig.getInstance().setmUploadMessage(null);
-                    finish();
+
+                    closeMainGleapActivity();
                 }
             });
         }
