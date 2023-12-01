@@ -31,7 +31,7 @@ class GleapActivityManager {
 
     public void bringGleapToFront(Activity activity) {
         try {
-            if (isGleapMainActivityActive() && requireActivityCheck()) {
+            if (isSingleInstanceLaunchMode(activity) && isGleapMainActivityActive()) {
                 Intent intent = new Intent(activity, GleapMainActivity.class);
                 intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
                 activity.startActivity(intent);
@@ -43,8 +43,7 @@ class GleapActivityManager {
         return GleapMainActivity.isActive;
     }
 
-    public boolean requireActivityCheck() {
-        Activity mainActivity = GleapMainActivity.callerActivity.get();
+    public boolean isSingleInstanceLaunchMode(Activity mainActivity) {
         if (mainActivity != null) {
             try {
                 PackageManager pm = mainActivity.getPackageManager();

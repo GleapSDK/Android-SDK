@@ -71,6 +71,7 @@ public class MainActivity extends AppCompatActivity {
              //   Gleap.getInstance().open();
                  //Gleap.getInstance().startBot("643521e69a18f2be5f3a4865");
                //Gleap.getInstance().openNews();
+                Gleap.getInstance().open();
             }
         });
 

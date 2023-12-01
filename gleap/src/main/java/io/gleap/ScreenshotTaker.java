@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.util.Log;
 
@@ -74,13 +76,28 @@ class ScreenshotTaker {
                         return;
                     }
 
+                    boolean isSingleInstanceMode = false;
+                    if (activityToOpen != null) {
+                        try {
+                            PackageManager pm = activityToOpen.getPackageManager();
+                            ActivityInfo info = pm.getActivityInfo(activityToOpen.getComponentName(), 0);
+                            if (info.launchMode == ActivityInfo.LAUNCH_SINGLE_INSTANCE) {
+                                isSingleInstanceMode = true;
+                            }
+                        } catch (Exception e) {}
+                    }
+
                     // Set the caller activity.
                     GleapMainActivity.callerActivity = new WeakReference<>(activityToOpen);
 
                     Intent intent = new Intent(activityToOpen, GleapMainActivity.class);
                     intent.putExtra("IS_SURVEY", type == SurveyType.SURVEY);
                     intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+                    if (isSingleInstanceMode) {
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    }
+
                     gleapBug.setScreenshot(imageFile);
 
                     GleapInvisibleActivityManger.getInstance().clearMessages();

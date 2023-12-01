@@ -219,6 +219,16 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
     @Override
     protected void onDestroy() {
+        GleapDetectorUtil.resumeAllDetectors();
+        GleapConfig.getInstance().setAction(null);
+        if (GleapConfig.getInstance().getWidgetClosedCallback() != null) {
+            GleapConfig.getInstance().getWidgetClosedCallback().invoke();
+        }
+
+        GleapInvisibleActivityManger.getInstance().clearMessages();
+        GleapInvisibleActivityManger.getInstance().setShowFab(true);
+        GleapConfig.getInstance().setmUploadMessage(null);
+
         isActive = false;
         webView.removeJavascriptInterface("GleapJSBridge");
         webView.stopLoading();
@@ -247,6 +257,8 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
             this.exitAfterFifteenSeconds = null;
         }
         this.handler = null;
+
+        callerActivity.clear();
 
         super.onDestroy();
     }
@@ -713,26 +725,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         }
 
         private void closeGleap() {
-            if (this.mContextRef.get() == null) {
-                return;
-            }
-
-            this.mContextRef.get().runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    GleapDetectorUtil.resumeAllDetectors();
-                    GleapConfig.getInstance().setAction(null);
-                    if (GleapConfig.getInstance().getWidgetClosedCallback() != null) {
-                        GleapConfig.getInstance().getWidgetClosedCallback().invoke();
-                    }
-
-                    GleapInvisibleActivityManger.getInstance().clearMessages();
-                    GleapInvisibleActivityManger.getInstance().setShowFab(true);
-                    GleapConfig.getInstance().setmUploadMessage(null);
-
-                    closeMainGleapActivity();
-                }
-            });
+            closeMainGleapActivity();
         }
     }
 
