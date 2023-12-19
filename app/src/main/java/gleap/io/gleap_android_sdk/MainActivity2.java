@@ -37,8 +37,7 @@ public class MainActivity2 extends AppCompatActivity {
         findViewById(R.id.btn_feedback_1).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Gleap.getInstance().startFeedbackFlow("bugreporting", false);
-
+                Gleap.getInstance().startClassicForm("bugreporting", false);
             }
         });
 

@@ -11,6 +11,7 @@ import io.gleap.callbacks.CustomActionCallback;
 import io.gleap.callbacks.FeedbackFlowStartedCallback;
 import io.gleap.callbacks.FeedbackSendingFailedCallback;
 import io.gleap.callbacks.FeedbackSentCallback;
+import io.gleap.callbacks.NotificationUnreadCountUpdatedCallback;
 import io.gleap.callbacks.RegisterPushMessageGroupCallback;
 import io.gleap.callbacks.UnRegisterPushMessageGroupCallback;
 import io.gleap.callbacks.WidgetClosedCallback;
@@ -20,7 +21,7 @@ public class MainApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        Gleap.initialize("X5C0grjFCjUMbZKi131MjZLaGRwg2iKH", this);
+        Gleap.initialize("ogWhNhuiZcGWrva5nlDS8l7a78OfaLlV", this);
         Gleap.getInstance().setTags(new String[] {
                 "Android",
                 "Tags",
@@ -38,6 +39,13 @@ public class MainApplication extends Application {
             @Override
             public void invoke(String pushMessageGroup) {
                 System.err.println("Subscribe: "+pushMessageGroup);
+            }
+        });
+
+        Gleap.getInstance().setNotificationUnreadCountUpdatedCallback(new NotificationUnreadCountUpdatedCallback() {
+            @Override
+            public void invoke(int count) {
+                System.out.println("COUNTER!!!!! " + count);
             }
         });
 

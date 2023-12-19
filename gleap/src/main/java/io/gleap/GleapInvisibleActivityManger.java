@@ -611,6 +611,12 @@ class GleapInvisibleActivityManger {
     public void setMessageCounter(int messageCounter) {
         this.messageCounter = messageCounter;
 
+        try {
+            if (GleapConfig.getInstance().getNotificationUnreadCountUpdatedCallback() != null) {
+                GleapConfig.getInstance().getNotificationUnreadCountUpdatedCallback().invoke(messageCounter);
+            }
+        } catch (Exception exp) {}
+
         if (notificationCountTextView != null) {
             notificationCountTextView.setText(String.valueOf(this.messageCounter));
 
@@ -713,8 +719,6 @@ class GleapInvisibleActivityManger {
                         local.runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                // Update counter and show FAB.
-                                setMessageCounter(messageCounter);
                                 GleapInvisibleActivityManger.animateViewInOut(imageButton, true);
                             }
                         });
@@ -724,7 +728,6 @@ class GleapInvisibleActivityManger {
                 // Instantly show FAB if icon is already loaded.
                 imageButton.setImageBitmap(fabIcon);
                 imageButton.setVisibility(View.VISIBLE);
-                setMessageCounter(messageCounter);
             }
 
             int offsetX = GleapConfig.getInstance().getButtonX() + 20;

@@ -15,6 +15,7 @@ import io.gleap.callbacks.FeedbackWillBeSentCallback;
 import io.gleap.callbacks.GetBitmapCallback;
 import io.gleap.callbacks.InitializationDoneCallback;
 import io.gleap.callbacks.InitializedCallback;
+import io.gleap.callbacks.NotificationUnreadCountUpdatedCallback;
 import io.gleap.callbacks.RegisterPushMessageGroupCallback;
 import io.gleap.callbacks.UnRegisterPushMessageGroupCallback;
 import io.gleap.callbacks.WidgetClosedCallback;
@@ -124,9 +125,21 @@ interface iGleap {
      *                     use e.g. bugreporting, featurerequests, rating, contact
      * @throws GleapNotInitialisedException thrown when Gleap is not initialised
      */
-    void startFeedbackFlow(String feedbackFlow) throws GleapNotInitialisedException;
+    void startFeedbackFlow(String feedbackFlow);
 
-    void startFeedbackFlow(String feedbackFlow, Boolean showBackButton) throws GleapNotInitialisedException;
+    void startFeedbackFlow(String feedbackFlow, Boolean showBackButton);
+
+    void startClassicForm(String formId);
+
+    void startClassicForm(String formId, Boolean showBackButton);
+
+    void startConversation();
+
+    void startConversation(boolean showBackButton);
+
+    void startBot(String botId);
+
+    void startBot(String botId, boolean showBackButton);
 
     void showSurvey(String surveyId);
 
@@ -335,6 +348,12 @@ interface iGleap {
      */
     void setWidgetClosedCallback(WidgetClosedCallback widgetClosedCallback);
 
+    /**
+     * This is called, when the widget is opened
+     *
+     * @param notificationUnreadCountUpdatedCallback
+     */
+    void setNotificationUnreadCountUpdatedCallback(NotificationUnreadCountUpdatedCallback notificationUnreadCountUpdatedCallback);
 
     /**
      * This is called, when the Gleap flow is started

@@ -28,8 +28,6 @@ public class IdentifyUser extends AppCompatActivity {
             }
         });
 
-
-
         findViewById(R.id.btn_identify).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {

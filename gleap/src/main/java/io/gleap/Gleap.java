@@ -25,6 +25,7 @@ import io.gleap.callbacks.GetActivityCallback;
 import io.gleap.callbacks.GetBitmapCallback;
 import io.gleap.callbacks.InitializationDoneCallback;
 import io.gleap.callbacks.InitializedCallback;
+import io.gleap.callbacks.NotificationUnreadCountUpdatedCallback;
 import io.gleap.callbacks.RegisterPushMessageGroupCallback;
 import io.gleap.callbacks.UnRegisterPushMessageGroupCallback;
 import io.gleap.callbacks.WidgetClosedCallback;
@@ -393,10 +394,22 @@ public class Gleap implements iGleap {
         }
     }
 
+    @Override
+    public void startConversation() {
+        startBot("", false);
+    }
+
+    @Override
+    public void startConversation(boolean showBackButton) {
+        startBot("", showBackButton);
+    }
+
+    @Override
     public void startBot(String botId) {
         startBot(botId, false);
     }
 
+    @Override
     public void startBot(String botId, boolean showBackButton) {
         try {
             ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
@@ -470,18 +483,34 @@ public class Gleap implements iGleap {
     }
 
     /**
-     * Manually start the bug reporting workflow. This is used, when you use the activation method "NONE".
-     *
-     * @throws GleapNotInitialisedException thrown when Gleap is not initialised
+     * Start a classic form by formId
      */
     @Override
-    public void startFeedbackFlow(String feedbackFlow) throws GleapNotInitialisedException {
+    public void startClassicForm(String formId) {
+        try {
+            startFeedbackFlow(formId, true);
+        } catch (Error | Exception ignore) {
+        }
+    }
+    
+    @Override
+    public void startClassicForm(String formId, Boolean showBackButton) {
+        try {
+            startFeedbackFlow(formId, showBackButton);
+        } catch (Error | Exception ignore) {
+        }
+    }
+
+    /**
+     * Manually start the bug reporting workflow. This is used, when you use the activation method "NONE".
+     */
+    @Override
+    public void startFeedbackFlow(String feedbackFlow) {
         try {
             startFeedbackFlow(feedbackFlow, true);
         } catch (Error | Exception ignore) {
         }
     }
-
 
     @Override
     public void startFeedbackFlow(String feedbackFlow, Boolean showBackButton) {
@@ -866,6 +895,16 @@ public class Gleap implements iGleap {
 
     }
 
+    @Override
+    public void setNotificationUnreadCountUpdatedCallback(NotificationUnreadCountUpdatedCallback notificationUnreadCountUpdatedCallback) {
+        try {
+            GleapConfig.getInstance().setNotificationUnreadCountUpdatedCallback(notificationUnreadCountUpdatedCallback);
+
+        } catch (Error | Exception ignore) {
+        }
+
+    }
+
     /**
      * Attach one key value pair to existing custom data.
      *
@@ -1107,6 +1146,9 @@ public class Gleap implements iGleap {
             GleapBug.getInstance().setApplicationtype(applicationType);
         } catch (Error | Exception ignore) {
         }
+    }
+
+    public void setNotificationUnreadCountUpdatedCallback() {
     }
 
     /**

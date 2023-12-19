@@ -25,6 +25,7 @@ import io.gleap.callbacks.GetActivityCallback;
 import io.gleap.callbacks.GetBitmapCallback;
 import io.gleap.callbacks.InitializationDoneCallback;
 import io.gleap.callbacks.InitializedCallback;
+import io.gleap.callbacks.NotificationUnreadCountUpdatedCallback;
 import io.gleap.callbacks.RegisterPushMessageGroupCallback;
 import io.gleap.callbacks.UnRegisterPushMessageGroupCallback;
 import io.gleap.callbacks.WidgetClosedCallback;
@@ -58,6 +59,7 @@ class GleapConfig {
     private CallCloseCallback callCloseCallback;
     private WidgetOpenedCallback widgetOpenedCallback;
     private WidgetClosedCallback widgetClosedCallback;
+    private NotificationUnreadCountUpdatedCallback notificationUnreadCountUpdatedCallback;
     private GetActivityCallback getActivityCallback;
     private CustomActionCallback customAction;
     private GetBitmapCallback getBitmapCallback;
@@ -343,6 +345,14 @@ class GleapConfig {
 
     public void setWidgetClosedCallback(WidgetClosedCallback widgetClosedCallback) {
         this.widgetClosedCallback = widgetClosedCallback;
+    }
+
+    public void setNotificationUnreadCountUpdatedCallback(NotificationUnreadCountUpdatedCallback notificationUnreadCountUpdatedCallback) {
+        this.notificationUnreadCountUpdatedCallback = notificationUnreadCountUpdatedCallback;
+    }
+
+    public NotificationUnreadCountUpdatedCallback getNotificationUnreadCountUpdatedCallback() {
+        return notificationUnreadCountUpdatedCallback;
     }
 
     public GetBitmapCallback getGetBitmapCallback() {

@@ -7,6 +7,8 @@ import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 import java.lang.ref.WeakReference;
@@ -105,6 +107,14 @@ class ScreenshotTaker {
                     if(GleapConfig.getInstance().getWidgetOpenedCallback() != null) {
                         GleapConfig.getInstance().getWidgetOpenedCallback().invoke();
                     }
+
+                    Handler mainThreadHandler = new Handler(Looper.getMainLooper());
+                    mainThreadHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            GleapInvisibleActivityManger.getInstance().setMessageCounter(0);
+                        }
+                    });
 
                     activity.startActivity(intent);
                 }
