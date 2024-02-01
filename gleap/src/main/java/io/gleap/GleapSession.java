@@ -1,10 +1,10 @@
 package io.gleap;
 
-class UserSession {
+class GleapSession {
     private String id;
     private String hash;
 
-    public  UserSession(String id, String hash){
+    public GleapSession(String id, String hash){
         this.id = id;
         this.hash = hash;
     }

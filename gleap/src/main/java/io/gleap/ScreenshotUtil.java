@@ -1,8 +1,6 @@
 package io.gleap;
 
 import android.app.Activity;
-import android.app.Service;
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -10,14 +8,9 @@ import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.os.Build;
 import android.os.Handler;
-import android.os.IBinder;
 import android.util.Base64;
-import android.view.GestureDetector;
-import android.view.LayoutInflater;
 import android.view.PixelCopy;
-import android.view.SurfaceView;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 
@@ -28,27 +21,17 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 import static android.graphics.Bitmap.Config.ARGB_8888;
-import static android.graphics.Bitmap.Config.HARDWARE;
 import static android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND;
 
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
-
-import org.json.JSONObject;
-
-import gleap.io.gleap.R;
 
 class ScreenshotUtil {
     public static void takeScreenshot(GetImageCallback getImageCallback) throws GleapSessionNotInitialisedException, InterruptedException, ExecutionException {
         try {
-            if (!UserSessionController.getInstance().isSessionLoaded()) {
+            if (!GleapSessionController.getInstance().isSessionLoaded()) {
                 throw new GleapSessionNotInitialisedException();
             }
 

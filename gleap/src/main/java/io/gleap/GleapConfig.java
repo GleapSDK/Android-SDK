@@ -282,12 +282,6 @@ class GleapConfig {
     }
 
     public void setLanguage(String language) {
-        try {
-            GleapUser user = UserSessionController.getInstance().getStoredGleapUser();
-            if (user != null) {
-                user.setNew(true);
-            }
-        }catch (Exception ignore) {}
         this.language = language;
     }
 

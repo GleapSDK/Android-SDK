@@ -37,7 +37,6 @@ import androidx.activity.result.ActivityResult;
 import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -667,37 +666,43 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
         private void sendSessionUpdate() {
             try {
-                UserSession userSession = UserSessionController.getInstance().getUserSession();
-                GleapUser gleapUser = UserSessionController.getInstance().getGleapUserSession();
+                GleapSession gleapSession = GleapSessionController.getInstance().getUserSession();
+                GleapSessionProperties gleapSessionProperties = GleapSessionController.getInstance().getGleapUserSession();
                 JSONObject sessionData = new JSONObject();
-                sessionData.put("gleapId", userSession.getId());
-                sessionData.put("gleapHash", userSession.getHash());
-                if (gleapUser != null) {
-                    sessionData.put("userId", gleapUser.getUserId());
+                sessionData.put("gleapId", gleapSession.getId());
+                sessionData.put("gleapHash", gleapSession.getHash());
+                if (gleapSessionProperties != null) {
+                    if (gleapSessionProperties.getUserId() != null) {
+                        sessionData.put("userId", gleapSessionProperties.getUserId());
+                    }
 
-                    GleapUserProperties gleapUserProperties = gleapUser.getGleapUserProperties();
-                    if (gleapUserProperties != null) {
-                        sessionData.put("name", gleapUserProperties.getName());
-                        sessionData.put("email", gleapUserProperties.getEmail());
-                        sessionData.put("value", gleapUserProperties.getValue());
+                    if (gleapSessionProperties.getName() != null) {
+                        sessionData.put("name", gleapSessionProperties.getName());
+                    }
 
-                        if (gleapUserProperties.getPhone() != null) {
-                            sessionData.put("phone", gleapUserProperties.getPhone());
-                        }
+                    if (gleapSessionProperties.getEmail() != null) {
+                        sessionData.put("email", gleapSessionProperties.getEmail());
+                    }
 
-                        if (gleapUserProperties.getCompanyName() != null) {
-                            sessionData.put("companyName", gleapUserProperties.getCompanyName());
-                        }
+                    sessionData.put("value", gleapSessionProperties.getValue());
 
-                        if (gleapUserProperties.getPlan() != null) {
-                            sessionData.put("plan", gleapUserProperties.getPlan());
-                        }
+                    if (gleapSessionProperties.getPhone() != null) {
+                        sessionData.put("phone", gleapSessionProperties.getPhone());
+                    }
 
-                        if (gleapUserProperties.getCompanyId() != null) {
-                            sessionData.put("companyId", gleapUserProperties.getCompanyId());
-                        }
+                    if (gleapSessionProperties.getCompanyName() != null) {
+                        sessionData.put("companyName", gleapSessionProperties.getCompanyName());
+                    }
+
+                    if (gleapSessionProperties.getPlan() != null) {
+                        sessionData.put("plan", gleapSessionProperties.getPlan());
+                    }
+
+                    if (gleapSessionProperties.getCompanyId() != null) {
+                        sessionData.put("companyId", gleapSessionProperties.getCompanyId());
                     }
                 }
+
                 JSONObject data = new JSONObject();
                 data.put("sessionData", sessionData);
                 data.put("apiUrl", GleapConfig.getInstance().getApiUrl());

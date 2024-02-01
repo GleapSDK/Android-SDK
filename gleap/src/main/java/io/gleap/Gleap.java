@@ -99,7 +99,7 @@ public class Gleap implements iGleap {
             GleapConfig.getInstance().setSdkKey(sdkKey);
             if (!isInitialized) {
                 isInitialized = true;
-                UserSessionController.initialize(application);
+                GleapSessionController.initialize(application);
                 new GleapListener();
             } else {
                 if (GleapConfig.getInstance().getConfigLoadedCallback() != null && GleapConfig.getInstance().getPlainConfig() != null) {
@@ -148,8 +148,8 @@ public class Gleap implements iGleap {
                         @Override
                         public void run() throws RuntimeException {
                             try {
-                                if (!GleapDetectorUtil.isIsRunning() && UserSessionController.getInstance() != null &&
-                                        UserSessionController.getInstance().isSessionLoaded() && instance != null) {
+                                if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null &&
+                                        GleapSessionController.getInstance().isSessionLoaded() && instance != null) {
                                     try {
                                         if (screenshotTaker != null) {
                                             JSONObject message = new JSONObject();
@@ -204,8 +204,8 @@ public class Gleap implements iGleap {
                         @Override
                         public void run() throws RuntimeException {
                             try {
-                                if (!GleapDetectorUtil.isIsRunning() && UserSessionController.getInstance() != null &&
-                                        UserSessionController.getInstance().isSessionLoaded() && instance != null) {
+                                if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null &&
+                                        GleapSessionController.getInstance().isSessionLoaded() && instance != null) {
                                     try {
                                         if (screenshotTaker != null) {
                                             screenshotTaker.takeScreenshot(type);
@@ -240,8 +240,8 @@ public class Gleap implements iGleap {
                         @Override
                         public void run() throws RuntimeException {
                             try {
-                                if (!GleapDetectorUtil.isIsRunning() && UserSessionController.getInstance() != null &&
-                                        UserSessionController.getInstance().isSessionLoaded() && instance != null) {
+                                if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null &&
+                                        GleapSessionController.getInstance().isSessionLoaded() && instance != null) {
                                     try {
                                         if (screenshotTaker != null) {
                                             JSONObject message = new JSONObject();
@@ -279,8 +279,8 @@ public class Gleap implements iGleap {
                         @Override
                         public void run() throws RuntimeException {
                             try {
-                                if (!GleapDetectorUtil.isIsRunning() && UserSessionController.getInstance() != null &&
-                                        UserSessionController.getInstance().isSessionLoaded() && instance != null) {
+                                if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null &&
+                                        GleapSessionController.getInstance().isSessionLoaded() && instance != null) {
                                     try {
                                         if (screenshotTaker != null) {
                                             JSONObject message = new JSONObject();
@@ -319,8 +319,8 @@ public class Gleap implements iGleap {
                         @Override
                         public void run() throws RuntimeException {
                             try {
-                                if (!GleapDetectorUtil.isIsRunning() && UserSessionController.getInstance() != null &&
-                                        UserSessionController.getInstance().isSessionLoaded() && instance != null) {
+                                if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null &&
+                                        GleapSessionController.getInstance().isSessionLoaded() && instance != null) {
                                     try {
                                         if (screenshotTaker != null) {
                                             JSONObject message = new JSONObject();
@@ -371,8 +371,8 @@ public class Gleap implements iGleap {
                         @Override
                         public void run() throws RuntimeException {
                             try {
-                                if (!GleapDetectorUtil.isIsRunning() && UserSessionController.getInstance() != null &&
-                                        UserSessionController.getInstance().isSessionLoaded() && instance != null) {
+                                if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null &&
+                                        GleapSessionController.getInstance().isSessionLoaded() && instance != null) {
                                     try {
                                         if (screenshotTaker != null) {
                                             JSONObject message = new JSONObject();
@@ -420,8 +420,8 @@ public class Gleap implements iGleap {
                         @Override
                         public void run() throws RuntimeException {
                             try {
-                                if (!GleapDetectorUtil.isIsRunning() && UserSessionController.getInstance() != null &&
-                                        UserSessionController.getInstance().isSessionLoaded() && instance != null) {
+                                if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null &&
+                                        GleapSessionController.getInstance().isSessionLoaded() && instance != null) {
                                     try {
                                         if (screenshotTaker != null) {
                                             JSONObject message = new JSONObject();
@@ -458,8 +458,8 @@ public class Gleap implements iGleap {
                         @Override
                         public void run() throws RuntimeException {
                             try {
-                                if (!GleapDetectorUtil.isIsRunning() && UserSessionController.getInstance() != null &&
-                                        UserSessionController.getInstance().isSessionLoaded() && instance != null) {
+                                if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null &&
+                                        GleapSessionController.getInstance().isSessionLoaded() && instance != null) {
                                     try {
                                         if (screenshotTaker != null) {
                                             JSONObject message = new JSONObject();
@@ -522,7 +522,7 @@ public class Gleap implements iGleap {
                     Runnable gleapRunnable = new Runnable() {
                         @Override
                         public void run() throws RuntimeException {
-                            if (!GleapDetectorUtil.isIsRunning() && UserSessionController.getInstance() != null && UserSessionController.getInstance().isSessionLoaded() && Gleap.getInstance() != null) {
+                            if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null && GleapSessionController.getInstance().isSessionLoaded() && Gleap.getInstance() != null) {
                                 try {
                                     JSONObject data = new JSONObject();
                                     if (!feedbackFlow.equals("")) {
@@ -591,7 +591,7 @@ public class Gleap implements iGleap {
                     Runnable gleapRunnable = new Runnable() {
                         @Override
                         public void run() throws RuntimeException {
-                            if (!GleapDetectorUtil.isIsRunning() && UserSessionController.getInstance() != null && UserSessionController.getInstance().isSessionLoaded() && Gleap.getInstance() != null) {
+                            if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null && GleapSessionController.getInstance().isSessionLoaded() && Gleap.getInstance() != null) {
                                 try {
 
                                     JSONObject data = new JSONObject();
@@ -625,7 +625,7 @@ public class Gleap implements iGleap {
                     Runnable gleapRunnable = new Runnable() {
                         @Override
                         public void run() throws RuntimeException {
-                            if (!GleapDetectorUtil.isIsRunning() && UserSessionController.getInstance() != null && UserSessionController.getInstance().isSessionLoaded() && Gleap.getInstance() != null) {
+                            if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null && GleapSessionController.getInstance().isSessionLoaded() && Gleap.getInstance() != null) {
                                 try {
 
                                     JSONObject data = new JSONObject();
@@ -660,7 +660,7 @@ public class Gleap implements iGleap {
                     Runnable gleapRunnable = new Runnable() {
                         @Override
                         public void run() throws RuntimeException {
-                            if (!GleapDetectorUtil.isIsRunning() && UserSessionController.getInstance() != null && UserSessionController.getInstance().isSessionLoaded() && Gleap.getInstance() != null) {
+                            if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null && GleapSessionController.getInstance().isSessionLoaded() && Gleap.getInstance() != null) {
                                 try {
 
                                     JSONObject data = new JSONObject();
@@ -695,7 +695,7 @@ public class Gleap implements iGleap {
                     Runnable gleapRunnable = new Runnable() {
                         @Override
                         public void run() throws RuntimeException {
-                            if (!GleapDetectorUtil.isIsRunning() && UserSessionController.getInstance() != null && UserSessionController.getInstance().isSessionLoaded() && Gleap.getInstance() != null) {
+                            if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null && GleapSessionController.getInstance().isSessionLoaded() && Gleap.getInstance() != null) {
                                 try {
 
                                     JSONObject data = new JSONObject();
@@ -760,11 +760,13 @@ public class Gleap implements iGleap {
     @Override
     public void identifyUser(String id) {
         try {
-            GleapUser gleapUser = new GleapUser(id);
-            if (UserSessionController.getInstance() != null) {
-                UserSessionController.getInstance().setGleapUserSession(gleapUser);
+            if (GleapSessionController.getInstance() != null) {
+                GleapSessionProperties gleapSessionProperties = new GleapSessionProperties();
+                gleapSessionProperties.setUserId(id);
+
+                GleapSessionController.getInstance().setPendingIdentificationAction(gleapSessionProperties);
+                GleapSessionController.getInstance().executePendingUpdates();
             }
-            new GleapIdentifyService().execute();
         } catch (Error | Exception exception) {
         }
     }
@@ -773,29 +775,45 @@ public class Gleap implements iGleap {
      * Updates a session's user data.
      *
      * @param id                  Id of the user.
-     * @param gleapUserProperties The updated user data.
+     * @param gleapSessionProperties The updated user data.
      * @author Gleap
      */
     @Override
-    public void identifyUser(String id, GleapUserProperties gleapUserProperties) {
+    public void identifyUser(String id, GleapSessionProperties gleapSessionProperties) {
         try {
-            GleapUser gleapUser = new GleapUser(id, gleapUserProperties);
-            if (UserSessionController.getInstance() != null) {
-                UserSessionController.getInstance().setGleapUserSession(gleapUser);
+            if (GleapSessionController.getInstance() != null) {
+                gleapSessionProperties.setUserId(id);
+
+                GleapSessionController.getInstance().setPendingIdentificationAction(gleapSessionProperties);
+                GleapSessionController.getInstance().executePendingUpdates();
             }
-            new GleapIdentifyService().execute();
         } catch (Error | Exception exception) {
         }
     }
 
     @Override
-    public void identifyUser(String id, GleapUserProperties gleapUserProperties, JSONObject customData) {
-        GleapUser gleapUser = new GleapUser(id, gleapUserProperties);
-        gleapUserProperties.setCustomData(customData);
-        if (UserSessionController.getInstance() != null) {
-            UserSessionController.getInstance().setGleapUserSession(gleapUser);
+    public void identifyUser(String id, GleapSessionProperties gleapSessionProperties, JSONObject customData) {
+        try {
+            if (GleapSessionController.getInstance() != null) {
+                gleapSessionProperties.setUserId(id);
+                gleapSessionProperties.setCustomData(customData);
+
+                GleapSessionController.getInstance().setPendingIdentificationAction(gleapSessionProperties);
+                GleapSessionController.getInstance().executePendingUpdates();
+            }
+        } catch (Error | Exception exception) {
         }
-        new GleapIdentifyService().execute();
+    }
+
+    @Override
+    public void updateContact(GleapSessionProperties gleapSessionProperties) {
+        try {
+            if (GleapSessionController.getInstance() != null) {
+                GleapSessionController.getInstance().setPendingUpdateAction(gleapSessionProperties);
+                GleapSessionController.getInstance().executePendingUpdates();
+            }
+        } catch (Error | Exception exception) {
+        }
     }
 
     /**
@@ -806,9 +824,10 @@ public class Gleap implements iGleap {
     @Override
     public void clearIdentity() {
         try {
-            if (UserSessionController.getInstance() != null) {
-                UserSessionController.getInstance().clearUserSession();
+            if (GleapSessionController.getInstance() != null) {
+                GleapSessionController.getInstance().clearUserSession();
             }
+
             try {
                 ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
                     @Override
@@ -821,7 +840,7 @@ public class Gleap implements iGleap {
             }
 
             GleapEventService.getInstance().stop();
-            GleapUserSessionLoader sessionLoader = new GleapUserSessionLoader();
+            GleapBaseSessionService sessionLoader = new GleapBaseSessionService();
             sessionLoader.execute();
         } catch (Error | Exception ignore) {
         }
@@ -1159,18 +1178,11 @@ public class Gleap implements iGleap {
     }
 
     public static class GleapListener implements OnHttpResponseListener {
-
         public GleapListener() {
             try {
                 new ConfigLoader(this).execute(GleapBug.getInstance());
 
-                GleapUserSessionLoader sessionLoader = new GleapUserSessionLoader();
-                sessionLoader.setCallback(new GleapUserSessionLoader.UserSessionLoadedCallback() {
-                    @Override
-                    public void invoke() {
-                        new GleapIdentifyService().execute();
-                    }
-                });
+                GleapBaseSessionService sessionLoader = new GleapBaseSessionService();
                 sessionLoader.execute();
             } catch (Error | Exception ignore) {
             }
@@ -1410,7 +1422,7 @@ public class Gleap implements iGleap {
                 Runnable gleapRunnable = new Runnable() {
                     @Override
                     public void run() throws RuntimeException {
-                        if (!GleapDetectorUtil.isIsRunning() && UserSessionController.getInstance() != null && UserSessionController.getInstance().isSessionLoaded() && Gleap.getInstance() != null) {
+                        if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null && GleapSessionController.getInstance().isSessionLoaded() && Gleap.getInstance() != null) {
                             try {
                                 JSONObject data = new JSONObject();
                                 data.put("hideBackButton", !showBackButton);
@@ -1427,10 +1439,10 @@ public class Gleap implements iGleap {
     }
 
     @Override
-    public GleapUser getIdentity() {
-        GleapUser gleapUser = null;
+    public GleapSessionProperties getIdentity() {
+        GleapSessionProperties gleapUser = null;
         try {
-            gleapUser = UserSessionController.getInstance().getGleapUserSession();
+            gleapUser = GleapSessionController.getInstance().getGleapUserSession();
         } catch (Error | Exception ignore) {
         }
         return gleapUser;
@@ -1439,7 +1451,7 @@ public class Gleap implements iGleap {
     @Override
     public boolean isUserIdentified() {
         try {
-            GleapUser gleapUser = UserSessionController.getInstance().getStoredGleapUser();
+            GleapSessionProperties gleapUser = GleapSessionController.getInstance().getStoredGleapUser();
             if (gleapUser != null && gleapUser.getUserId() != null && !gleapUser.getUserId().equals("")) {
                 return true;
             }

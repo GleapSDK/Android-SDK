@@ -203,19 +203,26 @@ interface iGleap {
     /**
      * Updates a session's user data.
      *
-     * @param gleapUserProperties The updated user data.
+     * @param gleapSessionProperties The updated user data.
      * @author Gleap
      */
-    void identifyUser(String id, GleapUserProperties gleapUserProperties);
+    void identifyUser(String id, GleapSessionProperties gleapSessionProperties);
 
     /**
      * Updates a session's user data.
      *
-     * @param gleapUserProperties The updated user data.
+     * @param gleapSessionProperties The updated user data.
      * @author Gleap
      */
-    void identifyUser(String id, GleapUserProperties gleapUserProperties, JSONObject customData);
+    void identifyUser(String id, GleapSessionProperties gleapSessionProperties, JSONObject customData);
 
+    /**
+     * Updates session data.
+     *
+     * @param gleapSessionProperties The updated user data.
+     * @author Gleap
+     */
+    void updateContact(GleapSessionProperties gleapSessionProperties);
 
     /**
      * Clears a user session.
@@ -517,7 +524,7 @@ interface iGleap {
 
     void openFeatureRequests(boolean showBackButton);
 
-    GleapUser getIdentity();
+    GleapSessionProperties getIdentity();
 
     boolean isUserIdentified();
 

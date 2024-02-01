@@ -1,15 +1,10 @@
 package io.gleap;
 
-import android.os.Build;
-
-import androidx.annotation.RequiresApi;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -52,10 +47,10 @@ class FormDataHttpsHelper {
         httpConn.setRequestProperty("Connection", "Keep-Alive");
         httpConn.setRequestProperty("Cache-Control", "no-cache");
         httpConn.setRequestProperty("api-token", apiToken);
-        UserSession userSession = UserSessionController.getInstance().getUserSession();
-        if(userSession != null) {
-            httpConn.setRequestProperty("gleap-id", userSession.getId());
-            httpConn.setRequestProperty("gleap-hash", userSession.getHash());
+        GleapSession gleapSession = GleapSessionController.getInstance().getUserSession();
+        if(gleapSession != null) {
+            httpConn.setRequestProperty("gleap-id", gleapSession.getId());
+            httpConn.setRequestProperty("gleap-hash", gleapSession.getHash());
         }
         httpConn.setRequestProperty(
                 "Content-Type", "multipart/form-data;boundary=" + this.boundary);
