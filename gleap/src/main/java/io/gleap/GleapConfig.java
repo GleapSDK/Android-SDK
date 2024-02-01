@@ -85,7 +85,7 @@ class GleapConfig {
     private boolean activationMethodScreenshotGesture = false;
     private boolean activationMethodFeedbackButton = false;
     private String language = "en";
-    private JSONArray networkLogPropsToIgnore;
+    private JSONArray networkLogPropsToIgnore = new JSONArray();
     private JSONArray blackList = new JSONArray();
     private JSONObject plainConfig;
 
@@ -282,12 +282,6 @@ class GleapConfig {
     }
 
     public void setLanguage(String language) {
-        try {
-            GleapUser user = UserSessionController.getInstance().getStoredGleapUser();
-            if (user != null) {
-                user.setNew(true);
-            }
-        }catch (Exception ignore) {}
         this.language = language;
     }
 
@@ -468,6 +462,9 @@ class GleapConfig {
     }
 
     public JSONArray getNetworkLogPropsToIgnore() {
+        if (networkLogPropsToIgnore == null) {
+            return new JSONArray();
+        }
         return networkLogPropsToIgnore;
     }
 
@@ -512,9 +509,11 @@ class GleapConfig {
     }
 
     public JSONArray getBlackList() {
+        if (blackList == null) {
+            return new JSONArray();
+        }
         return blackList;
     }
-
 
     public CallCloseCallback getCallCloseCallback() {
         return callCloseCallback;

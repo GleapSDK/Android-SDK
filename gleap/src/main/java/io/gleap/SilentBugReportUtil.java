@@ -6,7 +6,6 @@ import android.graphics.Bitmap;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.Iterator;
 import java.util.concurrent.ExecutionException;
 
 import io.gleap.callbacks.FeedbackSentCallback;
@@ -67,8 +66,8 @@ class SilentBugReportUtil {
 
     public static void createSilentBugReport(Context context, String description, Gleap.SEVERITY severity, JSONObject excludeData, FeedbackSentCallback feedbackSentCallback) {
 
-        if (!GleapDetectorUtil.isIsRunning() && UserSessionController.getInstance() != null &&
-                UserSessionController.getInstance().isSessionLoaded() && Gleap.getInstance() != null) {
+        if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null &&
+                GleapSessionController.getInstance().isSessionLoaded() && Gleap.getInstance() != null) {
 
             GleapConfig.getInstance().setCrashFeedbackSentCallback(feedbackSentCallback);
             createSilentBugReport(context, description, severity, "CRASH", excludeData);

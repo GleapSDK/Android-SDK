@@ -3,10 +3,6 @@ package io.gleap;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.AsyncTask;
-import android.os.Build;
-import android.util.JsonWriter;
-
-import androidx.annotation.RequiresApi;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -23,13 +19,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.text.ParseException;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -172,11 +164,11 @@ class HttpHelper extends AsyncTask<GleapBug, Void, JSONObject> {
         conn.setRequestProperty("Accept", "application/json");
         conn.setRequestProperty("Content-Type", "application/json");
         conn.setRequestMethod("POST");
-        UserSession userSession = UserSessionController.getInstance().getUserSession();
+        GleapSession gleapSession = GleapSessionController.getInstance().getUserSession();
 
-        if (userSession != null) {
-            conn.setRequestProperty("gleap-id", userSession.getId());
-            conn.setRequestProperty("gleap-hash", userSession.getHash());
+        if (gleapSession != null) {
+            conn.setRequestProperty("gleap-id", gleapSession.getId());
+            conn.setRequestProperty("gleap-hash", gleapSession.getHash());
         }
         JSONObject body = new JSONObject();
 /*

@@ -12,12 +12,12 @@ class GleapURLGenerator {
                 postfixUrl += "?lang=" + URLEncoder.encode(config.getLanguage(), "utf-8");
             }
 
-            UserSessionController userSessionController = UserSessionController.getInstance();
+            GleapSessionController userSessionController = GleapSessionController.getInstance();
             if(userSessionController != null) {
-                UserSession userSession = userSessionController.getUserSession();
-                if (userSession != null) {
-                    postfixUrl += "&gleapId=" + userSession.getId();
-                    postfixUrl += "&gleapHash=" + userSession.getHash();
+                GleapSession gleapSession = userSessionController.getUserSession();
+                if (gleapSession != null) {
+                    postfixUrl += "&gleapId=" + gleapSession.getId();
+                    postfixUrl += "&gleapHash=" + gleapSession.getHash();
                 }
             }
 

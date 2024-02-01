@@ -1,9 +1,7 @@
 package io.gleap;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -26,15 +24,15 @@ public class GleapWebSocketListener extends WebSocketListener {
                 .pingInterval(40, TimeUnit.SECONDS)
                 .build();
 
-        UserSession userSession = UserSessionController.getInstance().getUserSession();
-        if (userSession == null) {
+        GleapSession gleapSession = GleapSessionController.getInstance().getUserSession();
+        if (gleapSession == null) {
             return false;
         }
 
         String wsApiUrl = GleapConfig.getInstance().getWsApiUrl();
         String sdkKey = GleapConfig.getInstance().getSdkKey();
 
-        internallyConnect(wsApiUrl + "?gleapId=" + userSession.getId() + "&gleapHash=" + userSession.getHash() + "&apiKey=" + sdkKey + "&sdkVersion=" + BuildConfig.VERSION_NAME);
+        internallyConnect(wsApiUrl + "?gleapId=" + gleapSession.getId() + "&gleapHash=" + gleapSession.getHash() + "&apiKey=" + sdkKey + "&sdkVersion=" + BuildConfig.VERSION_NAME);
 
         return true;
     }

@@ -14,8 +14,10 @@ import java.nio.charset.StandardCharsets;
 
 import javax.net.ssl.HttpsURLConnection;
 
-public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
-    private static final String httpsUrl = GleapConfig.getInstance().getApiUrl() + "/sessions/identify";
+import gleap.io.gleap.BuildConfig;
+
+public class GleapUpdateSessionService extends AsyncTask<Void, Void, Integer> {
+    private static final String httpsUrl = GleapConfig.getInstance().getApiUrl() + "/sessions/partialupdate";
 
     @Override
     protected Integer doInBackground(Void... voids) {
@@ -24,27 +26,26 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                 return 200;
             }
 
-            // If session is not ready yet, wait for session to load.
+            // Check if we have a session. If not, wait for the session to be fetched.
             GleapSession gleapSession = GleapSessionController.getInstance().getUserSession();
-            if(gleapSession == null) {
+            if (gleapSession == null) {
                 return 200;
             }
 
-            GleapSessionProperties pendingAction = GleapSessionController.getInstance().getPendingIdentificationAction();
-            if (pendingAction == null) {
-                // Nothing to do.
+            GleapSessionProperties pendingIdentificationAction = GleapSessionController.getInstance().getPendingIdentificationAction();
+            if (pendingIdentificationAction != null) {
+                // There was still a pending identification action - wait.
                 return 200;
             }
 
-            // Reset the pending contact identification action.
-            GleapSessionController.getInstance().setPendingIdentificationAction(null);
-
-            // Verify if we need to run the identify call - check if already same data.
-            GleapSessionProperties oldProps = GleapSessionController.getInstance().getGleapUserSession();
-            if (oldProps != null && oldProps.equals(pendingAction)) {
-                // Old equals new, nothing to do.
+            // Check if there is a pending update.
+            GleapSessionProperties pendingUpdateAction = GleapSessionController.getInstance().getPendingUpdateAction();
+            if(pendingUpdateAction == null) {
                 return 200;
             }
+
+            // Remove pending update action.
+            GleapSessionController.getInstance().setPendingUpdateAction(null);
 
             try {
                 URL url = new URL(httpsUrl);
@@ -56,21 +57,18 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                 conn.setDoOutput(true);
                 conn.setDoInput(true);
 
-                // Append credentials.
                 if (gleapSession.getId() != null && !gleapSession.getId().equals("")) {
                     conn.setRequestProperty("Gleap-Id", gleapSession.getId());
                 }
+
                 if (gleapSession.getHash() != null && !gleapSession.getHash().equals("")) {
                     conn.setRequestProperty("Gleap-Hash", gleapSession.getHash());
                 }
 
-                // Get payload to send.
-                JSONObject jsonObject = pendingAction.getJSONPayload();
-
-                // Check if we do have an userId.
-                if (!jsonObject.has( "userId")) {
-                    return 200;
-                }
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("data", pendingUpdateAction.getJSONPayload());
+                jsonObject.put("sdkVersion", BuildConfig.VERSION_NAME);
+                jsonObject.put("type", "android");
 
                 try (OutputStream os = conn.getOutputStream()) {
                     byte[] input = jsonObject.toString().getBytes(StandardCharsets.UTF_8);
@@ -84,24 +82,12 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                     while ((input = br.readLine()) != null) {
                         result = new JSONObject(input);
                     }
-                    GleapSessionController.getInstance().processSessionActionResult(result, true, false);
-                } catch (Exception e) {
-                    GleapSessionController.getInstance().setSessionLoaded(true);
-                    if (GleapSessionController.getInstance() != null) {
-                        GleapSessionController.getInstance().clearUserSession();
-                        GleapSessionController.getInstance().setSessionLoaded(true);
-                    }
-                }
 
-            } catch (Exception e) {
-                if (GleapSessionController.getInstance() != null) {
-                    GleapSessionController.getInstance().clearUserSession();
-                    GleapSessionController.getInstance().setSessionLoaded(true);
-                }
-            }
-        } catch (Exception ignored) {}
+                    GleapSessionController.getInstance().processSessionActionResult(result, false, false);
+                } catch (Exception e) {}
+            } catch (Exception e) {}
+        } catch (Exception e) {}
 
         return 200;
     }
-
 }

@@ -8,9 +8,7 @@ import android.view.View;
 import org.json.JSONObject;
 
 import io.gleap.Gleap;
-import io.gleap.GleapUser;
-import io.gleap.GleapUserProperties;
-import io.gleap.callbacks.RegisterPushMessageGroupCallback;
+import io.gleap.GleapSessionProperties;
 
 public class IdentifyUser extends AppCompatActivity {
 
@@ -38,44 +36,64 @@ public class IdentifyUser extends AppCompatActivity {
         findViewById(R.id.btn_identify2).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                GleapUserProperties gleapUserProperties = new GleapUserProperties("12", "Test User", "test@email.com");
+                GleapSessionProperties gleapSessionProperties = new GleapSessionProperties("12", "Test User", "test@email.com");
                 JSONObject jsonObject = new JSONObject();
                 try{
                     jsonObject.put("customProperty", 1337);
                     jsonObject.put("customStringProperty","STRING PROPERTY");
+                } catch (Exception custom) {
+                    custom.printStackTrace();
+                }
+                gleapSessionProperties.setCustomData(jsonObject);
+                gleapSessionProperties.setCompanyId("COM12");
+                gleapSessionProperties.setCompanyName("COMAAAAAA");
+                gleapSessionProperties.setPlan("asdfasdfs");
+                Gleap.getInstance().identifyUser("1338", gleapSessionProperties, null);
+            }
+        });
+
+        findViewById(R.id.btn_identify22).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                GleapSessionProperties gleapSessionProperties = new GleapSessionProperties("12", "Test User", "test@email.com");
+                JSONObject jsonObject = new JSONObject();
+                try{
+                    jsonObject.put("customProperty", 1337);
+                    jsonObject.put("customStringProperty2","STRING PROPERTY");
                 }catch (Exception custom) {
                     custom.printStackTrace();
                 }
-                gleapUserProperties.setCompanyId("COM12");
-                gleapUserProperties.setCompanyName("COMAAAAAA");
-                gleapUserProperties.setPlan("asdfasdfs");
-                Gleap.getInstance().identifyUser("1338", gleapUserProperties, null);
+                gleapSessionProperties.setCustomData(jsonObject);
+                gleapSessionProperties.setCompanyId("COM12");
+                gleapSessionProperties.setCompanyName("COMAAAAAA");
+                gleapSessionProperties.setPlan("asdfasdfs");
+                Gleap.getInstance().updateContact(gleapSessionProperties);
             }
         });
 
         findViewById(R.id.btn_identify3).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                GleapUserProperties gleapUserProperties = new GleapUserProperties("12", "Test User", "test@email.com", "f60d2a8960f5e2711159d72b67695014a05aa576023d77056bb27e7d7a96b4a6");
-                Gleap.getInstance().identifyUser("1234", gleapUserProperties);
+                GleapSessionProperties gleapSessionProperties = new GleapSessionProperties("12", "Test User", "test@email.com", "f60d2a8960f5e2711159d72b67695014a05aa576023d77056bb27e7d7a96b4a6");
+                Gleap.getInstance().identifyUser("1234", gleapSessionProperties);
             }
         });
 
         findViewById(R.id.btn_identify_error).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                GleapUserProperties gleapUserProperties = new GleapUserProperties(null, null, null, null);
-                Gleap.getInstance().identifyUser(null, gleapUserProperties);
+                GleapSessionProperties gleapSessionProperties = new GleapSessionProperties(null, null, null, null);
+                Gleap.getInstance().identifyUser(null, gleapSessionProperties);
             }
         });
 
         findViewById(R.id.btn_identify_value).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                GleapUserProperties gleapUserProperties = new GleapUserProperties("13", "VALUE boy", "test@email.com");
-                gleapUserProperties.setValue(20);
-                gleapUserProperties.setPhone("+436502425552");
-                Gleap.getInstance().identifyUser("13", gleapUserProperties);
+                GleapSessionProperties gleapSessionProperties = new GleapSessionProperties("13", "VALUE boy", "test@email.com");
+                gleapSessionProperties.setValue(20);
+                gleapSessionProperties.setPhone("+436502425552");
+                Gleap.getInstance().identifyUser("13", gleapSessionProperties);
             }
         });
 

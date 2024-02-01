@@ -77,7 +77,7 @@ public class Networklog {
     }
 
     private void stripObject(JSONObject object) {
-        JSONArray stripWords = GleapConfig.getInstance().getNetworkLogPropsToIgnore();
+        JSONArray stripWords = mergeMultiJsonArray(GleapConfig.getInstance().getNetworkLogPropsToIgnore(), Gleap.propsToIgnore);
         for (int i = 0; i < stripWords.length(); i++) {
             try {
                 String key = stripWords.getString(i);
@@ -87,8 +87,16 @@ public class Networklog {
         }
     }
 
+    public static JSONArray mergeMultiJsonArray(JSONArray... arrays) {
+        JSONArray outArray = new JSONArray();
+        for (JSONArray array : arrays)
+            for (int i = 0; i < array.length(); i++)
+                outArray.put(array.optJSONObject(i));
+        return outArray;
+    }
+
     private boolean checkUrl(String url) {
-        JSONArray jsonArray = GleapConfig.getInstance().getBlackList();
+        JSONArray jsonArray = mergeMultiJsonArray(GleapConfig.getInstance().getBlackList(), Gleap.blacklist);
         for (int i = 0; i < jsonArray.length(); i++) {
             try {
                 if (url.contains(jsonArray.getString(i))) {
@@ -97,6 +105,7 @@ public class Networklog {
             } catch (Exception ex) {
             }
         }
+
         return true;
     }
 

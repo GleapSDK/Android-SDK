@@ -434,13 +434,9 @@ class GleapChatMessage {
 
     private String getName() {
         try {
-            GleapUser gleapUser = UserSessionController.getInstance().getGleapUserSession();
-            if (gleapUser != null) {
-                GleapUserProperties userProperties = gleapUser.getGleapUserProperties();
-                if (userProperties != null) {
-                    return userProperties.getName().split(" ")[0].split("@")[0].split("\\.")[0].split("\\+")[0];
-                }
-                return "";
+            GleapSessionProperties userProperties = GleapSessionController.getInstance().getGleapUserSession();
+            if (userProperties != null) {
+                return userProperties.getName().split(" ")[0].split("@")[0].split("\\.")[0].split("\\+")[0];
             }
             return "";
         } catch (Exception exp) {

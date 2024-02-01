@@ -5,13 +5,7 @@ import android.app.Application;
 import android.graphics.Bitmap;
 import android.os.Handler;
 import android.os.Looper;
-import android.view.MotionEvent;
-import android.view.View;
-import android.view.ViewGroup;
 
-import androidx.core.graphics.BitmapCompat;
-
-import java.util.Date;
 import java.util.concurrent.ExecutionException;
 
 class ReplaysDetector extends GleapDetector {
@@ -54,7 +48,7 @@ class ReplaysDetector extends GleapDetector {
         @Override
         public void run() {
             try {
-                if (Gleap.getInstance() != null && UserSessionController.getInstance().isSessionLoaded()) {
+                if (Gleap.getInstance() != null && GleapSessionController.getInstance().isSessionLoaded()) {
                     try {
                         Activity activity = ActivityUtil.getCurrentActivity();
 

@@ -78,7 +78,7 @@ class GleapEventService {
             @Override
             public void run() {
                 try {
-                    if (UserSessionController.getInstance() != null && UserSessionController.getInstance().isSessionLoaded()) {
+                    if (GleapSessionController.getInstance() != null && GleapSessionController.getInstance().isSessionLoaded()) {
                         if (eventsToBeSent.size() > 0) {
                             new EventHttpHelper().execute();
                         }
@@ -149,10 +149,10 @@ class GleapEventService {
             conn.setRequestProperty("Content-Type", "application/json");
             conn.setRequestMethod("POST");
 
-            UserSession userSession = UserSessionController.getInstance().getUserSession();
-            if (userSession != null) {
-                conn.setRequestProperty("gleap-id", userSession.getId());
-                conn.setRequestProperty("gleap-hash", userSession.getHash());
+            GleapSession gleapSession = GleapSessionController.getInstance().getUserSession();
+            if (gleapSession != null) {
+                conn.setRequestProperty("gleap-id", gleapSession.getId());
+                conn.setRequestProperty("gleap-hash", gleapSession.getHash());
             }
 
             JSONObject body = new JSONObject();
