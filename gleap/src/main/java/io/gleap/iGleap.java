@@ -248,13 +248,13 @@ interface iGleap {
      * Sets the network log blacklist.
      * @param blacklist
      */
-    void setNetworkLogsBlacklist(JSONArray blacklist);
+    void setNetworkLogsBlacklist(String[] blacklist);
 
     /**
      * Sets the network log props to ignore.
      * @param propsToIgnore
      */
-    void setNetworkLogPropsToIgnore(JSONArray propsToIgnore);
+    void setNetworkLogPropsToIgnore(String[] propsToIgnore);
 
     /**
      * Clears a user session.

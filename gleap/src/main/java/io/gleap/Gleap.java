@@ -649,13 +649,25 @@ public class Gleap implements iGleap {
     }
 
     @Override
-    public void setNetworkLogPropsToIgnore(JSONArray propsToIgnore) {
-        Gleap.propsToIgnore = propsToIgnore;
+    public void setNetworkLogPropsToIgnore(String[] propsToIgnore) {
+        JSONArray jsonArray = new JSONArray();
+
+        for (String item : propsToIgnore) {
+            jsonArray.put(item);
+        }
+
+        Gleap.propsToIgnore = jsonArray;
     }
 
     @Override
-    public void setNetworkLogsBlacklist(JSONArray blacklist) {
-        Gleap.blacklist = blacklist;
+    public void setNetworkLogsBlacklist(String[] blacklist) {
+        JSONArray jsonArray = new JSONArray();
+
+        for (String item : blacklist) {
+            jsonArray.put(item);
+        }
+
+        Gleap.blacklist = jsonArray;
     }
 
     @Override
