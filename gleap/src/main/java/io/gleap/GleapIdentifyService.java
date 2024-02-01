@@ -46,7 +46,12 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
             // Reset the pending contact identification action.
             GleapSessionController.getInstance().setPendingIdentificationAction(null);
 
-
+            // Verify if we need to run the identify call - check if already same data.
+            GleapSessionProperties oldProps = GleapSessionController.getInstance().getGleapUserSession();
+            if (oldProps != null && oldProps.equals(pendingAction)) {
+                // Old equals new, nothing to do.
+                return 200;
+            }
 
             try {
                 URL url = new URL(httpsUrl);
