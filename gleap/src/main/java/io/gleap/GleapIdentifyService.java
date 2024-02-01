@@ -16,7 +16,6 @@ import javax.net.ssl.HttpsURLConnection;
 
 public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
     private static final String httpsUrl = GleapConfig.getInstance().getApiUrl() + "/sessions/identify";
-    public boolean isLoaded = false;
 
     @Override
     protected Integer doInBackground(Void... voids) {
@@ -27,13 +26,7 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
 
             // If session is not ready yet, wait for session to load.
             GleapSession gleapSession = GleapSessionController.getInstance().getUserSession();
-            if(gleapSession != null) {
-                return 200;
-            }
-
-            GleapSessionProperties pendingIdentificationAction = GleapSessionController.getInstance().getPendingIdentificationAction();
-            if (pendingIdentificationAction != null) {
-                // There was still a pending identification action - wait.
+            if(gleapSession == null) {
                 return 200;
             }
 
@@ -56,15 +49,17 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
             try {
                 URL url = new URL(httpsUrl);
                 HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
+                conn.setRequestMethod("POST");
                 conn.setRequestProperty("Api-Token", GleapConfig.getInstance().getSdkKey());
                 conn.setRequestProperty("Accept", "application/json");
                 conn.setRequestProperty("Content-Type", "application/json");
-                conn.setRequestMethod("POST");
+                conn.setDoOutput(true);
+                conn.setDoInput(true);
 
+                // Append credentials.
                 if (gleapSession.getId() != null && !gleapSession.getId().equals("")) {
                     conn.setRequestProperty("Gleap-Id", gleapSession.getId());
                 }
-
                 if (gleapSession.getHash() != null && !gleapSession.getHash().equals("")) {
                     conn.setRequestProperty("Gleap-Hash", gleapSession.getHash());
                 }
@@ -83,13 +78,12 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                 }
 
                 try (BufferedReader br = new BufferedReader(
-                        new InputStreamReader(conn.getInputStream(), "utf-8"))) {
+                        new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
                     JSONObject result = null;
                     String input;
                     while ((input = br.readLine()) != null) {
                         result = new JSONObject(input);
                     }
-
                     GleapSessionController.getInstance().processSessionActionResult(result, true, false);
                 } catch (Exception e) {
                     GleapSessionController.getInstance().setSessionLoaded(true);
@@ -97,7 +91,6 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                         GleapSessionController.getInstance().clearUserSession();
                         GleapSessionController.getInstance().setSessionLoaded(true);
                     }
-                    isLoaded = true;
                 }
 
             } catch (Exception e) {
@@ -105,10 +98,8 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                     GleapSessionController.getInstance().clearUserSession();
                     GleapSessionController.getInstance().setSessionLoaded(true);
                 }
-                isLoaded = true;
             }
-        } catch (Exception ignored) {
-        }
+        } catch (Exception ignored) {}
 
         return 200;
     }

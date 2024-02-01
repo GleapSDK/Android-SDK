@@ -24,19 +24,19 @@ class GleapBaseSessionService extends AsyncTask<Void, Void, Integer> {
         try {
             URL url = new URL(httpsUrl);
             HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
             conn.setRequestProperty("Api-Token", GleapConfig.getInstance().getSdkKey());
             conn.setRequestProperty("Accept", "application/json");
             conn.setRequestProperty("Content-Type", "application/json");
-            conn.setRequestMethod("POST");
-            GleapSession gleapSession = GleapSessionController.getInstance().getUserSession();
+            conn.setDoOutput(true);
+            conn.setDoInput(true);
 
-            // Set existing gleap id.
+            // Append credentials, if they exist.
+            GleapSession gleapSession = GleapSessionController.getInstance().getUserSession();
             if (gleapSession != null && gleapSession.getId() != null && !gleapSession.getId().isEmpty()) {
                 conn.setRequestProperty("Gleap-Id", gleapSession.getId());
             }
-
-            // Set existing gleap hash.
-            if(gleapSession != null && gleapSession.getHash() != null && !gleapSession.getHash().isEmpty()) {
+            if (gleapSession != null && gleapSession.getHash() != null && !gleapSession.getHash().isEmpty()) {
                 conn.setRequestProperty("Gleap-Hash", gleapSession.getHash());
             }
 

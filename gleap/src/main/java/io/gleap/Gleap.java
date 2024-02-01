@@ -5,6 +5,7 @@ import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.File;
@@ -35,6 +36,8 @@ public class Gleap implements iGleap {
     private static Gleap instance;
     private static ScreenshotTaker screenshotTaker;
     private static Application application;
+    public static JSONArray blacklist = new JSONArray();
+    public static JSONArray propsToIgnore = new JSONArray();
     private static boolean isInitialized = false;
 
     private Gleap() {
@@ -646,6 +649,16 @@ public class Gleap implements iGleap {
     }
 
     @Override
+    public void setNetworkLogPropsToIgnore(JSONArray propsToIgnore) {
+        Gleap.propsToIgnore = propsToIgnore;
+    }
+
+    @Override
+    public void setNetworkLogsBlacklist(JSONArray blacklist) {
+        Gleap.blacklist = blacklist;
+    }
+
+    @Override
     public void openHelpCenterCollection(String collectionId) {
         openHelpCenterArticle(collectionId, false);
     }
@@ -783,7 +796,6 @@ public class Gleap implements iGleap {
         try {
             if (GleapSessionController.getInstance() != null) {
                 gleapSessionProperties.setUserId(id);
-
                 GleapSessionController.getInstance().setPendingIdentificationAction(gleapSessionProperties);
                 GleapSessionController.getInstance().executePendingUpdates();
             }
@@ -796,8 +808,50 @@ public class Gleap implements iGleap {
         try {
             if (GleapSessionController.getInstance() != null) {
                 gleapSessionProperties.setUserId(id);
-                gleapSessionProperties.setCustomData(customData);
 
+                if (customData != null) {
+                    gleapSessionProperties.setCustomData(customData);
+                }
+
+                GleapSessionController.getInstance().setPendingIdentificationAction(gleapSessionProperties);
+                GleapSessionController.getInstance().executePendingUpdates();
+            }
+        } catch (Error | Exception exception) {
+        }
+    }
+
+    /**
+     * Identifies a contact.
+     *
+     * @param id Id of the user.
+     * @author Gleap
+     */
+    @Override
+    public void identifyContact(String id) {
+        try {
+            if (GleapSessionController.getInstance() != null) {
+                GleapSessionProperties gleapSessionProperties = new GleapSessionProperties();
+                gleapSessionProperties.setUserId(id);
+
+                GleapSessionController.getInstance().setPendingIdentificationAction(gleapSessionProperties);
+                GleapSessionController.getInstance().executePendingUpdates();
+            }
+        } catch (Error | Exception exception) {
+        }
+    }
+
+    /**
+     * Identifies a contact with data.
+     *
+     * @param id                  Id of the user.
+     * @param gleapSessionProperties The updated user data.
+     * @author Gleap
+     */
+    @Override
+    public void identifyContact(String id, GleapSessionProperties gleapSessionProperties) {
+        try {
+            if (GleapSessionController.getInstance() != null) {
+                gleapSessionProperties.setUserId(id);
                 GleapSessionController.getInstance().setPendingIdentificationAction(gleapSessionProperties);
                 GleapSessionController.getInstance().executePendingUpdates();
             }

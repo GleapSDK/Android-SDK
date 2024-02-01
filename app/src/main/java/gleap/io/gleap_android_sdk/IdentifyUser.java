@@ -41,13 +41,33 @@ public class IdentifyUser extends AppCompatActivity {
                 try{
                     jsonObject.put("customProperty", 1337);
                     jsonObject.put("customStringProperty","STRING PROPERTY");
-                }catch (Exception custom) {
+                } catch (Exception custom) {
                     custom.printStackTrace();
                 }
+                gleapSessionProperties.setCustomData(jsonObject);
                 gleapSessionProperties.setCompanyId("COM12");
                 gleapSessionProperties.setCompanyName("COMAAAAAA");
                 gleapSessionProperties.setPlan("asdfasdfs");
                 Gleap.getInstance().identifyUser("1338", gleapSessionProperties, null);
+            }
+        });
+
+        findViewById(R.id.btn_identify22).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                GleapSessionProperties gleapSessionProperties = new GleapSessionProperties("12", "Test User", "test@email.com");
+                JSONObject jsonObject = new JSONObject();
+                try{
+                    jsonObject.put("customProperty", 1337);
+                    jsonObject.put("customStringProperty2","STRING PROPERTY");
+                }catch (Exception custom) {
+                    custom.printStackTrace();
+                }
+                gleapSessionProperties.setCustomData(jsonObject);
+                gleapSessionProperties.setCompanyId("COM12");
+                gleapSessionProperties.setCompanyName("COMAAAAAA");
+                gleapSessionProperties.setPlan("asdfasdfs");
+                Gleap.getInstance().updateContact(gleapSessionProperties);
             }
         });
 

@@ -1,5 +1,6 @@
 package io.gleap;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.File;
@@ -197,6 +198,7 @@ interface iGleap {
      *
      * @param id The updated user data.
      * @author Gleap
+     * @deprecated use {@link #identifyContact(String)} instead.
      */
     void identifyUser(String id);
 
@@ -205,6 +207,7 @@ interface iGleap {
      *
      * @param gleapSessionProperties The updated user data.
      * @author Gleap
+     * @deprecated use {@link #identifyContact(String, GleapSessionProperties)} instead.
      */
     void identifyUser(String id, GleapSessionProperties gleapSessionProperties);
 
@@ -213,8 +216,25 @@ interface iGleap {
      *
      * @param gleapSessionProperties The updated user data.
      * @author Gleap
+     * @deprecated use {@link #identifyContact(String, GleapSessionProperties)} instead.
      */
     void identifyUser(String id, GleapSessionProperties gleapSessionProperties, JSONObject customData);
+
+    /**
+     * Identifies a contact.
+     *
+     * @param id The updated user data.
+     * @author Gleap
+     */
+    void identifyContact(String id);
+
+    /**
+     * Identifies a contact with data.
+     *
+     * @param gleapSessionProperties The updated user data.
+     * @author Gleap
+     */
+    void identifyContact(String id, GleapSessionProperties gleapSessionProperties);
 
     /**
      * Updates session data.
@@ -223,6 +243,18 @@ interface iGleap {
      * @author Gleap
      */
     void updateContact(GleapSessionProperties gleapSessionProperties);
+
+    /**
+     * Sets the network log blacklist.
+     * @param blacklist
+     */
+    void setNetworkLogsBlacklist(JSONArray blacklist);
+
+    /**
+     * Sets the network log props to ignore.
+     * @param propsToIgnore
+     */
+    void setNetworkLogPropsToIgnore(JSONArray propsToIgnore);
 
     /**
      * Clears a user session.

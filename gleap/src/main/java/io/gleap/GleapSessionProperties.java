@@ -1,6 +1,11 @@
 package io.gleap;
 
+import androidx.annotation.Nullable;
+
+import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.util.Iterator;
 
 public class GleapSessionProperties {
     private String userId;
@@ -144,6 +149,9 @@ public class GleapSessionProperties {
             if (this.getName() != null && !this.getName().isEmpty()) {
                 jsonObject.put("name", this.getName());
             }
+            if (this.getUserId() != null && !this.getUserId().isEmpty()) {
+                jsonObject.put("userId", this.getUserId());
+            }
             if (this.getHash() != null && !this.getHash().isEmpty()) {
                 jsonObject.put("userHash", this.getHash());
             }
@@ -163,8 +171,9 @@ public class GleapSessionProperties {
                 jsonObject.put("companyId", this.getCompanyId());
             }
 
+            // Merge with custom data - flat.
             JSONObject customData = this.getCustomData();
-            if (customData != null) {
+            if (customData != null && customData.length() > 0) {
                 jsonObject = JsonUtil.mergeJSONObjects(jsonObject, customData);
             }
 
@@ -223,5 +232,97 @@ public class GleapSessionProperties {
         }
 
         return gleapSessionProperties;
+    }
+
+    @Override
+    public boolean equals(@Nullable Object obj) {
+        GleapSessionProperties otherUserPropterties = (GleapSessionProperties) obj;
+
+        if (otherUserPropterties == null) {
+            return false;
+        }
+
+        if (this.userId == null || !this.userId.equals(otherUserPropterties.userId)) {
+            return false;
+        }
+
+        if (this.getName() != null && otherUserPropterties.getName() != null && !this.getName().equals(otherUserPropterties.getName())) {
+            return false;
+        }
+
+        if (this.getEmail() != null && otherUserPropterties.getEmail() != null && !this.getEmail().equals(otherUserPropterties.getEmail())) {
+            return false;
+        }
+
+        if (this.getPhone() != null && otherUserPropterties.getPhone() != null) {
+            if (!this.getPhone().equals(otherUserPropterties.getPhone())) {
+                return false;
+            }
+        }
+
+        if (this.getPlan() != null && otherUserPropterties.getPlan() != null) {
+            if (!this.getPlan().equals(otherUserPropterties.getPlan())) {
+                return false;
+            }
+        }
+
+        if (this.getCompanyName() != null && otherUserPropterties.getCompanyName() != null) {
+            if (!this.getCompanyName().equals(otherUserPropterties.getCompanyName())) {
+                return false;
+            }
+        }
+
+        if (this.getCompanyId() != null && otherUserPropterties.getCompanyId() != null) {
+            if (!this.getCompanyId().equals(otherUserPropterties.getCompanyId())) {
+                return false;
+            }
+        }
+
+        if (this.getValue() != otherUserPropterties.getValue()) {
+            return false;
+        }
+
+        JSONObject customData = this.getCustomData();
+        JSONObject otherUserData = otherUserPropterties.getCustomData();
+
+        if (customData != null && otherUserData != null) {
+            Iterator<String> keys = otherUserData.keys();
+            while (keys.hasNext()) {
+                String key = keys.next();
+                if (customData.has(key)) {
+                    try {
+                        Object obj1 = customData.get(key);
+                        Object obj2 = otherUserData.get(key);
+
+                        // If both objects are JSONObjects, compare them as JSONObjects
+                        if (obj1 instanceof JSONObject && obj2 instanceof JSONObject) {
+                            JSONObject json1 = (JSONObject) obj1;
+                            JSONObject json2 = (JSONObject) obj2;
+
+                            if (!json1.equals(json2)) {
+                                return false;
+                            }
+                        } else {
+                            // Convert both objects to strings for other types
+                            String str1 = (obj1 == null) ? "" : obj1.toString();
+                            String str2 = (obj2 == null) ? "" : obj2.toString();
+                            boolean isEqual = str1.equals(str2);
+
+                            if (!isEqual) {
+                                return false;
+                            }
+                        }
+                    } catch (Exception e) {}
+                } else {
+                    return false;
+                }
+            }
+        }
+
+        if (customData == null && otherUserData != null) {
+            return false;
+        }
+
+        return true;
     }
 }

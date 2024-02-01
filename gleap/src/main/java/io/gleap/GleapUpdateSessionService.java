@@ -14,6 +14,8 @@ import java.nio.charset.StandardCharsets;
 
 import javax.net.ssl.HttpsURLConnection;
 
+import gleap.io.gleap.BuildConfig;
+
 public class GleapUpdateSessionService extends AsyncTask<Void, Void, Integer> {
     private static final String httpsUrl = GleapConfig.getInstance().getApiUrl() + "/sessions/partialupdate";
 
@@ -30,8 +32,15 @@ public class GleapUpdateSessionService extends AsyncTask<Void, Void, Integer> {
                 return 200;
             }
 
-            GleapSessionProperties gleapSessionProperties = GleapSessionController.getInstance().getPendingUpdateAction();
-            if(gleapSessionProperties == null) {
+            GleapSessionProperties pendingIdentificationAction = GleapSessionController.getInstance().getPendingIdentificationAction();
+            if (pendingIdentificationAction != null) {
+                // There was still a pending identification action - wait.
+                return 200;
+            }
+
+            // Check if there is a pending update.
+            GleapSessionProperties pendingUpdateAction = GleapSessionController.getInstance().getPendingUpdateAction();
+            if(pendingUpdateAction == null) {
                 return 200;
             }
 
@@ -41,10 +50,12 @@ public class GleapUpdateSessionService extends AsyncTask<Void, Void, Integer> {
             try {
                 URL url = new URL(httpsUrl);
                 HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
+                conn.setRequestMethod("POST");
                 conn.setRequestProperty("Api-Token", GleapConfig.getInstance().getSdkKey());
                 conn.setRequestProperty("Accept", "application/json");
                 conn.setRequestProperty("Content-Type", "application/json");
-                conn.setRequestMethod("POST");
+                conn.setDoOutput(true);
+                conn.setDoInput(true);
 
                 if (gleapSession.getId() != null && !gleapSession.getId().equals("")) {
                     conn.setRequestProperty("Gleap-Id", gleapSession.getId());
@@ -54,7 +65,10 @@ public class GleapUpdateSessionService extends AsyncTask<Void, Void, Integer> {
                     conn.setRequestProperty("Gleap-Hash", gleapSession.getHash());
                 }
 
-                JSONObject jsonObject = gleapSessionProperties.getJSONPayload();
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("data", pendingUpdateAction.getJSONPayload());
+                jsonObject.put("sdkVersion", BuildConfig.VERSION_NAME);
+                jsonObject.put("type", "android");
 
                 try (OutputStream os = conn.getOutputStream()) {
                     byte[] input = jsonObject.toString().getBytes(StandardCharsets.UTF_8);

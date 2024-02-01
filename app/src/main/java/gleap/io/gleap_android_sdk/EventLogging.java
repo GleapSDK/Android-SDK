@@ -48,7 +48,6 @@ public class EventLogging extends AppCompatActivity {
                 }catch (Exception ex) {
 
                 }
-                System.out.println("THIS SHOULD BE AFTERWARDS!!!");
                 Logger.getAnonymousLogger().log(Level.INFO, "HEY THIS IS IT?" );
                 Gleap.getInstance().trackEvent("THIS IS AN EVENT", jsonObject);
             }
