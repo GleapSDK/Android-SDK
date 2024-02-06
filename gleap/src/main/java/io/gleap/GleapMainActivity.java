@@ -94,6 +94,10 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
     }
 
     public void closeMainGleapActivity() {
+        if (GleapMainActivity.callerActivity == null) {
+            return;
+        }
+
         Activity mainActivity = GleapMainActivity.callerActivity.get();
         if (mainActivity != null) {
             try {
