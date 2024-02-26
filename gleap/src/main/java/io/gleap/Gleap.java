@@ -137,7 +137,7 @@ public class Gleap implements iGleap {
                     break;
             }
 
-        }catch (Exception ex) {}
+        } catch (Exception ex) {}
     }
 
     @Override
@@ -173,7 +173,6 @@ public class Gleap implements iGleap {
             });
         } catch (Error | Exception ignore) {
         }
-
     }
 
     /**

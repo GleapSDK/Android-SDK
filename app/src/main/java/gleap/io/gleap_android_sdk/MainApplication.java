@@ -13,7 +13,7 @@ public class MainApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        Gleap.initialize("vcxExo94dQQv7KIXd1BnMgN2bzpwZnoj", this);
+        Gleap.initialize("ogWhNhuiZcGWrva5nlDS8l7a78OfaLlV", this);
         Gleap.getInstance().setTags(new String[] {
                 "Android",
                 "Tags",

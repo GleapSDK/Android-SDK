@@ -100,12 +100,7 @@ public class GleapSessionController {
             }
         });
 
-        if (GleapConfig.getInstance().getUnRegisterPushMessageGroupCallback() != null && gleapSession != null) {
-            String hash = gleapSession.getHash();
-            if (!hash.equals("")) {
-                GleapConfig.getInstance().getUnRegisterPushMessageGroupCallback().invoke("gleapuser-" + hash);
-            }
-        }
+        unregisterPushMessageGroup(gleapSession.getHash());
         pendingUpdateAction = null;
         gleapSessionProperties = null;
         gleapSession = null;
@@ -249,7 +244,7 @@ public class GleapSessionController {
                 executePendingUpdates();
 
                 // Notify about registration.
-                registerPushMessageGroup(gleapSessionProperties.getHash());
+                registerPushMessageGroup(hash);
 
                 if (restartEventServices) {
                     // Restart event service.

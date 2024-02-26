@@ -194,6 +194,10 @@ public class GleapSessionProperties {
         GleapSessionProperties gleapSessionProperties = new GleapSessionProperties();
 
         try {
+            if (result.has("userId")) {
+                gleapSessionProperties.setUserId(result.getString("userId"));
+            }
+
             if (result.has("name")) {
                 gleapSessionProperties.setName(result.getString("name"));
             }
