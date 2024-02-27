@@ -116,13 +116,13 @@ public class Gleap implements iGleap {
 
     public void processOpenPushActions() {
         try {
-            ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
+            Handler mainHandler = new Handler(Looper.getMainLooper());
+            Runnable gleapRunnable = new Runnable() {
                 @Override
-                public void run() {
-                    Handler mainHandler = new Handler(Looper.getMainLooper());
-                    Runnable gleapRunnable = new Runnable() {
+                public void run() throws RuntimeException {
+                    ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
                         @Override
-                        public void run() throws RuntimeException {
+                        public void run() {
                             try {
                                 // Check if config got loaded.
                                 if (GleapConfig.getInstance().getPlainConfig() == null) {
@@ -162,10 +162,10 @@ public class Gleap implements iGleap {
                             } catch (Error | Exception ignore) {
                             }
                         }
-                    };
-                    mainHandler.postDelayed(gleapRunnable, 800);
+                    });
                 }
-            });
+            };
+            mainHandler.postDelayed(gleapRunnable, 1500);
         } catch (Error | Exception ignore) {
         }
     }
@@ -184,6 +184,7 @@ public class Gleap implements iGleap {
 
             if (!type.isEmpty()) {
                 this.openPushAction = new OpenPushAction(type, id);
+                this.processOpenPushActions();
             }
         } catch (Exception ex) {}
     }
