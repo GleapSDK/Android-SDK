@@ -101,8 +101,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         Activity mainActivity = GleapMainActivity.callerActivity.get();
         if (mainActivity != null) {
             try {
-                isActive = false;
-
                 PackageManager pm = mainActivity.getPackageManager();
                 ActivityInfo info = pm.getActivityInfo(mainActivity.getComponentName(), 0);
 

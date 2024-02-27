@@ -77,7 +77,7 @@ class GleapActivityManager {
 
                 @Override
                 public void onActivityResumed(@NonNull Activity activity) {
-
+                    Gleap.getInstance().processOpenPushActions();
                 }
 
                 @Override

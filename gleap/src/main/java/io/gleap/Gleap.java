@@ -115,31 +115,58 @@ public class Gleap implements iGleap {
     }
 
     public void processOpenPushActions() {
-        // Check if config got loaded.
-        if (GleapConfig.getInstance().getPlainConfig() == null) {
-            return;
-        }
+        try {
+            ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Handler mainHandler = new Handler(Looper.getMainLooper());
+                    Runnable gleapRunnable = new Runnable() {
+                        @Override
+                        public void run() throws RuntimeException {
+                            try {
+                                // Check if config got loaded.
+                                if (GleapConfig.getInstance().getPlainConfig() == null) {
+                                    return;
+                                }
 
-        if (!GleapSessionController.getInstance().isSessionLoaded()) {
-            return;
-        }
+                                if (GleapSessionController.getInstance() == null || !GleapSessionController.getInstance().isSessionLoaded()) {
+                                    return;
+                                }
 
-        System.out.println("CHECK PUSHY?!?");
+                                if (instance == null) {
+                                    return;
+                                }
 
-        if (this.openPushAction != null) {
-            switch (this.openPushAction.getType()) {
-                case "news":
-                    this.openNewsArticle(this.openPushAction.getId(), true);
-                    break;
-                case "checklist":
-                    this.openChecklist(this.openPushAction.getId(), true);
-                    break;
-                case "conversation":
-                    this.openConversation(this.openPushAction.getId());
-                    break;
-            }
+                                if (GleapDetectorUtil.isIsRunning()) {
+                                    return;
+                                }
 
-            this.openPushAction = null;
+                                try {
+                                    if (instance.openPushAction != null) {
+                                        switch (instance.openPushAction.getType()) {
+                                            case "news":
+                                                instance.openNewsArticle(instance.openPushAction.getId(), true);
+                                                break;
+                                            case "checklist":
+                                                instance.openChecklist(instance.openPushAction.getId(), true);
+                                                break;
+                                            case "conversation":
+                                                instance.openConversation(instance.openPushAction.getId());
+                                                break;
+                                        }
+
+                                        instance.openPushAction = null;
+                                    }
+                                } catch (Exception e) {
+                                }
+                            } catch (Error | Exception ignore) {
+                            }
+                        }
+                    };
+                    mainHandler.postDelayed(gleapRunnable, 800);
+                }
+            });
+        } catch (Error | Exception ignore) {
         }
     }
 
@@ -157,7 +184,6 @@ public class Gleap implements iGleap {
 
             if (!type.isEmpty()) {
                 this.openPushAction = new OpenPushAction(type, id);
-                this.processOpenPushActions();
             }
         } catch (Exception ex) {}
     }
