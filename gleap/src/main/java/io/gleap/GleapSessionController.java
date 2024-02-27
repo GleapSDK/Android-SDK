@@ -252,6 +252,9 @@ public class GleapSessionController {
                     GleapEventService.getInstance().startWebSocketListener();
                 }
 
+                // Process push actions.
+                Gleap.getInstance().processOpenPushActions();
+
                 if (sendInitDelegate && GleapConfig.getInstance().getInitializationDoneCallback() != null) {
                     GleapConfig.getInstance().getInitializationDoneCallback().invoke();
                 }

@@ -4,16 +4,14 @@ import android.app.Application;
 
 import io.gleap.Gleap;
 import io.gleap.callbacks.CustomActionCallback;
-import io.gleap.callbacks.NotificationUnreadCountUpdatedCallback;
 import io.gleap.callbacks.RegisterPushMessageGroupCallback;
 import io.gleap.callbacks.UnRegisterPushMessageGroupCallback;
 
 public class MainApplication extends Application {
-
     @Override
     public void onCreate() {
         super.onCreate();
-        Gleap.initialize("ogWhNhuiZcGWrva5nlDS8l7a78OfaLlV", this);
+        Gleap.initialize("QTJpSeGQXMQPXxKqaXB8ZSBmZ57idbgS", this);
         Gleap.getInstance().setTags(new String[] {
                 "Android",
                 "Tags",
@@ -34,17 +32,10 @@ public class MainApplication extends Application {
             }
         });
 
-        Gleap.getInstance().setNotificationUnreadCountUpdatedCallback(new NotificationUnreadCountUpdatedCallback() {
-            @Override
-            public void invoke(int count) {
-                System.out.println("COUNTER!!!!! " + count);
-            }
-        });
-
-        Gleap.getInstance().setUnRegisterPushMessageGroupCallback(new UnRegisterPushMessageGroupCallback() {
+        Gleap.getInstance().setRegisterPushMessageGroupCallback(new RegisterPushMessageGroupCallback() {
             @Override
             public void invoke(String pushMessageGroup) {
-                System.err.println("Unsubscribe: "+pushMessageGroup);
+                System.out.println(pushMessageGroup);
             }
         });
      //   Gleap.getInstance().setLanguage("pt");

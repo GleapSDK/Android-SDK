@@ -39,6 +39,7 @@ public class Gleap implements iGleap {
     public static JSONArray blacklist = new JSONArray();
     public static JSONArray propsToIgnore = new JSONArray();
     private static boolean isInitialized = false;
+    private static OpenPushAction openPushAction;
 
     private Gleap() {
     }
@@ -113,6 +114,35 @@ public class Gleap implements iGleap {
         }
     }
 
+    public void processOpenPushActions() {
+        // Check if config got loaded.
+        if (GleapConfig.getInstance().getPlainConfig() == null) {
+            return;
+        }
+
+        if (!GleapSessionController.getInstance().isSessionLoaded()) {
+            return;
+        }
+
+        System.out.println("CHECK PUSHY?!?");
+
+        if (this.openPushAction != null) {
+            switch (this.openPushAction.getType()) {
+                case "news":
+                    this.openNewsArticle(this.openPushAction.getId(), true);
+                    break;
+                case "checklist":
+                    this.openChecklist(this.openPushAction.getId(), true);
+                    break;
+                case "conversation":
+                    this.openConversation(this.openPushAction.getId());
+                    break;
+            }
+
+            this.openPushAction = null;
+        }
+    }
+
     @Override
     public void handlePushNotification(JSONObject notificationData) {
         try {
@@ -125,18 +155,10 @@ public class Gleap implements iGleap {
                 id = notificationData.getString("id");
             }
 
-            switch (type) {
-                case "news":
-                    this.openNewsArticle(id, true);
-                    break;
-                case "checklist":
-                    this.openChecklist(id, true);
-                    break;
-                case "conversation":
-                    this.openConversation(id);
-                    break;
+            if (!type.isEmpty()) {
+                this.openPushAction = new OpenPushAction(type, id);
+                this.processOpenPushActions();
             }
-
         } catch (Exception ex) {}
     }
 

@@ -251,6 +251,8 @@ class GleapConfig {
         } catch (JSONException e) {
             e.printStackTrace();
         }
+
+        Gleap.getInstance().processOpenPushActions();
     }
 
     public String getSdkKey() {

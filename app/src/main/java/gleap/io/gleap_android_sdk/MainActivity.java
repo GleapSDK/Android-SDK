@@ -2,12 +2,19 @@ package gleap.io.gleap_android_sdk;
 
 import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
+import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -16,6 +23,34 @@ import io.gleap.Gleap;
 
 
 public class MainActivity extends AppCompatActivity {
+    private final ActivityResultLauncher<String> requestPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
+                if (isGranted) {
+                    // FCM SDK (and your app) can post notifications.
+                } else {
+                    // TODO: Inform user that that your app will not show notifications.
+                }
+            });
+
+    private void askNotificationPermission() {
+        // This is only necessary for API level >= 33 (TIRAMISU)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
+                    PackageManager.PERMISSION_GRANTED) {
+                System.out.println("ALREADY DONE!");
+                // FCM SDK (and your app) can post notifications.
+            } else if (shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)) {
+                System.out.println("NOOOOOOOOPE!");
+                // TODO: display an educational UI explaining to the user the features that will be enabled
+                //       by them granting the POST_NOTIFICATION permission. This UI should provide the user
+                //       "OK" and "No thanks" buttons. If the user selects "OK," directly request the permission.
+                //       If the user selects "No thanks," allow the user to continue without notifications.
+            } else {
+                // Directly ask for the permission
+                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
+            }
+        }
+    }
     public static String[] storge_permissions = {
             // ... already existing permissions
             Manifest.permission.READ_EXTERNAL_STORAGE
@@ -37,12 +72,32 @@ public class MainActivity extends AppCompatActivity {
         return permissionsToRequest;
     }
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         Gleap.getInstance().showFeedbackButton(true);
+
+        if (getIntent().getExtras() != null) {
+            Log.d("YOOOO", BundleUtil.toJsonObject(getIntent().getExtras()).toString());
+            Gleap.getInstance().handlePushNotification(BundleUtil.toJsonObject(getIntent().getExtras()));
+        }
+
+        /*String jsonString = "{\"google.delivered_priority\":\"normal\",\"google.sent_time\":1709032798200,\"google.ttl\":2419200,\"google.original_priority\":\"normal\",\"sender\":\"GLEAP\",\"google.product_id\":72175901,\"id\":\"QY59fQ7iDz2YK9uE1bJi54FaNDNekokboMpKaXh8ikOs50o3XTPBaerUiqnAXxiynijw9p\",\"from\":\"\\/topics\\/gleapuser-964b07cb33e95274d3a1b3a4b66809f4749d7d0aa51c86079d49d5ad5df76d94\",\"type\":\"conversation\",\"google.message_id\":\"0:1709032798416886%bd50d7f1bd50d7f1\",\"gcm.n.analytics_data\":\"Bundle[mParcelledData.dataSize=240]\",\"collapse_key\":\"gleap.io.gleap_android_sdk\"}";
+
+        try {
+            JSONObject jsonObject = new JSONObject(jsonString);
+            // Use jsonObject as needed, for example, print it
+            Gleap.getInstance().handlePushNotification(jsonObject);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }*/
+
+        /*if (intent?.extras?.getString(INTENT_EXTRAS_SENDER_KEY) == INTENT_EXTRAS_GLEAP_SENDER_VALUE) {
+            Gleap.getInstance().handlePushNotification(intent?.extras?.toJsonObject())
+        }*/
 
         findViewById(R.id.feedback).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -99,8 +154,7 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.network).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(MainActivity.this, NetworkLogging.class);
-                startActivity(intent);
+                askNotificationPermission();
             }
         });
     }
