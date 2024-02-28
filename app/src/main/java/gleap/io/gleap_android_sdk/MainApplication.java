@@ -2,6 +2,8 @@ package gleap.io.gleap_android_sdk;
 
 import android.app.Application;
 
+import org.json.JSONObject;
+
 import io.gleap.Gleap;
 import io.gleap.callbacks.CustomActionCallback;
 import io.gleap.callbacks.RegisterPushMessageGroupCallback;
@@ -24,6 +26,16 @@ public class MainApplication extends Application {
                 System.out.println(message);
             }
         });
+
+        String jsonString = "{\"google.delivered_priority\":\"normal\",\"google.sent_time\":1709032798200,\"google.ttl\":2419200,\"google.original_priority\":\"normal\",\"sender\":\"GLEAP\",\"google.product_id\":72175901,\"id\":\"QY59fQ7iDz2YK9uE1bJi54FaNDNekokboMpKaXh8ikOs50o3XTPBaerUiqnAXxiynijw9p\",\"from\":\"\\/topics\\/gleapuser-964b07cb33e95274d3a1b3a4b66809f4749d7d0aa51c86079d49d5ad5df76d94\",\"type\":\"conversation\",\"google.message_id\":\"0:1709032798416886%bd50d7f1bd50d7f1\",\"gcm.n.analytics_data\":\"Bundle[mParcelledData.dataSize=240]\",\"collapse_key\":\"gleap.io.gleap_android_sdk\"}";
+
+        try {
+            JSONObject jsonObject = new JSONObject(jsonString);
+            // Use jsonObject as needed, for example, print it
+            Gleap.getInstance().handlePushNotification(jsonObject);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         Gleap.getInstance().setRegisterPushMessageGroupCallback(new RegisterPushMessageGroupCallback() {
             @Override

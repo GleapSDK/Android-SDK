@@ -120,49 +120,50 @@ public class Gleap implements iGleap {
             Runnable gleapRunnable = new Runnable() {
                 @Override
                 public void run() throws RuntimeException {
-                    ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                // Check if config got loaded.
-                                if (GleapConfig.getInstance().getPlainConfig() == null) {
-                                    return;
-                                }
-
-                                if (GleapSessionController.getInstance() == null || !GleapSessionController.getInstance().isSessionLoaded()) {
-                                    return;
-                                }
-
-                                if (instance == null) {
-                                    return;
-                                }
-
-                                if (GleapDetectorUtil.isIsRunning()) {
-                                    return;
-                                }
-
-                                try {
-                                    if (instance.openPushAction != null) {
-                                        switch (instance.openPushAction.getType()) {
-                                            case "news":
-                                                instance.openNewsArticle(instance.openPushAction.getId(), true);
-                                                break;
-                                            case "checklist":
-                                                instance.openChecklist(instance.openPushAction.getId(), true);
-                                                break;
-                                            case "conversation":
-                                                instance.openConversation(instance.openPushAction.getId());
-                                                break;
-                                        }
-
-                                        instance.openPushAction = null;
-                                    }
-                                } catch (Exception e) {
-                                }
-                            } catch (Error | Exception ignore) {
-                            }
+                    try {
+                        // Check if activity is null.
+                        if (ActivityUtil.getCurrentActivity() == null) {
+                            return;
                         }
-                    });
+
+                        // Check if config got loaded.
+                        if (GleapConfig.getInstance().getPlainConfig() == null) {
+                            return;
+                        }
+
+                        // Check if we have a session.
+                        if (GleapSessionController.getInstance() == null || !GleapSessionController.getInstance().isSessionLoaded()) {
+                            return;
+                        }
+
+                        if (instance == null) {
+                            return;
+                        }
+
+                        if (GleapDetectorUtil.isIsRunning()) {
+                            return;
+                        }
+
+                        try {
+                            if (instance.openPushAction != null) {
+                                switch (instance.openPushAction.getType()) {
+                                    case "news":
+                                        instance.openNewsArticle(instance.openPushAction.getId(), true);
+                                        break;
+                                    case "checklist":
+                                        instance.openChecklist(instance.openPushAction.getId(), true);
+                                        break;
+                                    case "conversation":
+                                        instance.openConversation(instance.openPushAction.getId());
+                                        break;
+                                }
+
+                                instance.openPushAction = null;
+                            }
+                        } catch (Error | Exception ignore) {
+                        }
+                    } catch (Error | Exception ignore) {
+                    }
                 }
             };
             mainHandler.postDelayed(gleapRunnable, 1500);
@@ -1529,27 +1530,29 @@ public class Gleap implements iGleap {
 
     @Override
     public void openFeatureRequests(boolean showBackButton) {
-        ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                Handler mainHandler = new Handler(Looper.getMainLooper());
-                Runnable gleapRunnable = new Runnable() {
-                    @Override
-                    public void run() throws RuntimeException {
-                        if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null && GleapSessionController.getInstance().isSessionLoaded() && Gleap.getInstance() != null) {
-                            try {
-                                JSONObject data = new JSONObject();
-                                data.put("hideBackButton", !showBackButton);
-                                GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("open-feature-requests", data));
-                                screenshotTaker.takeScreenshot();
-                            } catch (Exception e) {
+        try {
+            ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Handler mainHandler = new Handler(Looper.getMainLooper());
+                    Runnable gleapRunnable = new Runnable() {
+                        @Override
+                        public void run() throws RuntimeException {
+                            if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null && GleapSessionController.getInstance().isSessionLoaded() && Gleap.getInstance() != null) {
+                                try {
+                                    JSONObject data = new JSONObject();
+                                    data.put("hideBackButton", !showBackButton);
+                                    GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("open-feature-requests", data));
+                                    screenshotTaker.takeScreenshot();
+                                } catch (Exception e) {
+                                }
                             }
                         }
-                    }
-                };
-                mainHandler.post(gleapRunnable);
-            }
-        });
+                    };
+                    mainHandler.post(gleapRunnable);
+                }
+            });
+        } catch (Exception exp) {}
     }
 
     @Override
