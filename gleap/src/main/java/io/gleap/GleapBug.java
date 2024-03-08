@@ -6,12 +6,11 @@ import android.graphics.Bitmap;
 import androidx.annotation.Nullable;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.text.ParseException;
 import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.Iterator;
 
 import static io.gleap.DateUtil.dateToString;
 
@@ -33,6 +32,7 @@ class GleapBug {
     private String silentBugreportEmail;
     private Bitmap screenshot;
     private Replay replay;
+    private JSONObject ticketAttributes;
     private JSONObject customData;
     private JSONObject data;
     private String spamToken;
@@ -47,6 +47,7 @@ class GleapBug {
 
     private GleapBug() {
         customData = new JSONObject();
+        ticketAttributes = new JSONObject();
         if(60 % GleapConfig.getInstance().getInterval() == 0) {
             replay = new Replay(60 / GleapConfig.getInstance().getInterval(), 1000 * GleapConfig.getInstance().getInterval());
         }else {
@@ -95,10 +96,33 @@ class GleapBug {
         return customData;
     }
 
+    public JSONObject getTicketAttributes() {
+        return ticketAttributes;
+    }
+
     public void setCustomData(JSONObject customData) {
         this.customData = customData;
     }
 
+    public void setTicketAttribute(String key, Object value) throws JSONException {
+        this.ticketAttributes.put(key, value);
+    }
+
+    public void setTicketAttribute(String key, int value) throws JSONException {
+        this.ticketAttributes.put(key, value);
+    }
+
+    public void setTicketAttribute(String key, double value) throws JSONException {
+        this.ticketAttributes.put(key, value);
+    }
+
+    public void setTicketAttribute(String key, long value) throws JSONException {
+        this.ticketAttributes.put(key, value);
+    }
+
+    public void setTicketAttribute(String key, boolean value) throws JSONException {
+        this.ticketAttributes.put(key, value);
+    }
 
     public void setCustomData(String key, String value) {
         if(key != null && value != null) {
@@ -191,7 +215,32 @@ class GleapBug {
         this.data = data;
     }
 
+    public JSONObject mergeJSONObjects(JSONObject json1, JSONObject json2) throws JSONException {
+        // Create a new JSONObject to store the merged result
+        JSONObject merged = new JSONObject();
+
+        // Iterate over the keys of json1 and copy them to the merged object
+        Iterator<String> keys = json1.keys();
+        while (keys.hasNext()) {
+            String key = keys.next();
+            merged.put(key, json1.get(key));
+        }
+
+        // Iterate over the keys of json2 and copy them to the merged object, possibly overwriting values
+        keys = json2.keys();
+        while (keys.hasNext()) {
+            String key = keys.next();
+            merged.put(key, json2.get(key));
+        }
+
+        return merged;
+    }
+
     public JSONObject getData() {
+        try {
+            return this.mergeJSONObjects(this.data, this.ticketAttributes);
+        } catch (Exception exp) {}
+
         return this.data;
     }
 

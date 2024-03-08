@@ -2,9 +2,13 @@ package gleap.io.gleap_android_sdk;
 
 import android.app.Application;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import io.gleap.Gleap;
+import io.gleap.GleapAiTool;
+import io.gleap.GleapAiToolParameter;
+import io.gleap.callbacks.AiToolExecutedCallback;
 import io.gleap.callbacks.CustomActionCallback;
 import io.gleap.callbacks.RegisterPushMessageGroupCallback;
 import io.gleap.callbacks.UnRegisterPushMessageGroupCallback;
@@ -13,11 +17,62 @@ public class MainApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        Gleap.initialize("QTJpSeGQXMQPXxKqaXB8ZSBmZ57idbgS", this);
+        Gleap.initialize("rnKAHkPdeQBsRlZ1zh4AfbszdqqxASY0", this);
         Gleap.getInstance().setTags(new String[] {
                 "Android",
                 "Tags",
                 "#Beste"
+        });
+
+        // Creating parameters
+        GleapAiToolParameter amountParameter = new GleapAiToolParameter(
+                "amount",
+                "The amount of money to send. Must be positive and provided by the user.",
+                "string",
+                true
+        );
+
+        String[] possibleEnumValues = {"Alice", "Bob"};
+
+        GleapAiToolParameter contactParameter = new GleapAiToolParameter(
+                "contact",
+                "The contact to send money to.",
+                "string",
+                true,
+                possibleEnumValues
+        );
+
+        GleapAiToolParameter[] params = {amountParameter, contactParameter};
+
+        // Creating the AI tool with the parameters
+        GleapAiTool transactionTool = new GleapAiTool(
+                "send-money",
+                "Send money to a given contact.",
+                "The transfer got initiated but not completed yet. The user must confirm the transfer in the banking app.",
+                params
+        );
+
+        GleapAiTool[] tools = {transactionTool};
+
+        // Set the available tools using the static method
+        Gleap.getInstance().setAiTools(tools);
+
+        Gleap.getInstance().setTicketAttribute("test1", "This is a test");
+        Gleap.getInstance().setTicketAttribute("test2", 20);
+
+        Gleap.getInstance().setAiToolExecutedCallback(new AiToolExecutedCallback() {
+            @Override
+            public void aiToolExecuted(JSONObject jsonObject) {
+                try {
+                    String toolName = jsonObject.getString("name");
+                    JSONObject params = jsonObject.getJSONObject("params");
+
+                    System.out.println(jsonObject.toString());
+                    // {"name":"send-money","params":{"amount":"20","contact":"alice"}}
+                } catch (JSONException e) {
+                    throw new RuntimeException(e);
+                }
+            }
         });
 
         Gleap.getInstance().registerCustomAction(new CustomActionCallback() {
@@ -26,16 +81,6 @@ public class MainApplication extends Application {
                 System.out.println(message);
             }
         });
-
-        String jsonString = "{\"google.delivered_priority\":\"normal\",\"google.sent_time\":1709032798200,\"google.ttl\":2419200,\"google.original_priority\":\"normal\",\"sender\":\"GLEAP\",\"google.product_id\":72175901,\"id\":\"QY59fQ7iDz2YK9uE1bJi54FaNDNekokboMpKaXh8ikOs50o3XTPBaerUiqnAXxiynijw9p\",\"from\":\"\\/topics\\/gleapuser-964b07cb33e95274d3a1b3a4b66809f4749d7d0aa51c86079d49d5ad5df76d94\",\"type\":\"conversation\",\"google.message_id\":\"0:1709032798416886%bd50d7f1bd50d7f1\",\"gcm.n.analytics_data\":\"Bundle[mParcelledData.dataSize=240]\",\"collapse_key\":\"gleap.io.gleap_android_sdk\"}";
-
-        try {
-            JSONObject jsonObject = new JSONObject(jsonString);
-            // Use jsonObject as needed, for example, print it
-            Gleap.getInstance().handlePushNotification(jsonObject);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
 
         Gleap.getInstance().setRegisterPushMessageGroupCallback(new RegisterPushMessageGroupCallback() {
             @Override
@@ -78,9 +123,7 @@ public class MainApplication extends Application {
                 Gleap.getInstance().trackEvent(ConfigLoadedCallback.class.getName());
             }
         });
-
-
-
+        
         Gleap.getInstance().setFeedbackSendingFailedCallback(new FeedbackSendingFailedCallback() {
             @Override
             public void invoke(String message) {

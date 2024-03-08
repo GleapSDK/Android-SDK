@@ -14,6 +14,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 
+import io.gleap.callbacks.AiToolExecutedCallback;
 import io.gleap.callbacks.ConfigLoadedCallback;
 import io.gleap.callbacks.CustomActionCallback;
 import io.gleap.callbacks.FeedbackFlowClosedCallback;
@@ -45,6 +46,7 @@ class GleapConfig {
     private String feedbackFlow = "";
     private ValueCallback<Uri[]> mUploadMessage;
     private GleapAction action;
+    private GleapAiTool[] aiTools;
 
     private JSONObject stripModel = new JSONObject();
     private JSONObject crashStripModel = new JSONObject();
@@ -58,6 +60,7 @@ class GleapConfig {
     private FeedbackSendingFailedCallback feedbackSendingFailedCallback;
     private CallCloseCallback callCloseCallback;
     private WidgetOpenedCallback widgetOpenedCallback;
+    private AiToolExecutedCallback aiToolExecutedCallback;
     private WidgetClosedCallback widgetClosedCallback;
     private NotificationUnreadCountUpdatedCallback notificationUnreadCountUpdatedCallback;
     private GetActivityCallback getActivityCallback;
@@ -111,6 +114,24 @@ class GleapConfig {
             instance = new GleapConfig();
         }
         return instance;
+    }
+
+    public void setAiTools(GleapAiTool[] aiTools) {
+        this.aiTools = aiTools;
+    }
+
+    public JSONArray getAiTools() {
+        JSONArray tools = new JSONArray();
+
+        if (this.aiTools != null) {
+            for (int i = 0; i < this.aiTools.length; i++) {
+                try {
+                    tools.put(this.aiTools[i].toJSONObject());
+                } catch (Exception exp) {}
+            }
+        }
+
+        return tools;
     }
 
     /**
@@ -329,6 +350,14 @@ class GleapConfig {
 
     public WidgetOpenedCallback getWidgetOpenedCallback() {
         return widgetOpenedCallback;
+    }
+
+    public void setAiToolExecutedCallback(AiToolExecutedCallback aiToolExecutedCallback) {
+        this.aiToolExecutedCallback = aiToolExecutedCallback;
+    }
+
+    public AiToolExecutedCallback getAiToolExecutedCallback() {
+        return aiToolExecutedCallback;
     }
 
     public void setWidgetOpenedCallback(WidgetOpenedCallback widgetOpenedCallback) {

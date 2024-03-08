@@ -7,6 +7,7 @@ import java.io.File;
 
 import javax.net.ssl.HttpsURLConnection;
 
+import io.gleap.callbacks.AiToolExecutedCallback;
 import io.gleap.callbacks.ConfigLoadedCallback;
 import io.gleap.callbacks.CustomActionCallback;
 import io.gleap.callbacks.FeedbackFlowStartedCallback;
@@ -272,6 +273,51 @@ interface iGleap {
     void attachCustomData(JSONObject customData);
 
     /**
+     * Sets the value of a ticket attribute.
+     *
+     * @param key   The key of the attribute
+     * @param value The value you want to add
+     * @author Gleap
+     */
+    void setTicketAttribute(String key, Object value);
+
+    /**
+     * Sets the value of a ticket attribute.
+     *
+     * @param key   The key of the attribute
+     * @param value The value you want to add
+     * @author Gleap
+     */
+    void setTicketAttribute(String key, int value);
+
+    /**
+     * Sets the value of a ticket attribute.
+     *
+     * @param key   The key of the attribute
+     * @param value The value you want to add
+     * @author Gleap
+     */
+    void setTicketAttribute(String key, double value);
+
+    /**
+     * Sets the value of a ticket attribute.
+     *
+     * @param key   The key of the attribute
+     * @param value The value you want to add
+     * @author Gleap
+     */
+    void setTicketAttribute(String key, long value);
+
+    /**
+     * Sets the value of a ticket attribute.
+     *
+     * @param key   The key of the attribute
+     * @param value The value you want to add
+     * @author Gleap
+     */
+    void setTicketAttribute(String key, boolean value);
+
+    /**
      * Attach one key value pair to existing custom data.
      *
      * @param value The value you want to add
@@ -379,6 +425,13 @@ interface iGleap {
      * @param widgetOpenedCallback
      */
     void setWidgetOpenedCallback(WidgetOpenedCallback widgetOpenedCallback);
+
+    /**
+     * This is called, when an ai tool gets executed.
+     *
+     * @param aiToolExecutedCallback
+     */
+    void setAiToolExecutedCallback(AiToolExecutedCallback aiToolExecutedCallback);
 
     /**
      * This is called, when the widget is closed
@@ -565,6 +618,6 @@ interface iGleap {
     void setUnRegisterPushMessageGroupCallback(UnRegisterPushMessageGroupCallback callback);
 
     void setTags(String[] tags);
+
+    void setAiTools(GleapAiTool[] aiTools);
 }
-
-

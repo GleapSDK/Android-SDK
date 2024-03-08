@@ -16,6 +16,7 @@ import java.util.Locale;
 
 import javax.net.ssl.HttpsURLConnection;
 
+import io.gleap.callbacks.AiToolExecutedCallback;
 import io.gleap.callbacks.ConfigLoadedCallback;
 import io.gleap.callbacks.CustomActionCallback;
 import io.gleap.callbacks.FeedbackFlowStartedCallback;
@@ -1012,6 +1013,14 @@ public class Gleap implements iGleap {
     }
 
     @Override
+    public void setAiToolExecutedCallback(AiToolExecutedCallback aiToolExecutedCallback) {
+        try {
+            GleapConfig.getInstance().setAiToolExecutedCallback(aiToolExecutedCallback);
+        } catch (Error | Exception ignore) {
+        }
+    }
+
+    @Override
     public void setWidgetOpenedCallback(WidgetOpenedCallback widgetOpenedCallback) {
         try {
             GleapConfig.getInstance().setWidgetOpenedCallback(widgetOpenedCallback);
@@ -1050,6 +1059,86 @@ public class Gleap implements iGleap {
     public void setCustomData(String key, String value) {
         try {
             GleapBug.getInstance().setCustomData(key, value);
+        } catch (Error | Exception ignore) {
+        }
+    }
+
+    @Override
+    public void setAiTools(GleapAiTool[] aiTools) {
+        GleapConfig.getInstance().setAiTools(aiTools);
+    }
+
+    /**
+     * Sets the value of a ticket attribute.
+     *
+     * @param key   The key of the attribute
+     * @param value The value you want to add
+     * @author Gleap
+     */
+    @Override
+    public void setTicketAttribute(String key, Object value) {
+        try {
+            GleapBug.getInstance().setTicketAttribute(key, value);
+        } catch (Error | Exception ignore) {
+        }
+    }
+
+    /**
+     * Sets the value of a ticket attribute.
+     *
+     * @param key   The key of the attribute
+     * @param value The value you want to add
+     * @author Gleap
+     */
+    @Override
+    public void setTicketAttribute(String key, int value) {
+        try {
+            GleapBug.getInstance().setTicketAttribute(key, value);
+        } catch (Error | Exception ignore) {
+        }
+    }
+
+    /**
+     * Sets the value of a ticket attribute.
+     *
+     * @param key   The key of the attribute
+     * @param value The value you want to add
+     * @author Gleap
+     */
+    @Override
+    public void setTicketAttribute(String key, double value) {
+        try {
+            GleapBug.getInstance().setTicketAttribute(key, value);
+        } catch (Error | Exception ignore) {
+        }
+    }
+
+    /**
+     * Sets the value of a ticket attribute.
+     *
+     * @param key   The key of the attribute
+     * @param value The value you want to add
+     * @author Gleap
+     */
+    @Override
+    public void setTicketAttribute(String key, long value) {
+        try {
+            GleapBug.getInstance().setTicketAttribute(key, value);
+        } catch (Error | Exception ignore) {
+        }
+    }
+
+    /**
+     * Sets the value of a ticket attribute.
+     *
+     * @param key   The key of the attribute
+     * @param value The value you want to add
+     * @author Gleap
+     */
+    @Override
+    public void setTicketAttribute(String key, boolean value) {
+        try {
+            GleapBug.getInstance().setTicketAttribute(key, value);
         } catch (Error | Exception ignore) {
         }
     }

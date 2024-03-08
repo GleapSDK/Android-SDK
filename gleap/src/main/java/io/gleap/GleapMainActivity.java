@@ -436,6 +436,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     try {
                         JSONObject gleapCallback = new JSONObject(object);
                         String command = gleapCallback.getString("name");
+
                         switch (command) {
                             case "ping":
                                 sendConfigUpdate();
@@ -467,11 +468,18 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                             case "cleanup-drawings":
                                 GleapBug.getInstance().setScreenshot(null);
                                 break;
+                            case "tool-execution":
+                                try {
+                                    if (GleapConfig.getInstance().getAiToolExecutedCallback() != null) {
+                                        GleapConfig.getInstance().getAiToolExecutedCallback().aiToolExecuted(gleapCallback.getJSONObject("data"));
+                                    }
+                                } catch (Exception exp) {}
                             case "collect-ticket-data":
                                 try {
                                     GleapBug gleapBug = GleapBug.getInstance();
 
                                     JSONObject data = new JSONObject();
+                                    data.put("formData", gleapBug.getTicketAttributes());
                                     data.put("customData", gleapBug.getCustomData());
                                     data.put("networkLogs", gleapBug.getNetworklogs());
                                     data.put("customEventLog", gleapBug.getCustomEventLog());
@@ -647,6 +655,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 data.put("actions", jsonObject.getJSONObject("projectActions"));
                 data.put("overrideLanguage", GleapConfig.getInstance().getLanguage());
                 data.put("isApp", true);
+                data.put("aiTools", GleapConfig.getInstance().getAiTools());
 
                 sendMessage(generateGleapMessage("config-update", data));
             } catch (Exception err) {
