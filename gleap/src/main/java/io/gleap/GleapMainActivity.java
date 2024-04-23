@@ -56,6 +56,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
     private WebView webView;
     private OnBackPressedCallback onBackPressedCallback;
     private String url = GleapConfig.getInstance().getiFrameUrl();
+    private static String urlToOpenAfterClose = null;
     public static final int REQUEST_SELECT_FILE = 100;
     private Runnable exitAfterFifteenSeconds;
     private Handler handler;
@@ -110,6 +111,11 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     intentToMain.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
                     startActivity(intentToMain);
                     finish();
+
+                    if (GleapMainActivity.urlToOpenAfterClose != null) {
+                        Gleap.getInstance().handleLink(GleapMainActivity.urlToOpenAfterClose);
+                        GleapMainActivity.urlToOpenAfterClose = null;
+                    }
                 } else {
                     finish();
                 }
@@ -543,8 +549,10 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         private void openExternalURL(JSONObject object) {
             try {
                 String url = object.getString("data");
-                Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                startActivity(browserIntent);
+                if (url != null && url.length() > 0) {
+                    GleapMainActivity.urlToOpenAfterClose = url;
+                    closeGleap();
+                }
             } catch (Exception e) {
             }
         }

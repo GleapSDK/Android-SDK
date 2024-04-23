@@ -17,6 +17,7 @@ import java.util.Locale;
 import io.gleap.callbacks.AiToolExecutedCallback;
 import io.gleap.callbacks.ConfigLoadedCallback;
 import io.gleap.callbacks.CustomActionCallback;
+import io.gleap.callbacks.CustomLinkHandlerCallback;
 import io.gleap.callbacks.FeedbackFlowClosedCallback;
 import io.gleap.callbacks.FeedbackFlowStartedCallback;
 import io.gleap.callbacks.FeedbackSendingFailedCallback;
@@ -65,6 +66,7 @@ class GleapConfig {
     private NotificationUnreadCountUpdatedCallback notificationUnreadCountUpdatedCallback;
     private GetActivityCallback getActivityCallback;
     private CustomActionCallback customAction;
+    private CustomLinkHandlerCallback customLinkHandler;
     private GetBitmapCallback getBitmapCallback;
     private RegisterPushMessageGroupCallback registerPushMessageGroupCallback;
     private UnRegisterPushMessageGroupCallback unRegisterPushMessageGroupCallback;
@@ -442,6 +444,14 @@ class GleapConfig {
 
     public CustomActionCallback getCustomActions() {
         return customAction;
+    }
+
+    public void registerCustomLinkHandler(CustomLinkHandlerCallback customLinkHandler) {
+        this.customLinkHandler = customLinkHandler;
+    }
+
+    public CustomLinkHandlerCallback getCustomLinkHandler() {
+        return customLinkHandler;
     }
 
     public ConfigLoadedCallback getConfigLoadedCallback() {

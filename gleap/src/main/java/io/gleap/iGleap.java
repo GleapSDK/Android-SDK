@@ -10,6 +10,7 @@ import javax.net.ssl.HttpsURLConnection;
 import io.gleap.callbacks.AiToolExecutedCallback;
 import io.gleap.callbacks.ConfigLoadedCallback;
 import io.gleap.callbacks.CustomActionCallback;
+import io.gleap.callbacks.CustomLinkHandlerCallback;
 import io.gleap.callbacks.FeedbackFlowStartedCallback;
 import io.gleap.callbacks.FeedbackSendingFailedCallback;
 import io.gleap.callbacks.FeedbackSentCallback;
@@ -550,6 +551,13 @@ interface iGleap {
     void registerCustomAction(CustomActionCallback customAction);
 
     /**
+     * Register a custom function, that handles links.
+     *
+     * @param customLinkHandler implement the callback
+     */
+    void registerCustomLinkHandler(CustomLinkHandlerCallback customLinkHandler);
+
+    /**
      * Set the activation Methods manually
      *
      * @param activationMethods set of activation methods
@@ -620,4 +628,6 @@ interface iGleap {
     void setTags(String[] tags);
 
     void setAiTools(GleapAiTool[] aiTools);
+
+    void handleLink(String url);
 }

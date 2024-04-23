@@ -1,6 +1,8 @@
 package io.gleap;
 
+import android.app.Activity;
 import android.app.Application;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
@@ -19,6 +21,7 @@ import javax.net.ssl.HttpsURLConnection;
 import io.gleap.callbacks.AiToolExecutedCallback;
 import io.gleap.callbacks.ConfigLoadedCallback;
 import io.gleap.callbacks.CustomActionCallback;
+import io.gleap.callbacks.CustomLinkHandlerCallback;
 import io.gleap.callbacks.FeedbackFlowStartedCallback;
 import io.gleap.callbacks.FeedbackSendingFailedCallback;
 import io.gleap.callbacks.FeedbackSentCallback;
@@ -1355,6 +1358,101 @@ public class Gleap implements iGleap {
         try {
             GleapConfig.getInstance().registerCustomAction(customAction);
         } catch (Error | Exception ignore) {
+        }
+    }
+
+    @Override
+    public void registerCustomLinkHandler(CustomLinkHandlerCallback customLinkHandler) {
+        try {
+            GleapConfig.getInstance().registerCustomLinkHandler(customLinkHandler);
+        } catch (Error | Exception ignore) {
+        }
+    }
+
+    @Override
+    public void handleLink(String url) {
+        if (url == null || url.length() == 0) {
+            return;
+        }
+
+        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                // Smartlink, handle internally.
+                if (url.contains("gleap:")) {
+                    if (GleapDetectorUtil.isIsRunning()) {
+                        // Try again later.
+                        Gleap.getInstance().handleLink(url);
+                    } else {
+                        Gleap.getInstance().handleGleapLink(url);
+                    }
+                    return;
+                }
+
+                // Use custom link handler.
+                if (GleapConfig.getInstance().getCustomLinkHandler() != null) {
+                    GleapConfig.getInstance().getCustomLinkHandler().invoke(url);
+                    return;
+                }
+
+                // Open externally.
+                Gleap.getInstance().openUrlExternally(url);
+            }
+        }, 500);
+    }
+
+    public void handleGleapLink(String href) {
+        try {
+            String[] urlParts = href.split("/");
+            String type = urlParts[2];
+
+            switch (type) {
+                case "article":
+                    String articleId = urlParts[3];
+                    this.openHelpCenterArticle(articleId, true);
+                    break;
+                case "collection":
+                    String collectionId = urlParts[3];
+                    this.openHelpCenterCollection(collectionId, true);
+                    break;
+                case "survey":
+                    String surveyId = urlParts[3];
+                    this.showSurvey(surveyId);
+                    break;
+                case "bot":
+                    String botId = urlParts[3];
+                    this.startBot(botId, true);
+                    break;
+                case "news":
+                    String newsId = urlParts[3];
+                    this.openNewsArticle(newsId, true);
+                    break;
+                case "flow":
+                    String flowId = urlParts[3];
+                    this.startFeedbackFlow(flowId, true);
+                    break;
+                case "checklist":
+                    String checklistId = urlParts[3];
+                    this.startChecklist(checklistId, true);
+                    break;
+                case "tour":
+                    System.out.println("Product tours are not supported on mobile.");
+                    break;
+                default:
+                    System.out.println("Invalid type provided in href: " + href);
+                    break;
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to handle Gleap link: " + href);
+        }
+    }
+
+    private void openUrlExternally(String url) {
+        try {
+            Activity local = ActivityUtil.getCurrentActivity();
+            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+            local.startActivity(browserIntent);
+        } catch (Exception e) {
         }
     }
 

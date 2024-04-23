@@ -183,7 +183,7 @@ class GleapBanner {
                                     try {
                                         String url = gleapCallback.getString("data");
                                         if (url != null && url.length() > 0) {
-                                            openExternalURL(url);
+                                            Gleap.getInstance().handleLink(url);
                                         }
                                     }catch (Exception exp) {}
                                     break;
@@ -236,15 +236,6 @@ class GleapBanner {
                         }
                     }
                 });
-            }
-        }
-
-        private void openExternalURL(String url) {
-            try {
-                Activity local = ActivityUtil.getCurrentActivity();
-                Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                local.startActivity(browserIntent);
-            } catch (Exception e) {
             }
         }
 
