@@ -110,14 +110,13 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     Intent intentToMain = new Intent(this, mainActivity.getClass());
                     intentToMain.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
                     startActivity(intentToMain);
-                    finish();
+                }
 
-                    if (GleapMainActivity.urlToOpenAfterClose != null) {
-                        Gleap.getInstance().handleLink(GleapMainActivity.urlToOpenAfterClose);
-                        GleapMainActivity.urlToOpenAfterClose = null;
-                    }
-                } else {
-                    finish();
+                finish();
+
+                if (GleapMainActivity.urlToOpenAfterClose != null) {
+                    Gleap.getInstance().handleLink(GleapMainActivity.urlToOpenAfterClose);
+                    GleapMainActivity.urlToOpenAfterClose = null;
                 }
             } catch (Exception e) {
                 e.printStackTrace();

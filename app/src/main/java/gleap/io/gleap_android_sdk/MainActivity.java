@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 import io.gleap.Gleap;
+import io.gleap.callbacks.CustomLinkHandlerCallback;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -82,6 +83,13 @@ public class MainActivity extends AppCompatActivity {
 
         Gleap.getInstance().showFeedbackButton(true);
 
+        Gleap.getInstance().registerCustomLinkHandler(new CustomLinkHandlerCallback() {
+            @Override
+            public void invoke(String url) {
+                System.out.println(url);
+            }
+        });
+
         /*if (intent?.extras?.getString(INTENT_EXTRAS_SENDER_KEY) == INTENT_EXTRAS_GLEAP_SENDER_VALUE) {
             Gleap.getInstance().handlePushNotification(intent?.extras?.toJsonObject())
         }*/
@@ -92,6 +100,8 @@ public class MainActivity extends AppCompatActivity {
              //   Gleap.getInstance().open();
                  //Gleap.getInstance().startBot("643521e69a18f2be5f3a4865");
                //Gleap.getInstance().openNews();
+
+
                 Gleap.getInstance().open();
             }
         });
