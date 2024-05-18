@@ -8,12 +8,14 @@ public class GleapAiTool {
     public String name;
     public String toolDescription;
     public String response;
+    public String executionType;
     public GleapAiToolParameter[] parameters;
 
-    public GleapAiTool(String name, String toolDescription, String response, GleapAiToolParameter[] parameters) {
+    public GleapAiTool(String name, String toolDescription, String response, String executionType, GleapAiToolParameter[] parameters) {
         this.name = name;
         this.toolDescription = toolDescription;
         this.response = response;
+        this.executionType = executionType;
         this.parameters = parameters;
     }
 
@@ -22,6 +24,7 @@ public class GleapAiTool {
         try {
             jsonObject.put("name", name);
             jsonObject.put("description", toolDescription);
+            jsonObject.put("executionType", executionType);
             jsonObject.put("response", response);
 
             JSONArray paramsArray = new JSONArray();

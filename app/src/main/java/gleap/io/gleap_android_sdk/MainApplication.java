@@ -49,6 +49,7 @@ public class MainApplication extends Application {
                 "send-money",
                 "Send money to a given contact.",
                 "The transfer got initiated but not completed yet. The user must confirm the transfer in the banking app.",
+                "button",
                 params
         );
 

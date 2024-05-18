@@ -69,10 +69,6 @@ class GleapActivityManager {
 
                 @Override
                 public void onActivityStarted(@NonNull Activity activity) {
-                    checkPage(activity);
-
-                    GleapInvisibleActivityManger.getInstance().addLayoutToActivity(activity);
-
                     // Check if Gleap is still active. If so, bring Gleap to front.
                     bringGleapToFront(activity);
 
@@ -87,11 +83,13 @@ class GleapActivityManager {
                             Gleap.getInstance().processOpenPushActions();
                         }
                     }, 4000);
-                  }
+                }
 
                 @Override
                 public void onActivityResumed(@NonNull Activity activity) {
+                    checkPage(activity);
 
+                    GleapInvisibleActivityManger.getInstance().addLayoutToActivity(activity);
                 }
 
                 @Override
