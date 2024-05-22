@@ -640,6 +640,14 @@ class GleapInvisibleActivityManger {
                         if (showFabIn) {
                             if (feedbackButtonRelativeLayout != null) {
                                 feedbackButtonRelativeLayout.setVisibility(View.VISIBLE);
+
+                                // Re-add classic button.
+                                if (GleapConfig.getInstance().getWidgetPositionType() == WidgetPositionType.CLASSIC) {
+                                    Activity currentActivity = ActivityUtil.getCurrentActivity();
+                                    if (currentActivity != null) {
+                                        renderClassicFeedbackButton(currentActivity);
+                                    }
+                                }
                             }
                         } else {
                             if (feedbackButtonRelativeLayout != null) {
