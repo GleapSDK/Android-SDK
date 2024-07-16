@@ -68,7 +68,7 @@ publishing {
 }
 
 signing {
-    sign publishing.publications
+    sign publishing.publications.mavenJava
 }
 
 tasks.register('androidSourcesJar', Jar) {
@@ -82,7 +82,9 @@ artifacts {
 
 afterEvaluate {
     signing {
-        required { isReleaseBuild() && gradle.taskGraph.hasTask("publish") }
+        required {
+            gradle.taskGraph.hasTask("publish")
+        }
         sign configurations.archives
     }
 }
