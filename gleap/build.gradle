@@ -29,12 +29,12 @@ android {
 
     namespace 'gleap.io.gleap'
 
-    compileSdkVersion 34
+    compileSdkVersion 33
 
     defaultConfig {
         minSdkVersion 21
-        targetSdkVersion 34
-        buildConfigField "String", "VERSION_NAME", "\"13.8.0\""
+        targetSdkVersion 33
+        buildConfigField "String", "VERSION_NAME", "\"13.8.1\""
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
