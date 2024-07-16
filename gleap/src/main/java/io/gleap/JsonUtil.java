@@ -12,7 +12,7 @@ class JsonUtil {
             if (keys != null) {
                 for (int i = 0; i < keys.length(); i++) {
                     String key = keys.getString(i); // Here's your key
-                    String value = jsonObject.getString(key); // Here's your value
+                    Object value = jsonObject.get(key); // Here's your value
                     result.put(key, value);
                 }
             }
@@ -20,7 +20,7 @@ class JsonUtil {
             if (keys2 != null) {
                 for (int i = 0; i < keys2.length(); i++) {
                     String key = keys2.getString(i); // Here's your key
-                    String value = jsonObject2.getString(key); // Here's your value
+                    Object value = jsonObject2.get(key); // Here's your value
                     result.put(key, value);
                 }
             }
