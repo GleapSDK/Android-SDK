@@ -699,7 +699,7 @@ class GleapInvisibleActivityManger {
             }
 
             if (feedbackButtonRelativeLayout.indexOfChild(imageButton) < 0) {
-                feedbackButtonRelativeLayout.addView(imageButton, convertDpToPixel(56, local), convertDpToPixel(56, local));
+                feedbackButtonRelativeLayout.addView(imageButton, convertDpToPixel(54, local), convertDpToPixel(54, local));
             }
 
             GradientDrawable gdDefaultText = new GradientDrawable();

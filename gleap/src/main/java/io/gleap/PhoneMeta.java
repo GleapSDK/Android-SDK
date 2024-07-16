@@ -2,7 +2,6 @@ package io.gleap;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
@@ -29,7 +28,6 @@ import java.util.Date;
 import java.util.Locale;
 
 import static io.gleap.ActivityUtil.getCurrentActivity;
-
 import gleap.io.gleap.BuildConfig;
 
 

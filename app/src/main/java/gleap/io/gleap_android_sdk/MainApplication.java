@@ -17,7 +17,7 @@ public class MainApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        Gleap.initialize("TkyN25Q6P5Leh2i27QNbCfxVtGyuqBAv", this);
+        Gleap.initialize("xAhpa8UoNkm7Z5jaYexM0yKA6XAZs3yx", this);
         Gleap.getInstance().setTags(new String[] {
                 "Android",
                 "Tags",

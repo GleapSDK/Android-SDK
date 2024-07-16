@@ -1,8 +1,6 @@
 package io.gleap;
 
 import android.os.AsyncTask;
-import android.os.Handler;
-import android.os.Looper;
 
 import org.json.JSONObject;
 

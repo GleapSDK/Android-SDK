@@ -26,13 +26,15 @@ android {
     lintOptions {
         abortOnError false
     }
-    compileSdkVersion 33
+
+    namespace 'gleap.io.gleap'
+
+    compileSdkVersion 34
 
     defaultConfig {
         minSdkVersion 21
-        targetSdkVersion 33
-        versionCode 130701
-        versionName "13.7.1"
+        targetSdkVersion 34
+        buildConfigField "String", "VERSION_NAME", "\"13.8.0\""
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
@@ -46,6 +48,7 @@ android {
             manifestPlaceholders.cleartextTrafficPermitted = "true"
         }
     }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
@@ -55,7 +58,7 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'androidx.appcompat:appcompat:1.3.0'
-    implementation 'com.google.android.material:material:1.3.0'
+    implementation 'androidx.appcompat:appcompat:[1.3.0,)'
+    implementation 'com.google.android.material:material:[1.3.0,)'
     implementation 'com.squareup.okhttp3:okhttp:[3.5.0,)'
 }

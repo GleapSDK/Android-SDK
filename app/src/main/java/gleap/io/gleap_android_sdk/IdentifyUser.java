@@ -48,6 +48,7 @@ public class IdentifyUser extends AppCompatActivity {
                 gleapSessionProperties.setCompanyId("COM12");
                 gleapSessionProperties.setCompanyName("COMAAAAAA");
                 gleapSessionProperties.setPlan("asdfasdfs");
+                gleapSessionProperties.setSla(100);
                 Gleap.getInstance().identifyUser("1338", gleapSessionProperties, null);
             }
         });

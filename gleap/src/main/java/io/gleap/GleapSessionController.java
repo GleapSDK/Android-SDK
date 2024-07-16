@@ -145,6 +145,7 @@ public class GleapSessionController {
                 sharedPreferences.edit().putString("companyName", gleapUser.getCompanyName()).apply();
             }
             sharedPreferences.edit().putFloat("value", (float) gleapUser.getValue()).apply();
+            sharedPreferences.edit().putFloat("sla", (float) gleapUser.getSla()).apply();
             if (gleapUser.getHash() != null && !gleapUser.getHash().equals("")) {
                 sharedPreferences.edit().putString("hash", gleapUser.getHash()).apply();
             }
@@ -168,6 +169,7 @@ public class GleapSessionController {
             String companyName = sharedPreferences.getString("companyName", "");
             String hash = sharedPreferences.getString("hash", "");
             double value = sharedPreferences.getFloat("value", 0);
+            double sla = sharedPreferences.getFloat("sla", 0);
 
             // Set props.
             if (!userId.isEmpty()) {
@@ -197,6 +199,9 @@ public class GleapSessionController {
 
             // Set value.
             gleapUser.setValue(value);
+
+            // Set sla.
+            gleapUser.setSla(sla);
 
             // Set custom data.
             JSONObject customData = new JSONObject();

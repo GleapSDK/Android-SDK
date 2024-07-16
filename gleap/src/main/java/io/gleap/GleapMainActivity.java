@@ -704,6 +704,8 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
                     sessionData.put("value", gleapSessionProperties.getValue());
 
+                    sessionData.put("sla", gleapSessionProperties.getSla());
+
                     if (gleapSessionProperties.getPhone() != null) {
                         sessionData.put("phone", gleapSessionProperties.getPhone());
                     }

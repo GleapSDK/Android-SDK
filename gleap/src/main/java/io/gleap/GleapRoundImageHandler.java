@@ -58,7 +58,7 @@ class GleapRoundImageHandler extends AsyncTask<Void, Void, Bitmap> {
             }
             result.recycle();
             imageView.setImageBitmap(croppedBitmap);
-        }catch (Exception ex) {
+        } catch (Exception ex) {
 
         }
     }
@@ -82,9 +82,9 @@ class GleapRoundImageHandler extends AsyncTask<Void, Void, Bitmap> {
         paint.setFilterBitmap(true);
         paint.setDither(true);
         canvas.drawARGB(0, 0, 0, 0);
-        canvas.drawCircle(finalBitmap.getWidth() / 2 + 0.7f,
-                finalBitmap.getHeight() / 2 + 0.7f,
-                finalBitmap.getWidth() / 2 + 0.1f, paint);
+        canvas.drawCircle(finalBitmap.getWidth() / 2f + 0.7f,
+                finalBitmap.getHeight() / 2f + 0.7f,
+                finalBitmap.getWidth() / 2f + 0.1f, paint);
         paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
         canvas.drawBitmap(finalBitmap, rect, rect, paint);
 

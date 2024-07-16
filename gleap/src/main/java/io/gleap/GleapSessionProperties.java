@@ -17,6 +17,7 @@ public class GleapSessionProperties {
     private String plan;
     private String companyId;
     private String companyName;
+    private double sla;
     private JSONObject customData;
 
     /**
@@ -123,6 +124,14 @@ public class GleapSessionProperties {
         this.companyId = companyId;
     }
 
+    public double getSla() {
+        return sla;
+    }
+
+    public void setSla(double sla) {
+        this.sla = sla;
+    }
+
     public String getCompanyName() {
         return companyName;
     }
@@ -157,6 +166,9 @@ public class GleapSessionProperties {
             }
             if (this.getValue() != 0) {
                 jsonObject.put("value", this.getValue());
+            }
+            if (this.getSla() != 0) {
+                jsonObject.put("sla", this.getSla());
             }
             if (this.getPhone() != null && !this.getPhone().isEmpty()) {
                 jsonObject.put("phone", this.getPhone());
@@ -212,6 +224,10 @@ public class GleapSessionProperties {
 
             if (result.has("companyName")) {
                 gleapSessionProperties.setCompanyName(result.getString("companyName"));
+            }
+
+            if (result.has("sla")) {
+                gleapSessionProperties.setSla(result.getDouble("sla"));
             }
 
             if (result.has("companyId")) {
@@ -283,6 +299,10 @@ public class GleapSessionProperties {
         }
 
         if (this.getValue() != otherUserPropterties.getValue()) {
+            return false;
+        }
+
+        if (this.getSla() != otherUserPropterties.getSla()) {
             return false;
         }
 
