@@ -108,7 +108,7 @@ class GleapConfig {
     private LinkedList<GleapWebViewMessage> gleapWebViewMessages = new LinkedList<>();
 
     private GleapConfig() {
-        this.language = Locale.getDefault().toLanguageTag();
+        this.language = Locale.getDefault().toLanguageTag().toLowerCase();
     }
 
     public static GleapConfig getInstance() {

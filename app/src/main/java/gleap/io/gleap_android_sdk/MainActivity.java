@@ -102,7 +102,7 @@ public class MainActivity extends AppCompatActivity {
                //Gleap.getInstance().openNews();
 
 
-                Gleap.getInstance().open();
+                Gleap.getInstance().openConversations(true);
             }
         });
 

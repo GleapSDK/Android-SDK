@@ -195,6 +195,45 @@ public class Gleap implements iGleap {
     }
 
     @Override
+    public void openConversations() {
+        openConversations(false);
+    }
+
+    @Override
+    public void openConversations(boolean hideBackButton) {
+        try {
+            ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Handler mainHandler = new Handler(Looper.getMainLooper());
+                    Runnable gleapRunnable = new Runnable() {
+                        @Override
+                        public void run() throws RuntimeException {
+                            try {
+                                if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null &&
+                                        GleapSessionController.getInstance().isSessionLoaded() && instance != null) {
+                                    try {
+                                        if (screenshotTaker != null) {
+                                            JSONObject message = new JSONObject();
+                                            message.put("hideBackButton", hideBackButton);
+                                            GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("open-conversations", message));
+                                            screenshotTaker.takeScreenshot();
+                                        }
+                                    } catch (Exception e) {
+                                    }
+                                }
+                            } catch (Error | Exception ignore) {
+                            }
+                        }
+                    };
+                    mainHandler.post(gleapRunnable);
+                }
+            });
+        } catch (Error | Exception ignore) {
+        }
+    }
+
+    @Override
     public void openConversation(String shareToken) {
         try {
             ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {

@@ -152,7 +152,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
             }
             super.onCreate(savedInstanceState);
             GleapInvisibleActivityManger.getInstance().clearMessages();
-            GleapBug.getInstance().setLanguage(Locale.getDefault().getLanguage());
 
             url += GleapURLGenerator.generateURL();
 

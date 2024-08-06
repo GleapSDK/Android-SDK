@@ -36,7 +36,17 @@ interface iGleap {
      * Open a conversation with the given sharetoken
      * @param shareToken token for the conversation
      */
-    void openConversation(String shareToken);
+    void openConversation(String shareToken) throws GleapNotInitialisedException;
+
+    /**
+     * Open the conversations tab
+     */
+    void openConversations() throws GleapNotInitialisedException;
+
+    /**
+     * Open the conversations tab
+     */
+    void openConversations(boolean showBackButton) throws GleapNotInitialisedException;
 
     /**
      * Invoke Bug Reporting

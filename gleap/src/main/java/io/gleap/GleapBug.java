@@ -27,7 +27,6 @@ class GleapBug {
     private String type = "";
     private final Date startUpDate = new Date();
     private boolean isDisabled = false;
-    private String language = "";
     private String severity = "MEDIUM";
     private String silentBugreportEmail;
     private Bitmap screenshot;
@@ -180,15 +179,7 @@ class GleapBug {
     public Date getStartUpDate() {
         return startUpDate;
     }
-
-    public String getLanguage() {
-        return language;
-    }
-
-    public void setLanguage(String language) {
-        this.language = language;
-    }
-
+    
     public void addRequest(Networklog networklog) {
         try {
             networkBuffer.addNetworkLog(networklog);
