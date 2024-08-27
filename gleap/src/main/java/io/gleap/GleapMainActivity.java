@@ -224,46 +224,50 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
     @Override
     protected void onDestroy() {
-        GleapDetectorUtil.resumeAllDetectors();
-        GleapConfig.getInstance().setAction(null);
-        if (GleapConfig.getInstance().getWidgetClosedCallback() != null) {
-            GleapConfig.getInstance().getWidgetClosedCallback().invoke();
-        }
+        try {
+            GleapDetectorUtil.resumeAllDetectors();
+            GleapConfig.getInstance().setAction(null);
+            if (GleapConfig.getInstance().getWidgetClosedCallback() != null) {
+                GleapConfig.getInstance().getWidgetClosedCallback().invoke();
+            }
 
-        GleapInvisibleActivityManger.getInstance().clearMessages();
-        GleapInvisibleActivityManger.getInstance().setShowFab(true);
-        GleapConfig.getInstance().setmUploadMessage(null);
+            GleapInvisibleActivityManger.getInstance().clearMessages();
+            GleapInvisibleActivityManger.getInstance().setShowFab(true);
+            GleapConfig.getInstance().setmUploadMessage(null);
 
-        isActive = false;
-        webView.removeJavascriptInterface("GleapJSBridge");
-        webView.stopLoading();
-        webView.clearHistory();
-        webView.clearCache(true);
-        webView.onPause();
-        webView.removeAllViews();
-        webView.destroyDrawingCache();
-        webView.destroy();
-        webView = null;
+            isActive = false;
+            webView.removeJavascriptInterface("GleapJSBridge");
+            webView.stopLoading();
+            webView.clearHistory();
+            webView.clearCache(true);
+            webView.onPause();
+            webView.removeAllViews();
+            webView.destroyDrawingCache();
+            webView.destroy();
+            webView = null;
 
-        if (openFileLauncher != null) {
-            openFileLauncher.unregister();
-            openFileLauncher = null;
-        }
+            if (openFileLauncher != null) {
+                openFileLauncher.unregister();
+                openFileLauncher = null;
+            }
 
-        if (onBackPressedCallback != null) {
-            onBackPressedCallback.remove();
-            onBackPressedCallback = null;
-        }
+            if (onBackPressedCallback != null) {
+                onBackPressedCallback.remove();
+                onBackPressedCallback = null;
+            }
 
-        GleapConfig.getInstance().setCallCloseCallback(null);
+            GleapConfig.getInstance().setCallCloseCallback(null);
 
-        if (this.exitAfterFifteenSeconds != null) {
-            this.handler.removeCallbacks(this.exitAfterFifteenSeconds);
-            this.exitAfterFifteenSeconds = null;
-        }
-        this.handler = null;
+            if (this.exitAfterFifteenSeconds != null) {
+                this.handler.removeCallbacks(this.exitAfterFifteenSeconds);
+                this.exitAfterFifteenSeconds = null;
+            }
+            this.handler = null;
 
-        callerActivity.clear();
+            if (callerActivity != null) {
+                callerActivity.clear();
+            }
+        } catch (Exception exp) {}
 
         super.onDestroy();
     }
