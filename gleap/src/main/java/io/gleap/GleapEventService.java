@@ -22,6 +22,9 @@ import java.util.List;
 import javax.net.ssl.HttpsURLConnection;
 
 import gleap.io.gleap.BuildConfig;
+import java.util.Date;
+
+import static io.gleap.DateUtil.dateToString;
 
 class GleapEventService {
     private GleapArrayHelper<JSONObject> gleapArrayHelper;
@@ -62,6 +65,7 @@ class GleapEventService {
         try {
             JSONObject sessiontStarted = new JSONObject();
             sessiontStarted.put("name", "sessionStarted");
+            sessiontStarted.put("date", dateToString(new Date()));
             eventsToBeSent.add(sessiontStarted);
 
             Activity activity = ActivityUtil.getCurrentActivity();
@@ -70,6 +74,7 @@ class GleapEventService {
             page.put("page", activity.getClass().getSimpleName());
             pageView.put("name", "pageView");
             pageView.put("data", page);
+            pageView.put("date", dateToString(new Date()));
             eventsToBeSent.add(pageView);
         }catch (Exception ex) {}
 
