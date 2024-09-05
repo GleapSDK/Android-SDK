@@ -631,6 +631,8 @@ class GleapInvisibleActivityManger {
 
     public void setShowFab(boolean showFabIn) {
         try {
+            System.out.println("SHOWFABCHANGED: " + showFabIn);
+
             this.showFab = showFabIn;
             ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
                 @Override

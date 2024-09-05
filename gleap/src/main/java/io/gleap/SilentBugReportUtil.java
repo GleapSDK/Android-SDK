@@ -8,8 +8,6 @@ import org.json.JSONObject;
 
 import java.util.concurrent.ExecutionException;
 
-import io.gleap.callbacks.FeedbackSentCallback;
-
 class SilentBugReportUtil {
     public static void createSilentBugReport(Context context, String description, Gleap.SEVERITY severity, String type, JSONObject excludeData) {
 
@@ -64,12 +62,11 @@ class SilentBugReportUtil {
         createSilentBugReport(context, description, severity, "CRASH", null);
     }
 
-    public static void createSilentBugReport(Context context, String description, Gleap.SEVERITY severity, JSONObject excludeData, FeedbackSentCallback feedbackSentCallback) {
+    public static void createSilentBugReport(Context context, String description, Gleap.SEVERITY severity, JSONObject excludeData) {
 
         if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null &&
                 GleapSessionController.getInstance().isSessionLoaded() && Gleap.getInstance() != null) {
-
-            GleapConfig.getInstance().setCrashFeedbackSentCallback(feedbackSentCallback);
+            
             createSilentBugReport(context, description, severity, "CRASH", excludeData);
         }
     }

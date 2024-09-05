@@ -46,7 +46,6 @@ import org.json.JSONObject;
 
 import java.lang.ref.WeakReference;
 import java.util.List;
-import java.util.Locale;
 
 import gleap.io.gleap.R;
 
@@ -112,6 +111,8 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     startActivity(intentToMain);
                 }
 
+                GleapInvisibleActivityManger.getInstance().setShowFab(true);
+
                 finish();
 
                 if (GleapMainActivity.urlToOpenAfterClose != null) {
@@ -120,6 +121,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 }
             } catch (Exception e) {
                 e.printStackTrace();
+                GleapInvisibleActivityManger.getInstance().setShowFab(true);
                 finish();
             }
         }
@@ -231,8 +233,8 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 GleapConfig.getInstance().getWidgetClosedCallback().invoke();
             }
 
-            GleapInvisibleActivityManger.getInstance().clearMessages();
             GleapInvisibleActivityManger.getInstance().setShowFab(true);
+            GleapInvisibleActivityManger.getInstance().clearMessages();
             GleapConfig.getInstance().setmUploadMessage(null);
 
             isActive = false;
@@ -634,7 +636,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                             }
 
                             if (data.has("outboundId")) {
-                                gleapBug.setOutboubdId(data.getString("outboundId"));
+                                gleapBug.setOutboundId(data.getString("outboundId"));
                             }
 
                             if (data.has("spamToken")) {
@@ -645,11 +647,10 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                                 JSONObject formData = data.getJSONObject("formData");
                                 gleapBug.setData(formData);
                             }
-
-
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
+                        
                         new HttpHelper(GleapMainActivity.this, getApplicationContext()).execute(gleapBug);
                     } catch (Exception ex) {
                     }

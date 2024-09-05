@@ -35,8 +35,10 @@ class GleapBug {
     private JSONObject customData;
     private JSONObject data;
     private String spamToken;
-    private String outboubdId;
+    private String outboundId;
     private String[] tags;
+
+    private JSONObject outboundAction;
 
     private @Nullable
     PhoneMeta phoneMeta;
@@ -294,12 +296,12 @@ class GleapBug {
         this.spamToken = spamToken;
     }
 
-    public String getOutboubdId() {
-        return outboubdId;
+    public String getOutboundId() {
+        return outboundId;
     }
 
-    public void setOutboubdId(String outboubdId) {
-        this.outboubdId = outboubdId;
+    public void setOutboundId(String outboundId) {
+        this.outboundId = outboundId;
     }
 
     public NetworkBuffer getNetworkBuffer() {
@@ -312,5 +314,13 @@ class GleapBug {
 
     public void setTags(String[] tags) {
         this.tags = tags;
+    }
+
+    public JSONObject getOutboundAction() {
+        return outboundAction;
+    }
+
+    public void setOutboundAction(JSONObject outboundAction) {
+        this.outboundAction = outboundAction;
     }
 }

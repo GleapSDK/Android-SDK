@@ -28,6 +28,7 @@ import io.gleap.callbacks.GetBitmapCallback;
 import io.gleap.callbacks.InitializationDoneCallback;
 import io.gleap.callbacks.InitializedCallback;
 import io.gleap.callbacks.NotificationUnreadCountUpdatedCallback;
+import io.gleap.callbacks.OutboundSentCallback;
 import io.gleap.callbacks.RegisterPushMessageGroupCallback;
 import io.gleap.callbacks.UnRegisterPushMessageGroupCallback;
 import io.gleap.callbacks.WidgetClosedCallback;
@@ -54,7 +55,7 @@ class GleapConfig {
     private ConfigLoadedCallback configLoadedCallback;
     private InitializedCallback initializedCallback;
     private FeedbackSentCallback feedbackSentCallback;
-    private FeedbackSentCallback crashFeedbackSentCallback;
+    private OutboundSentCallback outboundSentCallback;
     private FeedbackWillBeSentCallback feedbackWillBeSentCallback;
     private FeedbackFlowStartedCallback feedbackFlowStartedCallback;
     private FeedbackFlowClosedCallback feedbackFlowClosedCallback;
@@ -318,6 +319,14 @@ class GleapConfig {
         this.feedbackSentCallback = feedbackSentCallback;
     }
 
+    public OutboundSentCallback getOutboundSentCallback() {
+        return outboundSentCallback;
+    }
+
+    public void setOutboundSentCallback(OutboundSentCallback outboundSentCallback) {
+        this.outboundSentCallback = outboundSentCallback;
+    }
+
     public FeedbackWillBeSentCallback getFeedbackWillBeSentCallback() {
         return feedbackWillBeSentCallback;
     }
@@ -531,14 +540,6 @@ class GleapConfig {
 
     public void setInterval(int interval) {
         this.interval = interval;
-    }
-
-    public FeedbackSentCallback getCrashFeedbackSentCallback() {
-        return crashFeedbackSentCallback;
-    }
-
-    public void setCrashFeedbackSentCallback(FeedbackSentCallback crashFeedbackSentCallback) {
-        this.crashFeedbackSentCallback = crashFeedbackSentCallback;
     }
 
     public JSONObject getCrashStripModel() {

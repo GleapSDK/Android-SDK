@@ -108,7 +108,7 @@ class GleapChatMessage {
         ImageView topImage = new ImageView(local.getApplication().getApplicationContext());
         topImage.setMaxHeight(convertDpToPixel(155, activity));
         topImage.setMinimumHeight(convertDpToPixel(155, activity));
-        topImage.setAdjustViewBounds(false);
+        topImage.setAdjustViewBounds(true);
         topImage.setScaleType(ImageView.ScaleType.CENTER_CROP);
         new GleapImageHandler(image, topImage, new GleapImageLoaded() {
             @Override
@@ -124,7 +124,11 @@ class GleapChatMessage {
         LinearLayout bottomPart = new LinearLayout(local.getApplication().getApplicationContext());
         bottomPart.setOrientation(LinearLayout.VERTICAL);
         ImageView avatarImage = new ImageView(local.getApplication().getApplicationContext());
-        avatarImage.setAdjustViewBounds(false);
+        avatarImage.setMaxHeight(convertDpToPixel(24, activity));
+        avatarImage.setMinimumHeight(convertDpToPixel(24, activity));
+        avatarImage.setMinimumWidth(convertDpToPixel(24, activity));
+        avatarImage.setMaxWidth(convertDpToPixel(24, activity));
+        avatarImage.setAdjustViewBounds(true);
         avatarImage.setScaleType(ImageView.ScaleType.CENTER_CROP);
 
         LinearLayout.LayoutParams avatarParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -372,8 +376,14 @@ class GleapChatMessage {
         cardView.addView(completeMessage);
 
         ImageView avatarImage = new ImageView(local.getApplication().getApplicationContext());
+
+        avatarImage.setMaxHeight(convertDpToPixel(28, local));
+        avatarImage.setMinimumHeight(convertDpToPixel(28, local));
+        avatarImage.setMinimumWidth(convertDpToPixel(28, local));
+        avatarImage.setMaxWidth(convertDpToPixel(28, local));
         avatarImage.setAdjustViewBounds(true);
         avatarImage.setScaleType(ImageView.ScaleType.CENTER_CROP);
+
         new GleapImageHandler(getSender().getProfileImageUrl(), avatarImage, new GleapImageLoaded() {
             @Override
             public void invoke(Bitmap bitmap) {

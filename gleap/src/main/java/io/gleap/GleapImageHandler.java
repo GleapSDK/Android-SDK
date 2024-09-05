@@ -60,6 +60,7 @@ class GleapImageHandler extends AsyncTask<Void, Void, Bitmap> {
         try {
             imageView.setImageBitmap(result);
             imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            imageView.requestLayout();
             gleapImageLoaded.invoke(result);
         } catch (Exception ex) {
 

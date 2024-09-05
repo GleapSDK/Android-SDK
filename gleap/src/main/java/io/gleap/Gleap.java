@@ -31,6 +31,7 @@ import io.gleap.callbacks.GetBitmapCallback;
 import io.gleap.callbacks.InitializationDoneCallback;
 import io.gleap.callbacks.InitializedCallback;
 import io.gleap.callbacks.NotificationUnreadCountUpdatedCallback;
+import io.gleap.callbacks.OutboundSentCallback;
 import io.gleap.callbacks.RegisterPushMessageGroupCallback;
 import io.gleap.callbacks.UnRegisterPushMessageGroupCallback;
 import io.gleap.callbacks.WidgetClosedCallback;
@@ -835,37 +836,17 @@ public class Gleap implements iGleap {
     @Override
     public void sendSilentCrashReport(String description, SEVERITY severity) {
         try {
-            SilentBugReportUtil.createSilentBugReport(application, description, severity, new JSONObject(), null);
+            SilentBugReportUtil.createSilentBugReport(application, description, severity);
         } catch (Error | Exception ignore) {
         }
     }
 
     @Override
-    public void sendSilentCrashReport(String description, SEVERITY severity, JSONObject
-            excludeData) {
+    public void sendSilentCrashReport(String description, SEVERITY severity, JSONObject excludeData) {
         try {
-            SilentBugReportUtil.createSilentBugReport(application, description, severity, excludeData, null);
+            SilentBugReportUtil.createSilentBugReport(application, description, severity, excludeData);
         } catch (Error | Exception ignore) {
         }
-    }
-
-    @Override
-    public void sendSilentCrashReport(String description, SEVERITY severity, JSONObject
-            excludeData, FeedbackSentCallback feedbackSentCallback) {
-        try {
-            SilentBugReportUtil.createSilentBugReport(application, description, severity, excludeData, feedbackSentCallback);
-        } catch (Error | Exception ignore) {
-        }
-    }
-
-    @Override
-    public void sendSilentCrashReport(String description, SEVERITY
-            severity, FeedbackSentCallback feedbackSentCallback) {
-        try {
-            SilentBugReportUtil.createSilentBugReport(application, description, severity, null, feedbackSentCallback);
-        } catch (Error | Exception ignore) {
-        }
-
     }
 
     /**
@@ -1241,7 +1222,7 @@ public class Gleap implements iGleap {
     }
 
     /**
-     * This method is triggered, when the Gleap flow is closed
+     * This method is triggered, when feedback is sent
      *
      * @param feedbackSentCallback this callback is called when the flow is called
      */
@@ -1249,6 +1230,19 @@ public class Gleap implements iGleap {
     public void setFeedbackSentCallback(FeedbackSentCallback feedbackSentCallback) {
         try {
             GleapConfig.getInstance().setFeedbackSentCallback(feedbackSentCallback);
+        } catch (Error | Exception ignore) {
+        }
+    }
+
+    /**
+     * This method is triggered, when an outbound is sent.
+     *
+     * @param outboundSentCallback this callback is called when the flow is called
+     */
+    @Override
+    public void setOutboundSentCallback(OutboundSentCallback outboundSentCallback) {
+        try {
+            GleapConfig.getInstance().setOutboundSentCallback(outboundSentCallback);
         } catch (Error | Exception ignore) {
         }
     }

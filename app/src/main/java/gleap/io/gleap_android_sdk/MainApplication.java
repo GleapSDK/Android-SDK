@@ -10,6 +10,8 @@ import io.gleap.GleapAiTool;
 import io.gleap.GleapAiToolParameter;
 import io.gleap.callbacks.AiToolExecutedCallback;
 import io.gleap.callbacks.CustomActionCallback;
+import io.gleap.callbacks.FeedbackSentCallback;
+import io.gleap.callbacks.OutboundSentCallback;
 import io.gleap.callbacks.RegisterPushMessageGroupCallback;
 import io.gleap.callbacks.UnRegisterPushMessageGroupCallback;
 
@@ -18,7 +20,7 @@ public class MainApplication extends Application {
     public void onCreate() {
         super.onCreate();
         // Gleap.getInstance().setLanguage("de-at");
-        Gleap.initialize("QoXkztrcfqtl706i9CLcI3O5mGeWCaNw", this);
+        Gleap.initialize("qL1QaYaBwCZ7rweHFTT9zROoBkZNhM8w", this);
         Gleap.getInstance().setTags(new String[] {
                 "Android",
                 "Tags",
@@ -97,55 +99,28 @@ public class MainApplication extends Application {
                 System.out.println(pushMessageGroup);
             }
         });
-     //   Gleap.getInstance().setLanguage("pt");
-
-       /*   GleapUserProperties userProperties = new GleapUserProperties("Test User", "niklas@gmail.com" );
-        //userProperties.setHash();
-        GleapUser gleapUserWithId = new GleapUser("12");
-        GleapUser gleapUserWithIdAndProps = new GleapUser("12", userProperties);
-
-        File file = new File("/data/user/0/gleap.io.gleap_android_sdk/cache/file5101004034427200754.png");
-        Gleap.getInstance().addAttachment(file);
 
 
-      //  Gleap.getInstance().identifyUser("1234", userProperties, "f60d2a8960f5e2711159d72b67695014a05aa576023d77056bb27e7d7a96b4a6");
-*/
-/*
-
-        Gleap.getInstance().setWidgetClosedCallback(new WidgetClosedCallback() {
+        Gleap.getInstance().setOutboundSentCallback(new OutboundSentCallback() {
             @Override
-            public void invoke() {
-                Gleap.getInstance().trackEvent(WidgetClosedCallback.class.getName());
+            public void invoke(JSONObject jsonObject) {
+                try {
+                    System.out.println("Outbound" + jsonObject.toString());
+                } catch (Exception exp) {
+                    System.out.println("OUTBOUND NULL!");
+                }
             }
         });
 
-        Gleap.getInstance().setConfigLoadedCallback(new ConfigLoadedCallback() {
+        Gleap.getInstance().setFeedbackSentCallback(new FeedbackSentCallback() {
             @Override
-            public void configLoaded(JSONObject jsonObject) {
-                Gleap.getInstance().trackEvent(ConfigLoadedCallback.class.getName());
+            public void invoke(JSONObject jsonObject) {
+                try {
+                    System.out.println("Feedback" + jsonObject.toString());
+                } catch (Exception exp) {
+                    System.out.println("FEEDBACK NULL!");
+                }
             }
         });
-        
-        Gleap.getInstance().setFeedbackSendingFailedCallback(new FeedbackSendingFailedCallback() {
-            @Override
-            public void invoke(String message) {
-                Gleap.getInstance().trackEvent(FeedbackSentCallback.class.getName());
-            }
-        });
-
-        Gleap.getInstance().registerCustomAction(new CustomActionCallback() {
-            @Override
-            public void invoke(String message) {
-                Gleap.getInstance().trackEvent(CustomActionCallback.class.getName() + " " + message);
-                Gleap.getInstance().close();
-            }
-        });
-
-        Gleap.getInstance().setFeedbackFlowStartedCallback(new FeedbackFlowStartedCallback() {
-            @Override
-            public void invoke(String message) {
-                Gleap.getInstance().trackEvent(FeedbackFlowStartedCallback.class.getName());
-            }
-        });*/
     }
 }

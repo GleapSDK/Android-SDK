@@ -38,6 +38,7 @@ class HttpHelper extends AsyncTask<GleapBug, Void, JSONObject> {
     private static final String REPORT_BUG_URL_POSTFIX = "/bugs/v2";
     private final Context context;
     private static JSONObject sentCallbackData;
+    private static JSONObject dataToSend;
 
     GleapConfig bbConfig = GleapConfig.getInstance();
 
@@ -51,6 +52,7 @@ class HttpHelper extends AsyncTask<GleapBug, Void, JSONObject> {
     @Override
     protected JSONObject doInBackground(GleapBug... gleapBugs) {
         GleapBug gleapBug = gleapBugs[0];
+
         JSONObject result = new JSONObject();
         try {
             result = postFeedback(gleapBug);
@@ -64,20 +66,37 @@ class HttpHelper extends AsyncTask<GleapBug, Void, JSONObject> {
 
     @Override
     protected void onPostExecute(JSONObject result) {
+        // Default form submission callback.
         if (GleapConfig.getInstance().getFeedbackSentCallback() != null) {
-            if (sentCallbackData != null) {
-                GleapConfig.getInstance().getFeedbackSentCallback().invoke(sentCallbackData.toString());
+            if (dataToSend != null && dataToSend.has("formData")) {
+                try {
+                    GleapConfig.getInstance().getFeedbackSentCallback().invoke(dataToSend.getJSONObject("formData"));
+                } catch (JSONException e) {
+                    GleapConfig.getInstance().getFeedbackSentCallback().invoke(null);
+                }
             } else {
-                GleapConfig.getInstance().getFeedbackSentCallback().invoke("");
+                GleapConfig.getInstance().getFeedbackSentCallback().invoke(null);
             }
         }
 
-        if (GleapConfig.getInstance().getCrashFeedbackSentCallback() != null) {
-            if (sentCallbackData != null) {
-                GleapConfig.getInstance().getCrashFeedbackSentCallback().invoke(sentCallbackData.toString());
-            } else {
-                GleapConfig.getInstance().getCrashFeedbackSentCallback().invoke("");
+        // Send outbound sent.
+        try {
+            if (GleapConfig.getInstance().getOutboundSentCallback() != null) {
+                if (dataToSend != null) {
+                    GleapConfig.getInstance().getOutboundSentCallback().invoke(dataToSend);
+                } else {
+                    GleapConfig.getInstance().getOutboundSentCallback().invoke(null);
+                }
             }
+        } catch (Exception exp) {}
+
+        // Track outbound submission.
+        if (dataToSend != null && dataToSend.has("outboundId")) {
+            try {
+                String outboundId = dataToSend.getString("outboundId");
+
+                Gleap.getInstance().trackEvent("outbound-" + outboundId + "-submitted", dataToSend.getJSONObject("formData"));
+            } catch (JSONException e) {}
         }
 
         sentCallbackData = null;
@@ -138,7 +157,6 @@ class HttpHelper extends AsyncTask<GleapBug, Void, JSONObject> {
         return null;
     }
 
-
     private JSONObject postFeedback(GleapBug gleapBug) throws JSONException, IOException {
         JSONObject config = GleapConfig.getInstance().getStripModel();
         JSONObject stripConfig = GleapConfig.getInstance().getCrashStripModel();
@@ -171,15 +189,18 @@ class HttpHelper extends AsyncTask<GleapBug, Void, JSONObject> {
             conn.setRequestProperty("gleap-hash", gleapSession.getHash());
         }
         JSONObject body = new JSONObject();
-/*
-        if (GleapConfig.getInstance().getAction() != null && GleapConfig.getInstance().getAction().getOutbound() != null) {
-            body.put("outbound", GleapConfig.getInstance().getAction().getOutbound());
-        }
-*/
-        body.put("outbound", gleapBug.getOutboubdId());
-        if(gleapBug.getOutboubdId() != null && !gleapBug.getOutboubdId().equals("")) {
-            gleapBug.setOutboubdId("bugreporting");
-        }
+
+        String outboundId = null;
+        try {
+            outboundId = gleapBug.getOutboundId();
+
+            if (outboundId == null || outboundId.equalsIgnoreCase("")) {
+                outboundId = "bugreporting";
+            }
+        } catch (Exception exp) {}
+
+        body.put("outbound", outboundId);
+
         body.put("spamToken", gleapBug.getSpamToken());
 
         if (!stripImages) {
@@ -202,6 +223,14 @@ class HttpHelper extends AsyncTask<GleapBug, Void, JSONObject> {
         callBackData.put("formdata", formData);
 
         sentCallbackData = callBackData;
+
+        // Prepare internal data to send ref.
+        JSONObject dataToSendObj = new JSONObject();
+        dataToSendObj.put("outboundId", gleapBug.getOutboundId());
+        dataToSendObj.put("outbound", gleapBug.getOutboundAction());
+        dataToSendObj.put("formData", formData);
+
+        dataToSend = dataToSendObj;
 
         body.put("formData", formData);
         body.put("networkLogs", gleapBug.getNetworklogs());

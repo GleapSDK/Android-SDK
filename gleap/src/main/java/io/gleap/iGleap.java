@@ -19,6 +19,7 @@ import io.gleap.callbacks.GetBitmapCallback;
 import io.gleap.callbacks.InitializationDoneCallback;
 import io.gleap.callbacks.InitializedCallback;
 import io.gleap.callbacks.NotificationUnreadCountUpdatedCallback;
+import io.gleap.callbacks.OutboundSentCallback;
 import io.gleap.callbacks.RegisterPushMessageGroupCallback;
 import io.gleap.callbacks.UnRegisterPushMessageGroupCallback;
 import io.gleap.callbacks.WidgetClosedCallback;
@@ -200,10 +201,6 @@ interface iGleap {
     void sendSilentCrashReport(String description, Gleap.SEVERITY severity);
 
     void sendSilentCrashReport(String description, Gleap.SEVERITY severity, JSONObject excludeData);
-
-    void sendSilentCrashReport(String description, Gleap.SEVERITY severity, FeedbackSentCallback feedbackSentCallback);
-
-    void sendSilentCrashReport(String description, Gleap.SEVERITY severity, JSONObject excludeData, FeedbackSentCallback feedbackSentCallback);
 
     /**
      * Updates a session's user data.
@@ -466,11 +463,18 @@ interface iGleap {
     void setFeedbackWillBeSentCallback(FeedbackWillBeSentCallback feedbackWillBeSentCallback);
 
     /**
-     * This method is triggered, when the Gleap flow is closed
+     * This method is triggered, when a form got submitted
      *
      * @param feedbackSentCallback this callback is called when the flow is called
      */
     void setFeedbackSentCallback(FeedbackSentCallback feedbackSentCallback);
+
+    /**
+     * This method is triggered, when an outbound message got answered
+     *
+     * @param outboundSentCallback this callback is called when the flow is called
+     */
+    void setOutboundSentCallback(OutboundSentCallback outboundSentCallback);
 
     /**
      * This is called if the sending has failed

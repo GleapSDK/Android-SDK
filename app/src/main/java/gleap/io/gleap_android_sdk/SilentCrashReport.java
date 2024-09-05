@@ -52,15 +52,7 @@ ex.printStackTrace();
                     JSONObject exclude = new JSONObject();
 
                     exclude.put("customData",true);
-
-                    Gleap.getInstance().sendSilentCrashReport("This is silent, Severity LOW, exclude ConsoleLog with callback", Gleap.SEVERITY.LOW, exclude, new FeedbackSentCallback() {
-                        @Override
-                        public void invoke(String message) {
-                            System.out.println("HEY");
-                            Toast toast = Toast.makeText(getApplicationContext(), "CALLBACK CALLED", Toast.LENGTH_LONG);
-                            toast.show();
-                        }
-                    });
+                    Gleap.getInstance().sendSilentCrashReport("This is silent, Severity LOW, exclude ConsoleLog with callback", Gleap.SEVERITY.LOW, exclude);
                 }catch (Exception ex) {
 
                 }
@@ -71,7 +63,7 @@ ex.printStackTrace();
             @Override
             public void onClick(View view) {
 
-                Gleap.getInstance().sendSilentCrashReport(null, null, null, null);
+                Gleap.getInstance().sendSilentCrashReport(null, null, null);
             }
         });
 
