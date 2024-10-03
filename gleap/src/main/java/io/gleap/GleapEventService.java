@@ -299,25 +299,44 @@ class GleapEventService {
                 if (currentAction.has("actionType")) {
                     if (currentAction.getString("actionType").contains("notification")) {
                         // In app notification.
-                        if (!this.disableInAppNotifications) {
-                            mainThreadHandler.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    try {
-                                        String outboundId = "";
-                                        if(currentAction.has("outbound")){
-                                            outboundId = currentAction.getString("outbound");
+                        JSONObject messageData = null;
+
+                        try {
+                            messageData = currentAction.getJSONObject("data");
+                        } catch (JSONException e) {
+
+                        } catch (Exception e) {
+
+                        }
+
+                        // Check if the notification is part of a checklist and has popupType "widget".
+                        if (messageData != null && messageData.has("checklist") &&
+                                messageData.getJSONObject("checklist").getString("popupType").equals("widget")) {
+
+                            // Open the checklist if the popupType is "widget".
+                            Gleap.getInstance().openChecklist(messageData.getJSONObject("checklist").getString("id"), true);
+                        } else {
+                            // In app notification.
+                            if (!this.disableInAppNotifications) {
+                                mainThreadHandler.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        try {
+                                            String outboundId = "";
+                                            if(currentAction.has("outbound")){
+                                                outboundId = currentAction.getString("outbound");
+                                            }
+                                            JSONObject data = currentAction.getJSONObject("data");
+                                            GleapChatMessage comment = createComment(outboundId, data);
+                                            GleapInvisibleActivityManger.getInstance().addNotification(comment, null);
+                                        } catch (JSONException e) {
+
+                                        } catch (Exception e) {
+
                                         }
-                                        JSONObject messageData = currentAction.getJSONObject("data");
-                                        GleapChatMessage comment = createComment(outboundId, messageData);
-                                        GleapInvisibleActivityManger.getInstance().addNotification(comment, null);
-                                    } catch (JSONException e) {
-
-                                    } catch (Exception e) {
-
                                     }
-                                }
-                            });
+                                });
+                            }
                         }
                     } else if (currentAction.getString("format").contains("survey")) {
                         JSONObject jsonObject = new JSONObject();
