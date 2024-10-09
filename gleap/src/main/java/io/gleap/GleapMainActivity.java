@@ -266,10 +266,11 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
             }
             this.handler = null;
 
-            if (callerActivity != null) {
+            if (callerActivity != null && callerActivity.get() != null) {
                 callerActivity.clear();
             }
-        } catch (Exception exp) {}
+
+        } catch (Error | Exception ignore) {}
 
         super.onDestroy();
     }
