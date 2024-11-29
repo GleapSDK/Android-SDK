@@ -544,7 +544,13 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
             try {
                 String data = object.getString("data");
                 if (GleapConfig.getInstance().getCustomActions() != null) {
-                    GleapConfig.getInstance().getCustomActions().invoke(data);
+
+                    String shareToken = null;
+                    if (object.has("shareToken")) {
+                        shareToken = object.getString("shareToken");
+                    }
+
+                    GleapConfig.getInstance().getCustomActions().invoke(data, shareToken);
                 }
             } catch (JSONException e) {
                 e.printStackTrace();

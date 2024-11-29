@@ -20,7 +20,7 @@ public class MainApplication extends Application {
     public void onCreate() {
         super.onCreate();
         // Gleap.getInstance().setLanguage("de-at");
-        Gleap.initialize("gbMLfLgtayFd2PeNJrjbxl6eB2OboAfn", this);
+        Gleap.initialize("nKT6erqDUjwqfVN2xRkOG4XOf8NEEJ52", this);
         Gleap.getInstance().setTags(new String[] {
                 "Android",
                 "Tags",
@@ -81,8 +81,8 @@ public class MainApplication extends Application {
 
         Gleap.getInstance().registerCustomAction(new CustomActionCallback() {
             @Override
-            public void invoke(String message) {
-                System.out.println(message);
+            public void invoke(String message, String shareToken) {
+                System.out.println(message + " " + shareToken);
             }
         });
 

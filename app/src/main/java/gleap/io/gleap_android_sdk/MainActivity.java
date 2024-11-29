@@ -43,7 +43,7 @@ public class MainActivity extends AppCompatActivity {
                 System.out.println("ALREADY DONE!");
                 // FCM SDK (and your app) can post notifications.
             } else if (shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)) {
-                System.out.println("NOOOOOOOOPE!");
+                System.out.println("NOPE!");
                 // TODO: display an educational UI explaining to the user the features that will be enabled
                 //       by them granting the POST_NOTIFICATION permission. This UI should provide the user
                 //       "OK" and "No thanks" buttons. If the user selects "OK," directly request the permission.
