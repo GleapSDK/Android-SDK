@@ -125,6 +125,14 @@ class GleapBug {
         this.ticketAttributes.put(key, value);
     }
 
+    public void unsetTicketAttribute(String key) {
+        this.ticketAttributes.remove(key);
+    }
+
+    public void clearTicketAttributes() {
+        this.ticketAttributes = new JSONObject();
+    }
+
     public void setCustomData(String key, String value) {
         if(key != null && value != null) {
             try {

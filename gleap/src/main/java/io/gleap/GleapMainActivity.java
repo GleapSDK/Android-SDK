@@ -39,6 +39,7 @@ import androidx.activity.result.ActivityResult;
 import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -328,6 +329,28 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     requestCode);
         } else {
             permissionRequest.grant(permissionRequest.getResources());
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode == PERMISSIONS_REQUEST_RECORD_AUDIO) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Permission granted, now call permissionRequest.grant()
+                if (permissionRequest != null) {
+                    permissionRequest.grant(permissionRequest.getResources());
+                    permissionRequest = null;
+                }
+            } else {
+                // Permission denied, call permissionRequest.deny()
+                if (permissionRequest != null) {
+                    permissionRequest.deny();
+                    permissionRequest = null;
+                }
+            }
         }
     }
 

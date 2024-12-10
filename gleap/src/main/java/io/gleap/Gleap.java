@@ -1167,6 +1167,33 @@ public class Gleap implements iGleap {
     }
 
     /**
+     * Unsets a ticket attribute.
+     *
+     * @param key The key of the attribute
+     * @author Gleap
+     */
+    @Override
+    public void unsetTicketAttribute(String key) {
+        try {
+            GleapBug.getInstance().unsetTicketAttribute(key);
+        } catch (Error | Exception ignore) {
+        }
+    }
+
+    /**
+     * Clears all ticket attributes.
+     *
+     * @author Gleap
+     */
+    @Override
+    public void clearTicketAttributes() {
+        try {
+            GleapBug.getInstance().clearTicketAttributes();
+        } catch (Error | Exception ignore) {
+        }
+    }
+
+    /**
      * Attach Data to the request. The Data will be merged into the body sent with the bugreport.
      * !!Existing keys can be overriten
      *

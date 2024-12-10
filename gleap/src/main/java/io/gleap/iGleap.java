@@ -326,6 +326,21 @@ interface iGleap {
     void setTicketAttribute(String key, boolean value);
 
     /**
+     * Unsets a ticket attribute.
+     *
+     * @param key The key of the attribute
+     * @author Gleap
+     */
+    void unsetTicketAttribute(String key);
+
+    /**
+     * Clears all ticket attributes.
+     *
+     * @author Gleap
+     */
+    void clearTicketAttributes();
+
+    /**
      * Attach one key value pair to existing custom data.
      *
      * @param value The value you want to add
