@@ -1,5 +1,6 @@
 package io.gleap;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -23,6 +24,7 @@ import android.webkit.ConsoleMessage;
 import android.webkit.JavascriptInterface;
 import android.webkit.JsPromptResult;
 import android.webkit.JsResult;
+import android.webkit.PermissionRequest;
 import android.webkit.SslErrorHandler;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
@@ -39,6 +41,8 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -59,6 +63,9 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
     public static final int REQUEST_SELECT_FILE = 100;
     private Runnable exitAfterFifteenSeconds;
     private Handler handler;
+    private PermissionRequest permissionRequest;
+    private static final int PERMISSIONS_REQUEST_RECORD_AUDIO = 101;
+
     private ActivityResultLauncher<Intent> openFileLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             new ActivityResultCallback<ActivityResult>() {
@@ -288,11 +295,40 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         webView.setWebViewClient(new GleapWebViewClient());
         webView.setBackgroundColor(Color.TRANSPARENT);
         webView.addJavascriptInterface(new GleapJSBridge(this), "GleapJSBridge");
-        webView.setWebChromeClient(new GleapWebChromeClient());
+        webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public void onPermissionRequest(final PermissionRequest request) {
+                permissionRequest = request;
+
+                for (String permission : request.getResources()) {
+                    switch (permission) {
+                        case "android.webkit.resource.AUDIO_CAPTURE": {
+                            askForPermission(request.getOrigin().toString(), Manifest.permission.RECORD_AUDIO, PERMISSIONS_REQUEST_RECORD_AUDIO);
+                            break;
+                        }
+
+                        default:
+                            request.deny();
+                    }
+                }
+            }
+        });
         webView.loadUrl(url);
         webView.setVisibility(View.INVISIBLE);
         settings.setUseWideViewPort(true);
         settings.setLoadWithOverviewMode(true);
+    }
+
+    public void askForPermission(String origin, String permission, int requestCode) {
+        if (ContextCompat.checkSelfPermission(getApplicationContext(),
+                permission)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(GleapMainActivity.this,
+                    new String[]{permission},
+                    requestCode);
+        } else {
+            permissionRequest.grant(permissionRequest.getResources());
+        }
     }
 
     @Override
