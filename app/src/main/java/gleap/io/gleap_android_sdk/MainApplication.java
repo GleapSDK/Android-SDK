@@ -64,6 +64,10 @@ public class MainApplication extends Application {
         Gleap.getInstance().setTicketAttribute("test1", "This is a test");
         Gleap.getInstance().setTicketAttribute("test2", 20);
 
+        Gleap.getInstance().unsetTicketAttribute("test1");
+
+        Gleap.getInstance().clearTicketAttributes();
+
         Gleap.getInstance().setAiToolExecutedCallback(new AiToolExecutedCallback() {
             @Override
             public void aiToolExecuted(JSONObject jsonObject) {
