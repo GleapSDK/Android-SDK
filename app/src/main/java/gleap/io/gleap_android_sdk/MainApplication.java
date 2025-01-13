@@ -20,7 +20,7 @@ public class MainApplication extends Application {
     public void onCreate() {
         super.onCreate();
         // Gleap.getInstance().setLanguage("de-at");
-        Gleap.initialize("nKT6erqDUjwqfVN2xRkOG4XOf8NEEJ52", this);
+        Gleap.initialize("BTmQRJBPvKrOErNQCmyPYPAzSsw3gPmw", this);
         Gleap.getInstance().setTags(new String[] {
                 "Android",
                 "Tags",

@@ -2,6 +2,7 @@ package io.gleap;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
@@ -40,6 +41,7 @@ import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -66,6 +68,27 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
     private Handler handler;
     private PermissionRequest permissionRequest;
     private static final int PERMISSIONS_REQUEST_RECORD_AUDIO = 101;
+    private ValueCallback<Uri[]> fileChooserCallback;
+
+    // Register the ActivityResultLauncher at the class level
+    private final ActivityResultLauncher<Intent> imagePickerLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (fileChooserCallback == null) return;
+
+                if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                    Uri selectedImage = result.getData().getData();
+                    if (selectedImage != null) {
+                        fileChooserCallback.onReceiveValue(new Uri[]{selectedImage});
+                    } else {
+                        fileChooserCallback.onReceiveValue(null); // No file selected
+                    }
+                } else {
+                    fileChooserCallback.onReceiveValue(null); // Handle cancellation or errors
+                }
+                fileChooserCallback = null; // Reset callback after use
+            }
+    );
 
     private ActivityResultLauncher<Intent> openFileLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
@@ -311,6 +334,29 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                         default:
                             request.deny();
                     }
+                }
+            }
+
+            @Override
+            public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
+                // Save the callback for use after file selection
+                fileChooserCallback = filePathCallback;
+
+                // Check for Android 13+ (API 33)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    Intent intent = new Intent(Intent.ACTION_PICK);
+                    intent.setType("image/*");
+                    intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, false); // Single selection
+                    try {
+                        imagePickerLauncher.launch(intent);
+                        return true;
+                    } catch (ActivityNotFoundException e) {
+                        fileChooserCallback = null; // Reset callback on failure
+                        return false;
+                    }
+                } else {
+                    // Fallback for older Android versions
+                    return super.onShowFileChooser(webView, filePathCallback, fileChooserParams);
                 }
             }
         });
