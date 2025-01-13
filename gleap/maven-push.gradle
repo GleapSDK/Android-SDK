@@ -15,40 +15,38 @@ def getRepositoryPassword() {
     return hasProperty('NEXUS_PASSWORD') ? NEXUS_PASSWORD : ""
 }
 
+tasks.register('androidSourcesJar', Jar) {
+    archiveClassifier.set('sources')
+    from(android.sourceSets.main.java.sourceFiles)
+}
+
 publishing {
     publications {
         mavenJava(MavenPublication) {
-            afterEvaluate {
-                from components.release
-            }
-            groupId = GROUP
-            artifactId = POM_ARTIFACT_ID
-            version = VERSION_NAME
+            // Use the library's AAR as the artifact
+            artifact("$buildDir/outputs/aar/${project.name}-release.aar")
+
+            // Additional metadata (optional)
+            groupId = 'com.gleap' // Update as needed
+            artifactId = 'gleap-sdk'
+            version = '1.0.0'
 
             pom {
-                name = POM_NAME
-                packaging = POM_PACKAGING
-                description = POM_DESCRIPTION
-                url = POM_URL
-
-                scm {
-                    url = POM_SCM_URL
-                    connection = POM_SCM_CONNECTION
-                    developerConnection = POM_SCM_DEV_CONNECTION
-                }
+                name = 'Gleap SDK'
+                description = 'The Gleap SDK for Android'
+                url = 'https://www.gleap.io'
 
                 licenses {
                     license {
-                        name = POM_LICENCE_NAME
-                        url = POM_LICENCE_URL
-                        distribution = POM_LICENCE_DIST
+                        name = 'Apache-2.0'
+                        url = 'https://www.apache.org/licenses/LICENSE-2.0'
                     }
                 }
 
                 developers {
                     developer {
-                        id = POM_DEVELOPER_ID
-                        name = POM_DEVELOPER_NAME
+                        id = 'gleap'
+                        name = 'Gleap Team'
                     }
                 }
             }
@@ -57,11 +55,10 @@ publishing {
 
     repositories {
         maven {
-            url = uri(getReleaseRepositoryUrl())
-
+            url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/") // Update as needed
             credentials {
-                username = getRepositoryUsername()
-                password = getRepositoryPassword()
+                username = project.findProperty('NEXUS_USERNAME') ?: ''
+                password = project.findProperty('NEXUS_PASSWORD') ?: ''
             }
         }
     }
@@ -69,22 +66,4 @@ publishing {
 
 signing {
     sign publishing.publications.mavenJava
-}
-
-tasks.register('androidSourcesJar', Jar) {
-    classifier = 'sources'
-    from android.sourceSets.main.java.sourceFiles
-}
-
-artifacts {
-    archives androidSourcesJar
-}
-
-afterEvaluate {
-    signing {
-        required {
-            gradle.taskGraph.hasTask("publish")
-        }
-        sign configurations.archives
-    }
 }
