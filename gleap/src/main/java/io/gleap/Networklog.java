@@ -56,7 +56,7 @@ public class Networklog {
                     }
 
                     String reStr = request.getString("payload");
-                    if (reStr.length() > 1000) {
+                    if (reStr != null && reStr.length() > 1000) {
                         reStr = "<payload_too_large>";
                     }
                     request.put("payload", reStr);

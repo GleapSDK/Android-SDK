@@ -24,9 +24,6 @@ buildscript {
 }
 
 android {
-    lintOptions {
-        abortOnError false
-    }
 
     namespace 'gleap.io.gleap'
 
@@ -53,6 +50,9 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
+    }
+    lint {
+        abortOnError false
     }
 }
 

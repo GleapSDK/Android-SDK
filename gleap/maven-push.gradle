@@ -17,16 +17,19 @@ def getRepositoryPassword() {
 
 tasks.register('androidSourcesJar', Jar) {
     archiveClassifier.set('sources')
-    from(android.sourceSets.main.java.sourceFiles)
+    from(android.sourceSets.main.java.srcDirs)
 }
 
 publishing {
     publications {
         mavenJava(MavenPublication) {
             // Use the library's AAR as the artifact
-            artifact("$buildDir/outputs/aar/${project.name}-release.aar")
+            afterEvaluate {
+                artifact("$buildDir/outputs/aar/${project.name}-release.aar")
+            }
+            artifact tasks.androidSourcesJar // Add the sources JAR
 
-            // Additional metadata (optional)
+            // Metadata
             groupId = 'com.gleap' // Update as needed
             artifactId = 'gleap-sdk'
             version = '1.0.0'
@@ -55,10 +58,10 @@ publishing {
 
     repositories {
         maven {
-            url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/") // Update as needed
+            url = uri(getReleaseRepositoryUrl())
             credentials {
-                username = project.findProperty('NEXUS_USERNAME') ?: ''
-                password = project.findProperty('NEXUS_PASSWORD') ?: ''
+                username = getRepositoryUsername()
+                password = getRepositoryPassword()
             }
         }
     }

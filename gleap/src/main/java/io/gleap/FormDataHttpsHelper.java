@@ -71,7 +71,7 @@ class FormDataHttpsHelper {
                 fileName + "\"" + this.crlf);
         request.writeBytes("Content-Type: " +
                 "" + URLConnection.guessContentTypeFromName(fileName) + this.crlf + this.crlf);
-        int size = (int) uploadFile.length();
+        int size = uploadFile != null ? (int) uploadFile.length() : 0;
         byte[] bytes = new byte[size];
         try {
             BufferedInputStream buf = new BufferedInputStream(new FileInputStream(uploadFile));
