@@ -15,11 +15,6 @@ def getRepositoryPassword() {
     return hasProperty('NEXUS_PASSWORD') ? NEXUS_PASSWORD : ""
 }
 
-tasks.register('androidSourcesJar', Jar) {
-    archiveClassifier.set('sources')
-    from(android.sourceSets.main.java.srcDirs)
-}
-
 publishing {
     publications {
         mavenJava(MavenPublication) {
@@ -29,27 +24,34 @@ publishing {
             }
             artifact tasks.androidSourcesJar // Add the sources JAR
 
-            // Metadata
-            groupId = 'com.gleap' // Update as needed
-            artifactId = 'gleap-sdk'
-            version = '1.0.0'
+            groupId = GROUP
+            artifactId = POM_ARTIFACT_ID
+            version = VERSION_NAME
 
             pom {
-                name = 'Gleap SDK'
-                description = 'The Gleap SDK for Android'
-                url = 'https://www.gleap.io'
+                name = POM_NAME
+                packaging = POM_PACKAGING
+                description = POM_DESCRIPTION
+                url = POM_URL
+
+                scm {
+                    url = POM_SCM_URL
+                    connection = POM_SCM_CONNECTION
+                    developerConnection = POM_SCM_DEV_CONNECTION
+                }
 
                 licenses {
                     license {
-                        name = 'Apache-2.0'
-                        url = 'https://www.apache.org/licenses/LICENSE-2.0'
+                        name = POM_LICENCE_NAME
+                        url = POM_LICENCE_URL
+                        distribution = POM_LICENCE_DIST
                     }
                 }
 
                 developers {
                     developer {
-                        id = 'gleap'
-                        name = 'Gleap Team'
+                        id = POM_DEVELOPER_ID
+                        name = POM_DEVELOPER_NAME
                     }
                 }
             }
@@ -59,6 +61,7 @@ publishing {
     repositories {
         maven {
             url = uri(getReleaseRepositoryUrl())
+
             credentials {
                 username = getRepositoryUsername()
                 password = getRepositoryPassword()
@@ -69,4 +72,22 @@ publishing {
 
 signing {
     sign publishing.publications.mavenJava
+}
+
+tasks.register('androidSourcesJar', Jar) {
+    archiveClassifier.set('sources') // Fix the classifier issue
+    from android.sourceSets.main.java.sourceFiles
+}
+
+artifacts {
+    archives tasks.named('androidSourcesJar')
+}
+
+afterEvaluate {
+    signing {
+        required {
+            gradle.taskGraph.hasTask("publish")
+        }
+        sign configurations.archives
+    }
 }

@@ -10,8 +10,6 @@ if (localPropertiesFile.exists()) {
     }
 }
 
-println rootProject.subprojects
-
 buildscript {
     repositories {
         google()
@@ -24,7 +22,6 @@ buildscript {
 }
 
 android {
-
     namespace 'gleap.io.gleap'
 
     compileSdkVersion 33
