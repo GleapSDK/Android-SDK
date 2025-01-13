@@ -19,15 +19,22 @@ publishing {
     publications {
         mavenJava(MavenPublication) {
             afterEvaluate {
-                from components.release
+                if (components.findByName("release") != null) {
+                    from components["release"]
+                } else {
+                    artifact("$buildDir/outputs/aar/${project.name}-release.aar") {
+                        builtBy tasks.named("assembleRelease")
+                    }
+                }
             }
+
             groupId = GROUP
             artifactId = POM_ARTIFACT_ID
             version = VERSION_NAME
 
             pom {
                 name = POM_NAME
-                packaging = POM_PACKAGING
+                packaging = "aar"
                 description = POM_DESCRIPTION
                 url = POM_URL
 
@@ -72,12 +79,12 @@ signing {
 }
 
 tasks.register('androidSourcesJar', Jar) {
-    classifier = 'sources'
+    archiveClassifier.set('sources')
     from android.sourceSets.main.java.sourceFiles
 }
 
 artifacts {
-    archives androidSourcesJar
+    archives tasks.named('androidSourcesJar')
 }
 
 afterEvaluate {

@@ -1431,7 +1431,7 @@ public class Gleap implements iGleap {
 
     @Override
     public void handleLink(String url) {
-        if (url == null || url.length() == 0) {
+        if (url == null || (url != null && url.length() == 0)) {
             return;
         }
 

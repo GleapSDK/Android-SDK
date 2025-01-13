@@ -11,7 +11,7 @@ import java.util.concurrent.ExecutionException;
 class SilentBugReportUtil {
     public static void createSilentBugReport(Context context, String description, Gleap.SEVERITY severity, String type, JSONObject excludeData) {
 
-        if (excludeData == null || excludeData.length() == 0) {
+        if (excludeData == null || (excludeData != null && excludeData.length() == 0)) {
             excludeData = new JSONObject();
             try {
                 excludeData.put("screenshot", true);

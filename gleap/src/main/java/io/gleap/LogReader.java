@@ -88,20 +88,36 @@ class LogReader {
                 if (mt.lookingAt()) {
                     try {
                         String[] splittedLine = line.split(" ");
-                        String formattedDate = formatDate(splittedLine[1], splittedLine[0]);
-                        String logText = "";
-                        try {
-                            logText = line.substring(line.indexOf(splittedLine[5]) + splittedLine[5].length());
-                        } catch (Exception ex) {
-                            StringBuilder text = new StringBuilder();
-                            for (int i = 5; i < splittedLine.length; i++) {
-                                text.append(splittedLine[i]).append(" ");
-                            }
-                            logText = text.toString();
+                        
+                        // Ensure splittedLine has enough elements to avoid ArrayIndexOutOfBoundsException
+                        if (splittedLine.length > 5) {
+                            String formattedDate = formatDate(splittedLine[1], splittedLine[0]);
+                            String logText = "";
 
+                            try {
+                                // Safely compute logText
+                                int index = line.indexOf(splittedLine[5]);
+                                if (index != -1) {
+                                    logText = line.substring(index + splittedLine[5].length());
+                                }
+                            } catch (Exception ex) {
+                                // Fallback to building logText manually
+                                StringBuilder text = new StringBuilder();
+                                for (int i = 5; i < splittedLine.length; i++) {
+                                    text.append(splittedLine[i]).append(" ");
+                                }
+                                logText = text.toString().trim(); // Trim to remove trailing spaces
+                            }
+
+                            // Add to log only if formattedDate and logText are valid
+                            log.add(new Log(formattedDate, logText, getConsoleLineType(splittedLine[4])));
+                        } else {
+                            // Handle cases where the line does not meet the expected structure
+                            System.err.println("Invalid line structure: " + line);
                         }
-                        log.add(new Log(formattedDate, logText, getConsoleLineType(splittedLine[4])));
                     } catch (Exception ex) {
+                        // Log the exception for debugging
+                        ex.printStackTrace();
                     }
                 }
             }

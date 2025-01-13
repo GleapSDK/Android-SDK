@@ -10,23 +10,18 @@ if (localPropertiesFile.exists()) {
     }
 }
 
-println rootProject.subprojects
-
 buildscript {
     repositories {
         google()
         mavenCentral() // NEW
     }
     dependencies {
-        classpath 'com.github.dcendents:android-maven-gradle-plugin:2.1'
+        apply plugin: 'maven-publish'
+        apply plugin: 'signing'
     }
 }
 
 android {
-    lintOptions {
-        abortOnError false
-    }
-
     namespace 'gleap.io.gleap'
 
     compileSdkVersion 33
@@ -52,6 +47,9 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
+    }
+    lint {
+        abortOnError false
     }
 }
 
