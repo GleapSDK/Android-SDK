@@ -1,7 +1,6 @@
 apply plugin: 'com.android.library'
 apply from: 'maven-push.gradle'
 
-
 def localProperties = new Properties()
 def localPropertiesFile = rootProject.getBuildFile()
 if (localPropertiesFile.exists()) {
@@ -48,8 +47,16 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+
     lint {
         abortOnError false
+    }
+
+    // Expose the release variant for publishing
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+        }
     }
 }
 

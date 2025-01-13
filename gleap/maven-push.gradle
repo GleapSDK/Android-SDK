@@ -18,14 +18,9 @@ def getRepositoryPassword() {
 publishing {
     publications {
         mavenJava(MavenPublication) {
+            // Delay accessing the release component until after the Android plugin configures it
             afterEvaluate {
-                if (components.findByName("release") != null) {
-                    from components["release"]
-                } else {
-                    artifact("$buildDir/outputs/aar/${project.name}-release.aar") {
-                        builtBy tasks.named("assembleRelease")
-                    }
-                }
+                from components.release
             }
 
             groupId = GROUP
@@ -79,7 +74,7 @@ signing {
 }
 
 tasks.register('androidSourcesJar', Jar) {
-    archiveClassifier.set('sources')
+    archiveClassifier.set('sources') // Updated for Gradle 7+
     from android.sourceSets.main.java.sourceFiles
 }
 
