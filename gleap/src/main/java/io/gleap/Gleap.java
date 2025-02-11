@@ -654,7 +654,7 @@ public class Gleap implements iGleap {
         }
         //check if it isopen
         GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("start-survey", jsonObject));
-        Gleap.getInstance().open();
+        Gleap.getInstance().open(SurveyType.SURVEY);
     }
 
     @Override
@@ -669,7 +669,7 @@ public class Gleap implements iGleap {
         }
         //check if it isopen
         GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("start-survey", jsonObject));
-        Gleap.getInstance().open();
+        Gleap.getInstance().open(surveyType);
     }
 
     @Override
