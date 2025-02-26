@@ -19,6 +19,10 @@ class GleapActionQueueHandler {
     }
 
     public void addActionMessage(GleapAction message) {
+        if (Gleap.getInstance().isOpened()) {
+            return;
+        }
+
         this.messagesQueue.add(message);
     }
 

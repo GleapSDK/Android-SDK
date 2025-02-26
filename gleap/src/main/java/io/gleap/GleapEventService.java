@@ -292,6 +292,10 @@ class GleapEventService {
         }
 
         if (data.has("a") && data.get("a") instanceof JSONArray) {
+            if (Gleap.getInstance().isOpened()) {
+                return;
+            }
+
             JSONArray actions = data.getJSONArray("a");
 
             for (int i = 0; i < actions.length(); i++) {
