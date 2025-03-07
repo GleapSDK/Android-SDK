@@ -55,12 +55,18 @@ class GleapBaseSessionService extends AsyncTask<Void, Void, Integer> {
                     result = new JSONObject(input);
                 }
 
-                GleapSessionController.getInstance().processSessionActionResult(result, true, true);
+                if (GleapSessionController.getInstance() != null) {
+                    GleapSessionController.getInstance().processSessionActionResult(result, true, true);
+                }
             } catch (Exception e) {
-                GleapSessionController.getInstance().setSessionLoaded(true);
+                if (GleapSessionController.getInstance() != null) {
+                    GleapSessionController.getInstance().setSessionLoaded(true);
+                }
             }
         } catch (Exception e) {
-            GleapSessionController.getInstance().setSessionLoaded(true);
+            if (GleapSessionController.getInstance() != null) {
+                GleapSessionController.getInstance().setSessionLoaded(true);
+            }
         }
 
         return 200;
