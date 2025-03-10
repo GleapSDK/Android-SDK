@@ -218,6 +218,12 @@ class GleapBanner {
                                         Gleap.getInstance().openNewsArticle(articleId, true);
                                     }catch (Exception exp) {}
                                     break;
+                                case "show-checklist":
+                                    try {
+                                        String checklistId = gleapCallback.getJSONObject("data").getString("checklistId");
+                                        Gleap.getInstance().openChecklist(checklistId, true);
+                                    }catch (Exception exp) {}
+                                    break;
                                 case "show-help-article":
                                     try {
                                         String articleId = gleapCallback.getJSONObject("data").getString("articleId");
