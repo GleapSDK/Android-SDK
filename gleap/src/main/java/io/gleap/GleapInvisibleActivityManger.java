@@ -31,6 +31,7 @@ import androidx.constraintlayout.widget.ConstraintSet;
 
 import org.json.JSONObject;
 
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -389,11 +390,23 @@ class GleapInvisibleActivityManger {
 
         // Check notification limit.
         GleapArrayHelper<GleapChatMessage> helper = new GleapArrayHelper<>();
-        if (this.messages.size() >= 3) {
+        if (this.messages.size() >= 2) {
             // Remove from layout.
             GleapChatMessage notificationToRemove = this.messages.get(0);
             removeNotificationViewFromLayout(notificationToRemove);
             this.messages = helper.shiftArray(this.messages);
+        }
+
+        // Make sure to only show one news or checklist notification at a time. If either is already in the list, remove it first.
+        if (comment.getType().equals("news") || comment.getType().equals("checklist")) {
+            Iterator<GleapChatMessage> iterator = this.messages.iterator();
+            while (iterator.hasNext()) {
+                GleapChatMessage message = iterator.next();
+                if (message.getType().equals("news") || message.getType().equals("checklist")) {
+                    removeNotificationViewFromLayout(message);
+                    iterator.remove();
+                }
+            }
         }
 
         this.messages.add(comment);
