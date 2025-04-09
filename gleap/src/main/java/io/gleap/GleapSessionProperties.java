@@ -13,6 +13,7 @@ public class GleapSessionProperties {
     private String email;
     private String hash;
     private double value;
+    private String avatar;
     private String phone;
     private String plan;
     private String companyId;
@@ -140,6 +141,14 @@ public class GleapSessionProperties {
         this.companyName = companyName;
     }
 
+    public String getAvatar() {
+        return avatar;
+    }
+
+    public void setAvatar(String avatar) {
+        this.avatar = avatar;
+    }
+
     public JSONObject getCustomData() {
         return customData;
     }
@@ -178,6 +187,9 @@ public class GleapSessionProperties {
             }
             if (this.getCompanyName() != null && !this.getCompanyName().isEmpty()) {
                 jsonObject.put("companyName", this.getCompanyName());
+            }
+            if (this.getAvatar() != null && !this.getAvatar().isEmpty()) {
+                jsonObject.put("avatar", this.getAvatar());
             }
             if (this.getCompanyId() != null && !this.getCompanyId().isEmpty()) {
                 jsonObject.put("companyId", this.getCompanyId());
@@ -224,6 +236,10 @@ public class GleapSessionProperties {
 
             if (result.has("companyName")) {
                 gleapSessionProperties.setCompanyName(result.getString("companyName"));
+            }
+
+            if (result.has("avatar")) {
+                gleapSessionProperties.setAvatar(result.getString("avatar"));
             }
 
             if (result.has("sla")) {
@@ -288,6 +304,12 @@ public class GleapSessionProperties {
 
         if (this.getCompanyName() != null && otherUserPropterties.getCompanyName() != null) {
             if (!this.getCompanyName().equals(otherUserPropterties.getCompanyName())) {
+                return false;
+            }
+        }
+
+        if (this.getAvatar() != null && otherUserPropterties.getAvatar() != null) {
+            if (!this.getAvatar().equals(otherUserPropterties.getAvatar())) {
                 return false;
             }
         }

@@ -5,6 +5,8 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
@@ -97,12 +99,26 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.feedback).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-             //   Gleap.getInstance().open();
-                 //Gleap.getInstance().startBot("643521e69a18f2be5f3a4865");
-               //Gleap.getInstance().openNews();
-
-
+                // Open the conversations.
                 Gleap.getInstance().openConversations(true);
+
+                // Check if Gleap is open after 2 seconds.
+                new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        boolean isOpen = Gleap.getInstance().isOpened();
+                        // You can log the result, update UI, etc.
+                        Log.d("Gleap", "Gleap is open: " + isOpen);
+                    }
+                }, 2000);
+
+                // Close Gleap after 4 seconds.
+                new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        Gleap.getInstance().close();
+                    }
+                }, 4000);
             }
         });
 

@@ -44,6 +44,7 @@ public class IdentifyUser extends AppCompatActivity {
                 } catch (Exception custom) {
                     custom.printStackTrace();
                 }
+                gleapSessionProperties.setAvatar("https://picsum.photos/354/354");
                 gleapSessionProperties.setCustomData(jsonObject);
                 gleapSessionProperties.setCompanyId("COM12");
                 gleapSessionProperties.setCompanyName("COMAAAAAA");

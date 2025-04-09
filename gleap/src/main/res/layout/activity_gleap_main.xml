@@ -14,7 +14,6 @@
             android:gravity="center_horizontal"
             android:background="#ffffff"
             android:orientation="vertical">
-
                 <View
                     android:id="@+id/gleap_progressBarHeader"
                     android:layout_width="match_parent"
@@ -22,14 +21,16 @@
                     android:background="#485bff" />
         </LinearLayout>
 
-        <WebView
-            android:id="@+id/gleap_webview"
+        <FrameLayout
+            android:id="@+id/webview_container"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="#00000000"
-            android:scrollbars="none"
-            android:visibility="gone">
-
-        </WebView>
-
+            android:layout_height="match_parent">
+                <WebView
+                    android:id="@+id/gleap_webview"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="#00000000"
+                    android:scrollbars="none"
+                    android:visibility="gone" />
+        </FrameLayout>
 </RelativeLayout>

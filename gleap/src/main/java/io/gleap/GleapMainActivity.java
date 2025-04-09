@@ -20,6 +20,7 @@ import android.os.Looper;
 import android.util.Base64;
 import android.view.View;
 import android.view.Window;
+import android.view.WindowInsets;
 import android.view.WindowManager;
 import android.webkit.ConsoleMessage;
 import android.webkit.JavascriptInterface;
@@ -34,6 +35,7 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.FrameLayout;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResult;
@@ -41,11 +43,13 @@ import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.view.OnApplyWindowInsetsListener;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -192,6 +196,38 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
             if (getPackageManager().hasSystemFeature("android.software.webview")) {
                 webView = findViewById(R.id.gleap_webview);
+
+                final FrameLayout webViewContainer = findViewById(R.id.webview_container);
+
+                ViewCompat.setOnApplyWindowInsetsListener(webViewContainer, new OnApplyWindowInsetsListener() {
+                    @Override
+                    public WindowInsetsCompat onApplyWindowInsets(View view, WindowInsetsCompat insetsCompat) {
+                        int topInset = 0;
+                        int bottomInset = 0;
+
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                            // Use getInsets() for Android R and above.
+                            // This returns an instance of androidx.core.graphics.Insets.
+                            androidx.core.graphics.Insets insets = insetsCompat.getInsets(WindowInsetsCompat.Type.systemBars());
+                            topInset = insets.top;
+                            bottomInset = insets.bottom;
+                        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                            // For Android M to Q, use the rootWindowInsets.
+                            WindowInsets windowInsets = view.getRootWindowInsets();
+                            if (windowInsets != null) {
+                                topInset = windowInsets.getStableInsetTop();
+                                bottomInset = windowInsets.getStableInsetBottom();
+                            }
+                        } else {
+                            topInset = 0;
+                            bottomInset = 0;
+                        }
+
+                        // Apply the retrieved insets as padding
+                        view.setPadding(view.getPaddingLeft(), topInset, view.getPaddingRight(), bottomInset);
+                        return insetsCompat;
+                    }
+                });
 
                 int backgroundColor = Color.parseColor(GleapConfig.getInstance().getBackgroundColor());
                 int headerColor = Color.parseColor(GleapConfig.getInstance().getHeaderColor());
@@ -828,6 +864,10 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
                     if (gleapSessionProperties.getCompanyName() != null) {
                         sessionData.put("companyName", gleapSessionProperties.getCompanyName());
+                    }
+
+                    if (gleapSessionProperties.getAvatar() != null) {
+                        sessionData.put("avatar", gleapSessionProperties.getAvatar());
                     }
 
                     if (gleapSessionProperties.getPlan() != null) {

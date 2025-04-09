@@ -5,7 +5,7 @@ android {
     defaultConfig {
         applicationId "gleap.io.gleap_android_sdk"
         minSdkVersion 21
-        targetSdkVersion 34
+        targetSdkVersion 36
         versionCode 1
         versionName "1.0.1.12423423423"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"

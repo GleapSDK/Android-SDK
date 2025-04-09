@@ -144,6 +144,9 @@ public class GleapSessionController {
             if (gleapUser.getCompanyName() != null) {
                 sharedPreferences.edit().putString("companyName", gleapUser.getCompanyName()).apply();
             }
+            if (gleapUser.getAvatar() != null) {
+                sharedPreferences.edit().putString("avatar", gleapUser.getAvatar()).apply();
+            }
             sharedPreferences.edit().putFloat("value", (float) gleapUser.getValue()).apply();
             sharedPreferences.edit().putFloat("sla", (float) gleapUser.getSla()).apply();
             if (gleapUser.getHash() != null && !gleapUser.getHash().equals("")) {
@@ -167,6 +170,7 @@ public class GleapSessionController {
             String plan = sharedPreferences.getString("plan", "");
             String companyId = sharedPreferences.getString("companyId", "");
             String companyName = sharedPreferences.getString("companyName", "");
+            String avatar = sharedPreferences.getString("avatar", "");
             String hash = sharedPreferences.getString("hash", "");
             double value = sharedPreferences.getFloat("value", 0);
             double sla = sharedPreferences.getFloat("sla", 0);
@@ -192,6 +196,9 @@ public class GleapSessionController {
             }
             if (!companyName.isEmpty()) {
                 gleapUser.setCompanyName(companyName);
+            }
+            if (!avatar.isEmpty()) {
+                gleapUser.setAvatar(avatar);
             }
             if (!hash.isEmpty()) {
                 gleapUser.setHash(hash);
