@@ -971,7 +971,8 @@ public class Gleap implements iGleap {
                 ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        GleapInvisibleActivityManger.getInstance().destoryBanner(true);
+                        GleapInvisibleActivityManger.getInstance().destroyBanner(true);
+                        GleapInvisibleActivityManger.getInstance().destroyModal(true);
                         GleapInvisibleActivityManger.getInstance().clearMessages();
                     }
                 });
@@ -1838,5 +1839,24 @@ public class Gleap implements iGleap {
         GleapConfig.getInstance().finishImageUpload(uris);
     }
 
+    /**
+     * Shows a modal to the user.
+     *
+     * @param data The modal data
+     * @author Gleap
+     */
+    @Override
+    public void showModal(JSONObject data) {
+        try {
+            ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        GleapInvisibleActivityManger.getInstance().showModal(data, null);
+                    } catch (Exception exp) {}
+                }
+            });
+        } catch (Exception exp) {}
+    }
 
 }

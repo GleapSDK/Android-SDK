@@ -58,6 +58,9 @@ class GleapInvisibleActivityManger {
     private int messageCounter = 0;
     boolean showFab = false;
     public boolean attached = false;
+    private GleapModal modal;
+    private JSONObject modalData;
+    private int originalVisibility = 0;
 
     private GleapInvisibleActivityManger() {
         messages = new LinkedList<>();
@@ -327,7 +330,7 @@ class GleapInvisibleActivityManger {
         }
     }
 
-    public void destoryBanner(boolean clearData) {
+    public void destroyBanner(boolean clearData) {
         if (this.banner != null) {
             LinearLayout innerBannerLayoutbanner = this.banner.getComponent();
             if (innerBannerLayoutbanner != null) {
@@ -343,6 +346,35 @@ class GleapInvisibleActivityManger {
 
         if (clearData) {
             this.bannerData = null;
+        }
+    }
+
+    public void destroyModal(boolean clearData) {
+        if (this.modal != null) {
+            LinearLayout innerModalLayout = this.modal.getComponent();
+            if (innerModalLayout != null) {
+                ConstraintLayout parentLayout = (ConstraintLayout) innerModalLayout.getParent();
+                if (parentLayout != null) {
+                    parentLayout.removeView(innerModalLayout);
+                }
+            }
+
+            this.modal.clearComponent();
+            this.modal = null;
+        }
+
+        // Revert background color.
+        if (layout != null) {
+            layout.setBackgroundColor(Color.TRANSPARENT);
+        }
+
+        // Show feedback button.
+        if (feedbackButtonRelativeLayout != null) {
+            feedbackButtonRelativeLayout.setVisibility(this.originalVisibility);
+        }
+
+        if (clearData) {
+            this.modalData = null;
         }
     }
 
@@ -376,6 +408,50 @@ class GleapInvisibleActivityManger {
 
                 // Add banner view.
                 layout.addView(innerBannerLayoutbanner);
+            }
+        }
+    }
+
+    public void showModal(JSONObject modalData, Activity activity) {
+        if (activity == null) {
+            activity = ActivityUtil.getCurrentActivity();
+        }
+
+        if (activity == null || modalData == null) {
+            return;
+        }
+
+        if (this.layout == null) {
+            return;
+        }
+
+        this.modalData = modalData;
+        this.modal = new GleapModal(this.modalData, activity);
+
+        // Attach the modal to the current layout.
+        LinearLayout innerModalLayout = this.modal.getComponent();
+        if (innerModalLayout != null) {
+            if (innerModalLayout.getParent() == null) {
+                // Setup constraints.
+                ConstraintSet modalSet = new ConstraintSet();
+                modalSet.clone(layout);
+                modalSet.connect(innerModalLayout.getId(), ConstraintSet.TOP, layout.getId(), ConstraintSet.TOP, 0);
+                modalSet.connect(innerModalLayout.getId(), ConstraintSet.START, layout.getId(), ConstraintSet.START, 0);
+                modalSet.connect(innerModalLayout.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, 0);
+                modalSet.connect(innerModalLayout.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, 0);
+                modalSet.applyTo(layout);
+
+                // Set stage for backdrop.
+                layout.setBackgroundColor(Color.parseColor("#80000000"));
+
+                // Hide feedback button.
+                if (feedbackButtonRelativeLayout != null) {
+                    this.originalVisibility = feedbackButtonRelativeLayout.getVisibility();
+                    feedbackButtonRelativeLayout.setVisibility(View.GONE);
+                }
+
+                // Add modal view.
+                layout.addView(innerModalLayout);
             }
         }
     }
@@ -433,7 +509,8 @@ class GleapInvisibleActivityManger {
 
     public void destoryUI() {
         this.destroyFab();
-        this.destoryBanner(false);
+        this.destroyBanner(false);
+        this.destroyModal(false);
         this.destroyNotificationLayout();
         this.destoryLayout();
     }
@@ -489,6 +566,11 @@ class GleapInvisibleActivityManger {
         // Show the banner if set.
         if (this.bannerData != null) {
             showBanner(this.bannerData, activity);
+        }
+
+        // Show the modal if set.
+        if (this.modalData != null) {
+            showModal(this.modalData, activity);
         }
 
         // Initialize notifications views.

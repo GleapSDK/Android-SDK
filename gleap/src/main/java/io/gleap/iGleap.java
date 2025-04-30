@@ -273,6 +273,14 @@ interface iGleap {
     void clearIdentity();
 
     /**
+     * Shows a modal to the user.
+     *
+     * @param data The modal data
+     * @author Gleap
+     */
+    void showModal(JSONObject data);
+
+    /**
      * Attaches custom data, which can be viewed in the Gleap dashboard. New data will be merged with existing custom data.
      *
      * @param customData The data to attach to a bug report.

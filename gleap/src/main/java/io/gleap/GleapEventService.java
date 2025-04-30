@@ -38,7 +38,7 @@ class GleapEventService {
     private GleapEventService() {
         gleapArrayHelper = new GleapArrayHelper<>();
     }
-    
+
     public static GleapEventService getInstance() {
         if (instance == null) {
             instance = new GleapEventService();
@@ -76,14 +76,16 @@ class GleapEventService {
             pageView.put("data", page);
             pageView.put("date", dateToString(new Date()));
             eventsToBeSent.add(pageView);
-        }catch (Exception ex) {}
+        } catch (Exception ex) {
+        }
 
         intervalHandler = new Handler(Looper.getMainLooper());
         intervalHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
                 try {
-                    if (GleapSessionController.getInstance() != null && GleapSessionController.getInstance().isSessionLoaded()) {
+                    if (GleapSessionController.getInstance() != null
+                            && GleapSessionController.getInstance().isSessionLoaded()) {
                         if (eventsToBeSent.size() > 0) {
                             new EventHttpHelper().execute();
                         }
@@ -101,7 +103,7 @@ class GleapEventService {
     }
 
     public void stop(Boolean clear) {
-        if(clear) {
+        if (clear) {
             eventsToBeSent.clear();
         }
         clearWebsocketListener();
@@ -177,12 +179,13 @@ class GleapEventService {
 
             try (BufferedReader br = new BufferedReader(
                     new InputStreamReader(conn.getInputStream(), "utf-8"))) {
-            } catch (Error | Exception e) {}
+            } catch (Error | Exception e) {
+            }
 
             conn.getInputStream().close();
             int status = conn.getResponseCode();
             conn.disconnect();
-            if(GleapEventService.getInstance().eventsSentCallback != null) {
+            if (GleapEventService.getInstance().eventsSentCallback != null) {
                 GleapEventService.getInstance().eventsSentCallback.invoked();
             }
             return status;
@@ -191,8 +194,7 @@ class GleapEventService {
 
     private JSONArray arrayToJSONArray(List<JSONObject> arrayList) {
         JSONArray result = new JSONArray();
-        for (JSONObject jsonObject :
-                arrayList) {
+        for (JSONObject jsonObject : arrayList) {
             result.put(jsonObject);
         }
 
@@ -270,7 +272,8 @@ class GleapEventService {
         }
 
         GleapSender sender = new GleapSender(senderName, profileImageUrl);
-        return new GleapChatMessage(outboundId, type, text, shareToken, sender, newsId, coverImageUrl, currentStep, totalSteps, nextStepTitle, checklistId);
+        return new GleapChatMessage(outboundId, type, text, shareToken, sender, newsId, coverImageUrl, currentStep,
+                totalSteps, nextStepTitle, checklistId);
     }
 
     public void processEventData(JSONObject data) throws Exception {
@@ -286,7 +289,8 @@ class GleapEventService {
                 public void run() {
                     try {
                         GleapInvisibleActivityManger.getInstance().setMessageCounter(data.getInt("u"));
-                    } catch (JSONException e) {}
+                    } catch (JSONException e) {
+                    }
                 }
             });
         }
@@ -318,7 +322,8 @@ class GleapEventService {
                                 messageData.getJSONObject("checklist").getString("popupType").equals("widget")) {
 
                             // Open the checklist if the popupType is "widget".
-                            Gleap.getInstance().openChecklist(messageData.getJSONObject("checklist").getString("id"), true);
+                            Gleap.getInstance().openChecklist(messageData.getJSONObject("checklist").getString("id"),
+                                    true);
                         } else {
                             // In app notification.
                             if (!this.disableInAppNotifications) {
@@ -327,7 +332,7 @@ class GleapEventService {
                                     public void run() {
                                         try {
                                             String outboundId = "";
-                                            if(currentAction.has("outbound")){
+                                            if (currentAction.has("outbound")) {
                                                 outboundId = currentAction.getString("outbound");
                                             }
                                             JSONObject data = currentAction.getJSONObject("data");
@@ -365,15 +370,30 @@ class GleapEventService {
                                 }
 
                                 // Check if it is open
-                                GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("start-survey", jsonObject));
+                                GleapActionQueueHandler.getInstance()
+                                        .addActionMessage(new GleapAction("start-survey", jsonObject));
                                 Gleap.getInstance().open(surveyType);
                             }
                         });
-                    } if (currentAction.getString("actionType").contains("banner")) {
+                    }
+                    if (currentAction.getString("actionType").contains("banner")) {
                         mainThreadHandler.post(new Runnable() {
                             @Override
                             public void run() {
                                 GleapInvisibleActivityManger.getInstance().showBanner(currentAction, null);
+                            }
+                        });
+                    } else if (currentAction.getString("actionType").contains("modal")) {
+                        mainThreadHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                // Get config from current action.
+                                try {
+                                    JSONObject config = currentAction.getJSONObject("config");
+                                    GleapInvisibleActivityManger.getInstance().showModal(config, null);
+                                } catch (Exception e) {
+                                    // Do nothing.
+                                }
                             }
                         });
                     } else {

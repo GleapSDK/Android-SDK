@@ -366,9 +366,22 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                             askForPermission(request.getOrigin().toString(), Manifest.permission.RECORD_AUDIO, PERMISSIONS_REQUEST_RECORD_AUDIO);
                             break;
                         }
-
+                        case "android.webkit.resource.VIDEO_CAPTURE": {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                                askForPermission(request.getOrigin().toString(), Manifest.permission.CAMERA, PERMISSIONS_REQUEST_RECORD_AUDIO);
+                            } else {
+                                permissionRequest.grant(new String[]{permission});
+                            }
+                            break;
+                        }
+                        // Grant access to file storage permissions
+                        case "android.webkit.resource.PROTECTED_MEDIA_ID":
+                        case "android.webkit.resource.MIDIDEVICES":
+                            permissionRequest.grant(new String[]{permission});
+                            break;
                         default:
-                            request.deny();
+                            // We'll allow other permissions by default to enable file access
+                            permissionRequest.grant(new String[]{permission});
                     }
                 }
             }
@@ -380,8 +393,9 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
                 // Check for Android 13+ (API 33)
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    Intent intent = new Intent(Intent.ACTION_PICK);
-                    intent.setType("image/*");
+                    Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+                    intent.setType("*/*");
+                    intent.addCategory(Intent.CATEGORY_OPENABLE);
                     intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, false); // Single selection
                     try {
                         imagePickerLauncher.launch(intent);
@@ -392,7 +406,22 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     }
                 } else {
                     // Fallback for older Android versions
-                    return super.onShowFileChooser(webView, filePathCallback, fileChooserParams);
+                    try {
+                        ValueCallback<Uri[]> mUploadMessage = GleapConfig.getInstance().getmUploadMessage();
+
+                        if (mUploadMessage != null) {
+                            mUploadMessage.onReceiveValue(null);
+                        }
+
+                        GleapConfig.getInstance().setmUploadMessage(filePathCallback);
+                        Intent i = new Intent(Intent.ACTION_GET_CONTENT);
+                        i.addCategory(Intent.CATEGORY_OPENABLE);
+                        i.setType("*/*"); // set MIME type to allow all files
+                        openFileLauncher.launch(i);
+                        return true;
+                    } catch (Exception ex) {
+                        return false;
+                    }
                 }
             }
         });
@@ -522,50 +551,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         public void onPageFinished(WebView view, String url) {
             super.onPageFinished(view, url);
 
-        }
-    }
-
-    private class GleapWebChromeClient extends WebChromeClient {
-
-        @Override
-        public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
-            try {
-                ValueCallback<Uri[]> mUploadMessage = GleapConfig.getInstance().getmUploadMessage();
-
-                if (mUploadMessage != null) {
-                    mUploadMessage.onReceiveValue(null);
-                }
-
-                GleapConfig.getInstance().setmUploadMessage(filePathCallback);
-                Intent i = new Intent(Intent.ACTION_GET_CONTENT);
-                i.addCategory(Intent.CATEGORY_OPENABLE);
-                i.setType("*/*"); // set MIME type to filter
-                openFileLauncher.launch(i);
-
-            } catch (Exception ex) {
-            }
-            return true;
-        }
-
-        @Override
-        public boolean onJsAlert(WebView view, String url, String message, final JsResult result) {
-            return true;
-        }
-
-        @Override
-        public boolean onJsConfirm(WebView view, String url, String message, final JsResult result) {
-            return true;
-        }
-
-        @Override
-        public boolean onJsPrompt(WebView view, String url, String message, String defaultValue,
-                                  final JsPromptResult result) {
-            return true;
-        }
-
-        @Override
-        public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
-            return true;
         }
     }
 
