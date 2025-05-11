@@ -20,12 +20,8 @@ import android.os.Looper;
 import android.util.Base64;
 import android.view.View;
 import android.view.Window;
-import android.view.WindowInsets;
 import android.view.WindowManager;
-import android.webkit.ConsoleMessage;
 import android.webkit.JavascriptInterface;
-import android.webkit.JsPromptResult;
-import android.webkit.JsResult;
 import android.webkit.PermissionRequest;
 import android.webkit.SslErrorHandler;
 import android.webkit.ValueCallback;
@@ -47,9 +43,9 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.core.view.OnApplyWindowInsetsListener;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.core.graphics.Insets;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -187,6 +183,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 }
             } catch (Exception ex) {
             }
+            
             super.onCreate(savedInstanceState);
             GleapInvisibleActivityManger.getInstance().clearMessages();
 
@@ -199,34 +196,25 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
                 final FrameLayout webViewContainer = findViewById(R.id.webview_container);
 
-                ViewCompat.setOnApplyWindowInsetsListener(webViewContainer, new OnApplyWindowInsetsListener() {
-                    @Override
-                    public WindowInsetsCompat onApplyWindowInsets(View view, WindowInsetsCompat insetsCompat) {
-                        int topInset = 0;
-                        int bottomInset = 0;
+                ViewCompat.setOnApplyWindowInsetsListener(webViewContainer,
+                    (view, insets) -> {
 
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                            // Use getInsets() for Android R and above.
-                            // This returns an instance of androidx.core.graphics.Insets.
-                            androidx.core.graphics.Insets insets = insetsCompat.getInsets(WindowInsetsCompat.Type.systemBars());
-                            topInset = insets.top;
-                            bottomInset = insets.bottom;
-                        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                            // For Android M to Q, use the rootWindowInsets.
-                            WindowInsets windowInsets = view.getRootWindowInsets();
-                            if (windowInsets != null) {
-                                topInset = windowInsets.getStableInsetTop();
-                                bottomInset = windowInsets.getStableInsetBottom();
-                            }
-                        } else {
-                            topInset = 0;
-                            bottomInset = 0;
-                        }
+                    // status + navigation bars (stable system bars)
+                    Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
 
-                        // Apply the retrieved insets as padding
-                        view.setPadding(view.getPaddingLeft(), topInset, view.getPaddingRight(), bottomInset);
-                        return insetsCompat;
-                    }
+                    // on Android 11+ this is the real keyboard height;
+                    // on older versions it’s 0 – but then the IME is reported as a system‑bar inset
+                    Insets ime  = insets.getInsets(WindowInsetsCompat.Type.ime());
+
+                    int topInset    = bars.top;                       // keep the status‑bar height
+                    int bottomInset = Math.max(bars.bottom, ime.bottom); // choose the larger of nav‑bar or IME
+
+                    view.setPadding(view.getPaddingLeft(),
+                                    topInset,
+                                    view.getPaddingRight(),
+                                    bottomInset);
+
+                    return insets;   // DON’T consume – let child views see the same insets
                 });
 
                 int backgroundColor = Color.parseColor(GleapConfig.getInstance().getBackgroundColor());
