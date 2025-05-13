@@ -7,30 +7,39 @@
     android:background="#00000000"
     android:theme="@android:style/Theme.Translucent"
     tools:context="io.gleap.GleapMainActivity">
-        <LinearLayout
-            android:id="@+id/loader"
+
+    <FrameLayout
+        android:id="@+id/loader"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#ffffff">
+        <View
+            android:id="@+id/gleap_progressBarHeader"
+            android:layout_width="match_parent"
+            android:layout_height="379dp"
+            android:background="#485bff" />
+        <ProgressBar
+            android:id="@+id/loading_indicator"
+            style="?android:attr/progressBarStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:indeterminate="true"
+            android:scaleX="0.6"
+            android:scaleY="0.6" />
+    </FrameLayout>
+    <FrameLayout
+        android:id="@+id/webview_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <WebView
+            android:id="@+id/gleap_webview"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:gravity="center_horizontal"
-            android:background="#ffffff"
-            android:orientation="vertical">
-                <View
-                    android:id="@+id/gleap_progressBarHeader"
-                    android:layout_width="match_parent"
-                    android:layout_height="379dp"
-                    android:background="#485bff" />
-        </LinearLayout>
+            android:background="#00000000"
+            android:scrollbars="none"
+            android:visibility="gone" />
+    </FrameLayout>
 
-        <FrameLayout
-            android:id="@+id/webview_container"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
-                <WebView
-                    android:id="@+id/gleap_webview"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:background="#00000000"
-                    android:scrollbars="none"
-                    android:visibility="gone" />
-        </FrameLayout>
 </RelativeLayout>
