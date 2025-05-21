@@ -654,6 +654,8 @@ interface iGleap {
 
     void openFeatureRequests(boolean showBackButton);
 
+    void closeWidgetOnExternalLinkOpen(boolean closeWidgetOnExternalLinkOpen);
+
     GleapSessionProperties getIdentity();
 
     boolean isUserIdentified();

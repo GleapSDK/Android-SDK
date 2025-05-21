@@ -675,8 +675,12 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
             try {
                 String url = object.getString("data");
                 if (url != null && url.length() > 0) {
-                    GleapMainActivity.urlToOpenAfterClose = url;
-                    closeGleap();
+                    if (Gleap.internalCloseWidgetOnExternalLinkOpen) {
+                        GleapMainActivity.urlToOpenAfterClose = url;
+                        closeGleap();
+                    } else {
+                        Gleap.getInstance().handleLink(url);
+                    }
                 }
             } catch (Exception e) {
             }

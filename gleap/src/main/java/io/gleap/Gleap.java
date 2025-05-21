@@ -43,6 +43,7 @@ public class Gleap implements iGleap {
     private static Application application;
     public static JSONArray blacklist = new JSONArray();
     public static JSONArray propsToIgnore = new JSONArray();
+    public static boolean internalCloseWidgetOnExternalLinkOpen = false;
     private static boolean isInitialized = false;
     private static OpenPushAction openPushAction;
 
@@ -1769,6 +1770,11 @@ public class Gleap implements iGleap {
         } catch (Error | Exception ignore) {
         }
 
+    }
+
+    @Override
+    public void closeWidgetOnExternalLinkOpen(boolean closeWidgetOnExternalLinkOpen) {
+        Gleap.internalCloseWidgetOnExternalLinkOpen = closeWidgetOnExternalLinkOpen;
     }
 
     @Override
