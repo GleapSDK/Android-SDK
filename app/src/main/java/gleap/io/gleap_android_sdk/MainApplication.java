@@ -19,8 +19,8 @@ public class MainApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        // Gleap.getInstance().setLanguage("de-at");
-        Gleap.initialize("CnH8klmCyIqhTn7a4O9ozy2bCb6XrsgV", this);
+        // Gleap.getInstance().setLanguage("es");
+        Gleap.initialize("SmeU2PvOlGwG9ns6ulacP6yurGJ5oyTB", this);
         Gleap.getInstance().setTags(new String[] {
                 "Android",
                 "Tags",

@@ -2,6 +2,7 @@ package io.gleap;
 
 import android.app.Application;
 import android.graphics.Bitmap;
+import android.util.Log;
 
 import androidx.annotation.Nullable;
 

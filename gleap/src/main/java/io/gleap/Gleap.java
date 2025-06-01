@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -116,7 +117,9 @@ public class Gleap implements iGleap {
                     GleapConfig.getInstance().getConfigLoadedCallback().configLoaded(GleapConfig.getInstance().getPlainConfig());
                 }
             }
-        } catch (Error | Exception ignore) {
+        } catch (Error | Exception error) {
+            // Log the error.
+            Log.e("Gleap", "Error initializing Gleap", error);
         }
     }
 

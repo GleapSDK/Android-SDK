@@ -3,6 +3,7 @@ package io.gleap;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -19,6 +20,8 @@ import java.net.URL;
 class ConfigLoader extends AsyncTask<GleapBug, Void, JSONObject> {
     private final String httpsUrl = GleapConfig.getInstance().getApiUrl() + "/config/" + GleapConfig.getInstance().getSdkKey();
     private final OnHttpResponseListener listener;
+    private static final int MAX_RETRIES = 3;
+    private static final long INITIAL_RETRY_DELAY_MS = 1000;
 
     public ConfigLoader(OnHttpResponseListener listener) {
         this.listener = listener;
@@ -34,13 +37,35 @@ class ConfigLoader extends AsyncTask<GleapBug, Void, JSONObject> {
 
     @Override
     protected JSONObject doInBackground(GleapBug... gleapBugs) {
-        URL url;
-        try {
-            url = new URL(httpsUrl + "/?lang=" + GleapConfig.getInstance().getLanguage());
-            HttpURLConnection con = (HttpURLConnection) url.openConnection();
-            con.connect();
-            readResponse(con);
-        } catch (IOException e) {
+        boolean success = false;
+        Exception lastException = null;
+        
+        for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+            try {
+                URL url = new URL(httpsUrl + "/?lang=" + GleapConfig.getInstance().getLanguage());
+                HttpURLConnection con = (HttpURLConnection) url.openConnection();
+                con.connect();
+                readResponse(con);
+                success = true;
+                break;
+            } catch (IOException e) {
+                lastException = e;
+                Log.w("Gleap", "Config load attempt " + attempt + " failed", e);
+                
+                if (attempt < MAX_RETRIES) {
+                    try {
+                        long delay = INITIAL_RETRY_DELAY_MS * (long) Math.pow(2, attempt - 1);
+                        Thread.sleep(delay);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (!success) {
+            Log.e("Gleap", "All config load attempts failed after " + MAX_RETRIES + " retries", lastException);
         }
 
         JSONObject response = new JSONObject();
