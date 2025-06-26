@@ -99,6 +99,7 @@ class GleapConfig {
     private WidgetPosition widgetPosition = WidgetPosition.BOTTOM_RIGHT;
     private String widgetButtonText = "Feedback";
     private boolean hideFeedbackButton = false;
+    private boolean feedbackButtonManuallySet = false;
 
     private int buttonX = 20; //horizontal
     private int buttonY = 20; //vertical
@@ -197,8 +198,11 @@ class GleapConfig {
                         break;
                     default:
                         this.widgetPosition = WidgetPosition.HIDDEN;
-                        GleapInvisibleActivityManger.getInstance().setShowFab(false);
-                        hideFeedbackButton = true;
+
+                        if (!this.isFeedbackButtonManuallySet()) {
+                            GleapInvisibleActivityManger.getInstance().setShowFab(false);
+                            hideFeedbackButton = true;
+                        }
                         break;
                 }
             }
@@ -644,6 +648,14 @@ class GleapConfig {
 
     public void setHideFeedbackButton(boolean hideFeedbackButton) {
         this.hideFeedbackButton = hideFeedbackButton;
+    }
+
+    public boolean isFeedbackButtonManuallySet() {
+        return this.feedbackButtonManuallySet;
+    }
+
+    public void setFeedbackButtonManuallySet(boolean feedbackButtonManuallySet) {
+        this.feedbackButtonManuallySet = feedbackButtonManuallySet;
     }
 
     public ValueCallback<Uri[]> getmUploadMessage() {

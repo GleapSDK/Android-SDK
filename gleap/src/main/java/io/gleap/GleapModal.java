@@ -111,7 +111,7 @@ class GleapModal {
             }
             
             if (canCloseModal) {
-                GleapInvisibleActivityManger.getInstance().destroyModal(true);
+                GleapInvisibleActivityManger.getInstance().destroyModal(true, false);
             }
         });
 
@@ -252,7 +252,7 @@ class GleapModal {
                 switch (cb.getString("name")) {
                     case "modal-loaded":       sendModalData(); break;
                     case "modal-data-set":     GleapInvisibleActivityManger.animateViewInOut(getComponent(), true); break;
-                    case "modal-close":        GleapInvisibleActivityManger.getInstance().destroyModal(true); break;
+                    case "modal-close":        GleapInvisibleActivityManger.getInstance().destroyModal(true, false); break;
                     case "start-conversation": startConversation(cb); break;
                     case "show-form":          showForm(cb); break;
                     case "open-url":           openUrl(cb.optString("data")); break;

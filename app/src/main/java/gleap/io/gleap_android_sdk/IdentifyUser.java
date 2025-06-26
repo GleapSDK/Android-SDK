@@ -17,7 +17,7 @@ public class IdentifyUser extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_identify_user);
 
-        Gleap.getInstance().showFeedbackButton(true);
+        //Gleap.getInstance().showFeedbackButton(true);
 
         findViewById(R.id.bck_btn_identify).setOnClickListener(new View.OnClickListener() {
             @Override

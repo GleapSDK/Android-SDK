@@ -87,6 +87,8 @@ public class MainActivity extends AppCompatActivity {
 
         Gleap.getInstance().closeWidgetOnExternalLinkOpen(true);
 
+
+
         /*if (intent?.extras?.getString(INTENT_EXTRAS_SENDER_KEY) == INTENT_EXTRAS_GLEAP_SENDER_VALUE) {
             Gleap.getInstance().handlePushNotification(intent?.extras?.toJsonObject())
         }*/

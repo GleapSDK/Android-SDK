@@ -349,7 +349,7 @@ class GleapInvisibleActivityManger {
         }
     }
 
-    public void destroyModal(boolean clearData) {
+    public void destroyModal(boolean clearData, boolean ignoreButton) {
         if (this.modal != null) {
             LinearLayout innerModalLayout = this.modal.getComponent();
             if (innerModalLayout != null) {
@@ -369,7 +369,7 @@ class GleapInvisibleActivityManger {
         }
 
         // Show feedback button.
-        if (feedbackButtonRelativeLayout != null) {
+        if (feedbackButtonRelativeLayout != null && !ignoreButton) {
             feedbackButtonRelativeLayout.setVisibility(this.originalVisibility);
         }
 
@@ -510,7 +510,7 @@ class GleapInvisibleActivityManger {
     public void destoryUI() {
         this.destroyFab();
         this.destroyBanner(false);
-        this.destroyModal(false);
+        this.destroyModal(false, false);
         this.destroyNotificationLayout();
         this.destoryLayout();
     }

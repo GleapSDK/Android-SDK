@@ -976,7 +976,7 @@ public class Gleap implements iGleap {
                     @Override
                     public void run() {
                         GleapInvisibleActivityManger.getInstance().destroyBanner(true);
-                        GleapInvisibleActivityManger.getInstance().destroyModal(true);
+                        GleapInvisibleActivityManger.getInstance().destroyModal(true, true);
                         GleapInvisibleActivityManger.getInstance().clearMessages();
                     }
                 });
@@ -1747,6 +1747,7 @@ public class Gleap implements iGleap {
     public void showFeedbackButton(boolean show) {
         try {
             GleapConfig.getInstance().setHideFeedbackButton(!show);
+            GleapConfig.getInstance().setFeedbackButtonManuallySet(true);
             GleapInvisibleActivityManger.getInstance().setShowFab(show);
         } catch (Exception ignore) {
         }
