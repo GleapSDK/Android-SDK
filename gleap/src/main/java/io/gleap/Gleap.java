@@ -1460,10 +1460,16 @@ public class Gleap implements iGleap {
                     return;
                 }
 
+                // If URL doesn't start with http or https, mailto or tel, close the widget.
+                if (!url.startsWith("http") && !url.startsWith("https") && !url.startsWith("mailto") && !url.startsWith("tel")) {
+                    Gleap.getInstance().close();
+                    return;
+                }
+
                 // Open externally.
                 Gleap.getInstance().openUrlExternally(url);
             }
-        }, 500);
+        }, 250);
     }
 
     public void handleGleapLink(String href) {
