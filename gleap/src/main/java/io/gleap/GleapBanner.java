@@ -81,22 +81,6 @@ class GleapBanner {
         bannerContainer.setId(View.generateViewId());
         bannerContainer.setVisibility(View.GONE);
 
-        // Add a clickable backdrop that closes the banner when clicked
-        View backdrop = new View(this.parentActivity.getApplication().getApplicationContext());
-        LinearLayout.LayoutParams backdropParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.MATCH_PARENT
-        );
-        backdrop.setLayoutParams(backdropParams);
-        backdrop.setBackgroundColor(Color.parseColor("#80000000")); // Semi-transparent black
-        backdrop.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                GleapInvisibleActivityManger.getInstance().destroyBanner(true);
-            }
-        });
-        bannerContainer.addView(backdrop);
-
         this.parentActivity.runOnUiThread(new Runnable() {
             public void run() {
                 try {
@@ -116,6 +100,7 @@ class GleapBanner {
                     settings.setDisplayZoomControls(false);
                     settings.setSupportZoom(false);
                     settings.setDefaultTextEncodingName("utf-8");
+                    webView.setWebContentsDebuggingEnabled(true);
                     webView.addJavascriptInterface(new GleapBanner.GleapBannerJSBridge(), "GleapBannerJSBridge");
                     webView.setWebChromeClient(new GleapBanner.GleapBannerWebChromeClient());
                     webView.setWebViewClient(new GleapBanner.GleapWebViewClient());
@@ -130,23 +115,18 @@ class GleapBanner {
                         throw new RuntimeException(e);
                     }
 
-                    // Create a CardView to ensure rounded corners for all banners
-                    CardView cardView = new CardView(parentActivity.getApplication().getApplicationContext());
-                    cardView.setBackgroundResource(R.drawable.rounded_corner);
-                    
                     if (isFloating) {
+                        CardView cardView = new CardView(parentActivity.getApplication().getApplicationContext());
+                        cardView.setBackgroundResource(R.drawable.rounded_corner);
                         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
                         params.setMargins(convertDpToPixel(20, parentActivity), convertDpToPixel(20, parentActivity), convertDpToPixel(20, parentActivity), convertDpToPixel(20, parentActivity));
                         cardView.setLayoutParams(params);
                         cardView.setElevation(20f);
+                        cardView.addView(webView);
+                        bannerContainer.addView(cardView);
                     } else {
-                        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-                        cardView.setLayoutParams(params);
-                        cardView.setRadius(convertDpToPixel(8, parentActivity)); // Add rounded corners for non-floating banners
+                        bannerContainer.addView(webView);
                     }
-                    
-                    cardView.addView(webView);
-                    bannerContainer.addView(cardView);
 
                 } catch (Exception exp) {
                     System.out.println(exp);
