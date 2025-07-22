@@ -33,6 +33,7 @@ import io.gleap.callbacks.RegisterPushMessageGroupCallback;
 import io.gleap.callbacks.UnRegisterPushMessageGroupCallback;
 import io.gleap.callbacks.WidgetClosedCallback;
 import io.gleap.callbacks.WidgetOpenedCallback;
+import io.gleap.callbacks.ErrorCallback;
 
 /**
  * Configuration received by the server
@@ -72,6 +73,7 @@ class GleapConfig {
     private RegisterPushMessageGroupCallback registerPushMessageGroupCallback;
     private UnRegisterPushMessageGroupCallback unRegisterPushMessageGroupCallback;
     private InitializationDoneCallback initializationDoneCallback;
+    private ErrorCallback errorCallback;
     private List<GleapDetector> gestureDetectors = new LinkedList<>();
     private List<GleapActivationMethod> priorizedGestureDetectors = new LinkedList<>();
     private int interval = 5;
@@ -693,5 +695,13 @@ class GleapConfig {
 
     public WidgetPositionType getWidgetPositionType() {
         return widgetPositionType;
+    }
+
+    public ErrorCallback getErrorCallback() {
+        return errorCallback;
+    }
+
+    public void setErrorCallback(ErrorCallback errorCallback) {
+        this.errorCallback = errorCallback;
     }
 }

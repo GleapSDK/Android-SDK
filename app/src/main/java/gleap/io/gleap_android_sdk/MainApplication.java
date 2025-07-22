@@ -10,6 +10,7 @@ import io.gleap.GleapAiTool;
 import io.gleap.GleapAiToolParameter;
 import io.gleap.callbacks.AiToolExecutedCallback;
 import io.gleap.callbacks.CustomActionCallback;
+import io.gleap.callbacks.ErrorCallback;
 import io.gleap.callbacks.FeedbackSentCallback;
 import io.gleap.callbacks.OutboundSentCallback;
 import io.gleap.callbacks.RegisterPushMessageGroupCallback;
@@ -20,6 +21,14 @@ public class MainApplication extends Application {
     public void onCreate() {
         super.onCreate();
         // Gleap.getInstance().setLanguage("es");
+
+        Gleap.getInstance().setErrorCallback(new ErrorCallback() {
+            @Override
+            public void onError(Throwable error, String context) {
+                System.out.println(context);
+            }
+        });
+
         Gleap.initialize("ogWhNhuiZcGWrva5nlDS8l7a78OfaLlV", this);
         Gleap.getInstance().setTags(new String[] {
                 "Android",

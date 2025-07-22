@@ -24,6 +24,7 @@ import io.gleap.callbacks.RegisterPushMessageGroupCallback;
 import io.gleap.callbacks.UnRegisterPushMessageGroupCallback;
 import io.gleap.callbacks.WidgetClosedCallback;
 import io.gleap.callbacks.WidgetOpenedCallback;
+import io.gleap.callbacks.ErrorCallback;
 
 interface iGleap {
 
@@ -669,4 +670,12 @@ interface iGleap {
     void setAiTools(GleapAiTool[] aiTools);
 
     void handleLink(String url);
+
+    /**
+     * Sets a callback to handle errors and exceptions that occur within the Gleap SDK.
+     * If no callback is set, errors will be silently ignored.
+     *
+     * @param errorCallback The callback to handle errors
+     */
+    void setErrorCallback(ErrorCallback errorCallback);
 }

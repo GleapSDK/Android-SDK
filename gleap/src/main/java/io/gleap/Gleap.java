@@ -37,6 +37,7 @@ import io.gleap.callbacks.RegisterPushMessageGroupCallback;
 import io.gleap.callbacks.UnRegisterPushMessageGroupCallback;
 import io.gleap.callbacks.WidgetClosedCallback;
 import io.gleap.callbacks.WidgetOpenedCallback;
+import io.gleap.callbacks.ErrorCallback;
 
 public class Gleap implements iGleap {
     private static Gleap instance;
@@ -56,19 +57,19 @@ public class Gleap implements iGleap {
      */
     private static void initGleap(String sdkKey, GleapActivationMethod[] activationMethods, Application application) {
         try {
-            //prepare Gleap
+            // prepare Gleap
             Gleap.application = application;
             screenshotTaker = new ScreenshotTaker();
             ConsoleUtil.clearConsole();
-            //init config and load from the server
+            // init config and load from the server
             GleapConfig.getInstance().setSdkKey(sdkKey);
 
-            //init Gleap bug
+            // init Gleap bug
             GleapBug.getInstance().setPhoneMeta(new PhoneMeta(application.getApplicationContext()));
 
             Gleap.getInstance().enableReplays(GleapConfig.getInstance().isEnableReplays());
 
-            //start activation methods
+            // start activation methods
             List<GleapDetector> detectorList = GleapDetectorUtil.initDetectors(application, activationMethods);
 
             if (GleapConfig.getInstance().isEnableReplays()) {
@@ -83,6 +84,7 @@ public class Gleap implements iGleap {
             GleapConfig.getInstance().setGestureDetectors(detectorList);
             GleapDetectorUtil.resumeAllDetectors();
         } catch (Exception ignore) {
+            handleErrorStatic(ignore, "initGleap");
         }
     }
 
@@ -118,8 +120,7 @@ public class Gleap implements iGleap {
                 }
             }
         } catch (Error | Exception error) {
-            // Log the error.
-            Log.e("Gleap", "Error initializing Gleap", error);
+            handleErrorStatic(error, "initialize");
         }
     }
 
@@ -141,7 +142,8 @@ public class Gleap implements iGleap {
                         }
 
                         // Check if we have a session.
-                        if (GleapSessionController.getInstance() == null || !GleapSessionController.getInstance().isSessionLoaded()) {
+                        if (GleapSessionController.getInstance() == null
+                                || !GleapSessionController.getInstance().isSessionLoaded()) {
                             return;
                         }
 
@@ -170,20 +172,23 @@ public class Gleap implements iGleap {
                                 instance.openPushAction = null;
                             }
                         } catch (Error | Exception ignore) {
+                            handleError(ignore, "processOpenPushActions - inner");
                         }
                     } catch (Error | Exception ignore) {
+                        handleError(ignore, "processOpenPushActions - outer");
                     }
                 }
             };
             mainHandler.postDelayed(gleapRunnable, 1500);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "processOpenPushActions");
         }
     }
 
     @Override
     public void handlePushNotification(JSONObject notificationData) {
         try {
-            String type ="";
+            String type = "";
             String id = "";
             if (notificationData.has("type")) {
                 type = notificationData.getString("type");
@@ -196,7 +201,9 @@ public class Gleap implements iGleap {
                 this.openPushAction = new OpenPushAction(type, id);
                 this.processOpenPushActions();
             }
-        } catch (Exception ex) {}
+        } catch (Exception ex) {
+            handleError(ex, "handlePushNotification");
+        }
     }
 
     @Override
@@ -221,13 +228,16 @@ public class Gleap implements iGleap {
                                         if (screenshotTaker != null) {
                                             JSONObject message = new JSONObject();
                                             message.put("hideBackButton", hideBackButton);
-                                            GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("open-conversations", message));
+                                            GleapActionQueueHandler.getInstance()
+                                                    .addActionMessage(new GleapAction("open-conversations", message));
                                             screenshotTaker.takeScreenshot();
                                         }
                                     } catch (Exception e) {
+                                        handleError(e, "openConversations - inner");
                                     }
                                 }
                             } catch (Error | Exception ignore) {
+                                handleError(ignore, "openConversations - middle");
                             }
                         }
                     };
@@ -235,6 +245,7 @@ public class Gleap implements iGleap {
                 }
             });
         } catch (Error | Exception ignore) {
+            handleError(ignore, "openConversations - outer");
         }
     }
 
@@ -256,13 +267,16 @@ public class Gleap implements iGleap {
                                             JSONObject message = new JSONObject();
                                             message.put("hideBackButton", false);
                                             message.put("shareToken", shareToken);
-                                            GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("open-conversation", message));
+                                            GleapActionQueueHandler.getInstance()
+                                                    .addActionMessage(new GleapAction("open-conversation", message));
                                             screenshotTaker.takeScreenshot();
                                         }
                                     } catch (Exception e) {
+                                        handleError(e, "run");
                                     }
                                 }
                             } catch (Error | Exception ignore) {
+                                handleError(ignore, "run");
                             }
                         }
                     };
@@ -270,11 +284,13 @@ public class Gleap implements iGleap {
                 }
             });
         } catch (Error | Exception ignore) {
+            handleError(ignore, "run");
         }
     }
 
     /**
-     * Manually shows the feedback menu or default feedback flow. This is used, when you use the activation method "NONE".
+     * Manually shows the feedback menu or default feedback flow. This is used, when
+     * you use the activation method "NONE".
      *
      * @throws GleapNotInitialisedException thrown when Gleap is not initialised
      * @author Gleap
@@ -285,7 +301,8 @@ public class Gleap implements iGleap {
     }
 
     /**
-     * Disable in-app notifications. This is useful, when you want to use your own in-app notifications UI.
+     * Disable in-app notifications. This is useful, when you want to use your own
+     * in-app notifications UI.
      *
      * @author Gleap
      */
@@ -311,9 +328,11 @@ public class Gleap implements iGleap {
                                             screenshotTaker.takeScreenshot(type);
                                         }
                                     } catch (Exception e) {
+                                        handleError(e, "run");
                                     }
                                 }
                             } catch (Error | Exception ignore) {
+                                handleError(ignore, "run");
                             }
                         }
                     };
@@ -321,6 +340,7 @@ public class Gleap implements iGleap {
                 }
             });
         } catch (Error | Exception ignore) {
+            handleError(ignore, "run");
         }
     }
 
@@ -346,13 +366,16 @@ public class Gleap implements iGleap {
                                         if (screenshotTaker != null) {
                                             JSONObject message = new JSONObject();
                                             message.put("hideBackButton", !showBackButton);
-                                            GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("open-checklists", message));
+                                            GleapActionQueueHandler.getInstance()
+                                                    .addActionMessage(new GleapAction("open-checklists", message));
                                             screenshotTaker.takeScreenshot();
                                         }
                                     } catch (Exception e) {
+                                        handleError(e, "run");
                                     }
                                 }
                             } catch (Error | Exception ignore) {
+                                handleError(ignore, "run");
                             }
                         }
                     };
@@ -360,6 +383,7 @@ public class Gleap implements iGleap {
                 }
             });
         } catch (Error | Exception ignore) {
+            handleError(ignore, "run");
         }
     }
 
@@ -386,13 +410,16 @@ public class Gleap implements iGleap {
                                             JSONObject message = new JSONObject();
                                             message.put("hideBackButton", !showBackButton);
                                             message.put("id", checklistId);
-                                            GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("open-checklist", message));
+                                            GleapActionQueueHandler.getInstance()
+                                                    .addActionMessage(new GleapAction("open-checklist", message));
                                             screenshotTaker.takeScreenshot();
                                         }
                                     } catch (Exception e) {
+                                        handleError(e, "run");
                                     }
                                 }
                             } catch (Error | Exception ignore) {
+                                handleError(ignore, "run");
                             }
                         }
                     };
@@ -400,6 +427,7 @@ public class Gleap implements iGleap {
                 }
             });
         } catch (Error | Exception ignore) {
+            handleError(ignore, "run");
         }
     }
 
@@ -426,13 +454,16 @@ public class Gleap implements iGleap {
                                             JSONObject message = new JSONObject();
                                             message.put("hideBackButton", !showBackButton);
                                             message.put("outboundId", outboundId);
-                                            GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("start-checklist", message));
+                                            GleapActionQueueHandler.getInstance()
+                                                    .addActionMessage(new GleapAction("start-checklist", message));
                                             screenshotTaker.takeScreenshot();
                                         }
                                     } catch (Exception e) {
+                                        handleError(e, "run");
                                     }
                                 }
                             } catch (Error | Exception ignore) {
+                                handleError(ignore, "run");
                             }
                         }
                     };
@@ -440,6 +471,7 @@ public class Gleap implements iGleap {
                 }
             });
         } catch (Error | Exception ignore) {
+            handleError(ignore, "run");
         }
     }
 
@@ -477,13 +509,16 @@ public class Gleap implements iGleap {
                                         if (screenshotTaker != null) {
                                             JSONObject message = new JSONObject();
                                             message.put("hideBackButton", !showBackButton);
-                                            GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("open-news", message));
+                                            GleapActionQueueHandler.getInstance()
+                                                    .addActionMessage(new GleapAction("open-news", message));
                                             screenshotTaker.takeScreenshot();
                                         }
                                     } catch (Exception e) {
+                                        handleError(e, "run");
                                     }
                                 }
                             } catch (Error | Exception ignore) {
+                                handleError(ignore, "run");
                             }
                         }
                     };
@@ -491,6 +526,7 @@ public class Gleap implements iGleap {
                 }
             });
         } catch (Error | Exception ignore) {
+            handleError(ignore, "run");
         }
     }
 
@@ -527,13 +563,16 @@ public class Gleap implements iGleap {
                                             JSONObject message = new JSONObject();
                                             message.put("hideBackButton", !showBackButton);
                                             message.put("botId", botId);
-                                            GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("start-bot", message));
+                                            GleapActionQueueHandler.getInstance()
+                                                    .addActionMessage(new GleapAction("start-bot", message));
                                             screenshotTaker.takeScreenshot();
                                         }
                                     } catch (Exception e) {
+                                        handleError(e, "run");
                                     }
                                 }
                             } catch (Error | Exception ignore) {
+                                handleError(ignore, "run");
                             }
                         }
                     };
@@ -541,6 +580,7 @@ public class Gleap implements iGleap {
                 }
             });
         } catch (Error | Exception ignore) {
+            handleError(ignore, "run");
         }
     }
 
@@ -565,13 +605,16 @@ public class Gleap implements iGleap {
                                             JSONObject message = new JSONObject();
                                             message.put("hideBackButton", !showBackButton);
                                             message.put("id", articleId);
-                                            GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("open-news-article", message));
+                                            GleapActionQueueHandler.getInstance()
+                                                    .addActionMessage(new GleapAction("open-news-article", message));
                                             screenshotTaker.takeScreenshot();
                                         }
                                     } catch (Exception e) {
+                                        handleError(e, "run");
                                     }
                                 }
                             } catch (Error | Exception ignore) {
+                                handleError(ignore, "run");
                             }
                         }
                     };
@@ -579,6 +622,7 @@ public class Gleap implements iGleap {
                 }
             });
         } catch (Error | Exception ignore) {
+            handleError(ignore, "run");
         }
     }
 
@@ -590,25 +634,29 @@ public class Gleap implements iGleap {
         try {
             startFeedbackFlow(formId, true);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "startClassicForm");
         }
     }
-    
+
     @Override
     public void startClassicForm(String formId, Boolean showBackButton) {
         try {
             startFeedbackFlow(formId, showBackButton);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "startClassicForm");
         }
     }
 
     /**
-     * Manually start the bug reporting workflow. This is used, when you use the activation method "NONE".
+     * Manually start the bug reporting workflow. This is used, when you use the
+     * activation method "NONE".
      */
     @Override
     public void startFeedbackFlow(String feedbackFlow) {
         try {
             startFeedbackFlow(feedbackFlow, true);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "startFeedbackFlow");
         }
     }
 
@@ -622,16 +670,20 @@ public class Gleap implements iGleap {
                     Runnable gleapRunnable = new Runnable() {
                         @Override
                         public void run() throws RuntimeException {
-                            if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null && GleapSessionController.getInstance().isSessionLoaded() && Gleap.getInstance() != null) {
+                            if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null
+                                    && GleapSessionController.getInstance().isSessionLoaded()
+                                    && Gleap.getInstance() != null) {
                                 try {
                                     JSONObject data = new JSONObject();
                                     if (!feedbackFlow.equals("")) {
                                         data.put("flow", feedbackFlow);
                                     }
                                     data.put("hideBackButton", !showBackButton);
-                                    GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("start-feedbackflow", data));
+                                    GleapActionQueueHandler.getInstance()
+                                            .addActionMessage(new GleapAction("start-feedbackflow", data));
                                     screenshotTaker.takeScreenshot();
                                 } catch (Exception e) {
+                                    handleError(e, "run");
                                 }
                             }
                         }
@@ -640,11 +692,11 @@ public class Gleap implements iGleap {
                 }
             });
         } catch (Error | Exception ignore) {
+            handleError(ignore, "run");
         }
     }
 
-
-    //survey, survey_full
+    // survey, survey_full
 
     @Override
     public void showSurvey(String surveyId) {
@@ -655,8 +707,9 @@ public class Gleap implements iGleap {
             jsonObject.put("format", "survey");
             jsonObject.put("flow", surveyId);
         } catch (Exception ex) {
+            handleError(ex, "showSurvey");
         }
-        //check if it isopen
+        // check if it isopen
         GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("start-survey", jsonObject));
         Gleap.getInstance().open(SurveyType.SURVEY);
     }
@@ -670,8 +723,9 @@ public class Gleap implements iGleap {
             jsonObject.put("format", surveyType.name().toLowerCase(Locale.ROOT));
             jsonObject.put("flow", surveyId);
         } catch (Exception ex) {
+            handleError(ex, "showSurvey");
         }
-        //check if it isopen
+        // check if it isopen
         GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("start-survey", jsonObject));
         Gleap.getInstance().open(surveyType);
     }
@@ -691,14 +745,18 @@ public class Gleap implements iGleap {
                     Runnable gleapRunnable = new Runnable() {
                         @Override
                         public void run() throws RuntimeException {
-                            if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null && GleapSessionController.getInstance().isSessionLoaded() && Gleap.getInstance() != null) {
+                            if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null
+                                    && GleapSessionController.getInstance().isSessionLoaded()
+                                    && Gleap.getInstance() != null) {
                                 try {
 
                                     JSONObject data = new JSONObject();
                                     data.put("hideBackButton", !showBackButton);
-                                    GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("open-helpcenter", data));
+                                    GleapActionQueueHandler.getInstance()
+                                            .addActionMessage(new GleapAction("open-helpcenter", data));
                                     screenshotTaker.takeScreenshot();
                                 } catch (Exception e) {
+                                    handleError(e, "run");
                                 }
                             }
                         }
@@ -707,6 +765,7 @@ public class Gleap implements iGleap {
                 }
             });
         } catch (Error | Exception ignore) {
+            handleError(ignore, "run");
         }
     }
 
@@ -725,15 +784,19 @@ public class Gleap implements iGleap {
                     Runnable gleapRunnable = new Runnable() {
                         @Override
                         public void run() throws RuntimeException {
-                            if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null && GleapSessionController.getInstance().isSessionLoaded() && Gleap.getInstance() != null) {
+                            if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null
+                                    && GleapSessionController.getInstance().isSessionLoaded()
+                                    && Gleap.getInstance() != null) {
                                 try {
 
                                     JSONObject data = new JSONObject();
                                     data.put("hideBackButton", !showBackButton);
                                     data.put("articleId", articleId);
-                                    GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("open-help-article", data));
+                                    GleapActionQueueHandler.getInstance()
+                                            .addActionMessage(new GleapAction("open-help-article", data));
                                     screenshotTaker.takeScreenshot();
                                 } catch (Exception e) {
+                                    handleError(e, "run");
                                 }
                             }
                         }
@@ -742,6 +805,7 @@ public class Gleap implements iGleap {
                 }
             });
         } catch (Error | Exception ignore) {
+            handleError(ignore, "run");
         }
     }
 
@@ -782,15 +846,19 @@ public class Gleap implements iGleap {
                     Runnable gleapRunnable = new Runnable() {
                         @Override
                         public void run() throws RuntimeException {
-                            if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null && GleapSessionController.getInstance().isSessionLoaded() && Gleap.getInstance() != null) {
+                            if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null
+                                    && GleapSessionController.getInstance().isSessionLoaded()
+                                    && Gleap.getInstance() != null) {
                                 try {
 
                                     JSONObject data = new JSONObject();
                                     data.put("hideBackButton", !showBackButton);
                                     data.put("collectionId", collectionId);
-                                    GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("open-help-collection", data));
+                                    GleapActionQueueHandler.getInstance()
+                                            .addActionMessage(new GleapAction("open-help-collection", data));
                                     screenshotTaker.takeScreenshot();
                                 } catch (Exception e) {
+                                    handleError(e, "run");
                                 }
                             }
                         }
@@ -799,6 +867,7 @@ public class Gleap implements iGleap {
                 }
             });
         } catch (Error | Exception ignore) {
+            handleError(ignore, "run");
         }
     }
 
@@ -817,15 +886,19 @@ public class Gleap implements iGleap {
                     Runnable gleapRunnable = new Runnable() {
                         @Override
                         public void run() throws RuntimeException {
-                            if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null && GleapSessionController.getInstance().isSessionLoaded() && Gleap.getInstance() != null) {
+                            if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null
+                                    && GleapSessionController.getInstance().isSessionLoaded()
+                                    && Gleap.getInstance() != null) {
                                 try {
 
                                     JSONObject data = new JSONObject();
                                     data.put("hideBackButton", !showBackButton);
                                     data.put("term", term);
-                                    GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("open-helpcenter-search", data));
+                                    GleapActionQueueHandler.getInstance()
+                                            .addActionMessage(new GleapAction("open-helpcenter-search", data));
                                     screenshotTaker.takeScreenshot();
                                 } catch (Exception e) {
+                                    handleError(e, "run");
                                 }
                             }
                         }
@@ -834,6 +907,7 @@ public class Gleap implements iGleap {
                 }
             });
         } catch (Error | Exception ignore) {
+            handleError(ignore, "run");
         }
     }
 
@@ -842,6 +916,7 @@ public class Gleap implements iGleap {
         try {
             SilentBugReportUtil.createSilentBugReport(application, description, severity);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "sendSilentCrashReport");
         }
     }
 
@@ -850,6 +925,7 @@ public class Gleap implements iGleap {
         try {
             SilentBugReportUtil.createSilentBugReport(application, description, severity, excludeData);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "sendSilentCrashReport");
         }
     }
 
@@ -870,13 +946,14 @@ public class Gleap implements iGleap {
                 GleapSessionController.getInstance().executePendingUpdates();
             }
         } catch (Error | Exception exception) {
+            handleError(exception, "identifyUser");
         }
     }
 
     /**
      * Updates a session's user data.
      *
-     * @param id                  Id of the user.
+     * @param id                     Id of the user.
      * @param gleapSessionProperties The updated user data.
      * @author Gleap
      */
@@ -889,6 +966,7 @@ public class Gleap implements iGleap {
                 GleapSessionController.getInstance().executePendingUpdates();
             }
         } catch (Error | Exception exception) {
+            handleError(exception, "identifyUser");
         }
     }
 
@@ -906,6 +984,7 @@ public class Gleap implements iGleap {
                 GleapSessionController.getInstance().executePendingUpdates();
             }
         } catch (Error | Exception exception) {
+            handleError(exception, "identifyUser");
         }
     }
 
@@ -926,13 +1005,14 @@ public class Gleap implements iGleap {
                 GleapSessionController.getInstance().executePendingUpdates();
             }
         } catch (Error | Exception exception) {
+            handleError(exception, "identifyContact");
         }
     }
 
     /**
      * Identifies a contact with data.
      *
-     * @param id                  Id of the user.
+     * @param id                     Id of the user.
      * @param gleapSessionProperties The updated user data.
      * @author Gleap
      */
@@ -945,6 +1025,7 @@ public class Gleap implements iGleap {
                 GleapSessionController.getInstance().executePendingUpdates();
             }
         } catch (Error | Exception exception) {
+            handleError(exception, "identifyContact");
         }
     }
 
@@ -956,6 +1037,7 @@ public class Gleap implements iGleap {
                 GleapSessionController.getInstance().executePendingUpdates();
             }
         } catch (Error | Exception exception) {
+            handleError(exception, "updateContact");
         }
     }
 
@@ -981,18 +1063,22 @@ public class Gleap implements iGleap {
                     }
                 });
             } catch (Exception ignore) {
+                handleError(ignore, "clearIdentity - inner");
             }
 
             GleapEventService.getInstance().stop();
             GleapBaseSessionService sessionLoader = new GleapBaseSessionService();
             sessionLoader.execute();
         } catch (Error | Exception ignore) {
+            handleError(ignore, "run");
         }
     }
 
     /**
-     * Sets the API url to your internal Gleap server. Please make sure that the server is reachable within the network
-     * If you use a http url pls add android:usesCleartextTraffic="true" to your main activity to allow cleartext traffic
+     * Sets the API url to your internal Gleap server. Please make sure that the
+     * server is reachable within the network
+     * If you use a http url pls add android:usesCleartextTraffic="true" to your
+     * main activity to allow cleartext traffic
      *
      * @param apiUrl url of the internal Gleap server
      */
@@ -1001,6 +1087,7 @@ public class Gleap implements iGleap {
         try {
             GleapConfig.getInstance().setApiUrl(apiUrl);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "setApiUrl");
         }
     }
 
@@ -1009,6 +1096,7 @@ public class Gleap implements iGleap {
         try {
             GleapConfig.getInstance().setWsApiUrl(wsApiUrl);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "setWSApiUrl");
         }
     }
 
@@ -1023,11 +1111,13 @@ public class Gleap implements iGleap {
         try {
             GleapConfig.getInstance().setiFrameUrl(frameUrl);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "setFrameUrl");
         }
     }
 
     /**
-     * Set the language for the Gleap Report Flow. Otherwise the default language is used.
+     * Set the language for the Gleap Report Flow. Otherwise the default language is
+     * used.
      * Supported Languages "en", "es", "fr", "it", "de", "nl", "cz"
      *
      * @param language ISO Country Code eg. "cz," "en", "de", "es", "nl"
@@ -1037,6 +1127,7 @@ public class Gleap implements iGleap {
         try {
             GleapConfig.getInstance().setLanguage(language);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "setLanguage");
         }
     }
 
@@ -1045,6 +1136,7 @@ public class Gleap implements iGleap {
         try {
             GleapConfig.getInstance().setAiToolExecutedCallback(aiToolExecutedCallback);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "setAiToolExecutedCallback");
         }
     }
 
@@ -1053,6 +1145,7 @@ public class Gleap implements iGleap {
         try {
             GleapConfig.getInstance().setWidgetOpenedCallback(widgetOpenedCallback);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "setWidgetOpenedCallback");
         }
     }
 
@@ -1062,16 +1155,19 @@ public class Gleap implements iGleap {
             GleapConfig.getInstance().setWidgetClosedCallback(widgetClosedCallback);
 
         } catch (Error | Exception ignore) {
+            handleError(ignore, "setWidgetClosedCallback");
         }
 
     }
 
     @Override
-    public void setNotificationUnreadCountUpdatedCallback(NotificationUnreadCountUpdatedCallback notificationUnreadCountUpdatedCallback) {
+    public void setNotificationUnreadCountUpdatedCallback(
+            NotificationUnreadCountUpdatedCallback notificationUnreadCountUpdatedCallback) {
         try {
             GleapConfig.getInstance().setNotificationUnreadCountUpdatedCallback(notificationUnreadCountUpdatedCallback);
 
         } catch (Error | Exception ignore) {
+            handleError(ignore, "setNotificationUnreadCountUpdatedCallback");
         }
 
     }
@@ -1088,6 +1184,7 @@ public class Gleap implements iGleap {
         try {
             GleapBug.getInstance().setCustomData(key, value);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "setCustomData");
         }
     }
 
@@ -1108,6 +1205,7 @@ public class Gleap implements iGleap {
         try {
             GleapBug.getInstance().setTicketAttribute(key, value);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "setTicketAttribute");
         }
     }
 
@@ -1123,6 +1221,7 @@ public class Gleap implements iGleap {
         try {
             GleapBug.getInstance().setTicketAttribute(key, value);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "setTicketAttribute");
         }
     }
 
@@ -1138,6 +1237,7 @@ public class Gleap implements iGleap {
         try {
             GleapBug.getInstance().setTicketAttribute(key, value);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "setTicketAttribute");
         }
     }
 
@@ -1153,6 +1253,7 @@ public class Gleap implements iGleap {
         try {
             GleapBug.getInstance().setTicketAttribute(key, value);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "setTicketAttribute");
         }
     }
 
@@ -1168,6 +1269,7 @@ public class Gleap implements iGleap {
         try {
             GleapBug.getInstance().setTicketAttribute(key, value);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "setTicketAttribute");
         }
     }
 
@@ -1182,6 +1284,7 @@ public class Gleap implements iGleap {
         try {
             GleapBug.getInstance().unsetTicketAttribute(key);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "unsetTicketAttribute");
         }
     }
 
@@ -1195,11 +1298,13 @@ public class Gleap implements iGleap {
         try {
             GleapBug.getInstance().clearTicketAttributes();
         } catch (Error | Exception ignore) {
+            handleError(ignore, "clearTicketAttributes");
         }
     }
 
     /**
-     * Attach Data to the request. The Data will be merged into the body sent with the bugreport.
+     * Attach Data to the request. The Data will be merged into the body sent with
+     * the bugreport.
      * !!Existing keys can be overriten
      *
      * @param data Data, which is added
@@ -1209,6 +1314,7 @@ public class Gleap implements iGleap {
         try {
             GleapBug.getInstance().setCustomData(data);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "attachCustomData");
         }
     }
 
@@ -1223,6 +1329,7 @@ public class Gleap implements iGleap {
         try {
             GleapBug.getInstance().removeUserAttribute(key);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "removeCustomDataForKey");
         }
     }
 
@@ -1235,6 +1342,7 @@ public class Gleap implements iGleap {
             GleapBug.getInstance().clearCustomData();
 
         } catch (Error | Exception ignore) {
+            handleError(ignore, "clearCustomData");
         }
     }
 
@@ -1244,11 +1352,11 @@ public class Gleap implements iGleap {
      * @param feedbackWillBeSentCallback is called when BB is opened
      */
     @Override
-    public void setFeedbackWillBeSentCallback(FeedbackWillBeSentCallback
-                                                      feedbackWillBeSentCallback) {
+    public void setFeedbackWillBeSentCallback(FeedbackWillBeSentCallback feedbackWillBeSentCallback) {
         try {
             GleapConfig.getInstance().setFeedbackWillBeSentCallback(feedbackWillBeSentCallback);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "setFeedbackWillBeSentCallback");
         }
 
     }
@@ -1263,6 +1371,7 @@ public class Gleap implements iGleap {
         try {
             GleapConfig.getInstance().setFeedbackSentCallback(feedbackSentCallback);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "setFeedbackSentCallback");
         }
     }
 
@@ -1276,18 +1385,18 @@ public class Gleap implements iGleap {
         try {
             GleapConfig.getInstance().setOutboundSentCallback(outboundSentCallback);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "setOutboundSentCallback");
         }
     }
 
     @Override
-    public void setFeedbackSendingFailedCallback(FeedbackSendingFailedCallback
-                                                         feedbackSendingFailedCallback) {
+    public void setFeedbackSendingFailedCallback(FeedbackSendingFailedCallback feedbackSendingFailedCallback) {
         try {
             GleapConfig.getInstance().setFeedbackSendingFailedCallback(feedbackSendingFailedCallback);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "setFeedbackSendingFailedCallback");
         }
     }
-
 
     /**
      * Customize the way, the Bitmap is generated. If this is overritten,
@@ -1300,6 +1409,7 @@ public class Gleap implements iGleap {
         try {
             GleapConfig.getInstance().setGetBitmapCallback(getBitmapCallback);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "setBitmapCallback");
         }
 
     }
@@ -1314,6 +1424,7 @@ public class Gleap implements iGleap {
         try {
             GleapConfig.getInstance().setConfigLoadedCallback(configLoadedCallback);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "setConfigLoadedCallback");
         }
     }
 
@@ -1327,24 +1438,25 @@ public class Gleap implements iGleap {
         try {
             GleapConfig.getInstance().setInitializedCallback(initializedCallback);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "setInitializedCallback");
         }
     }
 
     @Override
-    public void setFeedbackFlowStartedCallback(FeedbackFlowStartedCallback
-                                                       feedbackFlowStartedCallback) {
+    public void setFeedbackFlowStartedCallback(FeedbackFlowStartedCallback feedbackFlowStartedCallback) {
         try {
             GleapConfig.getInstance().setFeedbackFlowStartedCallback(feedbackFlowStartedCallback);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "setFeedbackFlowStartedCallback");
         }
     }
 
     @Override
-    public void setInitializationDoneCallback(InitializationDoneCallback
-                                                      initializationDoneCallback) {
+    public void setInitializationDoneCallback(InitializationDoneCallback initializationDoneCallback) {
         try {
             GleapConfig.getInstance().setInitializationDoneCallback(initializationDoneCallback);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "setInitializationDoneCallback");
         }
     }
 
@@ -1359,6 +1471,7 @@ public class Gleap implements iGleap {
         try {
             GleapBug.getInstance().getNetworkBuffer().attachNetworkLogs(networklogs);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "attachNetworkLogs");
         }
     }
 
@@ -1370,14 +1483,16 @@ public class Gleap implements iGleap {
      * @param status        status of the response (e.g. 200, 404)
      * @param duration      duration of the request
      * @param request       Add the data you want. e.g the body sent in the request
-     * @param response      Response of the call. You can add just the information you want and need.
+     * @param response      Response of the call. You can add just the information
+     *                      you want and need.
      */
     @Override
     public void logNetwork(String urlConnection, RequestType requestType, int status,
-                           int duration, JSONObject request, JSONObject response) {
+            int duration, JSONObject request, JSONObject response) {
         try {
             GleapHttpInterceptor.log(urlConnection, requestType, status, duration, request, response);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "logNetwork");
         }
     }
 
@@ -1386,35 +1501,38 @@ public class Gleap implements iGleap {
      *
      * @param urlConnection UrlHttpConnection
      * @param request       Add the data you want. e.g the body sent in the request
-     * @param response      Response of the call. You can add just the information you want and need.
+     * @param response      Response of the call. You can add just the information
+     *                      you want and need.
      */
     @Override
-    public void logNetwork(HttpsURLConnection urlConnection, JSONObject request, JSONObject
-            response) {
+    public void logNetwork(HttpsURLConnection urlConnection, JSONObject request, JSONObject response) {
         try {
             GleapHttpInterceptor.log(urlConnection, request, response);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "logNetwork");
         }
     }
-
 
     /**
      * Log network traffic by logging it manually.
      *
      * @param urlConnection UrlHttpConnection
      * @param request       Add the data you want. e.g the body sent in the request
-     * @param response      Response of the call. You can add just the information you want and need.
+     * @param response      Response of the call. You can add just the information
+     *                      you want and need.
      */
     @Override
     public void logNetwork(HttpsURLConnection urlConnection, String request, String response) {
         try {
             GleapHttpInterceptor.log(urlConnection, request, response);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "logNetwork");
         }
     }
 
     /**
-     * Register custom functions. This custom function can be configured in the widget, Form, Details of one step tab on app.Gleap.io
+     * Register custom functions. This custom function can be configured in the
+     * widget, Form, Details of one step tab on app.Gleap.io
      *
      * @param customAction what is executed when the custom step is pressed
      */
@@ -1423,6 +1541,7 @@ public class Gleap implements iGleap {
         try {
             GleapConfig.getInstance().registerCustomAction(customAction);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "registerCustomAction");
         }
     }
 
@@ -1431,6 +1550,7 @@ public class Gleap implements iGleap {
         try {
             GleapConfig.getInstance().registerCustomLinkHandler(customLinkHandler);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "registerCustomLinkHandler");
         }
     }
 
@@ -1461,7 +1581,8 @@ public class Gleap implements iGleap {
                 }
 
                 // If URL doesn't start with http or https, mailto or tel, close the widget.
-                if (!url.startsWith("http") && !url.startsWith("https") && !url.startsWith("mailto") && !url.startsWith("tel")) {
+                if (!url.startsWith("http") && !url.startsWith("https") && !url.startsWith("mailto")
+                        && !url.startsWith("tel")) {
                     Gleap.getInstance().close();
                 }
 
@@ -1513,7 +1634,7 @@ public class Gleap implements iGleap {
                     break;
             }
         } catch (Exception e) {
-            System.err.println("Failed to handle Gleap link: " + href);
+            handleError(e, "handleGleapLink");
         }
     }
 
@@ -1523,6 +1644,7 @@ public class Gleap implements iGleap {
             Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
             local.startActivity(browserIntent);
         } catch (Exception e) {
+            handleError(e, "openUrlExternally");
         }
     }
 
@@ -1536,6 +1658,7 @@ public class Gleap implements iGleap {
         try {
             GleapBug.getInstance().setApplicationtype(applicationType);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "setApplicationType");
         }
     }
 
@@ -1557,6 +1680,7 @@ public class Gleap implements iGleap {
                 GleapBaseSessionService sessionLoader = new GleapBaseSessionService();
                 sessionLoader.execute();
             } catch (Error | Exception ignore) {
+                handleErrorStatic(ignore, "GleapListener constructor");
             }
         }
 
@@ -1581,8 +1705,10 @@ public class Gleap implements iGleap {
                 if (instance == null) {
                     instance = new Gleap();
                 }
-                initGleap(GleapConfig.getInstance().getSdkKey(), activationMethods.toArray(new GleapActivationMethod[0]), application);
+                initGleap(GleapConfig.getInstance().getSdkKey(),
+                        activationMethods.toArray(new GleapActivationMethod[0]), application);
             } catch (Error | Exception ignore) {
+                handleErrorStatic(ignore, "GleapListener onTaskComplete");
             }
         }
     }
@@ -1598,6 +1724,7 @@ public class Gleap implements iGleap {
         try {
             GleapBug.getInstance().logEvent(name);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "trackEvent");
         }
     }
 
@@ -1613,6 +1740,7 @@ public class Gleap implements iGleap {
         try {
             GleapBug.getInstance().logEvent(name, data);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "trackEvent");
         }
     }
 
@@ -1627,6 +1755,7 @@ public class Gleap implements iGleap {
         try {
             GleapFileHelper.getInstance().addAttachment(attachment);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "addAttachment");
         }
     }
 
@@ -1640,6 +1769,7 @@ public class Gleap implements iGleap {
         try {
             GleapFileHelper.getInstance().clearAttachments();
         } catch (Error | Exception ignore) {
+            handleError(ignore, "removeAllAttachments");
         }
     }
 
@@ -1654,6 +1784,7 @@ public class Gleap implements iGleap {
                 GleapDetectorUtil.resumeAllDetectors();
             }
         } catch (Error | Exception ignore) {
+            handleError(ignore, "setActivationMethods");
         }
     }
 
@@ -1668,11 +1799,13 @@ public class Gleap implements iGleap {
         try {
             PrefillHelper.getInstancen().setPrefillData(data);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "preFillForm");
         }
     }
 
     /**
-     * Disables the console logging. This must be called BEFORE initializing the SDK.
+     * Disables the console logging. This must be called BEFORE initializing the
+     * SDK.
      *
      * @author Gleap
      */
@@ -1698,6 +1831,7 @@ public class Gleap implements iGleap {
                 }
             });
         } catch (Error | Exception ignore) {
+            handleError(ignore, "run");
         }
     }
 
@@ -1712,6 +1846,7 @@ public class Gleap implements iGleap {
         try {
             LogReader.getInstance().log(msg, GleapLogLevel.INFO);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "log");
         }
     }
 
@@ -1726,11 +1861,13 @@ public class Gleap implements iGleap {
         try {
             LogReader.getInstance().log(msg, gleapLogLevel);
         } catch (Error | Exception ignored) {
+            handleError(ignored, "log");
         }
     }
 
     /**
-     * Disables the console logging. This must be called BEFORE initializing the SDK.
+     * Disables the console logging. This must be called BEFORE initializing the
+     * SDK.
      *
      * @author Gleap
      */
@@ -1739,6 +1876,7 @@ public class Gleap implements iGleap {
         try {
             GleapConfig.getInstance().setEnableConsoleLogsFromCode(false);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "disableConsoleLog");
         }
     }
 
@@ -1749,12 +1887,13 @@ public class Gleap implements iGleap {
             GleapConfig.getInstance().setFeedbackButtonManuallySet(true);
             GleapInvisibleActivityManger.getInstance().setShowFab(show);
         } catch (Exception ignore) {
+            handleError(ignore, "showFeedbackButton");
         }
     }
 
     @Override
     public void setTags(String[] tags) {
-         GleapBug.getInstance().setTags(tags);
+        GleapBug.getInstance().setTags(tags);
     }
 
     /**
@@ -1765,6 +1904,7 @@ public class Gleap implements iGleap {
         try {
             GleapConfig.getInstance().setEnableReplays(enable);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "setTags");
         }
     }
 
@@ -1777,6 +1917,7 @@ public class Gleap implements iGleap {
         try {
             GleapConfig.getInstance().setGetActivityCallback(getActivityCallback);
         } catch (Error | Exception ignore) {
+            handleError(ignore, "setGetActivityCallback");
         }
 
     }
@@ -1801,13 +1942,17 @@ public class Gleap implements iGleap {
                     Runnable gleapRunnable = new Runnable() {
                         @Override
                         public void run() throws RuntimeException {
-                            if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null && GleapSessionController.getInstance().isSessionLoaded() && Gleap.getInstance() != null) {
+                            if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null
+                                    && GleapSessionController.getInstance().isSessionLoaded()
+                                    && Gleap.getInstance() != null) {
                                 try {
                                     JSONObject data = new JSONObject();
                                     data.put("hideBackButton", !showBackButton);
-                                    GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("open-feature-requests", data));
+                                    GleapActionQueueHandler.getInstance()
+                                            .addActionMessage(new GleapAction("open-feature-requests", data));
                                     screenshotTaker.takeScreenshot();
                                 } catch (Exception e) {
+                                    handleError(e, "run");
                                 }
                             }
                         }
@@ -1815,7 +1960,9 @@ public class Gleap implements iGleap {
                     mainHandler.post(gleapRunnable);
                 }
             });
-        } catch (Exception exp) {}
+        } catch (Exception exp) {
+            handleError(exp, "openFeatureRequests");
+        }
     }
 
     @Override
@@ -1824,6 +1971,7 @@ public class Gleap implements iGleap {
         try {
             gleapUser = GleapSessionController.getInstance().getGleapUserSession();
         } catch (Error | Exception ignore) {
+            handleError(ignore, "getIdentity");
         }
         return gleapUser;
     }
@@ -1836,6 +1984,7 @@ public class Gleap implements iGleap {
                 return true;
             }
         } catch (Exception ex) {
+            handleError(ex, "isUserIdentified");
         }
         return false;
     }
@@ -1855,6 +2004,46 @@ public class Gleap implements iGleap {
     }
 
     /**
+     * Helper method to handle errors and exceptions.
+     * If an error callback is set, it will be called with the error and context.
+     * Otherwise, the error will be silently ignored.
+     *
+     * @param error   The error or exception that occurred
+     * @param context Context information about where the error occurred
+     */
+    public void handleError(Throwable error, String context) {
+        try {
+            ErrorCallback errorCallback = GleapConfig.getInstance().getErrorCallback();
+            if (errorCallback != null) {
+                errorCallback.onError(error, context);
+            }
+        } catch (Exception ignore) {
+            // If the error callback itself throws an exception, we ignore it to prevent
+            // infinite loops
+        }
+    }
+
+    /**
+     * Static helper method to handle errors and exceptions in static contexts.
+     * If an error callback is set, it will be called with the error and context.
+     * Otherwise, the error will be silently ignored.
+     *
+     * @param error   The error or exception that occurred
+     * @param context Context information about where the error occurred
+     */
+    private static void handleErrorStatic(Throwable error, String context) {
+        try {
+            ErrorCallback errorCallback = GleapConfig.getInstance().getErrorCallback();
+            if (errorCallback != null) {
+                errorCallback.onError(error, context);
+            }
+        } catch (Exception ignore) {
+            // If the error callback itself throws an exception, we ignore it to prevent
+            // infinite loops
+        }
+    }
+
+    /**
      * Shows a modal to the user.
      *
      * @param data The modal data
@@ -1868,10 +2057,23 @@ public class Gleap implements iGleap {
                 public void run() {
                     try {
                         GleapInvisibleActivityManger.getInstance().showModal(data, null);
-                    } catch (Exception exp) {}
+                    } catch (Exception exp) {
+                        handleError(exp, "showModal - inner");
+                    }
                 }
             });
-        } catch (Exception exp) {}
+        } catch (Exception exp) {
+            handleError(exp, "showModal - outer");
+        }
+    }
+
+    @Override
+    public void setErrorCallback(ErrorCallback errorCallback) {
+        try {
+            GleapConfig.getInstance().setErrorCallback(errorCallback);
+        } catch (Error | Exception error) {
+            handleError(error, "setErrorCallback");
+        }
     }
 
 }
