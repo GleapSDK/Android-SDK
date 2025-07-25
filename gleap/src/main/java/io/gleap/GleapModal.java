@@ -278,7 +278,20 @@ class GleapModal {
         }
 
         private void sendModalData() {
-            try { sendMessage(generateGleapMessage("modal-data", modalData)); } catch (Exception ignored) {}
+            try { 
+                // Get config values with fallbacks
+                String primaryColor = GleapConfig.getInstance().getColor() != null ? GleapConfig.getInstance().getColor() : "#485BFF";
+                String backgroundColor = GleapConfig.getInstance().getBackgroundColor() != null ? GleapConfig.getInstance().getBackgroundColor() : "#FFFFFF";
+                
+                // Create a copy of modalData to avoid modifying the original
+                JSONObject dataToSend = new JSONObject(modalData.toString());
+
+                // Add the color fields at the root level
+                dataToSend.put("primaryColor", primaryColor);
+                dataToSend.put("backgroundColor", backgroundColor);
+                
+                sendMessage(generateGleapMessage("modal-data", dataToSend)); 
+            } catch (Exception ignored) {}
         }
 
         // ---- helper methods ------------------------------------------
