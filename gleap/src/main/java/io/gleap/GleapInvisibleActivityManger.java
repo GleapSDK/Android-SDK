@@ -391,6 +391,10 @@ class GleapInvisibleActivityManger {
             return;
         }
 
+        if (this.banner != null) {
+            this.destroyBanner(true);
+        }
+
         this.bannerData = bannerData;
         this.banner = new GleapBanner(this.bannerData, activity);
 
@@ -423,6 +427,10 @@ class GleapInvisibleActivityManger {
 
         if (this.layout == null) {
             return;
+        }
+
+        if (this.modal != null) {
+            this.destroyModal(true, true);
         }
 
         this.modalData = modalData;
