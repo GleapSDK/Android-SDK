@@ -1054,14 +1054,22 @@ public class Gleap implements iGleap {
             }
 
             try {
-                ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
+                Runnable gleapRunnable = new Runnable() {
                     @Override
                     public void run() {
                         GleapInvisibleActivityManger.getInstance().destroyBanner(true);
                         GleapInvisibleActivityManger.getInstance().destroyModal(true, true);
                         GleapInvisibleActivityManger.getInstance().clearMessages();
                     }
-                });
+                };
+
+                Activity currentActivity = ActivityUtil.getCurrentActivity();
+                if (currentActivity != null) {
+                    currentActivity.runOnUiThread(gleapRunnable);
+                } else {
+                    Handler mainHandler = new Handler(Looper.getMainLooper());
+                    mainHandler.post(gleapRunnable);
+                }
             } catch (Exception ignore) {
                 handleError(ignore, "clearIdentity - inner");
             }
