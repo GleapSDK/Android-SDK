@@ -3,6 +3,8 @@ package io.gleap;
 import android.app.Activity;
 import android.app.Application;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -26,11 +28,17 @@ class GleapDetectorUtil {
 
     public static List<GleapDetector> initDetectors(Application application, GleapActivationMethod[] activationMethods) {
         List<GleapDetector> detectorList = new LinkedList<>();
+
+        List<GleapActivationMethod> methods;
         if (GleapConfig.getInstance().getPriorizedGestureDetectors().size() > 0) {
-            activationMethods = (GleapActivationMethod[]) GleapConfig.getInstance().getPriorizedGestureDetectors().toArray();
+            methods = new LinkedList<>(GleapConfig.getInstance().getPriorizedGestureDetectors());
+        } else if (activationMethods != null) {
+            methods = Arrays.asList(activationMethods);
+        } else {
+            methods = Collections.emptyList();
         }
 
-        for (GleapActivationMethod activationMethod : activationMethods) {
+        for (GleapActivationMethod activationMethod : methods) {
             if (activationMethod != null) {
                 if (activationMethod == GleapActivationMethod.SHAKE) {
                     GleapDetector detector = new ShakeGestureDetector(application);
