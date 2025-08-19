@@ -29,7 +29,7 @@ public class MainApplication extends Application {
             }
         });
 
-        Gleap.initialize("SWDRYt539LLdlWtMLGYVos7oIAbWQPbX", this);
+        Gleap.initialize("H0fyJf8md5xrJn0W6ivHAlQeolIGFai1", this);
         Gleap.getInstance().setTags(new String[] {
                 "Android",
                 "Tags",
