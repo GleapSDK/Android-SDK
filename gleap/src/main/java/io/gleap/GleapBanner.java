@@ -100,7 +100,6 @@ class GleapBanner {
                     settings.setDisplayZoomControls(false);
                     settings.setSupportZoom(false);
                     settings.setDefaultTextEncodingName("utf-8");
-                    webView.setWebContentsDebuggingEnabled(true);
                     webView.addJavascriptInterface(new GleapBanner.GleapBannerJSBridge(), "GleapBannerJSBridge");
                     webView.setWebChromeClient(new GleapBanner.GleapBannerWebChromeClient());
                     webView.setWebViewClient(new GleapBanner.GleapWebViewClient());
