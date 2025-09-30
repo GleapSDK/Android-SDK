@@ -19,7 +19,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Base64;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
@@ -70,8 +69,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
     private PermissionRequest permissionRequest;
     private static final int PERMISSIONS_REQUEST_RECORD_AUDIO = 101;
     private ValueCallback<Uri[]> fileChooserCallback;
-    private boolean isImeVisible = false;
-    private int lockedScrollY = 0;
 
     // Register the ActivityResultLauncher at the class level
     private final ActivityResultLauncher<Intent> imagePickerLauncher = registerForActivityResult(
@@ -180,7 +177,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
             this.requestWindowFeature(Window.FEATURE_NO_TITLE);
             try {
-                getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
+                getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
                 if (getSupportActionBar() != null) {
                     getSupportActionBar().hide();
                 }
@@ -201,34 +198,23 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
                 ViewCompat.setOnApplyWindowInsetsListener(webViewContainer,
                     (view, insets) -> {
+
+                    // status + navigation bars (stable system bars)
                     Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+
+                    // on Android 11+ this is the real keyboard height;
+                    // on older versions it’s 0 – but then the IME is reported as a system‑bar inset
                     Insets ime  = insets.getInsets(WindowInsetsCompat.Type.ime());
 
-                    int topInset = bars.top;
-                    int bottomMargin = Math.max(bars.bottom, ime.bottom);
+                    int topInset    = bars.top;                       // keep the status‑bar height
+                    int bottomInset = Math.max(bars.bottom, ime.bottom); // choose the larger of nav‑bar or IME
 
-                    // Apply top inset as padding to keep status bar space
-                    view.setPadding(view.getPaddingLeft(), topInset, view.getPaddingRight(), 0);
+                    view.setPadding(view.getPaddingLeft(),
+                                    topInset,
+                                    view.getPaddingRight(),
+                                    bottomInset);
 
-                    // Shrink container height by setting bottom margin equal to IME/nav height
-                    ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) view.getLayoutParams();
-                    if (lp.bottomMargin != bottomMargin) {
-                        lp.bottomMargin = bottomMargin;
-                        view.setLayoutParams(lp);
-                    }
-
-                    boolean nowImeVisible = ime.bottom > 0;
-                    if (nowImeVisible && !isImeVisible) {
-                        isImeVisible = true;
-                        try {
-                            lockedScrollY = webView.getScrollY();
-                            webView.post(() -> webView.scrollTo(webView.getScrollX(), lockedScrollY));
-                        } catch (Exception ignore) {}
-                    } else if (!nowImeVisible && isImeVisible) {
-                        isImeVisible = false;
-                    }
-
-                    return insets;   // don’t consume
+                    return insets;   // DON’T consume – let child views see the same insets
                 });
 
                 int backgroundColor = Color.parseColor(GleapConfig.getInstance().getBackgroundColor());
@@ -348,8 +334,8 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
-        settings.setUseWideViewPort(true);
         settings.setLoadWithOverviewMode(true);
+        settings.setUseWideViewPort(true);
         settings.setBuiltInZoomControls(true);
         settings.setDisplayZoomControls(false);
         settings.setSupportZoom(true);
@@ -357,21 +343,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         webView.setWebViewClient(new GleapWebViewClient());
         webView.setBackgroundColor(Color.TRANSPARENT);
         webView.addJavascriptInterface(new GleapJSBridge(this), "GleapJSBridge");
-        try {
-            webView.setOverScrollMode(View.OVER_SCROLL_NEVER);
-            webView.setVerticalScrollBarEnabled(false);
-            webView.setHorizontalScrollBarEnabled(false);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                webView.setOnScrollChangeListener(new View.OnScrollChangeListener() {
-                    @Override
-                    public void onScrollChange(View v, int scrollX, int scrollY, int oldScrollX, int oldScrollY) {
-                        if (isImeVisible && scrollY != lockedScrollY) {
-                            webView.scrollTo(scrollX, lockedScrollY);
-                        }
-                    }
-                });
-            }
-        } catch (Exception ignore) {}
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
             public void onPermissionRequest(final PermissionRequest request) {
@@ -444,6 +415,8 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         });
         webView.loadUrl(url);
         webView.setVisibility(View.INVISIBLE);
+        settings.setUseWideViewPort(true);
+        settings.setLoadWithOverviewMode(true);
     }
 
     public void askForPermission(String origin, String permission, int requestCode) {
