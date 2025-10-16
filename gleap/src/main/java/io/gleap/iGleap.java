@@ -159,7 +159,15 @@ interface iGleap {
     void showSurvey(String surveyId);
 
     void showSurvey(String surveyId, SurveyType surveyType);
-
+    
+    /**
+     * Ask the AI a question
+     */
+    void askAI(String question);
+    /**
+     * Asks the AI a question
+     */
+    void askAI(String question, Boolean showBackButton);
     /**
      * Opens the help center.
      */

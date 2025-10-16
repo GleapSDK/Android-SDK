@@ -770,6 +770,46 @@ public class Gleap implements iGleap {
     }
 
     @Override
+    public void askAI(String question) {
+        askAI(question, false);
+    }
+
+    @Override
+    public void askAI(String question, Boolean showBackButton) {
+        try {
+            ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Handler mainHandler = new Handler(Looper.getMainLooper());
+                    Runnable gleapRunnable = new Runnable() {
+                        @Override
+                        public void run() throws RuntimeException {
+                            if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null
+                                    && GleapSessionController.getInstance().isSessionLoaded()
+                                    && Gleap.getInstance() != null) {
+                                try {
+
+                                    JSONObject data = new JSONObject();
+                                    data.put("hideBackButton", !showBackButton);
+                                    data.put("question", question);
+                                    GleapActionQueueHandler.getInstance()
+                                            .addActionMessage(new GleapAction("ask-ai", data));
+                                    screenshotTaker.takeScreenshot();
+                                } catch (Exception e) {
+                                    handleError(e, "run");
+                                }
+                            }
+                        }
+                    };
+                    mainHandler.post(gleapRunnable);
+                }
+            });
+        } catch (Error | Exception ignore) {
+            handleError(ignore, "run");
+        }
+    }
+
+    @Override
     public void openHelpCenterArticle(String articleId) {
         openHelpCenterArticle(articleId, false);
     }
