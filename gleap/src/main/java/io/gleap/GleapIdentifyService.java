@@ -51,6 +51,10 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
 
             // Get payload to send.
             JSONObject jsonObject = pendingAction.getJSONPayload();
+            
+            // Add platform and deviceType
+            jsonObject.put("platform", "Android");
+            jsonObject.put("deviceType", GleapHelper.getDeviceType());
 
             // Check if we do have an userId.
             if (!jsonObject.has( "userId")) {

@@ -26,4 +26,13 @@ public class GleapHelper {
         return Math.round(dp * ((float) context.getResources().getDisplayMetrics().densityDpi / DisplayMetrics.DENSITY_DEFAULT));
     }
 
+    /**
+     * Returns the device type for Android devices.
+     * 
+     * @return "mobile" for all Android devices
+     */
+    public static String getDeviceType() {
+        return "mobile";
+    }
+
 }

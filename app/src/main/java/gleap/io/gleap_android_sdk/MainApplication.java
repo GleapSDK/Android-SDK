@@ -11,6 +11,7 @@ import io.gleap.GleapAiToolParameter;
 import io.gleap.callbacks.AiToolExecutedCallback;
 import io.gleap.callbacks.CustomActionCallback;
 import io.gleap.callbacks.ErrorCallback;
+import io.gleap.callbacks.FeedbackSendingFailedCallback;
 import io.gleap.callbacks.FeedbackSentCallback;
 import io.gleap.callbacks.OutboundSentCallback;
 import io.gleap.callbacks.RegisterPushMessageGroupCallback;
@@ -34,6 +35,13 @@ public class MainApplication extends Application {
                 "Android",
                 "Tags",
                 "#Beste"
+        });
+
+        Gleap.getInstance().setFeedbackSentCallback(new FeedbackSentCallback() {
+            @Override
+            public void invoke(JSONObject jsonObject) {
+                System.out.println(jsonObject);
+            }
         });
 
         // Creating parameters

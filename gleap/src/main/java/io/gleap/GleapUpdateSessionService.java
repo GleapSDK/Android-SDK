@@ -64,8 +64,12 @@ public class GleapUpdateSessionService extends AsyncTask<Void, Void, Integer> {
                     conn.setRequestProperty("Gleap-Hash", gleapSession.getHash());
                 }
 
+                JSONObject dataPayload = pendingUpdateAction.getJSONPayload();
+                dataPayload.put("platform", "Android");
+                dataPayload.put("deviceType", GleapHelper.getDeviceType());
+                
                 JSONObject jsonObject = new JSONObject();
-                jsonObject.put("data", pendingUpdateAction.getJSONPayload());
+                jsonObject.put("data", dataPayload);
                 jsonObject.put("sdkVersion", BuildConfig.VERSION_NAME);
                 jsonObject.put("type", "android");
 
