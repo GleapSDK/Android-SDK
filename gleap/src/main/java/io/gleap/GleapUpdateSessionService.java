@@ -65,7 +65,7 @@ public class GleapUpdateSessionService extends AsyncTask<Void, Void, Integer> {
                 }
 
                 JSONObject dataPayload = pendingUpdateAction.getJSONPayload();
-                dataPayload.put("platform", "Android");
+                dataPayload.put("platform", "android");
                 dataPayload.put("deviceType", GleapHelper.getDeviceType());
                 
                 JSONObject jsonObject = new JSONObject();

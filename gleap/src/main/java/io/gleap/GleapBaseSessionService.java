@@ -84,7 +84,7 @@ class GleapBaseSessionService extends AsyncTask<Void, Void, Integer> {
         try (OutputStream os = conn.getOutputStream()) {
             JSONObject body = new JSONObject();
             body.put("lang", GleapConfig.getInstance().getLanguage());
-            body.put("platform", "Android");
+            body.put("platform", "android");
             body.put("deviceType", GleapHelper.getDeviceType());
             byte[] input = body.toString().getBytes(StandardCharsets.UTF_8);
             os.write(input, 0, input.length);
