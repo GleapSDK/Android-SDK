@@ -68,7 +68,26 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
     private Handler handler;
     private PermissionRequest permissionRequest;
     private static final int PERMISSIONS_REQUEST_RECORD_AUDIO = 101;
+    private static final int PERMISSIONS_REQUEST_RECORD_VIDEO = 102;
     private ValueCallback<Uri[]> fileChooserCallback;
+    
+    private java.util.Queue<PermissionQueueItem> permissionQueue = new java.util.LinkedList<>();
+    private boolean isProcessingPermission = false;
+    private java.util.List<String> grantedWebkitPermissions = new java.util.ArrayList<>();
+    
+    private static class PermissionQueueItem {
+        String origin;
+        String androidPermission;
+        String webkitPermission;
+        int requestCode;
+        
+        PermissionQueueItem(String origin, String androidPermission, String webkitPermission, int requestCode) {
+            this.origin = origin;
+            this.androidPermission = androidPermission;
+            this.webkitPermission = webkitPermission;
+            this.requestCode = requestCode;
+        }
+    }
 
     // Register the ActivityResultLauncher at the class level
     private final ActivityResultLauncher<Intent> imagePickerLauncher = registerForActivityResult(
@@ -347,18 +366,19 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
             @Override
             public void onPermissionRequest(final PermissionRequest request) {
                 permissionRequest = request;
+                grantedWebkitPermissions.clear();
 
                 for (String permission : request.getResources()) {
                     switch (permission) {
                         case "android.webkit.resource.AUDIO_CAPTURE": {
-                            askForPermission(request.getOrigin().toString(), Manifest.permission.RECORD_AUDIO, PERMISSIONS_REQUEST_RECORD_AUDIO);
+                            askForPermission(request.getOrigin().toString(), Manifest.permission.RECORD_AUDIO, permission, PERMISSIONS_REQUEST_RECORD_AUDIO);
                             break;
                         }
                         case "android.webkit.resource.VIDEO_CAPTURE": {
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                                askForPermission(request.getOrigin().toString(), Manifest.permission.CAMERA, PERMISSIONS_REQUEST_RECORD_AUDIO);
+                                askForPermission(request.getOrigin().toString(), Manifest.permission.CAMERA, permission, PERMISSIONS_REQUEST_RECORD_VIDEO);
                             } else {
-                                permissionRequest.grant(new String[]{permission});
+                                grantedWebkitPermissions.add(permission);
                             }
                             break;
                         }
@@ -419,15 +439,35 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         settings.setLoadWithOverviewMode(true);
     }
 
-    public void askForPermission(String origin, String permission, int requestCode) {
-        if (ContextCompat.checkSelfPermission(getApplicationContext(),
-                permission)
+    public void askForPermission(String origin, String androidPermission, String webkitPermission, int requestCode) {
+        permissionQueue.offer(new PermissionQueueItem(origin, androidPermission, webkitPermission, requestCode));
+        processNextPermission();
+    }
+    
+    private void processNextPermission() {
+        if (isProcessingPermission || permissionQueue.isEmpty()) {
+            return;
+        }
+        
+        PermissionQueueItem item = permissionQueue.poll();
+        if (item == null) {
+            return;
+        }
+        
+        if (ContextCompat.checkSelfPermission(getApplicationContext(), item.androidPermission)
                 != PackageManager.PERMISSION_GRANTED) {
+            isProcessingPermission = true;
             ActivityCompat.requestPermissions(GleapMainActivity.this,
-                    new String[]{permission},
-                    requestCode);
+                    new String[]{item.androidPermission},
+                    item.requestCode);
         } else {
-            permissionRequest.grant(permissionRequest.getResources());
+            grantedWebkitPermissions.add(item.webkitPermission);
+            processNextPermission();
+            
+            // If queue is now empty and we're not processing, grant immediately
+            if (permissionQueue.isEmpty() && !isProcessingPermission) {
+                grantPermissionsIfReady();
+            }
         }
     }
 
@@ -435,21 +475,46 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-
-        if (requestCode == PERMISSIONS_REQUEST_RECORD_AUDIO) {
+        
+        isProcessingPermission = false;
+        
+        if (permissions.length > 0) {
+            
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                // Permission granted, now call permissionRequest.grant()
-                if (permissionRequest != null) {
-                    permissionRequest.grant(permissionRequest.getResources());
-                    permissionRequest = null;
-                }
-            } else {
-                // Permission denied, call permissionRequest.deny()
-                if (permissionRequest != null) {
-                    permissionRequest.deny();
-                    permissionRequest = null;
+                String webkitPermission = getWebkitPermissionForAndroidPermission(permissions[0]);
+                if (webkitPermission != null) {
+                    grantedWebkitPermissions.add(webkitPermission);
                 }
             }
+        }
+        
+        processNextPermission();
+        
+        if (permissionQueue.isEmpty() && !isProcessingPermission) {
+            grantPermissionsIfReady();
+        }
+    }
+    
+    private void grantPermissionsIfReady() {
+        if (permissionRequest != null) {
+            if (!grantedWebkitPermissions.isEmpty()) {
+                permissionRequest.grant(grantedWebkitPermissions.toArray(new String[0]));
+            } else {
+                permissionRequest.deny();
+            }
+            permissionRequest = null;
+            grantedWebkitPermissions.clear();
+        }
+    }
+    
+    private String getWebkitPermissionForAndroidPermission(String androidPermission) {
+        switch (androidPermission) {
+            case Manifest.permission.RECORD_AUDIO:
+                return "android.webkit.resource.AUDIO_CAPTURE";
+            case Manifest.permission.CAMERA:
+                return "android.webkit.resource.VIDEO_CAPTURE";
+            default:
+                return null;
         }
     }
 
