@@ -278,8 +278,9 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     }
                 });
 
-                if (savedInstanceState == null) {
-                    initBrowser();
+                initBrowser();
+                if (savedInstanceState != null) {
+                    webView.restoreState(savedInstanceState);
                 }
             }
         } catch (Exception ex) {
