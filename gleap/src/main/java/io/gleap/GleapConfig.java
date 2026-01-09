@@ -42,10 +42,10 @@ class GleapConfig {
     private static GleapConfig instance;
 
     //bb config
-    private String apiUrl = "https://api.gleap.io";
-    private String wsApiUrl = "wss://ws.gleap.io";
-    private String iFrameUrl = "https://messenger-app.gleap.io/appnew";
-    private String sdkKey = "";
+    private volatile String apiUrl = "https://api.gleap.io";
+    private volatile String wsApiUrl = "wss://ws.gleap.io";
+    private volatile String iFrameUrl = "https://messenger-app.gleap.io/appnew";
+    private volatile String sdkKey = "";
     private String feedbackFlow = "";
     private ValueCallback<Uri[]> mUploadMessage;
     private GleapAction action;
@@ -92,7 +92,7 @@ class GleapConfig {
     private boolean activationMethodShake = false;
     private boolean activationMethodScreenshotGesture = false;
     private boolean activationMethodFeedbackButton = false;
-    private String language = "en";
+    private volatile String language = "en";
     private JSONArray networkLogPropsToIgnore = new JSONArray();
     private JSONArray blackList = new JSONArray();
     private JSONObject plainConfig;
@@ -285,11 +285,11 @@ class GleapConfig {
         Gleap.getInstance().processOpenPushActions();
     }
 
-    public String getSdkKey() {
+    public synchronized String getSdkKey() {
         return sdkKey;
     }
 
-    public void setSdkKey(String sdkKey) {
+    public synchronized void setSdkKey(String sdkKey) {
         this.sdkKey = sdkKey;
     }
 

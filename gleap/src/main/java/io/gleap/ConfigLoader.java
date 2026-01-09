@@ -18,7 +18,6 @@ import java.net.URL;
  * Loads the configuration from the server.
  */
 class ConfigLoader extends AsyncTask<GleapBug, Void, JSONObject> {
-    private final String httpsUrl = GleapConfig.getInstance().getApiUrl() + "/config/" + GleapConfig.getInstance().getSdkKey();
     private final OnHttpResponseListener listener;
     private static final int MAX_RETRIES = 3;
     private static final long INITIAL_RETRY_DELAY_MS = 1000;
@@ -37,9 +36,19 @@ class ConfigLoader extends AsyncTask<GleapBug, Void, JSONObject> {
 
     @Override
     protected JSONObject doInBackground(GleapBug... gleapBugs) {
+
+
+        String sdkKey = GleapConfig.getInstance().getSdkKey();
+        if (sdkKey == null || sdkKey.trim().isEmpty()) {
+            Log.e("Gleap", "SDK key is missing in ConfigLoader");
+            return new JSONObject();
+        }
+
+        String httpsUrl = GleapConfig.getInstance().getApiUrl() + "/config/" + GleapConfig.getInstance().getSdkKey();
+
         boolean success = false;
         Exception lastException = null;
-        
+
         for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
             try {
                 URL url = new URL(httpsUrl + "/?lang=" + GleapConfig.getInstance().getLanguage());
@@ -51,7 +60,7 @@ class ConfigLoader extends AsyncTask<GleapBug, Void, JSONObject> {
             } catch (IOException e) {
                 lastException = e;
                 Log.w("Gleap", "Config load attempt " + attempt + " failed", e);
-                
+
                 if (attempt < MAX_RETRIES) {
                     try {
                         long delay = INITIAL_RETRY_DELAY_MS * (long) Math.pow(2, attempt - 1);

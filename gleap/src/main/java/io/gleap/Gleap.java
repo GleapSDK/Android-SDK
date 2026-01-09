@@ -107,9 +107,19 @@ public class Gleap implements iGleap {
      * @param application used to have context and access to take screenshot
      */
     public static void initialize(String sdkKey, Application application) {
+
+        if (sdkKey == null || sdkKey.trim().isEmpty()) {
+            handleErrorStatic(new IllegalArgumentException("Gleap SDK key is missing or empty."), "initialize");
+            return;
+        }
+
+        if (isInitialized) {
+            return;
+        }
+
         try {
             Gleap.application = application;
-            GleapConfig.getInstance().setSdkKey(sdkKey);
+            GleapConfig.getInstance().setSdkKey(sdkKey.trim());
             if (!isInitialized) {
                 isInitialized = true;
                 GleapSessionController.initialize(application);
@@ -1536,7 +1546,7 @@ public class Gleap implements iGleap {
      */
     @Override
     public void logNetwork(String urlConnection, RequestType requestType, int status,
-            int duration, JSONObject request, JSONObject response) {
+                           int duration, JSONObject request, JSONObject response) {
         try {
             GleapHttpInterceptor.log(urlConnection, requestType, status, duration, request, response);
         } catch (Error | Exception ignore) {
