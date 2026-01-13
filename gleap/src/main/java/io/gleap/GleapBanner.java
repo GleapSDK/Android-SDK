@@ -70,7 +70,7 @@ class GleapBanner {
     }
 
     public LinearLayout getBannerComponent() {
-        LinearLayout bannerContainer = new LinearLayout(this.parentActivity.getApplication().getApplicationContext());
+        LinearLayout bannerContainer = new LinearLayout(this.parentActivity);
         bannerContainer.setOrientation(LinearLayout.VERTICAL);
         bannerContainer.setGravity(Gravity.TOP);
         LinearLayout.LayoutParams bannerParams = new LinearLayout.LayoutParams(
@@ -85,7 +85,7 @@ class GleapBanner {
             public void run() {
                 try {
                     // Create the WebView and load a URL
-                    webView = new WebView(parentActivity.getApplication().getApplicationContext());
+                    webView = new WebView(parentActivity);
                     LinearLayout.LayoutParams webViewParams = new LinearLayout.LayoutParams(
                             LinearLayout.LayoutParams.MATCH_PARENT,
                             100
@@ -115,7 +115,7 @@ class GleapBanner {
                     }
 
                     if (isFloating) {
-                        CardView cardView = new CardView(parentActivity.getApplication().getApplicationContext());
+                        CardView cardView = new CardView(parentActivity);
                         cardView.setBackgroundResource(R.drawable.rounded_corner);
                         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
                         params.setMargins(convertDpToPixel(20, parentActivity), convertDpToPixel(20, parentActivity), convertDpToPixel(20, parentActivity), convertDpToPixel(20, parentActivity));

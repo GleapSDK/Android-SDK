@@ -199,13 +199,13 @@ class GleapInvisibleActivityManger {
 
                     // Initialize close button.
                     if (closeButtonContainer == null) {
-                        ImageButton closeButton = new ImageButton(finalActivity.getApplication().getApplicationContext());
+                        ImageButton closeButton = new ImageButton(finalActivity);
 
                         GradientDrawable gradientDrawable = new GradientDrawable();
                         gradientDrawable.setCornerRadius(1000);
                         gradientDrawable.setColor(Color.parseColor("#878787"));
 
-                        closeButtonContainer = new RelativeLayout(finalActivity.getApplication().getApplicationContext());
+                        closeButtonContainer = new RelativeLayout(finalActivity);
                         closeButtonContainer.setGravity(Gravity.RIGHT);
 
                         LinearLayout.LayoutParams closeContainerParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
@@ -220,7 +220,7 @@ class GleapInvisibleActivityManger {
                             }
                         });
 
-                        RelativeLayout view = new RelativeLayout(finalActivity.getApplication().getApplicationContext());
+                        RelativeLayout view = new RelativeLayout(finalActivity);
                         view.addView(closeButton, convertDpToPixel(18, finalActivity), convertDpToPixel(18, finalActivity));
                         view.setBackground(gradientDrawable);
                         view.setPadding(15, 15, 15, 15);
@@ -230,7 +230,7 @@ class GleapInvisibleActivityManger {
                     }
 
                     if (notificationListContainer == null) {
-                        notificationListContainer = new LinearLayout(finalActivity.getApplication().getApplicationContext());
+                        notificationListContainer = new LinearLayout(finalActivity);
                         notificationListContainer.setOrientation(LinearLayout.VERTICAL);
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                             notificationListContainer.setGravity(notificationContainerLayout.getGravity());
@@ -312,7 +312,7 @@ class GleapInvisibleActivityManger {
         LinearLayout commentComponent = notification.getComponent(activity);
         if (commentComponent != null) {
             if (notification.getType().equals("news") || notification.getType().equals("checklist")) {
-                CardView cardView = new CardView(activity.getApplication().getApplicationContext());
+                CardView cardView = new CardView(activity);
                 cardView.setBackgroundResource(R.drawable.rounded_corner);
                 LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
                 params.setMargins(convertDpToPixel(1, activity), convertDpToPixel(10, activity), convertDpToPixel(20, activity), convertDpToPixel(4, activity));

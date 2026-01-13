@@ -100,12 +100,12 @@ class GleapChatMessage {
 
     public LinearLayout getNews(Activity local) {
         Activity activity = ActivityUtil.getCurrentActivity();
-        LinearLayout completeMessage = new LinearLayout(local.getApplication().getApplicationContext());
+        LinearLayout completeMessage = new LinearLayout(local);
         completeMessage.setId(View.generateViewId());
         completeMessage.setOrientation(LinearLayout.VERTICAL);
         completeMessage.setVisibility(View.GONE);
 
-        ImageView topImage = new ImageView(local.getApplication().getApplicationContext());
+        ImageView topImage = new ImageView(local);
         topImage.setMaxHeight(convertDpToPixel(155, activity));
         topImage.setMinimumHeight(convertDpToPixel(155, activity));
         topImage.setAdjustViewBounds(true);
@@ -121,9 +121,9 @@ class GleapChatMessage {
 
         completeMessage.addView(topImage);
 
-        LinearLayout bottomPart = new LinearLayout(local.getApplication().getApplicationContext());
+        LinearLayout bottomPart = new LinearLayout(local);
         bottomPart.setOrientation(LinearLayout.VERTICAL);
-        ImageView avatarImage = new ImageView(local.getApplication().getApplicationContext());
+        ImageView avatarImage = new ImageView(local);
         avatarImage.setMaxHeight(convertDpToPixel(24, activity));
         avatarImage.setMinimumHeight(convertDpToPixel(24, activity));
         avatarImage.setMinimumWidth(convertDpToPixel(24, activity));
@@ -152,7 +152,7 @@ class GleapChatMessage {
             width = convertDpToPixel(280, activity);
         }
 
-        TextView titleComponent = new TextView(local.getApplication().getApplicationContext());
+        TextView titleComponent = new TextView(local);
         titleComponent.setId(View.generateViewId());
         titleComponent.setText(getText().replace("{{name}}", getName()));
         titleComponent.setTextSize(16);
@@ -166,7 +166,7 @@ class GleapChatMessage {
         titleComponent.setPadding(convertDpToPixel(0, local), convertDpToPixel(0, local), convertDpToPixel(10, local), convertDpToPixel(0, local));
         bottomPart.addView(titleComponent);
 
-        TextView usernameTextView = new TextView(local.getApplication().getApplicationContext());
+        TextView usernameTextView = new TextView(local);
         usernameTextView.setId(View.generateViewId());
         usernameTextView.setText(getSender().getName());
         usernameTextView.setTextColor(Color.GRAY);
@@ -176,7 +176,7 @@ class GleapChatMessage {
         messageComponentParams.setMargins(convertDpToPixel(10, local), convertDpToPixel(0, local), convertDpToPixel(0, local), convertDpToPixel(0, local));
         usernameTextView.setLayoutParams(messageComponentParams);
 
-        LinearLayout userLayout = new LinearLayout(local.getApplication().getApplicationContext());
+        LinearLayout userLayout = new LinearLayout(local);
         userLayout.addView(avatarImage, convertDpToPixel(24, local), convertDpToPixel(24, local));
         userLayout.addView(usernameTextView);
         userLayout.setGravity(Gravity.CENTER_VERTICAL);
@@ -239,7 +239,7 @@ class GleapChatMessage {
             width = convertDpToPixel(280, activity);
         }
 
-        LinearLayout completeMessage = new LinearLayout(local.getApplication().getApplicationContext());
+        LinearLayout completeMessage = new LinearLayout(local);
         completeMessage.setId(View.generateViewId());
         completeMessage.setOrientation(LinearLayout.VERTICAL);
         completeMessage.setVisibility(View.VISIBLE);
@@ -252,7 +252,7 @@ class GleapChatMessage {
         completeMessage.setPadding(convertDpToPixel(16, local), convertDpToPixel(12, local), convertDpToPixel(16, local), convertDpToPixel(12, local));
         completeMessage.setLayoutParams(mainParams);
 
-        TextView titleComponent = new TextView(local.getApplication().getApplicationContext());
+        TextView titleComponent = new TextView(local);
         titleComponent.setId(View.generateViewId());
         titleComponent.setText(getText().replace("{{name}}", getName()));
         titleComponent.setTextSize(16);
@@ -275,7 +275,7 @@ class GleapChatMessage {
         }
 
         // Progress Bar Container
-        LinearLayout progressBarContainer = new LinearLayout(local.getApplication().getApplicationContext());
+        LinearLayout progressBarContainer = new LinearLayout(local);
         LinearLayout.LayoutParams containerParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, convertDpToPixel(8, local));
         containerParams.setMargins(0, convertDpToPixel(12, local), 0, convertDpToPixel(12, local));
         progressBarContainer.setLayoutParams(containerParams);
@@ -285,7 +285,7 @@ class GleapChatMessage {
         completeMessage.addView(progressBarContainer);
 
         // Progress Bar
-        View progressBar = new View(local.getApplication().getApplicationContext());
+        View progressBar = new View(local);
         LinearLayout.LayoutParams barParams = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, progress); // weight = progress
         progressBar.setLayoutParams(barParams);
         GradientDrawable progressBarDrawable = createRoundedRectangleDrawable(Color.parseColor(GleapConfig.getInstance().getColor()), cornerRadius, cornerRadius, cornerRadius, cornerRadius);
@@ -293,12 +293,12 @@ class GleapChatMessage {
         progressBarContainer.addView(progressBar);
 
         // Progress Bar Background View
-        View progressBarBg = new View(local.getApplication().getApplicationContext());
+        View progressBarBg = new View(local);
         LinearLayout.LayoutParams bgParams = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1-progress); // weight = 1-progress
         progressBarBg.setLayoutParams(bgParams);
         progressBarContainer.addView(progressBarBg);
 
-        TextView nextStepComponent = new TextView(local.getApplication().getApplicationContext());
+        TextView nextStepComponent = new TextView(local);
         nextStepComponent.setId(View.generateViewId());
         nextStepComponent.setText(getNextStepTitle().replace("{{name}}", getName()));
         nextStepComponent.setTextColor(Color.DKGRAY);
@@ -332,10 +332,10 @@ class GleapChatMessage {
     }
 
     public LinearLayout getPlainMessage(Activity local) {
-        LinearLayout messageContainer = new LinearLayout(local.getApplication().getApplicationContext());
+        LinearLayout messageContainer = new LinearLayout(local);
         messageContainer.setVisibility(View.GONE);
 
-        TextView titleComponent = new TextView(local.getApplication().getApplicationContext());
+        TextView titleComponent = new TextView(local);
         titleComponent.setId(View.generateViewId());
         titleComponent.setText(getSender().getName());
         titleComponent.setTextSize(14);
@@ -347,7 +347,7 @@ class GleapChatMessage {
         titleParams.bottomMargin = convertDpToPixel(2, local);
         titleComponent.setLayoutParams(titleParams);
 
-        TextView messageComponent = new TextView(local.getApplication().getApplicationContext());
+        TextView messageComponent = new TextView(local);
         messageComponent.setId(View.generateViewId());
         messageComponent.setText(getText().replace("{{name}}", getName()));
         messageComponent.setTextColor(Color.BLACK);
@@ -358,7 +358,7 @@ class GleapChatMessage {
         );
         messageComponent.setLayoutParams(titleParams);
 
-        LinearLayout completeMessage = new LinearLayout(local.getApplication().getApplicationContext());
+        LinearLayout completeMessage = new LinearLayout(local);
         completeMessage.setOrientation(LinearLayout.VERTICAL);
         completeMessage.addView(titleComponent);
         completeMessage.addView(messageComponent);
@@ -366,7 +366,7 @@ class GleapChatMessage {
         completeMessage.setBaselineAligned(true);
         completeMessage.setPadding(convertDpToPixel(17, local), convertDpToPixel(13, local), convertDpToPixel(17, local), convertDpToPixel(13, local));
 
-        CardView cardView = new CardView(local.getApplication().getApplicationContext());
+        CardView cardView = new CardView(local);
         cardView.setBackgroundResource(R.drawable.rounded_corner);
         LinearLayout.LayoutParams paramsBubble = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         paramsBubble.setMargins(convertDpToPixel(5, local), convertDpToPixel(9, local), convertDpToPixel(15, local), convertDpToPixel(4, local));
@@ -375,7 +375,7 @@ class GleapChatMessage {
         cardView.setElevation(4f);
         cardView.addView(completeMessage);
 
-        ImageView avatarImage = new ImageView(local.getApplication().getApplicationContext());
+        ImageView avatarImage = new ImageView(local);
 
         avatarImage.setMaxHeight(convertDpToPixel(28, local));
         avatarImage.setMinimumHeight(convertDpToPixel(28, local));
@@ -417,7 +417,7 @@ class GleapChatMessage {
 
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
 
-        CardView rounded = new CardView(local.getApplication().getApplicationContext());
+        CardView rounded = new CardView(local);
         rounded.setRadius(convertDpToPixel(32, local) / 2);
         rounded.addView(avatarImage, convertDpToPixel(28, local), convertDpToPixel(28, local));
 
