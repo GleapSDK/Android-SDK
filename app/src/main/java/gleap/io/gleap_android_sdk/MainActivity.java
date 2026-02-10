@@ -83,11 +83,9 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Gleap.getInstance().showFeedbackButton(true);
-
         Gleap.getInstance().closeWidgetOnExternalLinkOpen(true);
 
-
+        //Gleap.getInstance().setNotificationContainerOffset(20, 100);
 
         /*if (intent?.extras?.getString(INTENT_EXTRAS_SENDER_KEY) == INTENT_EXTRAS_GLEAP_SENDER_VALUE) {
             Gleap.getInstance().handlePushNotification(intent?.extras?.toJsonObject())

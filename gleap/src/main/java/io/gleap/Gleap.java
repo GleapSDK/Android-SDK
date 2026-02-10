@@ -1950,6 +1950,12 @@ public class Gleap implements iGleap {
     }
 
     @Override
+    public void setNotificationContainerOffset(int x, int y) {
+        GleapConfig.getInstance().setNotificationContainerOffsetX(x);
+        GleapConfig.getInstance().setNotificationContainerOffsetY(y);
+    }
+
+    @Override
     public void setTags(String[] tags) {
         GleapBug.getInstance().setTags(tags);
     }

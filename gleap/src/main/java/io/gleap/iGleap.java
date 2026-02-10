@@ -659,6 +659,12 @@ interface iGleap {
 
     void showFeedbackButton(boolean show);
 
+    /**
+     * Sets the X/Y offset (in dp) for the notification container when the feedback button is hidden.
+     * Default is 0, 0.
+     */
+    void setNotificationContainerOffset(int x, int y);
+
     void openFeatureRequests();
 
     void openFeatureRequests(boolean showBackButton);

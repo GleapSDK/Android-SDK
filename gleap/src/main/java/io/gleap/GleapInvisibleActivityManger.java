@@ -155,31 +155,35 @@ class GleapInvisibleActivityManger {
                     boolean manualHidden = GleapConfig.getInstance().isHideFeedbackButton();
                     boolean canShowFeedbackButton = showFab && !manualHidden;
 
-                    // Feedback button hidden - apply default constraints.
+                    // Feedback button hidden - apply default constraints plus optional notification container offset.
                     if (feedbackButtonRelativeLayout == null || !canShowFeedbackButton) {
-                        set.connect(notificationContainerLayout.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, convertDpToPixel(20, finalActivity));
-                        set.connect(notificationContainerLayout.getId(), ConstraintSet.START, layout.getId(), ConstraintSet.START, convertDpToPixel(0, finalActivity));
+                        int containerOffsetX = GleapConfig.getInstance().getNotificationContainerOffsetX();
+                        int containerOffsetY = GleapConfig.getInstance().getNotificationContainerOffsetY();
+                        set.connect(notificationContainerLayout.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, convertDpToPixel(20 + containerOffsetY, finalActivity));
+                        set.connect(notificationContainerLayout.getId(), ConstraintSet.START, layout.getId(), ConstraintSet.START, convertDpToPixel(containerOffsetX, finalActivity));
                     } else {
                         // Apply constraints based on feedback button type.
+                        int containerOffsetX = GleapConfig.getInstance().getNotificationContainerOffsetX();
+                        int containerOffsetY = GleapConfig.getInstance().getNotificationContainerOffsetY();
                         if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.BOTTOM_LEFT) {
-                            set.connect(notificationContainerLayout.getId(), ConstraintSet.BOTTOM, feedbackButtonRelativeLayout.getId(), ConstraintSet.TOP, convertDpToPixel(15, finalActivity));
-                            set.connect(notificationContainerLayout.getId(), ConstraintSet.START, layout.getId(), ConstraintSet.START, convertDpToPixel(offsetX, finalActivity));
+                            set.connect(notificationContainerLayout.getId(), ConstraintSet.BOTTOM, feedbackButtonRelativeLayout.getId(), ConstraintSet.TOP, convertDpToPixel(15 + containerOffsetY, finalActivity));
+                            set.connect(notificationContainerLayout.getId(), ConstraintSet.START, layout.getId(), ConstraintSet.START, convertDpToPixel(offsetX + containerOffsetX, finalActivity));
                             viewPadding = offsetX;
                         } else if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.BOTTOM_RIGHT) {
-                            set.connect(notificationContainerLayout.getId(), ConstraintSet.BOTTOM, feedbackButtonRelativeLayout.getId(), ConstraintSet.TOP, convertDpToPixel(15, finalActivity));
-                            set.connect(notificationContainerLayout.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, convertDpToPixel(offsetX - 20, finalActivity));
+                            set.connect(notificationContainerLayout.getId(), ConstraintSet.BOTTOM, feedbackButtonRelativeLayout.getId(), ConstraintSet.TOP, convertDpToPixel(15 + containerOffsetY, finalActivity));
+                            set.connect(notificationContainerLayout.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, convertDpToPixel(offsetX - 20 + containerOffsetX, finalActivity));
                             viewPadding = offsetX;
                             notificationContainerLayout.setGravity(Gravity.RIGHT);
                         } else if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.CLASSIC_LEFT) {
-                            set.connect(notificationContainerLayout.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, convertDpToPixel(offsetY, finalActivity));
-                            set.connect(notificationContainerLayout.getId(), ConstraintSet.START, layout.getId(), ConstraintSet.START, convertDpToPixel(offsetY, finalActivity));
+                            set.connect(notificationContainerLayout.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, convertDpToPixel(offsetY + containerOffsetY, finalActivity));
+                            set.connect(notificationContainerLayout.getId(), ConstraintSet.START, layout.getId(), ConstraintSet.START, convertDpToPixel(offsetX + containerOffsetX, finalActivity));
                         } else if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.CLASSIC_BOTTOM) {
-                            set.connect(notificationContainerLayout.getId(), ConstraintSet.BOTTOM, feedbackButtonRelativeLayout.getId(), ConstraintSet.TOP, convertDpToPixel(15, finalActivity));
-                            set.connect(notificationContainerLayout.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, 0);
+                            set.connect(notificationContainerLayout.getId(), ConstraintSet.BOTTOM, feedbackButtonRelativeLayout.getId(), ConstraintSet.TOP, convertDpToPixel(15 + containerOffsetY, finalActivity));
+                            set.connect(notificationContainerLayout.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, convertDpToPixel(containerOffsetX, finalActivity));
                             notificationContainerLayout.setGravity(Gravity.RIGHT);
                         } else {
-                            set.connect(notificationContainerLayout.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, convertDpToPixel(offsetY, finalActivity));
-                            set.connect(notificationContainerLayout.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, 0);
+                            set.connect(notificationContainerLayout.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, convertDpToPixel(offsetY + containerOffsetY, finalActivity));
+                            set.connect(notificationContainerLayout.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, convertDpToPixel(containerOffsetX, finalActivity));
                             notificationContainerLayout.setGravity(Gravity.RIGHT);
                         }
                     }

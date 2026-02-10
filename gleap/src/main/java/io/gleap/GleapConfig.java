@@ -106,6 +106,10 @@ class GleapConfig {
     private int buttonX = 20; //horizontal
     private int buttonY = 20; //vertical
 
+    /** X/Y offset for the notification container when feedback button is hidden (default 0). */
+    private int notificationContainerOffsetX = 0;
+    private int notificationContainerOffsetY = 0;
+
     //Streamedevent
     private int maxEventLength = 500;
 
@@ -634,6 +638,22 @@ class GleapConfig {
 
     public int getButtonY() {
         return buttonY;
+    }
+
+    public int getNotificationContainerOffsetX() {
+        return notificationContainerOffsetX;
+    }
+
+    public void setNotificationContainerOffsetX(int notificationContainerOffsetX) {
+        this.notificationContainerOffsetX = notificationContainerOffsetX;
+    }
+
+    public int getNotificationContainerOffsetY() {
+        return notificationContainerOffsetY;
+    }
+
+    public void setNotificationContainerOffsetY(int notificationContainerOffsetY) {
+        this.notificationContainerOffsetY = notificationContainerOffsetY;
     }
 
     private int getContrastColor(int color) {
