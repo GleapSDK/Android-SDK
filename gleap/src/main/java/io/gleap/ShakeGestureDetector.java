@@ -8,14 +8,24 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 
 /**
- * Detects the shake gesture of the phone
+ * Detects deliberate shake gestures while filtering out false positives from
+ * device rotations. Uses a high-pass filter to remove gravity and requires
+ * multiple acceleration peaks within a time window before triggering.
  */
 class ShakeGestureDetector extends GleapDetector implements SensorEventListener {
-    private static final float SHAKE_THRESHOLD_GRAVITY = 4.0F;
-    private static final int SHAKE_SLOP_TIME_MS = 600;
+    private static final float SHAKE_THRESHOLD_GRAVITY = 1.8F;
+    private static final int SHAKE_SLOP_TIME_MS = 250;
+    private static final int SHAKE_COUNT_RESET_TIME_MS = 1500;
+    private static final int MIN_SHAKE_COUNT = 2;
+    private static final float GRAVITY_FILTER_ALPHA = 0.8f;
+
     private long mShakeTimestamp;
+    private int mShakeCount;
     private SensorManager mSensorManager;
     private Sensor mAccelerometer;
+
+    private final float[] mGravity = new float[3];
+    private boolean mHasGravityEstimate = false;
 
     public ShakeGestureDetector(Application application) {
         super(application);
@@ -24,13 +34,13 @@ class ShakeGestureDetector extends GleapDetector implements SensorEventListener 
     @Override
     public void initialize() {
         mSensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
-        mAccelerometer = mSensorManager
-                .getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-
+        mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
     }
 
     @Override
     public void resume() {
+        mHasGravityEstimate = false;
+        mShakeCount = 0;
         mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_UI);
     }
 
@@ -45,21 +55,46 @@ class ShakeGestureDetector extends GleapDetector implements SensorEventListener 
     }
 
     @Override
-    public void onSensorChanged(SensorEvent sensorEvent) {
-        float gX = sensorEvent.values[0] / SensorManager.GRAVITY_EARTH;
-        float gY = sensorEvent.values[1] / SensorManager.GRAVITY_EARTH;
-        float gZ = sensorEvent.values[2] / SensorManager.GRAVITY_EARTH;
+    public void onSensorChanged(SensorEvent event) {
+        if (!mHasGravityEstimate) {
+            mGravity[0] = event.values[0];
+            mGravity[1] = event.values[1];
+            mGravity[2] = event.values[2];
+            mHasGravityEstimate = true;
+            return;
+        }
 
-        // gForce will be close to 1 when there is no movement.
-        double gForce = Math.sqrt(gX * gX + gY * gY + gZ * gZ);
-        if (gForce > SHAKE_THRESHOLD_GRAVITY) {
-            final long now = System.currentTimeMillis();
-            // ignore shake events too close to each other (600ms)
-            if (mShakeTimestamp + SHAKE_SLOP_TIME_MS > now) {
-                return;
-            }
+        // Low-pass filter to track gravity orientation over time
+        mGravity[0] = GRAVITY_FILTER_ALPHA * mGravity[0] + (1 - GRAVITY_FILTER_ALPHA) * event.values[0];
+        mGravity[1] = GRAVITY_FILTER_ALPHA * mGravity[1] + (1 - GRAVITY_FILTER_ALPHA) * event.values[1];
+        mGravity[2] = GRAVITY_FILTER_ALPHA * mGravity[2] + (1 - GRAVITY_FILTER_ALPHA) * event.values[2];
 
-            mShakeTimestamp = now;
+        // High-pass filter: subtract gravity to isolate user-driven acceleration
+        float x = event.values[0] - mGravity[0];
+        float y = event.values[1] - mGravity[1];
+        float z = event.values[2] - mGravity[2];
+
+        float acceleration = (float) Math.sqrt(x * x + y * y + z * z) / SensorManager.GRAVITY_EARTH;
+
+        if (acceleration < SHAKE_THRESHOLD_GRAVITY) {
+            return;
+        }
+
+        final long now = System.currentTimeMillis();
+
+        if (mShakeTimestamp + SHAKE_COUNT_RESET_TIME_MS < now) {
+            mShakeCount = 0;
+        }
+
+        if (mShakeTimestamp + SHAKE_SLOP_TIME_MS > now) {
+            return;
+        }
+
+        mShakeTimestamp = now;
+        mShakeCount++;
+
+        if (mShakeCount >= MIN_SHAKE_COUNT) {
+            mShakeCount = 0;
             try {
                 if (!GleapBug.getInstance().isDisabled()) {
                     this.takeScreenshot();
@@ -72,8 +107,5 @@ class ShakeGestureDetector extends GleapDetector implements SensorEventListener 
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int i) {
-
     }
-
-
 }
