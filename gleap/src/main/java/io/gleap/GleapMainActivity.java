@@ -74,6 +74,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
     private java.util.Queue<PermissionQueueItem> permissionQueue = new java.util.LinkedList<>();
     private boolean isProcessingPermission = false;
     private java.util.List<String> grantedWebkitPermissions = new java.util.ArrayList<>();
+    private boolean isSurvey = false;
     
     private static class PermissionQueueItem {
         String origin;
@@ -206,8 +207,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
             super.onCreate(savedInstanceState);
             GleapInvisibleActivityManger.getInstance().clearMessages();
 
-            url += GleapURLGenerator.generateURL();
-
             setContentView(R.layout.activity_gleap_main);
 
             if (getPackageManager().hasSystemFeature("android.software.webview")) {
@@ -246,7 +245,8 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
                 gradientDrawable.setCornerRadius(0f);
 
-                findViewById(R.id.gleap_progressBarHeader).setBackground(gradientDrawable);
+                View progressHeaderView = findViewById(R.id.gleap_progressBarHeader);
+                progressHeaderView.setBackground(gradientDrawable);
 
                 exitAfterFifteenSeconds = new Runnable() {
                     @Override
@@ -257,12 +257,15 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     }
                 };
 
-                //if it is no survey preload with shadow
-                boolean isSurvey = getIntent().getBooleanExtra("IS_SURVEY", false);
+                isSurvey = getIntent().getBooleanExtra("IS_SURVEY", false);
+                View loaderView = findViewById(R.id.loader);
+                loaderView.setVisibility(View.VISIBLE);
                 if (isSurvey) {
-                    findViewById(R.id.loader).setVisibility(View.INVISIBLE);
+                    progressHeaderView.setVisibility(View.GONE);
+                    loaderView.setBackgroundColor(Color.parseColor("#66000000"));
                 } else {
-                    findViewById(R.id.loader).setBackgroundColor(backgroundColor);
+                    progressHeaderView.setVisibility(View.VISIBLE);
+                    loaderView.setBackgroundColor(backgroundColor);
                 }
 
                 this.handler = new Handler(Looper.getMainLooper());
@@ -278,10 +281,16 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     }
                 });
 
-                initBrowser();
-                if (savedInstanceState != null) {
-                    webView.restoreState(savedInstanceState);
-                }
+                webView.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        url += GleapURLGenerator.generateURL();
+                        initBrowser();
+                        if (savedInstanceState != null) {
+                            webView.restoreState(savedInstanceState);
+                        }
+                    }
+                });
             }
         } catch (Exception ex) {
         }
@@ -653,6 +662,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                                         }
                                     }
                                 }, 100);
+                                findViewById(R.id.loader).setVisibility(View.GONE);
                                 webView.setVisibility(View.VISIBLE);
 
                                 break;
