@@ -7,6 +7,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -197,7 +198,12 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
             this.requestWindowFeature(Window.FEATURE_NO_TITLE);
             try {
-                getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+                // SOFT_INPUT_ADJUST_RESIZE is deprecated on API 30+ and ignored on API 35+.
+                // On API 30+ we rely solely on the WindowInsetsCompat listener for keyboard
+                // handling; on older versions we keep the legacy flag for compatibility.
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+                    getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+                }
                 if (getSupportActionBar() != null) {
                     getSupportActionBar().hide();
                 }
@@ -285,9 +291,19 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     @Override
                     public void run() {
                         url += GleapURLGenerator.generateURL();
-                        initBrowser();
                         if (savedInstanceState != null) {
-                            webView.restoreState(savedInstanceState);
+                            // Activity was recreated (e.g. process killed in background).
+                            // Set up WebView clients/settings but skip loading a new URL;
+                            // restoreState will navigate back to the previous page.
+                            initBrowserSettings();
+                            android.webkit.WebBackForwardList restored = webView.restoreState(savedInstanceState);
+                            if (restored == null) {
+                                // restoreState failed — fall back to a full reload.
+                                webView.loadUrl(url);
+                            }
+                        } else {
+                            // Fresh start — initialise everything and load the URL.
+                            initBrowser();
                         }
                     }
                 });
@@ -306,6 +322,15 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
         webView.restoreState(savedInstanceState);
+    }
+
+    @Override
+    public void onConfigurationChanged(@NonNull Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        // Intentionally empty — we declared the relevant configChanges in the
+        // manifest so the system delivers them here instead of recreating the
+        // activity. This keeps the WebView (and its chat state) alive when the
+        // soft keyboard appears/disappears or the screen layout changes.
     }
 
     @Override
@@ -359,7 +384,12 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         super.onDestroy();
     }
 
-    private void initBrowser() {
+    /**
+     * Configure WebView settings, clients and JS bridge without loading a URL.
+     * Call this when restoring from saved state so the WebView is properly
+     * wired up before {@code restoreState()} navigates to the previous page.
+     */
+    private void initBrowserSettings() {
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
@@ -443,10 +473,16 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 }
             }
         });
-        webView.loadUrl(url);
         webView.setVisibility(View.INVISIBLE);
-        settings.setUseWideViewPort(true);
-        settings.setLoadWithOverviewMode(true);
+    }
+
+    /**
+     * Full browser initialisation: configure settings, clients and load the URL.
+     * Used on a fresh start (no saved instance state).
+     */
+    private void initBrowser() {
+        initBrowserSettings();
+        webView.loadUrl(url);
     }
 
     public void askForPermission(String origin, String androidPermission, String webkitPermission, int requestCode) {
