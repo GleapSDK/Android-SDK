@@ -198,12 +198,12 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
             this.requestWindowFeature(Window.FEATURE_NO_TITLE);
             try {
-                // SOFT_INPUT_ADJUST_RESIZE is deprecated on API 30+ and ignored on API 35+.
-                // On API 30+ we rely solely on the WindowInsetsCompat listener for keyboard
-                // handling; on older versions we keep the legacy flag for compatibility.
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-                    getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
-                }
+                // SOFT_INPUT_ADJUST_RESIZE is deprecated on API 30+ but still honoured
+                // for apps that target SDK < 35 (this SDK targets 33).  Setting it
+                // unconditionally ensures the window shrinks for the keyboard on every
+                // device – including Android 16 / Samsung One UI 8.0 – so the WebView
+                // content remains visible without needing a separate IME-insets handler.
+                getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
                 if (getSupportActionBar() != null) {
                     getSupportActionBar().hide();
                 }
@@ -220,25 +220,24 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
                 final FrameLayout webViewContainer = findViewById(R.id.webview_container);
 
+                // Handle system-bar insets (status bar, navigation bar) so the
+                // WebView content is not drawn behind them.  We intentionally
+                // do NOT include IME insets here: the keyboard resize is fully
+                // handled by SOFT_INPUT_ADJUST_RESIZE which shrinks the window
+                // itself.  Adding IME padding on top of that would double-shift
+                // the content -- the root cause of the blank-screen-on-keyboard
+                // bug on Android 16 / Samsung One UI 8.0.
                 ViewCompat.setOnApplyWindowInsetsListener(webViewContainer,
                     (view, insets) -> {
 
-                    // status + navigation bars (stable system bars)
                     Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
 
-                    // on Android 11+ this is the real keyboard height;
-                    // on older versions it’s 0 – but then the IME is reported as a system‑bar inset
-                    Insets ime  = insets.getInsets(WindowInsetsCompat.Type.ime());
-
-                    int topInset    = bars.top;                       // keep the status‑bar height
-                    int bottomInset = Math.max(bars.bottom, ime.bottom); // choose the larger of nav‑bar or IME
-
                     view.setPadding(view.getPaddingLeft(),
-                                    topInset,
+                                    bars.top,
                                     view.getPaddingRight(),
-                                    bottomInset);
+                                    bars.bottom);
 
-                    return insets;   // DON’T consume – let child views see the same insets
+                    return insets;
                 });
 
                 int backgroundColor = Color.parseColor(GleapConfig.getInstance().getBackgroundColor());
@@ -321,7 +320,11 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
-        webView.restoreState(savedInstanceState);
+        // Do NOT call webView.restoreState() here.  The posted runnable in
+        // onCreate already handles restoration after the WebView clients are
+        // wired up via initBrowserSettings().  Calling restoreState() here
+        // would consume the Bundle's WebView state before that runnable
+        // executes, forcing an unnecessary full URL reload every time.
     }
 
     @Override
