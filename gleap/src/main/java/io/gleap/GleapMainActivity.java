@@ -19,6 +19,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Base64;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
@@ -75,7 +76,10 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
     private boolean isProcessingPermission = false;
     private java.util.List<String> grantedWebkitPermissions = new java.util.ArrayList<>();
     private boolean isSurvey = false;
-    
+    private boolean hasInitiallyLoaded = false;
+    private boolean isImeVisible = false;
+    private int lockedScrollY = 0;
+
     private static class PermissionQueueItem {
         String origin;
         String androidPermission;
@@ -197,13 +201,23 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
             this.requestWindowFeature(Window.FEATURE_NO_TITLE);
             try {
-                getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+                getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
                 if (getSupportActionBar() != null) {
                     getSupportActionBar().hide();
                 }
             } catch (Exception ex) {
             }
-            
+
+            // Prevent Android 16's DecorView auto-scroll (ViewRootImpl.scrollToRectOrFocus)
+            // which pans the translucent activity upward when the keyboard opens,
+            // exposing the host app underneath.
+            final View decorView = getWindow().getDecorView();
+            decorView.setOnScrollChangeListener((v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
+                if (scrollY != 0) {
+                    v.scrollTo(scrollX, 0);
+                }
+            });
+
             super.onCreate(savedInstanceState);
             GleapInvisibleActivityManger.getInstance().clearMessages();
 
@@ -216,23 +230,34 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
                 ViewCompat.setOnApplyWindowInsetsListener(webViewContainer,
                     (view, insets) -> {
-
-                    // status + navigation bars (stable system bars)
                     Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-
-                    // on Android 11+ this is the real keyboard height;
-                    // on older versions it’s 0 – but then the IME is reported as a system‑bar inset
                     Insets ime  = insets.getInsets(WindowInsetsCompat.Type.ime());
 
-                    int topInset    = bars.top;                       // keep the status‑bar height
-                    int bottomInset = Math.max(bars.bottom, ime.bottom); // choose the larger of nav‑bar or IME
+                    int topInset = bars.top;
+                    int bottomMargin = Math.max(bars.bottom, ime.bottom);
 
-                    view.setPadding(view.getPaddingLeft(),
-                                    topInset,
-                                    view.getPaddingRight(),
-                                    bottomInset);
+                    // Apply top inset as padding to keep status bar space
+                    view.setPadding(view.getPaddingLeft(), topInset, view.getPaddingRight(), 0);
 
-                    return insets;   // DON’T consume – let child views see the same insets
+                    // Shrink container height by setting bottom margin equal to IME/nav height
+                    ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) view.getLayoutParams();
+                    if (lp.bottomMargin != bottomMargin) {
+                        lp.bottomMargin = bottomMargin;
+                        view.setLayoutParams(lp);
+                    }
+
+                    boolean nowImeVisible = ime.bottom > 0;
+                    if (nowImeVisible && !isImeVisible) {
+                        isImeVisible = true;
+                        try {
+                            lockedScrollY = webView.getScrollY();
+                            webView.post(() -> webView.scrollTo(webView.getScrollX(), lockedScrollY));
+                        } catch (Exception ignore) {}
+                    } else if (!nowImeVisible && isImeVisible) {
+                        isImeVisible = false;
+                    }
+
+                    return insets;   // don't consume
                 });
 
                 int backgroundColor = Color.parseColor(GleapConfig.getInstance().getBackgroundColor());
@@ -259,13 +284,23 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
                 isSurvey = getIntent().getBooleanExtra("IS_SURVEY", false);
                 View loaderView = findViewById(R.id.loader);
-                loaderView.setVisibility(View.VISIBLE);
-                if (isSurvey) {
+
+                // When the Activity is recreated (e.g. config change, process
+                // death) hide the spinner but keep the loader background so
+                // the translucent window doesn't expose the host app.
+                if (savedInstanceState != null) {
+                    findViewById(R.id.loading_indicator).setVisibility(View.GONE);
                     progressHeaderView.setVisibility(View.GONE);
-                    loaderView.setBackgroundColor(Color.parseColor("#66000000"));
+                    hasInitiallyLoaded = true;
                 } else {
-                    progressHeaderView.setVisibility(View.VISIBLE);
-                    loaderView.setBackgroundColor(backgroundColor);
+                    loaderView.setVisibility(View.VISIBLE);
+                    if (isSurvey) {
+                        progressHeaderView.setVisibility(View.GONE);
+                        loaderView.setBackgroundColor(Color.parseColor("#66000000"));
+                    } else {
+                        progressHeaderView.setVisibility(View.VISIBLE);
+                        loaderView.setBackgroundColor(backgroundColor);
+                    }
                 }
 
                 this.handler = new Handler(Looper.getMainLooper());
@@ -281,16 +316,10 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     }
                 });
 
-                webView.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        url += GleapURLGenerator.generateURL();
-                        initBrowser();
-                        if (savedInstanceState != null) {
-                            webView.restoreState(savedInstanceState);
-                        }
-                    }
-                });
+                if (savedInstanceState == null) {
+                    url += GleapURLGenerator.generateURL();
+                    initBrowser();
+                }
             }
         } catch (Exception ex) {
         }
@@ -305,7 +334,9 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
-        webView.restoreState(savedInstanceState);
+        // webView.restoreState removed – the dynamic web-app JS context
+        // is not preserved by restoreState(), so initBrowser() always
+        // performs a fresh loadUrl() and restoreState would race with it.
     }
 
     @Override
@@ -372,6 +403,21 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         webView.setWebViewClient(new GleapWebViewClient());
         webView.setBackgroundColor(Color.TRANSPARENT);
         webView.addJavascriptInterface(new GleapJSBridge(this), "GleapJSBridge");
+        try {
+            webView.setOverScrollMode(View.OVER_SCROLL_NEVER);
+            webView.setVerticalScrollBarEnabled(false);
+            webView.setHorizontalScrollBarEnabled(false);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                webView.setOnScrollChangeListener(new View.OnScrollChangeListener() {
+                    @Override
+                    public void onScrollChange(View v, int scrollX, int scrollY, int oldScrollX, int oldScrollY) {
+                        if (isImeVisible && scrollY != lockedScrollY) {
+                            webView.scrollTo(scrollX, lockedScrollY);
+                        }
+                    }
+                });
+            }
+        } catch (Exception ignore) {}
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
             public void onPermissionRequest(final PermissionRequest request) {
@@ -662,7 +708,12 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                                         }
                                     }
                                 }, 100);
-                                findViewById(R.id.loader).setVisibility(View.GONE);
+                                // Hide only the spinner and header — keep the
+                                // loader FrameLayout visible as an opaque backdrop
+                                // so the translucent window doesn't expose the host app.
+                                hasInitiallyLoaded = true;
+                                findViewById(R.id.loading_indicator).setVisibility(View.GONE);
+                                findViewById(R.id.gleap_progressBarHeader).setVisibility(View.GONE);
                                 webView.setVisibility(View.VISIBLE);
 
                                 break;
