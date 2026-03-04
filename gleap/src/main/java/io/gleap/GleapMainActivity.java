@@ -201,22 +201,31 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
             this.requestWindowFeature(Window.FEATURE_NO_TITLE);
             try {
-                getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
+                if (Build.VERSION.SDK_INT >= 36) {
+                    // Android 16+: ADJUST_NOTHING so the system doesn't resize/pan the
+                    // translucent activity when the keyboard opens – we handle IME insets
+                    // ourselves via the WindowInsetsListener below.
+                    getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
+                } else {
+                    getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+                }
                 if (getSupportActionBar() != null) {
                     getSupportActionBar().hide();
                 }
             } catch (Exception ex) {
             }
 
-            // Prevent Android 16's DecorView auto-scroll (ViewRootImpl.scrollToRectOrFocus)
-            // which pans the translucent activity upward when the keyboard opens,
-            // exposing the host app underneath.
-            final View decorView = getWindow().getDecorView();
-            decorView.setOnScrollChangeListener((v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
-                if (scrollY != 0) {
-                    v.scrollTo(scrollX, 0);
-                }
-            });
+            if (Build.VERSION.SDK_INT >= 36) {
+                // Prevent Android 16's DecorView auto-scroll (ViewRootImpl.scrollToRectOrFocus)
+                // which pans the translucent activity upward when the keyboard opens,
+                // exposing the host app underneath.
+                final View decorView = getWindow().getDecorView();
+                decorView.setOnScrollChangeListener((v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
+                    if (scrollY != 0) {
+                        v.scrollTo(scrollX, 0);
+                    }
+                });
+            }
 
             super.onCreate(savedInstanceState);
             GleapInvisibleActivityManger.getInstance().clearMessages();
@@ -233,28 +242,28 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
                     Insets ime  = insets.getInsets(WindowInsetsCompat.Type.ime());
 
-                    int topInset = bars.top;
-                    int bottomMargin = Math.max(bars.bottom, ime.bottom);
+                    int topInset    = bars.top;
+                    int bottomInset;
 
-                    // Apply top inset as padding to keep status bar space
-                    view.setPadding(view.getPaddingLeft(), topInset, view.getPaddingRight(), 0);
-
-                    // Shrink container height by setting bottom margin equal to IME/nav height
-                    ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) view.getLayoutParams();
-                    if (lp.bottomMargin != bottomMargin) {
-                        lp.bottomMargin = bottomMargin;
-                        view.setLayoutParams(lp);
+                    if (Build.VERSION.SDK_INT >= 36) {
+                        bottomInset = Math.max(bars.bottom, ime.bottom);
+                    } else {
+                        bottomInset = Math.max(bars.bottom, ime.bottom);
                     }
 
-                    boolean nowImeVisible = ime.bottom > 0;
-                    if (nowImeVisible && !isImeVisible) {
-                        isImeVisible = true;
-                        try {
-                            lockedScrollY = webView.getScrollY();
-                            webView.post(() -> webView.scrollTo(webView.getScrollX(), lockedScrollY));
-                        } catch (Exception ignore) {}
-                    } else if (!nowImeVisible && isImeVisible) {
-                        isImeVisible = false;
+                    view.setPadding(view.getPaddingLeft(), topInset, view.getPaddingRight(), bottomInset);
+
+                    if (Build.VERSION.SDK_INT >= 36) {
+                        boolean nowImeVisible = ime.bottom > 0;
+                        if (nowImeVisible && !isImeVisible) {
+                            isImeVisible = true;
+                            try {
+                                lockedScrollY = webView.getScrollY();
+                                webView.post(() -> webView.scrollTo(webView.getScrollX(), lockedScrollY));
+                            } catch (Exception ignore) {}
+                        } else if (!nowImeVisible && isImeVisible) {
+                            isImeVisible = false;
+                        }
                     }
 
                     return insets;   // don't consume
