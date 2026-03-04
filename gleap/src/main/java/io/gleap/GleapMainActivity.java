@@ -290,7 +290,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 // the translucent window doesn't expose the host app.
                 if (savedInstanceState != null) {
                     findViewById(R.id.loading_indicator).setVisibility(View.GONE);
-                    progressHeaderView.setVisibility(View.GONE);
                     hasInitiallyLoaded = true;
                 } else {
                     loaderView.setVisibility(View.VISIBLE);
@@ -713,7 +712,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                                 // so the translucent window doesn't expose the host app.
                                 hasInitiallyLoaded = true;
                                 findViewById(R.id.loading_indicator).setVisibility(View.GONE);
-                                findViewById(R.id.gleap_progressBarHeader).setVisibility(View.GONE);
                                 webView.setVisibility(View.VISIBLE);
 
                                 break;
