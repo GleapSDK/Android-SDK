@@ -1,10 +1,7 @@
 package io.gleap;
 
-import static android.content.Context.MODE_PRIVATE;
-
 import android.app.Activity;
 import android.app.Application;
-import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.Looper;
 
@@ -24,9 +21,9 @@ public class GleapSessionController {
         this.application = application;
 
         // Load existing session.
-        SharedPreferences sharedPreferences = application.getSharedPreferences("usersession", MODE_PRIVATE);
-        String id = sharedPreferences.getString("id", "");
-        String hash = sharedPreferences.getString("hash", "");
+        GleapPreferencesHelper prefs = GleapPreferencesHelper.getInstance(application);
+        String id = prefs.getString("session_id", "");
+        String hash = prefs.getString("session_hash", "");
         if (!id.equals("") && !hash.equals("")) {
             gleapSession = new GleapSession(id, hash);
         }
@@ -84,8 +81,7 @@ public class GleapSessionController {
     }
 
     public void clearUserSession() {
-        SharedPreferences sharedPreferences = application.getSharedPreferences("usersession", MODE_PRIVATE);
-        sharedPreferences.edit().clear().apply();
+        GleapPreferencesHelper.getInstance(application).clear();
 
         if (gleapSession != null) {
             unregisterPushMessageGroup(gleapSession.getHash());
@@ -103,9 +99,9 @@ public class GleapSessionController {
             gleapSession.setHash(hash);
             gleapSession.setId(id);
         }
-        SharedPreferences sharedPreferences = application.getSharedPreferences("usersession", MODE_PRIVATE);
-        sharedPreferences.edit().putString("hash", hash).apply();
-        sharedPreferences.edit().putString("id", id).apply();
+        GleapPreferencesHelper prefs = GleapPreferencesHelper.getInstance(application);
+        prefs.putString("session_hash", hash);
+        prefs.putString("session_id", id);
     }
 
     public GleapSession getUserSession() {
@@ -115,56 +111,56 @@ public class GleapSessionController {
     public void setGleapUserSession(GleapSessionProperties gleapUser) {
         this.gleapSessionProperties = gleapUser;
 
+        if (gleapUser == null) {
+            return;
+        }
+
         // Locally save.
-        SharedPreferences sharedPreferences = application.getSharedPreferences("gleap-user", MODE_PRIVATE);
-        sharedPreferences.edit().putString("userId", gleapUser.getUserId()).apply();
-        if (gleapUser != null) {
-            sharedPreferences.edit().putString("name", gleapUser.getName()).apply();
-            sharedPreferences.edit().putString("email", gleapUser.getEmail()).apply();
-            if (gleapUser.getPhone() != null) {
-                sharedPreferences.edit().putString("phone", gleapUser.getPhone()).apply();
-            }
-            if (gleapUser.getPlan() != null) {
-                sharedPreferences.edit().putString("plan", gleapUser.getPlan()).apply();
-            }
-            if (gleapUser.getCompanyId() != null) {
-                sharedPreferences.edit().putString("companyId", gleapUser.getCompanyId()).apply();
-            }
-            if (gleapUser.getCompanyName() != null) {
-                sharedPreferences.edit().putString("companyName", gleapUser.getCompanyName()).apply();
-            }
-            if (gleapUser.getAvatar() != null) {
-                sharedPreferences.edit().putString("avatar", gleapUser.getAvatar()).apply();
-            }
-            sharedPreferences.edit().putFloat("value", (float) gleapUser.getValue()).apply();
-            sharedPreferences.edit().putFloat("sla", (float) gleapUser.getSla()).apply();
-            if (gleapUser.getHash() != null && !gleapUser.getHash().equals("")) {
-                sharedPreferences.edit().putString("hash", gleapUser.getHash()).apply();
-            }
-            if(gleapUser.getCustomData() != null) {
-                sharedPreferences.edit().putString("customData", gleapUser.getCustomData().toString()).apply();
-            }
+        GleapPreferencesHelper prefs = GleapPreferencesHelper.getInstance(application);
+        prefs.putString("userId", gleapUser.getUserId());
+        prefs.putString("name", gleapUser.getName());
+        prefs.putString("email", gleapUser.getEmail());
+        if (gleapUser.getPhone() != null) {
+            prefs.putString("phone", gleapUser.getPhone());
+        }
+        if (gleapUser.getPlan() != null) {
+            prefs.putString("plan", gleapUser.getPlan());
+        }
+        if (gleapUser.getCompanyId() != null) {
+            prefs.putString("companyId", gleapUser.getCompanyId());
+        }
+        if (gleapUser.getCompanyName() != null) {
+            prefs.putString("companyName", gleapUser.getCompanyName());
+        }
+        if (gleapUser.getAvatar() != null) {
+            prefs.putString("avatar", gleapUser.getAvatar());
+        }
+        prefs.putFloat("value", (float) gleapUser.getValue());
+        prefs.putFloat("sla", (float) gleapUser.getSla());
+        if (gleapUser.getHash() != null && !gleapUser.getHash().equals("")) {
+            prefs.putString("hash", gleapUser.getHash());
+        }
+        if (gleapUser.getCustomData() != null) {
+            prefs.putString("customData", gleapUser.getCustomData().toString());
         }
     }
 
     public GleapSessionProperties getStoredGleapUser() {
-        // Initialize gleapUser at the beginning.
         GleapSessionProperties gleapUser = new GleapSessionProperties();
         try {
-            SharedPreferences sharedPreferences = application.getSharedPreferences("gleap-user", MODE_PRIVATE);
-            String userId = sharedPreferences.getString("userId", "");
-            String userName = sharedPreferences.getString("name", "");
-            String email = sharedPreferences.getString("email", "");
-            String phone = sharedPreferences.getString("phone", "");
-            String plan = sharedPreferences.getString("plan", "");
-            String companyId = sharedPreferences.getString("companyId", "");
-            String companyName = sharedPreferences.getString("companyName", "");
-            String avatar = sharedPreferences.getString("avatar", "");
-            String hash = sharedPreferences.getString("hash", "");
-            double value = sharedPreferences.getFloat("value", 0);
-            double sla = sharedPreferences.getFloat("sla", 0);
+            GleapPreferencesHelper prefs = GleapPreferencesHelper.getInstance(application);
+            String userId = prefs.getString("userId", "");
+            String userName = prefs.getString("name", "");
+            String email = prefs.getString("email", "");
+            String phone = prefs.getString("phone", "");
+            String plan = prefs.getString("plan", "");
+            String companyId = prefs.getString("companyId", "");
+            String companyName = prefs.getString("companyName", "");
+            String avatar = prefs.getString("avatar", "");
+            String hash = prefs.getString("hash", "");
+            double value = prefs.getFloat("value", 0);
+            double sla = prefs.getFloat("sla", 0);
 
-            // Set props.
             if (!userId.isEmpty()) {
                 gleapUser.setUserId(userId);
             }
@@ -193,23 +189,17 @@ public class GleapSessionController {
                 gleapUser.setHash(hash);
             }
 
-            // Set value.
             gleapUser.setValue(value);
-
-            // Set sla.
             gleapUser.setSla(sla);
 
-            // Set custom data.
             JSONObject customData = new JSONObject();
             try {
-                String customDataString = sharedPreferences.getString("customData", "");
+                String customDataString = prefs.getString("customData", "");
                 customData = new JSONObject(customDataString);
             } catch (Exception ex) {
-                // Handle exception if necessary
             }
             gleapUser.setCustomData(customData);
         } catch (Exception | Error ignore) {
-            // Handle exception if necessary, or leave it empty to ignore
         }
         return gleapUser;
     }

@@ -74,11 +74,9 @@ class GleapBaseSessionService extends AsyncTask<Void, Void, Integer> {
         GleapSession gleapSession = GleapSessionController.getInstance().getUserSession();
         if (gleapSession != null && gleapSession.getId() != null && !gleapSession.getId().isEmpty()) {
             conn.setRequestProperty("Gleap-Id", gleapSession.getId());
-            Log.d("Gleap", "Gleap-Id: " + gleapSession.getId());
         }
         if (gleapSession != null && gleapSession.getHash() != null && !gleapSession.getHash().isEmpty()) {
             conn.setRequestProperty("Gleap-Hash", gleapSession.getHash());
-            Log.d("Gleap", "Gleap-Hash: " + gleapSession.getHash());
         }
 
         try (OutputStream os = conn.getOutputStream()) {
