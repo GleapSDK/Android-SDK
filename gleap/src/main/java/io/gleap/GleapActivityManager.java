@@ -21,6 +21,7 @@ class GleapActivityManager {
     private static GleapActivityManager gleapActivityManager;
     private Application application;
     private String currentPage = "";
+    private boolean started = false;
 
     private GleapActivityManager(){}
 
@@ -60,6 +61,10 @@ class GleapActivityManager {
     }
 
     public void start(Application application) {
+        if (started) {
+            return;
+        }
+        started = true;
         this.application = application;
         if (this.application != null) {
             this.application.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {

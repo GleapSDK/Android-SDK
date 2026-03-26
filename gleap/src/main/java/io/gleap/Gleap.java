@@ -124,6 +124,7 @@ public class Gleap implements iGleap {
                 isInitialized = true;
                 GleapSessionController.initialize(application);
                 new GleapListener();
+                GleapConnectivityManager.getInstance().register(application.getApplicationContext());
             } else {
                 if (GleapConfig.getInstance().getConfigLoadedCallback() != null && GleapConfig.getInstance().getPlainConfig() != null) {
                     GleapConfig.getInstance().getConfigLoadedCallback().configLoaded(GleapConfig.getInstance().getPlainConfig());
