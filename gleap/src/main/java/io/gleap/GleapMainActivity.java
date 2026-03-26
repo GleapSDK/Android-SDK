@@ -13,6 +13,7 @@ import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.net.http.SslError;
+import android.annotation.TargetApi;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -27,6 +28,7 @@ import android.webkit.PermissionRequest;
 import android.webkit.SslErrorHandler;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
+import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
@@ -636,6 +638,18 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
         public void onReceivedError(WebView view, int errorCode,
                                     String description, String failingUrl) {
+            showNoInternetDialog();
+        }
+
+        @Override
+        @TargetApi(Build.VERSION_CODES.M)
+        public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+            if (request.isForMainFrame()) {
+                showNoInternetDialog();
+            }
+        }
+
+        private void showNoInternetDialog() {
             webView.setVisibility(View.GONE);
 
             AlertDialog alertDialog = new AlertDialog.Builder(GleapMainActivity.this).setPositiveButton("Ok", new DialogInterface.OnClickListener() {
@@ -656,7 +670,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 alertDialog.show();
             } catch (Exception ex) {
             }
-
         }
 
         @Override
