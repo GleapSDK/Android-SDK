@@ -223,6 +223,23 @@ public class GleapSessionController {
 
             // Notify the session controller.
             if (id != null && hash != null) {
+                // If the server returned a different hash than the one we currently hold
+                // (typical on identify-merge into an existing identified session, or on
+                // a session rotation triggered by clearIdentity-then-identifyUser without
+                // a clean teardown in between) the previous FCM topic subscription is
+                // now stale: pushes targeted at the previous identity will keep being
+                // delivered to this device until we explicitly unsubscribe.
+                //
+                // Capture the previous hash BEFORE mergeUserSession overwrites it, then
+                // unsubscribe so we are only ever a member of the current session's
+                // topic. Without the lastRegisteredUserHash reset the subsequent
+                // registerPushMessageGroup(hash) below would no-op when the previous
+                // value happens to be cached here.
+                String previousHash = (gleapSession != null) ? gleapSession.getHash() : null;
+                if (previousHash != null && !previousHash.equalsIgnoreCase(hash)) {
+                    unregisterPushMessageGroup(previousHash);
+                }
+
                 mergeUserSession(id, hash);
                 setSessionLoaded(true);
                 gleapSession = getUserSession();
