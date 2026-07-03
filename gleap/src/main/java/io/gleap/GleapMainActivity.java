@@ -57,6 +57,8 @@ import org.json.JSONObject;
 import java.lang.ref.WeakReference;
 import java.util.List;
 
+import io.gleap.callbacks.GleapAgentToolResultCallback;
+
 import gleap.io.gleap.R;
 
 public class GleapMainActivity extends AppCompatActivity implements OnHttpResponseListener {
@@ -354,6 +356,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         try {
             GleapDetectorUtil.resumeAllDetectors();
             GleapConfig.getInstance().setAction(null);
+            GleapAgentToolManager.getInstance().clearExecutionState();
             if (GleapConfig.getInstance().getWidgetClosedCallback() != null) {
                 GleapConfig.getInstance().getWidgetClosedCallback().invoke();
             }
@@ -746,6 +749,25 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                                         GleapConfig.getInstance().getAiToolExecutedCallback().aiToolExecuted(gleapCallback.getJSONObject("data"));
                                     }
                                 } catch (Exception exp) {}
+                                break;
+                            case "frontend-tool-execute":
+                                try {
+                                    GleapAgentToolManager.getInstance().executeTool(gleapCallback.getJSONObject("data"), new GleapAgentToolResultCallback() {
+                                        @Override
+                                        public void onResult(Object resultData) {
+                                            runOnUiThread(new Runnable() {
+                                                @Override
+                                                public void run() {
+                                                    try {
+                                                        sendMessage(generateGleapMessage("frontend-tool-result", (JSONObject) resultData));
+                                                    } catch (Error | Exception ignore) {
+                                                    }
+                                                }
+                                            });
+                                        }
+                                    });
+                                } catch (Exception exp) {}
+                                break;
                             case "collect-ticket-data":
                                 try {
                                     GleapBug gleapBug = GleapBug.getInstance();
@@ -938,7 +960,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 data.put("actions", jsonObject.getJSONObject("projectActions"));
                 data.put("overrideLanguage", GleapConfig.getInstance().getLanguage());
                 data.put("isApp", true);
-                data.put("aiTools", GleapConfig.getInstance().getAiTools());
 
                 sendMessage(generateGleapMessage("config-update", data));
             } catch (Exception err) {

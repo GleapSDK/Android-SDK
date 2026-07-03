@@ -20,6 +20,7 @@ import java.util.Locale;
 import javax.net.ssl.HttpsURLConnection;
 
 import io.gleap.callbacks.AiToolExecutedCallback;
+import io.gleap.callbacks.GleapAgentToolHandler;
 import io.gleap.callbacks.ConfigLoadedCallback;
 import io.gleap.callbacks.CustomActionCallback;
 import io.gleap.callbacks.CustomLinkHandlerCallback;
@@ -1248,8 +1249,12 @@ public class Gleap implements iGleap {
     }
 
     @Override
-    public void setAiTools(GleapAiTool[] aiTools) {
-        GleapConfig.getInstance().setAiTools(aiTools);
+    public void registerAgentTool(String name, GleapAgentToolHandler handler) {
+        try {
+            GleapAgentToolManager.getInstance().registerAgentTool(name, handler);
+        } catch (Error | Exception ignore) {
+            handleError(ignore, "registerAgentTool");
+        }
     }
 
     /**

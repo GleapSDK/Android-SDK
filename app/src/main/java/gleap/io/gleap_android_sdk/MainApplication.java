@@ -6,9 +6,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import io.gleap.Gleap;
-import io.gleap.GleapAiTool;
-import io.gleap.GleapAiToolParameter;
 import io.gleap.callbacks.AiToolExecutedCallback;
+import io.gleap.callbacks.GleapAgentToolHandler;
+import io.gleap.callbacks.GleapAgentToolResultCallback;
 import io.gleap.callbacks.CustomActionCallback;
 import io.gleap.callbacks.ErrorCallback;
 import io.gleap.callbacks.FeedbackSendingFailedCallback;
@@ -44,39 +44,14 @@ public class MainApplication extends Application {
             }
         });
 
-        // Creating parameters
-        GleapAiToolParameter amountParameter = new GleapAiToolParameter(
-                "amount",
-                "The amount of money to send. Must be positive and provided by the user.",
-                "string",
-                true
-        );
-
-        String[] possibleEnumValues = {"Alice", "Bob"};
-
-        GleapAiToolParameter contactParameter = new GleapAiToolParameter(
-                "contact",
-                "The contact to send money to.",
-                "string",
-                true,
-                possibleEnumValues
-        );
-
-        GleapAiToolParameter[] params = {amountParameter, contactParameter};
-
-        // Creating the AI tool with the parameters
-        GleapAiTool transactionTool = new GleapAiTool(
-                "send-money",
-                "Send money to a given contact.",
-                "The transfer got initiated but not completed yet. The user must confirm the transfer in the banking app.",
-                "button",
-                params
-        );
-
-        GleapAiTool[] tools = {transactionTool};
-
-        // Set the available tools using the static method
-        Gleap.getInstance().setAiTools(tools);
+        // Executes the "send-money" Frontend tool defined on the AI agent in the Gleap dashboard.
+        Gleap.getInstance().registerAgentTool("send-money", new GleapAgentToolHandler() {
+            @Override
+            public void execute(JSONObject params, GleapAgentToolResultCallback callback) {
+                System.out.println("send-money called with params: " + params.toString());
+                callback.onResult("The transfer got initiated but not completed yet. The user must confirm the transfer in the banking app.");
+            }
+        });
 
         Gleap.getInstance().setTicketAttribute("test1", "This is a test");
         Gleap.getInstance().setTicketAttribute("test2", 20);

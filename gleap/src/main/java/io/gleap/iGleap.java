@@ -8,6 +8,7 @@ import java.io.File;
 import javax.net.ssl.HttpsURLConnection;
 
 import io.gleap.callbacks.AiToolExecutedCallback;
+import io.gleap.callbacks.GleapAgentToolHandler;
 import io.gleap.callbacks.ConfigLoadedCallback;
 import io.gleap.callbacks.CustomActionCallback;
 import io.gleap.callbacks.CustomLinkHandlerCallback;
@@ -681,7 +682,16 @@ interface iGleap {
 
     void setTags(String[] tags);
 
-    void setAiTools(GleapAiTool[] aiTools);
+    /**
+     * Registers the handler for a Frontend tool defined on your AI agent in the
+     * Gleap dashboard. The agent calls the handler with the configured parameters
+     * and waits for the result passed to the callback (String or JSON object,
+     * which gets stringified).
+     *
+     * @param name    The tool's runtime name as defined on the AI agent.
+     * @param handler The handler to execute the tool. Call the callback exactly once with the result.
+     */
+    void registerAgentTool(String name, GleapAgentToolHandler handler);
 
     void handleLink(String url);
 
