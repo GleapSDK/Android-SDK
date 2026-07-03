@@ -49,7 +49,6 @@ class GleapConfig {
     private String feedbackFlow = "";
     private ValueCallback<Uri[]> mUploadMessage;
     private GleapAction action;
-    private GleapAiTool[] aiTools;
 
     private JSONObject stripModel = new JSONObject();
     private JSONObject crashStripModel = new JSONObject();
@@ -124,24 +123,6 @@ class GleapConfig {
             instance = new GleapConfig();
         }
         return instance;
-    }
-
-    public void setAiTools(GleapAiTool[] aiTools) {
-        this.aiTools = aiTools;
-    }
-
-    public JSONArray getAiTools() {
-        JSONArray tools = new JSONArray();
-
-        if (this.aiTools != null) {
-            for (int i = 0; i < this.aiTools.length; i++) {
-                try {
-                    tools.put(this.aiTools[i].toJSONObject());
-                } catch (Exception exp) {}
-            }
-        }
-
-        return tools;
     }
 
     /**
