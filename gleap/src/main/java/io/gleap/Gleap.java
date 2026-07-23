@@ -1,6 +1,7 @@
 package io.gleap;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Application;
 import android.content.Intent;
 import android.net.Uri;
@@ -16,9 +17,11 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.net.ssl.HttpsURLConnection;
 
+import gleap.io.gleap.R;
 import io.gleap.callbacks.AiToolExecutedCallback;
 import io.gleap.callbacks.GleapAgentToolHandler;
 import io.gleap.callbacks.ConfigLoadedCallback;
@@ -49,6 +52,7 @@ public class Gleap implements iGleap {
     public static boolean internalCloseWidgetOnExternalLinkOpen = false;
     private static boolean isInitialized = false;
     private static OpenPushAction openPushAction;
+    private static final AtomicBoolean sessionRecoveryInProgress = new AtomicBoolean(false);
 
     private Gleap() {
     }
@@ -234,8 +238,7 @@ public class Gleap implements iGleap {
                         @Override
                         public void run() throws RuntimeException {
                             try {
-                                if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null &&
-                                        GleapSessionController.getInstance().isSessionLoaded() && instance != null) {
+                                if (!GleapDetectorUtil.isIsRunning() && isGleapReady() && instance != null) {
                                     try {
                                         if (screenshotTaker != null) {
                                             JSONObject message = new JSONObject();
@@ -247,6 +250,13 @@ public class Gleap implements iGleap {
                                     } catch (Exception e) {
                                         handleError(e, "openConversations - inner");
                                     }
+                                } else if (!GleapDetectorUtil.isIsRunning() && instance != null) {
+                                    recoverSessionAndRetry(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            openConversations(hideBackButton);
+                                        }
+                                    });
                                 }
                             } catch (Error | Exception ignore) {
                                 handleError(ignore, "openConversations - middle");
@@ -272,8 +282,7 @@ public class Gleap implements iGleap {
                         @Override
                         public void run() throws RuntimeException {
                             try {
-                                if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null &&
-                                        GleapSessionController.getInstance().isSessionLoaded() && instance != null) {
+                                if (!GleapDetectorUtil.isIsRunning() && isGleapReady() && instance != null) {
                                     try {
                                         if (screenshotTaker != null) {
                                             JSONObject message = new JSONObject();
@@ -286,6 +295,13 @@ public class Gleap implements iGleap {
                                     } catch (Exception e) {
                                         handleError(e, "run");
                                     }
+                                } else if (!GleapDetectorUtil.isIsRunning() && instance != null) {
+                                    recoverSessionAndRetry(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            openConversation(shareToken);
+                                        }
+                                    });
                                 }
                             } catch (Error | Exception ignore) {
                                 handleError(ignore, "run");
@@ -333,8 +349,7 @@ public class Gleap implements iGleap {
                         @Override
                         public void run() throws RuntimeException {
                             try {
-                                if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null &&
-                                        GleapSessionController.getInstance().isSessionLoaded() && instance != null) {
+                                if (!GleapDetectorUtil.isIsRunning() && isGleapReady() && instance != null) {
                                     try {
                                         if (screenshotTaker != null) {
                                             screenshotTaker.takeScreenshot(type);
@@ -342,6 +357,13 @@ public class Gleap implements iGleap {
                                     } catch (Exception e) {
                                         handleError(e, "run");
                                     }
+                                } else if (type == SurveyType.NONE && !GleapDetectorUtil.isIsRunning() && instance != null) {
+                                    recoverSessionAndRetry(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            open(type);
+                                        }
+                                    });
                                 }
                             } catch (Error | Exception ignore) {
                                 handleError(ignore, "run");
@@ -353,6 +375,96 @@ public class Gleap implements iGleap {
             });
         } catch (Error | Exception ignore) {
             handleError(ignore, "run");
+        }
+    }
+
+    /**
+     * Whether the session and the remote config have actually been loaded — after an
+     * offline app launch the session start is marked as done without ever succeeding,
+     * so the widget could not load and opening it would silently do nothing.
+     */
+    private static boolean isGleapReady() {
+        return GleapSessionController.getInstance() != null
+                && GleapSessionController.getInstance().isSessionLoaded()
+                && GleapSessionController.getInstance().getUserSession() != null
+                && GleapConfig.getInstance().getPlainConfig() != null;
+    }
+
+    /**
+     * Attempts to restart the Gleap session (and config load) when the widget is opened
+     * explicitly but Gleap never finished loading (e.g. the app was launched offline).
+     * On success the widget opens as requested; on failure the user gets the same offline
+     * alert the widget shows when it fails to load mid-session.
+     */
+    private void recoverSessionAndRetry(final Runnable retryOpen) {
+        if (!sessionRecoveryInProgress.compareAndSet(false, true)) {
+            return;
+        }
+
+        try {
+            new GleapBaseSessionService(new GleapBaseSessionService.SessionLoadedCallback() {
+                @Override
+                public void invoke(boolean success) {
+                    try {
+                        if (!success) {
+                            sessionRecoveryInProgress.set(false);
+                            showOfflineAlert();
+                            return;
+                        }
+
+                        if (GleapConfig.getInstance().getPlainConfig() != null) {
+                            sessionRecoveryInProgress.set(false);
+                            retryOpen.run();
+                            return;
+                        }
+
+                        // The config never loaded either — fetch it before opening the widget.
+                        new ConfigLoader(new OnHttpResponseListener() {
+                            @Override
+                            public void onTaskComplete(JSONObject response) throws GleapAlreadyInitialisedException {
+                                sessionRecoveryInProgress.set(false);
+                                if (GleapConfig.getInstance().getPlainConfig() != null) {
+                                    GleapDetectorUtil.clearAllDetectors();
+                                    new GleapListener(false).onTaskComplete(response);
+                                    retryOpen.run();
+                                } else {
+                                    showOfflineAlert();
+                                }
+                            }
+                        }).execute(GleapBug.getInstance());
+                    } catch (Error | Exception exception) {
+                        sessionRecoveryInProgress.set(false);
+                        handleError(exception, "recoverSessionAndRetry - callback");
+                    }
+                }
+            }).execute();
+        } catch (Error | Exception exception) {
+            sessionRecoveryInProgress.set(false);
+            handleError(exception, "recoverSessionAndRetry");
+        }
+    }
+
+    private static void showOfflineAlert() {
+        try {
+            final Activity activity = ActivityUtil.getCurrentActivity();
+            if (activity == null) {
+                return;
+            }
+            activity.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        AlertDialog alertDialog = new AlertDialog.Builder(activity)
+                                .setPositiveButton(activity.getString(R.string.gleap_alert_no_internet_accept), null)
+                                .create();
+                        alertDialog.setTitle(activity.getString(R.string.gleap_alert_no_internet_title));
+                        alertDialog.setMessage(activity.getString(R.string.gleap_alert_no_internet_subtitle));
+                        alertDialog.show();
+                    } catch (Error | Exception ignore) {
+                    }
+                }
+            });
+        } catch (Error | Exception ignore) {
         }
     }
 
@@ -372,8 +484,7 @@ public class Gleap implements iGleap {
                         @Override
                         public void run() throws RuntimeException {
                             try {
-                                if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null &&
-                                        GleapSessionController.getInstance().isSessionLoaded() && instance != null) {
+                                if (!GleapDetectorUtil.isIsRunning() && isGleapReady() && instance != null) {
                                     try {
                                         if (screenshotTaker != null) {
                                             JSONObject message = new JSONObject();
@@ -385,6 +496,13 @@ public class Gleap implements iGleap {
                                     } catch (Exception e) {
                                         handleError(e, "run");
                                     }
+                                } else if (!GleapDetectorUtil.isIsRunning() && instance != null) {
+                                    recoverSessionAndRetry(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            openChecklists(showBackButton);
+                                        }
+                                    });
                                 }
                             } catch (Error | Exception ignore) {
                                 handleError(ignore, "run");
@@ -415,8 +533,7 @@ public class Gleap implements iGleap {
                         @Override
                         public void run() throws RuntimeException {
                             try {
-                                if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null &&
-                                        GleapSessionController.getInstance().isSessionLoaded() && instance != null) {
+                                if (!GleapDetectorUtil.isIsRunning() && isGleapReady() && instance != null) {
                                     try {
                                         if (screenshotTaker != null) {
                                             JSONObject message = new JSONObject();
@@ -429,6 +546,13 @@ public class Gleap implements iGleap {
                                     } catch (Exception e) {
                                         handleError(e, "run");
                                     }
+                                } else if (!GleapDetectorUtil.isIsRunning() && instance != null) {
+                                    recoverSessionAndRetry(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            openChecklist(checklistId, showBackButton);
+                                        }
+                                    });
                                 }
                             } catch (Error | Exception ignore) {
                                 handleError(ignore, "run");
@@ -459,8 +583,7 @@ public class Gleap implements iGleap {
                         @Override
                         public void run() throws RuntimeException {
                             try {
-                                if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null &&
-                                        GleapSessionController.getInstance().isSessionLoaded() && instance != null) {
+                                if (!GleapDetectorUtil.isIsRunning() && isGleapReady() && instance != null) {
                                     try {
                                         if (screenshotTaker != null) {
                                             JSONObject message = new JSONObject();
@@ -473,6 +596,13 @@ public class Gleap implements iGleap {
                                     } catch (Exception e) {
                                         handleError(e, "run");
                                     }
+                                } else if (!GleapDetectorUtil.isIsRunning() && instance != null) {
+                                    recoverSessionAndRetry(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            startChecklist(outboundId, showBackButton);
+                                        }
+                                    });
                                 }
                             } catch (Error | Exception ignore) {
                                 handleError(ignore, "run");
@@ -515,8 +645,7 @@ public class Gleap implements iGleap {
                         @Override
                         public void run() throws RuntimeException {
                             try {
-                                if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null &&
-                                        GleapSessionController.getInstance().isSessionLoaded() && instance != null) {
+                                if (!GleapDetectorUtil.isIsRunning() && isGleapReady() && instance != null) {
                                     try {
                                         if (screenshotTaker != null) {
                                             JSONObject message = new JSONObject();
@@ -528,6 +657,13 @@ public class Gleap implements iGleap {
                                     } catch (Exception e) {
                                         handleError(e, "run");
                                     }
+                                } else if (!GleapDetectorUtil.isIsRunning() && instance != null) {
+                                    recoverSessionAndRetry(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            openNews(showBackButton);
+                                        }
+                                    });
                                 }
                             } catch (Error | Exception ignore) {
                                 handleError(ignore, "run");
@@ -568,8 +704,7 @@ public class Gleap implements iGleap {
                         @Override
                         public void run() throws RuntimeException {
                             try {
-                                if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null &&
-                                        GleapSessionController.getInstance().isSessionLoaded() && instance != null) {
+                                if (!GleapDetectorUtil.isIsRunning() && isGleapReady() && instance != null) {
                                     try {
                                         if (screenshotTaker != null) {
                                             JSONObject message = new JSONObject();
@@ -582,6 +717,13 @@ public class Gleap implements iGleap {
                                     } catch (Exception e) {
                                         handleError(e, "run");
                                     }
+                                } else if (!GleapDetectorUtil.isIsRunning() && instance != null) {
+                                    recoverSessionAndRetry(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            startBot(botId, showBackButton);
+                                        }
+                                    });
                                 }
                             } catch (Error | Exception ignore) {
                                 handleError(ignore, "run");
@@ -610,8 +752,7 @@ public class Gleap implements iGleap {
                         @Override
                         public void run() throws RuntimeException {
                             try {
-                                if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null &&
-                                        GleapSessionController.getInstance().isSessionLoaded() && instance != null) {
+                                if (!GleapDetectorUtil.isIsRunning() && isGleapReady() && instance != null) {
                                     try {
                                         if (screenshotTaker != null) {
                                             JSONObject message = new JSONObject();
@@ -624,6 +765,13 @@ public class Gleap implements iGleap {
                                     } catch (Exception e) {
                                         handleError(e, "run");
                                     }
+                                } else if (!GleapDetectorUtil.isIsRunning() && instance != null) {
+                                    recoverSessionAndRetry(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            openNewsArticle(articleId, showBackButton);
+                                        }
+                                    });
                                 }
                             } catch (Error | Exception ignore) {
                                 handleError(ignore, "run");
@@ -682,8 +830,7 @@ public class Gleap implements iGleap {
                     Runnable gleapRunnable = new Runnable() {
                         @Override
                         public void run() throws RuntimeException {
-                            if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null
-                                    && GleapSessionController.getInstance().isSessionLoaded()
+                            if (!GleapDetectorUtil.isIsRunning() && isGleapReady()
                                     && Gleap.getInstance() != null) {
                                 try {
                                     JSONObject data = new JSONObject();
@@ -697,6 +844,13 @@ public class Gleap implements iGleap {
                                 } catch (Exception e) {
                                     handleError(e, "run");
                                 }
+                            } else if (!GleapDetectorUtil.isIsRunning() && Gleap.getInstance() != null) {
+                                recoverSessionAndRetry(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        startFeedbackFlow(feedbackFlow, showBackButton);
+                                    }
+                                });
                             }
                         }
                     };
@@ -757,8 +911,7 @@ public class Gleap implements iGleap {
                     Runnable gleapRunnable = new Runnable() {
                         @Override
                         public void run() throws RuntimeException {
-                            if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null
-                                    && GleapSessionController.getInstance().isSessionLoaded()
+                            if (!GleapDetectorUtil.isIsRunning() && isGleapReady()
                                     && Gleap.getInstance() != null) {
                                 try {
 
@@ -770,6 +923,13 @@ public class Gleap implements iGleap {
                                 } catch (Exception e) {
                                     handleError(e, "run");
                                 }
+                            } else if (!GleapDetectorUtil.isIsRunning() && Gleap.getInstance() != null) {
+                                recoverSessionAndRetry(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        openHelpCenter(showBackButton);
+                                    }
+                                });
                             }
                         }
                     };
@@ -796,8 +956,7 @@ public class Gleap implements iGleap {
                     Runnable gleapRunnable = new Runnable() {
                         @Override
                         public void run() throws RuntimeException {
-                            if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null
-                                    && GleapSessionController.getInstance().isSessionLoaded()
+                            if (!GleapDetectorUtil.isIsRunning() && isGleapReady()
                                     && Gleap.getInstance() != null) {
                                 try {
 
@@ -810,6 +969,13 @@ public class Gleap implements iGleap {
                                 } catch (Exception e) {
                                     handleError(e, "run");
                                 }
+                            } else if (!GleapDetectorUtil.isIsRunning() && Gleap.getInstance() != null) {
+                                recoverSessionAndRetry(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        askAI(question, showBackButton);
+                                    }
+                                });
                             }
                         }
                     };
@@ -836,8 +1002,7 @@ public class Gleap implements iGleap {
                     Runnable gleapRunnable = new Runnable() {
                         @Override
                         public void run() throws RuntimeException {
-                            if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null
-                                    && GleapSessionController.getInstance().isSessionLoaded()
+                            if (!GleapDetectorUtil.isIsRunning() && isGleapReady()
                                     && Gleap.getInstance() != null) {
                                 try {
 
@@ -850,6 +1015,13 @@ public class Gleap implements iGleap {
                                 } catch (Exception e) {
                                     handleError(e, "run");
                                 }
+                            } else if (!GleapDetectorUtil.isIsRunning() && Gleap.getInstance() != null) {
+                                recoverSessionAndRetry(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        openHelpCenterArticle(articleId, showBackButton);
+                                    }
+                                });
                             }
                         }
                     };
@@ -898,8 +1070,7 @@ public class Gleap implements iGleap {
                     Runnable gleapRunnable = new Runnable() {
                         @Override
                         public void run() throws RuntimeException {
-                            if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null
-                                    && GleapSessionController.getInstance().isSessionLoaded()
+                            if (!GleapDetectorUtil.isIsRunning() && isGleapReady()
                                     && Gleap.getInstance() != null) {
                                 try {
 
@@ -912,6 +1083,13 @@ public class Gleap implements iGleap {
                                 } catch (Exception e) {
                                     handleError(e, "run");
                                 }
+                            } else if (!GleapDetectorUtil.isIsRunning() && Gleap.getInstance() != null) {
+                                recoverSessionAndRetry(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        openHelpCenterCollection(collectionId, showBackButton);
+                                    }
+                                });
                             }
                         }
                     };
@@ -938,8 +1116,7 @@ public class Gleap implements iGleap {
                     Runnable gleapRunnable = new Runnable() {
                         @Override
                         public void run() throws RuntimeException {
-                            if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null
-                                    && GleapSessionController.getInstance().isSessionLoaded()
+                            if (!GleapDetectorUtil.isIsRunning() && isGleapReady()
                                     && Gleap.getInstance() != null) {
                                 try {
 
@@ -952,6 +1129,13 @@ public class Gleap implements iGleap {
                                 } catch (Exception e) {
                                     handleError(e, "run");
                                 }
+                            } else if (!GleapDetectorUtil.isIsRunning() && Gleap.getInstance() != null) {
+                                recoverSessionAndRetry(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        searchHelpCenter(term, showBackButton);
+                                    }
+                                });
                             }
                         }
                     };
@@ -1738,6 +1922,14 @@ public class Gleap implements iGleap {
 
     public static class GleapListener implements OnHttpResponseListener {
         public GleapListener() {
+            this(true);
+        }
+
+        GleapListener(boolean startLoading) {
+            if (!startLoading) {
+                return;
+            }
+
             try {
                 new ConfigLoader(this).execute(GleapBug.getInstance());
 
@@ -2012,8 +2204,7 @@ public class Gleap implements iGleap {
                     Runnable gleapRunnable = new Runnable() {
                         @Override
                         public void run() throws RuntimeException {
-                            if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null
-                                    && GleapSessionController.getInstance().isSessionLoaded()
+                            if (!GleapDetectorUtil.isIsRunning() && isGleapReady()
                                     && Gleap.getInstance() != null) {
                                 try {
                                     JSONObject data = new JSONObject();
@@ -2024,6 +2215,13 @@ public class Gleap implements iGleap {
                                 } catch (Exception e) {
                                     handleError(e, "run");
                                 }
+                            } else if (!GleapDetectorUtil.isIsRunning() && Gleap.getInstance() != null) {
+                                recoverSessionAndRetry(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        openFeatureRequests(showBackButton);
+                                    }
+                                });
                             }
                         }
                     };
