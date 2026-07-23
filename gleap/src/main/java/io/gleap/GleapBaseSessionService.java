@@ -17,9 +17,24 @@ import java.nio.charset.StandardCharsets;
 import javax.net.ssl.HttpsURLConnection;
 
 class GleapBaseSessionService extends AsyncTask<Void, Void, Integer> {
+    interface SessionLoadedCallback {
+        void invoke(boolean success);
+    }
+
     private static final String httpsUrl = GleapConfig.getInstance().getApiUrl() + "/sessions";
     private static final int MAX_RETRIES = 3;
     private static final long INITIAL_RETRY_DELAY_MS = 1000;
+
+    private final SessionLoadedCallback sessionLoadedCallback;
+    private boolean sessionEstablished = false;
+
+    GleapBaseSessionService() {
+        this(null);
+    }
+
+    GleapBaseSessionService(SessionLoadedCallback sessionLoadedCallback) {
+        this.sessionLoadedCallback = sessionLoadedCallback;
+    }
 
     @SuppressLint("WrongThread")
     @Override
@@ -51,13 +66,24 @@ class GleapBaseSessionService extends AsyncTask<Void, Void, Integer> {
 
         if (!success) {
             Log.e("Gleap", "All session request attempts failed after " + MAX_RETRIES + " retries", lastException);
-            
+
             if (GleapSessionController.getInstance() != null) {
                 GleapSessionController.getInstance().setSessionLoaded(true);
             }
         }
 
+        sessionEstablished = success && GleapSessionController.getInstance() != null
+                && GleapSessionController.getInstance().isSessionLoaded()
+                && GleapSessionController.getInstance().getUserSession() != null;
+
         return 200;
+    }
+
+    @Override
+    protected void onPostExecute(Integer result) {
+        if (sessionLoadedCallback != null) {
+            sessionLoadedCallback.invoke(sessionEstablished);
+        }
     }
 
     private void performSessionRequest() throws Exception {
