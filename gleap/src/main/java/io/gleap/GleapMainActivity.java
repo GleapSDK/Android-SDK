@@ -10,7 +10,6 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.net.http.SslError;
 import android.annotation.TargetApi;
@@ -274,17 +273,8 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 });
 
                 int backgroundColor = Color.parseColor(GleapConfig.getInstance().getBackgroundColor());
-                int headerColor = Color.parseColor(GleapConfig.getInstance().getHeaderColor());
-                int[] gradientColors = new int[]{headerColor, headerColor, headerColor, backgroundColor};
-                GradientDrawable gradientDrawable = new GradientDrawable(
-                        GradientDrawable.Orientation.TOP_BOTTOM,
-                        gradientColors
-                );
-
-                gradientDrawable.setCornerRadius(0f);
 
                 View progressHeaderView = findViewById(R.id.gleap_progressBarHeader);
-                progressHeaderView.setBackground(gradientDrawable);
 
                 exitAfterFifteenSeconds = new Runnable() {
                     @Override
@@ -296,7 +286,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 };
 
                 isSurvey = getIntent().getBooleanExtra("IS_SURVEY", false);
-                View loaderView = findViewById(R.id.loader);
+                FrameLayout loaderView = findViewById(R.id.loader);
 
                 // When the Activity is recreated (e.g. config change, process
                 // death) hide the spinner but keep the loader background so
@@ -304,15 +294,28 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 if (savedInstanceState != null) {
                     findViewById(R.id.loading_indicator).setVisibility(View.GONE);
                     hasInitiallyLoaded = true;
-                } else {
-                    loaderView.setVisibility(View.VISIBLE);
-                    if (isSurvey) {
-                        progressHeaderView.setVisibility(View.GONE);
+                }
+
+                if (isSurvey) {
+                    progressHeaderView.setVisibility(View.GONE);
+                    if (savedInstanceState == null) {
+                        loaderView.setVisibility(View.VISIBLE);
                         loaderView.setBackgroundColor(Color.parseColor("#66000000"));
-                    } else {
-                        progressHeaderView.setVisibility(View.VISIBLE);
-                        loaderView.setBackgroundColor(backgroundColor);
                     }
+                } else {
+                    // Widget loader: mirror the messenger's home background so
+                    // the reveal is seamless (see GleapLoadingBackgroundView).
+                    // No spinner — the background itself is the loading
+                    // indicator, matching the web/iOS SDKs. Also added on
+                    // recreation: it stays behind the webview as the backdrop.
+                    progressHeaderView.setVisibility(View.GONE);
+                    findViewById(R.id.loading_indicator).setVisibility(View.GONE);
+                    loaderView.setVisibility(View.VISIBLE);
+                    loaderView.setBackgroundColor(backgroundColor);
+                    loaderView.addView(new GleapLoadingBackgroundView(this), 0,
+                            new FrameLayout.LayoutParams(
+                                    FrameLayout.LayoutParams.MATCH_PARENT,
+                                    FrameLayout.LayoutParams.MATCH_PARENT));
                 }
 
                 this.handler = new Handler(Looper.getMainLooper());
@@ -735,9 +738,34 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                                 // Hide only the spinner and header — keep the
                                 // loader FrameLayout visible as an opaque backdrop
                                 // so the translucent window doesn't expose the host app.
+                                // Cross-fade the webview in over the loading
+                                // background (which shows the same colors/image),
+                                // so the hand-off reads as continuous — the
+                                // messenger's own home entrance animations then
+                                // play inside the webview.
+                                //
+                                // The reveal waits 500ms after the ping (same as
+                                // the iOS SDK): the web app pings BEFORE its
+                                // first paint, so an immediate fade briefly
+                                // shows an unpainted webview and the content
+                                // pops in mid-fade — a visible jump.
                                 hasInitiallyLoaded = true;
                                 findViewById(R.id.loading_indicator).setVisibility(View.GONE);
-                                webView.setVisibility(View.VISIBLE);
+                                webView.setAlpha(0f);
+                                new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        if (webView == null) {
+                                            return;
+                                        }
+                                        webView.setVisibility(View.VISIBLE);
+                                        // withLayer(): a hardware-rendered WebView
+                                        // ignores view alpha unless it draws into
+                                        // a layer — without it the "fade" pops in
+                                        // as a single-frame swap.
+                                        webView.animate().alpha(1f).setDuration(300).withLayer().start();
+                                    }
+                                }, 500);
 
                                 break;
                             case "cleanup-drawings":
