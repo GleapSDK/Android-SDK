@@ -83,6 +83,16 @@ class GleapConfig {
     private String color = "#485bff";
     private String backgroundColor = "#ffffff";
     private String headerColor = "#485bff";
+    // Loading-background config (mirrors the web/iOS SDK loaders). headerColor2/3
+    // fall back to headerColor via their getters, like the messenger's
+    // getHeaderColorSecondary.
+    private String headerColor2 = "";
+    private String headerColor3 = "";
+    private String bgType = "";
+    private String bgImage = "";
+    private int homeVersion = 0;
+    private boolean fadeBg = true;
+    private boolean bgBlur = true;
     private int loaderColor = Color.BLACK;
 
     private boolean enableConsoleLogs = true;
@@ -221,6 +231,34 @@ class GleapConfig {
 
             if (flowConfigs.has("headerColor")) {
                 this.headerColor = flowConfigs.getString("headerColor");
+            }
+
+            if (flowConfigs.has("headerColor2")) {
+                this.headerColor2 = flowConfigs.getString("headerColor2");
+            }
+
+            if (flowConfigs.has("headerColor3")) {
+                this.headerColor3 = flowConfigs.getString("headerColor3");
+            }
+
+            if (flowConfigs.has("bgType")) {
+                this.bgType = flowConfigs.getString("bgType");
+            }
+
+            if (flowConfigs.has("bgImage")) {
+                this.bgImage = flowConfigs.getString("bgImage");
+            }
+
+            if (flowConfigs.has("v")) {
+                this.homeVersion = flowConfigs.getInt("v");
+            }
+
+            if (flowConfigs.has("fadebg")) {
+                this.fadeBg = flowConfigs.getBoolean("fadebg");
+            }
+
+            if (flowConfigs.has("bgBlur")) {
+                this.bgBlur = flowConfigs.getBoolean("bgBlur");
             }
 
             if (flowConfigs.has("enableReplays")) {
@@ -607,6 +645,35 @@ class GleapConfig {
 
     public String getHeaderColor() {
         return headerColor;
+    }
+
+    // Falls back to headerColor, mirroring the messenger's getHeaderColorSecondary.
+    public String getHeaderColor2() {
+        return (headerColor2 != null && !headerColor2.isEmpty()) ? headerColor2 : headerColor;
+    }
+
+    public String getHeaderColor3() {
+        return (headerColor3 != null && !headerColor3.isEmpty()) ? headerColor3 : headerColor;
+    }
+
+    public String getBgType() {
+        return bgType;
+    }
+
+    public String getBgImage() {
+        return bgImage;
+    }
+
+    public int getHomeVersion() {
+        return homeVersion;
+    }
+
+    public boolean isFadeBg() {
+        return fadeBg;
+    }
+
+    public boolean isBgBlur() {
+        return bgBlur;
     }
 
     public int getLoaderColor() {
