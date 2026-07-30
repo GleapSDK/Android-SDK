@@ -4,7 +4,7 @@ import java.io.File;
 
 class GleapFileHelper {
     private static final int MAX_AMOUNT = 6;
-    private static final int MAX_FILE_SIZE = 1024*1024;
+    private static final int MAX_FILE_SIZE = 10 * 1024 * 1024;
     private File[] files = new File[MAX_AMOUNT];
     private int curreIndex = 0;
     private static GleapFileHelper instance;
@@ -26,7 +26,7 @@ class GleapFileHelper {
                     System.err.println("Gleap: Already " + MAX_AMOUNT + " appended. This is the maximum amount.");
                 }
             } else {
-                System.err.println("Gleap: File is to big.");
+                System.err.println("Gleap: File is too big. The maximum attachment size is " + (MAX_FILE_SIZE / (1024 * 1024)) + " MB.");
             }
         }
     }
