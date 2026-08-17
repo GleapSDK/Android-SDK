@@ -340,6 +340,18 @@ class GleapInvisibleActivityManger {
     public void updateCloseButtonState() {
         if (closeButtonContainer != null) {
             if (this.messages.size() > 0) {
+                // Its elevation shadow ignores alpha and would pop in at full
+                // strength under the still-transparent button — ramp it with
+                // the fade.
+                if (closeButtonContainer.getVisibility() != View.VISIBLE) {
+                    try {
+                        float targetElevation = convertDpToPixel(6, ActivityUtil.getCurrentActivity());
+                        ObjectAnimator elevationAnimator = ObjectAnimator.ofFloat(closeButtonContainer, "elevation", 0f, targetElevation);
+                        elevationAnimator.setDuration(200);
+                        elevationAnimator.start();
+                    } catch (Exception exp) {
+                    }
+                }
                 animateViewInOut(closeButtonContainer, true);
             } else {
                 closeButtonContainer.setVisibility(View.GONE);
@@ -778,6 +790,32 @@ class GleapInvisibleActivityManger {
         return false;
     }
 
+    // An elevation shadow is drawn from the view's outline and ignores the
+    // view's alpha — under a card fading in, the shadow would pop to full
+    // strength instantly (a short dark flicker before the card appears).
+    // Ramp the card's elevation from zero alongside the fade instead.
+    private void rampCardElevationWithFade(View cardRoot) {
+        try {
+            if (!(cardRoot instanceof ViewGroup)) {
+                return;
+            }
+            View inner = ((ViewGroup) cardRoot).getChildAt(0);
+            if (!(inner instanceof CardView)) {
+                return;
+            }
+            CardView cardView = (CardView) inner;
+            float targetElevation = cardView.getCardElevation();
+            if (targetElevation <= 0f) {
+                return;
+            }
+            ObjectAnimator elevationAnimator = ObjectAnimator.ofFloat(cardView, "cardElevation", 0f, targetElevation);
+            elevationAnimator.setDuration(350);
+            elevationAnimator.setInterpolator(new PathInterpolator(0.4f, 0f, 0.2f, 1f));
+            elevationAnimator.start();
+        } catch (Exception exp) {
+        }
+    }
+
     private void relayoutStack(boolean withEntrance) {
         if (notificationStackFrame == null) {
             return;
@@ -945,6 +983,7 @@ class GleapInvisibleActivityManger {
                     card.setScaleX(0.97f);
                     card.setScaleY(0.97f);
                     card.setAlpha(0f);
+                    rampCardElevationWithFade(card);
                     card.animate()
                             .translationY(targetTy)
                             .scaleX(targetScale)
@@ -974,6 +1013,7 @@ class GleapInvisibleActivityManger {
                 entranceView.setAlpha(0f);
                 entranceView.setScaleX(0.97f);
                 entranceView.setScaleY(0.97f);
+                rampCardElevationWithFade(entranceView);
                 entranceView.animate()
                         .alpha(1f)
                         .scaleX(1f)
