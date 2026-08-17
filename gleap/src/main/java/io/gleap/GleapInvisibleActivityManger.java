@@ -20,6 +20,7 @@ import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.view.WindowInsets;
 import android.view.animation.DecelerateInterpolator;
+import android.view.animation.PathInterpolator;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
@@ -910,7 +911,10 @@ class GleapInvisibleActivityManger {
                 if (animate || (arrival && card != entranceView)) {
                     // Release the clip before the motion so nothing pops
                     // mid-animation; a card that needs one gets it back once
-                    // it has settled.
+                    // it has settled. The gentle standard-easing curve keeps
+                    // even a long tuck travel readable — an aggressive
+                    // decelerate front-loads the motion into the first frames
+                    // and the deck appears to teleport.
                     card.setClipBounds(null);
                     final Rect settledClip = clip;
                     final View animatedCard = card;
@@ -919,8 +923,8 @@ class GleapInvisibleActivityManger {
                             .scaleX(targetScale)
                             .scaleY(targetScale)
                             .alpha(targetAlpha)
-                            .setDuration(300)
-                            .setInterpolator(new DecelerateInterpolator(2f))
+                            .setDuration(350)
+                            .setInterpolator(new PathInterpolator(0.4f, 0f, 0.2f, 1f))
                             .withEndAction(new Runnable() {
                                 @Override
                                 public void run() {
@@ -942,8 +946,8 @@ class GleapInvisibleActivityManger {
                             .scaleX(targetScale)
                             .scaleY(targetScale)
                             .alpha(1f)
-                            .setDuration(300)
-                            .setInterpolator(new DecelerateInterpolator(2f))
+                            .setDuration(350)
+                            .setInterpolator(new PathInterpolator(0.4f, 0f, 0.2f, 1f))
                             .start();
                 } else {
                     card.animate().cancel();
@@ -968,7 +972,7 @@ class GleapInvisibleActivityManger {
                         .alpha(1f)
                         .translationY(restingTy)
                         .setDuration(450)
-                        .setInterpolator(new DecelerateInterpolator(2f))
+                        .setInterpolator(new PathInterpolator(0.4f, 0f, 0.2f, 1f))
                         .start();
             }
 
@@ -983,8 +987,8 @@ class GleapInvisibleActivityManger {
                 if (animate || arrival) {
                     closeButtonContainer.animate()
                             .translationY(closeTy)
-                            .setDuration(300)
-                            .setInterpolator(new DecelerateInterpolator(2f))
+                            .setDuration(350)
+                            .setInterpolator(new PathInterpolator(0.4f, 0f, 0.2f, 1f))
                             .start();
                 } else {
                     closeButtonContainer.animate().cancel();
