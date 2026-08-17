@@ -124,6 +124,84 @@ class GleapInvisibleActivityManger {
         }
     }
 
+    /**
+     * (Re)applies the notification container's position constraints. Runs on
+     * creation and again whenever the feedback button's visibility flips —
+     * the container anchors to the button when it is shown, and the button's
+     * state can settle after the container was first built (the config
+     * applies asynchronously). Without the re-apply, notifications rendered
+     * in that window sat at the bottom of the screen until the next rebuild.
+     */
+    private void applyNotificationContainerConstraints(Activity activity) {
+        try {
+            if (layout == null || notificationContainerLayout == null || activity == null) {
+                return;
+            }
+
+            int offsetX = GleapConfig.getInstance().getButtonX();
+            int offsetY = GleapConfig.getInstance().getButtonY();
+
+            ConstraintSet set = new ConstraintSet();
+            set.clone(layout);
+
+            // Reset both horizontal anchors — a re-apply may switch sides.
+            set.clear(notificationContainerLayout.getId(), ConstraintSet.START);
+            set.clear(notificationContainerLayout.getId(), ConstraintSet.END);
+
+            int viewPadding = 20;
+
+            boolean manualHidden = GleapConfig.getInstance().isHideFeedbackButton();
+            boolean canShowFeedbackButton = showFab && !manualHidden;
+
+            // Feedback button hidden - apply default constraints plus optional notification container offset.
+            if (feedbackButtonRelativeLayout == null || !canShowFeedbackButton) {
+                int containerOffsetX = GleapConfig.getInstance().getNotificationContainerOffsetX();
+                int containerOffsetY = GleapConfig.getInstance().getNotificationContainerOffsetY();
+                set.connect(notificationContainerLayout.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, convertDpToPixel(20 + containerOffsetY, activity));
+                set.connect(notificationContainerLayout.getId(), ConstraintSet.START, layout.getId(), ConstraintSet.START, convertDpToPixel(20 + containerOffsetX, activity));
+            } else {
+                // Apply constraints based on feedback button type.
+                int containerOffsetX = GleapConfig.getInstance().getNotificationContainerOffsetX();
+                int containerOffsetY = GleapConfig.getInstance().getNotificationContainerOffsetY();
+                if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.BOTTOM_LEFT) {
+                    set.connect(notificationContainerLayout.getId(), ConstraintSet.BOTTOM, feedbackButtonRelativeLayout.getId(), ConstraintSet.TOP, convertDpToPixel(15 + containerOffsetY, activity));
+                    set.connect(notificationContainerLayout.getId(), ConstraintSet.START, layout.getId(), ConstraintSet.START, convertDpToPixel(offsetX + containerOffsetX, activity));
+                    viewPadding = offsetX;
+                } else if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.BOTTOM_RIGHT) {
+                    set.connect(notificationContainerLayout.getId(), ConstraintSet.BOTTOM, feedbackButtonRelativeLayout.getId(), ConstraintSet.TOP, convertDpToPixel(15 + containerOffsetY, activity));
+                    set.connect(notificationContainerLayout.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, convertDpToPixel(offsetX + containerOffsetX, activity));
+                    viewPadding = offsetX;
+                    notificationContainerLayout.setGravity(Gravity.RIGHT);
+                } else if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.CLASSIC_LEFT) {
+                    set.connect(notificationContainerLayout.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, convertDpToPixel(offsetY + containerOffsetY, activity));
+                    set.connect(notificationContainerLayout.getId(), ConstraintSet.START, layout.getId(), ConstraintSet.START, convertDpToPixel(offsetX + containerOffsetX, activity));
+                } else if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.CLASSIC_BOTTOM) {
+                    set.connect(notificationContainerLayout.getId(), ConstraintSet.BOTTOM, feedbackButtonRelativeLayout.getId(), ConstraintSet.TOP, convertDpToPixel(15 + containerOffsetY, activity));
+                    set.connect(notificationContainerLayout.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, convertDpToPixel(20 + containerOffsetX, activity));
+                    notificationContainerLayout.setGravity(Gravity.RIGHT);
+                } else {
+                    set.connect(notificationContainerLayout.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, convertDpToPixel(offsetY + containerOffsetY, activity));
+                    set.connect(notificationContainerLayout.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, convertDpToPixel(20 + containerOffsetX, activity));
+                    notificationContainerLayout.setGravity(Gravity.RIGHT);
+                }
+            }
+
+            // Set max width.
+            try {
+                DisplayMetrics displayMetrics = new DisplayMetrics();
+                activity.getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+                int deviceWidth = displayMetrics.widthPixels;
+                int deviceHeight = displayMetrics.heightPixels;
+                int smallerDimension = Math.min(deviceWidth, deviceHeight);
+                int maxWidthPx = smallerDimension - convertDpToPixel(viewPadding * 2, activity);
+                set.constrainMaxWidth(notificationContainerLayout.getId(), maxWidthPx);
+            } catch (Exception exp) {}
+
+            set.applyTo(layout);
+        } catch (Exception exp) {
+        }
+    }
+
     public void createNotificationLayout(Activity activity) {
         if (activity == null) {
             activity = ActivityUtil.getCurrentActivity();
@@ -148,64 +226,9 @@ class GleapInvisibleActivityManger {
                     notificationContainerLayout.setOrientation(LinearLayout.VERTICAL);
                     notificationContainerLayout.setGravity(Gravity.LEFT);
 
-                    int offsetX = GleapConfig.getInstance().getButtonX();
-                    int offsetY = GleapConfig.getInstance().getButtonY();
-
                     layout.addView(notificationContainerLayout);
 
-                    ConstraintSet set = new ConstraintSet();
-                    set.clone(layout);
-
-                    int viewPadding = 20;
-
-                    boolean manualHidden = GleapConfig.getInstance().isHideFeedbackButton();
-                    boolean canShowFeedbackButton = showFab && !manualHidden;
-
-                    // Feedback button hidden - apply default constraints plus optional notification container offset.
-                    if (feedbackButtonRelativeLayout == null || !canShowFeedbackButton) {
-                        int containerOffsetX = GleapConfig.getInstance().getNotificationContainerOffsetX();
-                        int containerOffsetY = GleapConfig.getInstance().getNotificationContainerOffsetY();
-                        set.connect(notificationContainerLayout.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, convertDpToPixel(20 + containerOffsetY, finalActivity));
-                        set.connect(notificationContainerLayout.getId(), ConstraintSet.START, layout.getId(), ConstraintSet.START, convertDpToPixel(20 + containerOffsetX, finalActivity));
-                    } else {
-                        // Apply constraints based on feedback button type.
-                        int containerOffsetX = GleapConfig.getInstance().getNotificationContainerOffsetX();
-                        int containerOffsetY = GleapConfig.getInstance().getNotificationContainerOffsetY();
-                        if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.BOTTOM_LEFT) {
-                            set.connect(notificationContainerLayout.getId(), ConstraintSet.BOTTOM, feedbackButtonRelativeLayout.getId(), ConstraintSet.TOP, convertDpToPixel(15 + containerOffsetY, finalActivity));
-                            set.connect(notificationContainerLayout.getId(), ConstraintSet.START, layout.getId(), ConstraintSet.START, convertDpToPixel(offsetX + containerOffsetX, finalActivity));
-                            viewPadding = offsetX;
-                        } else if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.BOTTOM_RIGHT) {
-                            set.connect(notificationContainerLayout.getId(), ConstraintSet.BOTTOM, feedbackButtonRelativeLayout.getId(), ConstraintSet.TOP, convertDpToPixel(15 + containerOffsetY, finalActivity));
-                            set.connect(notificationContainerLayout.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, convertDpToPixel(offsetX + containerOffsetX, finalActivity));
-                            viewPadding = offsetX;
-                            notificationContainerLayout.setGravity(Gravity.RIGHT);
-                        } else if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.CLASSIC_LEFT) {
-                            set.connect(notificationContainerLayout.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, convertDpToPixel(offsetY + containerOffsetY, finalActivity));
-                            set.connect(notificationContainerLayout.getId(), ConstraintSet.START, layout.getId(), ConstraintSet.START, convertDpToPixel(offsetX + containerOffsetX, finalActivity));
-                        } else if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.CLASSIC_BOTTOM) {
-                            set.connect(notificationContainerLayout.getId(), ConstraintSet.BOTTOM, feedbackButtonRelativeLayout.getId(), ConstraintSet.TOP, convertDpToPixel(15 + containerOffsetY, finalActivity));
-                            set.connect(notificationContainerLayout.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, convertDpToPixel(20 + containerOffsetX, finalActivity));
-                            notificationContainerLayout.setGravity(Gravity.RIGHT);
-                        } else {
-                            set.connect(notificationContainerLayout.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, convertDpToPixel(offsetY + containerOffsetY, finalActivity));
-                            set.connect(notificationContainerLayout.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, convertDpToPixel(20 + containerOffsetX, finalActivity));
-                            notificationContainerLayout.setGravity(Gravity.RIGHT);
-                        }
-                    }
-
-                    // Set max width.
-                    try {
-                        DisplayMetrics displayMetrics = new DisplayMetrics();
-                        finalActivity.getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-                        int deviceWidth = displayMetrics.widthPixels;
-                        int deviceHeight = displayMetrics.heightPixels;
-                        int smallerDimension = Math.min(deviceWidth, deviceHeight);
-                        int maxWidthPx = smallerDimension - convertDpToPixel(viewPadding * 2, finalActivity);
-                        set.constrainMaxWidth(notificationContainerLayout.getId(), maxWidthPx);
-                    } catch (Exception exp) {}
-
-                    set.applyTo(layout);
+                    applyNotificationContainerConstraints(finalActivity);
 
                     // The stack frame holds the cards (bottom-anchored, the
                     // newest in front) plus the floating close button. Nothing
@@ -233,7 +256,12 @@ class GleapInvisibleActivityManger {
                         closeBackground.setShape(GradientDrawable.OVAL);
                         closeBackground.setColor(GleapNotificationStyle.backgroundColor());
                         closeButtonContainer.setBackground(closeBackground);
-                        closeButtonContainer.setElevation(convertDpToPixel(8, finalActivity));
+                        // Above the cards' 4dp elevation, with the same
+                        // softened shadow tint.
+                        closeButtonContainer.setElevation(convertDpToPixel(6, finalActivity));
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                            closeButtonContainer.setOutlineSpotShadowColor(Color.argb(150, 0, 0, 0));
+                        }
 
                         ImageView closeCross = new ImageView(finalActivity);
                         closeCross.setImageResource(R.drawable.close_white);
@@ -253,10 +281,11 @@ class GleapInvisibleActivityManger {
                         notificationStackFrame.addView(closeButtonContainer, new FrameLayout.LayoutParams(closeSize, closeSize, Gravity.TOP | Gravity.END));
                     }
 
-                    // Initially add all messages (if any)
+                    // Initially add all messages (if any). Re-adds after a
+                    // rebuild are not arrivals — no entrance animation.
                     if (messages.size() > 0) {
                         for (GleapChatMessage notification : messages) {
-                            addNotificationViewToLayout(notification, finalActivity);
+                            addNotificationViewToLayout(notification, finalActivity, false);
                         }
                         updateCloseButtonState();
                     }
@@ -300,7 +329,7 @@ class GleapInvisibleActivityManger {
         }
     }
 
-    public void addNotificationViewToLayout(GleapChatMessage notification, Activity activity) {
+    public void addNotificationViewToLayout(GleapChatMessage notification, Activity activity, boolean isNewArrival) {
         if (activity == null) {
             activity = ActivityUtil.getCurrentActivity();
         }
@@ -318,9 +347,11 @@ class GleapInvisibleActivityManger {
             // Bottom-anchored: the stack math positions every card purely via
             // translationY, and the add order keeps the newest card in front.
             notificationStackFrame.addView(commentComponent, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM));
-            pendingEntranceView = commentComponent;
+            if (isNewArrival) {
+                pendingEntranceView = commentComponent;
+            }
         }
-        relayoutStack(true);
+        relayoutStack(isNewArrival);
     }
 
     public void destroyBanner(boolean clearData) {
@@ -492,7 +523,7 @@ class GleapInvisibleActivityManger {
         this.stackExpanded = false;
 
         this.messages.add(comment);
-        addNotificationViewToLayout(comment, activity);
+        addNotificationViewToLayout(comment, activity, true);
         updateCloseButtonState();
     }
 
@@ -809,6 +840,13 @@ class GleapInvisibleActivityManger {
 
             boolean collapsed = count > 1 && !stackExpanded;
 
+            // A new arrival on an existing stack is choreographed as one deck
+            // motion: the previous cards animate back into their tuck while
+            // the new card emerges from the stack's front slot — rather than
+            // the old front snapping back and the new card floating up from
+            // the empty space below the stack.
+            boolean arrival = entranceView != null && !animate && collapsed;
+
             int newerHeights = 0;
             for (int i = count - 1; i >= 0; i--) {
                 View card = cards.get(i);
@@ -851,15 +889,41 @@ class GleapInvisibleActivityManger {
                 card.setPivotX(stackWidth / 2f);
                 card.setPivotY(0f);
 
-                if (animate) {
-                    // Release the clip before the spread so nothing pops
-                    // mid-animation.
+                if (animate || (arrival && card != entranceView)) {
+                    // Release the clip before the motion so nothing pops
+                    // mid-animation; a card that needs one gets it back once
+                    // it has settled.
                     card.setClipBounds(null);
+                    final Rect settledClip = clip;
+                    final View animatedCard = card;
                     card.animate()
                             .translationY(targetTy)
                             .scaleX(targetScale)
                             .scaleY(targetScale)
                             .alpha(targetAlpha)
+                            .setDuration(300)
+                            .setInterpolator(new DecelerateInterpolator(2f))
+                            .withEndAction(new Runnable() {
+                                @Override
+                                public void run() {
+                                    animatedCard.setClipBounds(settledClip);
+                                }
+                            })
+                            .start();
+                } else if (arrival) {
+                    // The new front card: starts tucked like the next card of
+                    // the deck — slightly scaled back, its top where a peek
+                    // would sit — and comes forward into the front slot.
+                    card.animate().cancel();
+                    card.setTranslationY(targetTy - convertDpToPixel(9, activity));
+                    card.setScaleX(0.955f);
+                    card.setScaleY(0.955f);
+                    card.setAlpha(0f);
+                    card.animate()
+                            .translationY(targetTy)
+                            .scaleX(targetScale)
+                            .scaleY(targetScale)
+                            .alpha(1f)
                             .setDuration(300)
                             .setInterpolator(new DecelerateInterpolator(2f))
                             .start();
@@ -875,10 +939,11 @@ class GleapInvisibleActivityManger {
                 newerHeights += heights[i];
             }
 
-            // Only the just-arrived front card plays the entrance animation —
-            // a slide-up with a fade, matching the web widget.
-            if (entranceView != null && !animate) {
+            // The very first notification has no stack to emerge from — it
+            // slides up with a fade, matching the web widget's entrance.
+            if (entranceView != null && !animate && !arrival) {
                 float restingTy = entranceView.getTranslationY();
+                entranceView.animate().cancel();
                 entranceView.setAlpha(0f);
                 entranceView.setTranslationY(restingTy + convertDpToPixel(12, activity));
                 entranceView.animate()
@@ -897,7 +962,7 @@ class GleapInvisibleActivityManger {
                 float closeTy = visualTop - overhang;
                 boolean isRTL = notificationStackFrame.getLayoutDirection() == View.LAYOUT_DIRECTION_RTL;
                 closeButtonContainer.setTranslationX(isRTL ? -overhang : overhang);
-                if (animate) {
+                if (animate || arrival) {
                     closeButtonContainer.animate()
                             .translationY(closeTy)
                             .setDuration(300)
@@ -962,6 +1027,10 @@ class GleapInvisibleActivityManger {
                             feedbackButtonRelativeLayout.setVisibility(View.INVISIBLE);
                         }
                     }
+
+                    // The notification container anchors to the button when it
+                    // is visible — follow the state change.
+                    applyNotificationContainerConstraints(ActivityUtil.getCurrentActivity());
                 }
             });
         } catch (Error | Exception ignore) {

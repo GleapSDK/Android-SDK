@@ -113,7 +113,12 @@ class GleapChatMessage {
         CardView cardView = new CardView(local);
         int containerRadius = GleapNotificationStyle.containerRadiusPx(local);
         cardView.setRadius(containerRadius);
-        cardView.setCardElevation(convertDpToPixel(6, local));
+        // Soft and airy, like the web widget's two-layer shadow — a low
+        // elevation, further lightened where the platform allows tinting.
+        cardView.setCardElevation(convertDpToPixel(4, local));
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            cardView.setOutlineSpotShadowColor(Color.argb(150, 0, 0, 0));
+        }
         cardView.setCardBackgroundColor(GleapNotificationStyle.backgroundColor());
         cardView.setClipToOutline(true);
         cardView.setUseCompatPadding(false);
