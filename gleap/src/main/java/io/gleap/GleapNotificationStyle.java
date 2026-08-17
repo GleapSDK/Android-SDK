@@ -94,6 +94,19 @@ class GleapNotificationStyle {
         }
     }
 
+    // The stack frame's one fixed height: tall enough for any expanded stack
+    // (4 news-sized cards with gaps fit comfortably), so it never needs to be
+    // resized when notifications come and go — resizing would re-anchor the
+    // bottom-pinned cards mid-animation.
+    static int stackFrameHeightPx(Activity activity) {
+        try {
+            android.util.DisplayMetrics displayMetrics = activity.getResources().getDisplayMetrics();
+            return Math.max(displayMetrics.heightPixels, convertDpToPixel(1200, activity));
+        } catch (Exception exp) {
+            return convertDpToPixel(1200, activity);
+        }
+    }
+
     private static Date parseIsoDate(String value) {
         if (value == null || value.length() == 0) {
             return null;

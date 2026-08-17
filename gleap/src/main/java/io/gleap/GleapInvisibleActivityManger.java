@@ -148,6 +148,12 @@ class GleapInvisibleActivityManger {
             set.clear(notificationContainerLayout.getId(), ConstraintSet.START);
             set.clear(notificationContainerLayout.getId(), ConstraintSet.END);
 
+            // The container carries the stack frame's fixed height explicitly:
+            // left at WRAP_CONTENT, ConstraintLayout measures it AT_MOST the
+            // parent's height, the taller frame inside overflows past the
+            // container's bottom, and the cards render below the screen.
+            set.constrainHeight(notificationContainerLayout.getId(), GleapNotificationStyle.stackFrameHeightPx(activity));
+
             int viewPadding = 20;
 
             boolean manualHidden = GleapConfig.getInstance().isHideFeedbackButton();
@@ -244,7 +250,16 @@ class GleapInvisibleActivityManger {
                         notificationStackFrame = new FrameLayout(finalActivity);
                         notificationStackFrame.setClipChildren(false);
                         notificationStackFrame.setClipToPadding(false);
-                        notificationContainerLayout.addView(notificationStackFrame, new LinearLayout.LayoutParams(GleapNotificationStyle.stackWidthPx(finalActivity), LinearLayout.LayoutParams.WRAP_CONTENT));
+                        // The frame keeps one FIXED height, tall enough for any
+                        // stack. Resizing it per arrival re-anchored the
+                        // bottom-pinned cards mid-animation — the whole deck
+                        // rendered offset by the height delta and visibly slid
+                        // into place. With a constant height nothing ever
+                        // re-bases; only the card animators move cards. The
+                        // frame is transparent and not clickable, so the empty
+                        // space above the cards stays inert.
+                        int stackFrameHeight = GleapNotificationStyle.stackFrameHeightPx(finalActivity);
+                        notificationContainerLayout.addView(notificationStackFrame, new LinearLayout.LayoutParams(GleapNotificationStyle.stackWidthPx(finalActivity), stackFrameHeight));
                     }
 
                     // The close button floats over the stack's top corner
@@ -348,6 +363,9 @@ class GleapInvisibleActivityManger {
             // translationY, and the add order keeps the newest card in front.
             notificationStackFrame.addView(commentComponent, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM));
             if (isNewArrival) {
+                // Invisible until the stack layout pass places it and starts
+                // the entrance — it must never flash at a resting position.
+                commentComponent.setAlpha(0f);
                 pendingEntranceView = commentComponent;
             }
         }
@@ -832,10 +850,10 @@ class GleapInvisibleActivityManger {
                 expandedHeight += heights[i];
             }
 
+            int frameHeight = GleapNotificationStyle.stackFrameHeightPx(activity);
             ViewGroup.LayoutParams frameParams = notificationStackFrame.getLayoutParams();
-            if (frameParams != null && frameParams.height != expandedHeight) {
-                frameParams.height = expandedHeight;
-                notificationStackFrame.setLayoutParams(frameParams);
+            if (frameParams != null && frameParams.height > 0) {
+                frameHeight = frameParams.height;
             }
 
             boolean collapsed = count > 1 && !stackExpanded;
@@ -958,7 +976,7 @@ class GleapInvisibleActivityManger {
             // corner and rides along as the stack expands or collapses.
             if (closeButtonContainer != null) {
                 int overhang = convertDpToPixel(9, activity);
-                float visualTop = collapsed ? expandedHeight - (frontHeight + headroom) : 0;
+                float visualTop = collapsed ? frameHeight - (frontHeight + headroom) : frameHeight - expandedHeight;
                 float closeTy = visualTop - overhang;
                 boolean isRTL = notificationStackFrame.getLayoutDirection() == View.LAYOUT_DIRECTION_RTL;
                 closeButtonContainer.setTranslationX(isRTL ? -overhang : overhang);
