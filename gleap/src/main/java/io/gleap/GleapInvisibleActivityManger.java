@@ -829,11 +829,15 @@ class GleapInvisibleActivityManger {
                         targetAlpha = 0f;
                     }
 
-                    // Clips a taller card behind down to the front card's
-                    // bottom edge, so e.g. a news cover can't hang out below
-                    // the stack. The generous negative insets keep the shadow
+                    // Clips a taller card behind to the front card's own
+                    // height (in card space, like the web widget), so e.g. a
+                    // news cover can't hang out below the stack. After the
+                    // peek offset and scale-back, the clipped bottom lands
+                    // above the front card's bottom — the area behind its
+                    // rounded corners stays clear, nothing shines through
+                    // them. The generous negative insets keep the shadow
                     // outside the clipped edge alive.
-                    int visibleHeight = (int) ((frontHeight + peek) / targetScale);
+                    int visibleHeight = frontHeight;
                     if (heights[i] > visibleHeight) {
                         int overscan = convertDpToPixel(40, activity);
                         clip = new Rect(-overscan, -overscan, stackWidth + overscan, visibleHeight);
