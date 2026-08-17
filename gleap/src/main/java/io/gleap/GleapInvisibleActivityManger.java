@@ -251,6 +251,21 @@ class GleapInvisibleActivityManger {
                         notificationStackFrame = new FrameLayout(finalActivity);
                         notificationStackFrame.setClipChildren(false);
                         notificationStackFrame.setClipToPadding(false);
+
+                        // Containment guarantee: nothing — no card, no shadow,
+                        // no mid-animation overhang — may ever draw below the
+                        // stack's bottom edge (the feedback button sits right
+                        // under it). Generous side/top overscan keeps shadows
+                        // and the close-button overhang alive; the bottom gets
+                        // only a small allowance for the front card's shadow.
+                        int sideOverscan = convertDpToPixel(60, finalActivity);
+                        int bottomShadowAllowance = convertDpToPixel(10, finalActivity);
+                        int clipFrameHeight = GleapNotificationStyle.stackFrameHeightPx(finalActivity);
+                        notificationStackFrame.setClipBounds(new Rect(
+                                -sideOverscan,
+                                -sideOverscan,
+                                GleapNotificationStyle.stackWidthPx(finalActivity) + sideOverscan,
+                                clipFrameHeight + bottomShadowAllowance));
                         // The frame keeps one FIXED height, tall enough for any
                         // stack. Resizing it per arrival re-anchored the
                         // bottom-pinned cards mid-animation — the whole deck
@@ -933,13 +948,13 @@ class GleapInvisibleActivityManger {
                             })
                             .start();
                 } else if (arrival) {
-                    // The new front card: starts tucked like the next card of
-                    // the deck — slightly scaled back, its top where a peek
-                    // would sit — and comes forward into the front slot.
+                    // The new front card materializes in its slot — a fade
+                    // with a slight scale-up and NO travel, so it can never
+                    // read as arriving from somewhere else on the screen.
                     card.animate().cancel();
-                    card.setTranslationY(targetTy - convertDpToPixel(9, activity));
-                    card.setScaleX(0.955f);
-                    card.setScaleY(0.955f);
+                    card.setTranslationY(targetTy);
+                    card.setScaleX(0.97f);
+                    card.setScaleY(0.97f);
                     card.setAlpha(0f);
                     card.animate()
                             .translationY(targetTy)
@@ -964,14 +979,17 @@ class GleapInvisibleActivityManger {
             // The very first notification has no stack to emerge from — it
             // slides up with a fade, matching the web widget's entrance.
             if (entranceView != null && !animate && !arrival) {
-                float restingTy = entranceView.getTranslationY();
+                // The very first notification materializes in place too —
+                // fade plus a slight scale-up, no travel.
                 entranceView.animate().cancel();
                 entranceView.setAlpha(0f);
-                entranceView.setTranslationY(restingTy + convertDpToPixel(12, activity));
+                entranceView.setScaleX(0.97f);
+                entranceView.setScaleY(0.97f);
                 entranceView.animate()
                         .alpha(1f)
-                        .translationY(restingTy)
-                        .setDuration(450)
+                        .scaleX(1f)
+                        .scaleY(1f)
+                        .setDuration(350)
                         .setInterpolator(new PathInterpolator(0.4f, 0f, 0.2f, 1f))
                         .start();
             }
