@@ -5,6 +5,7 @@ import static io.gleap.GleapHelper.convertDpToPixel;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
+import android.animation.RectEvaluator;
 import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -252,20 +253,6 @@ class GleapInvisibleActivityManger {
                         notificationStackFrame.setClipChildren(false);
                         notificationStackFrame.setClipToPadding(false);
 
-                        // Containment guarantee: nothing — no card, no shadow,
-                        // no mid-animation overhang — may ever draw below the
-                        // stack's bottom edge (the feedback button sits right
-                        // under it). Generous side/top overscan keeps shadows
-                        // and the close-button overhang alive; the bottom gets
-                        // only a small allowance for the front card's shadow.
-                        int sideOverscan = convertDpToPixel(60, finalActivity);
-                        int bottomShadowAllowance = convertDpToPixel(10, finalActivity);
-                        int clipFrameHeight = GleapNotificationStyle.stackFrameHeightPx(finalActivity);
-                        notificationStackFrame.setClipBounds(new Rect(
-                                -sideOverscan,
-                                -sideOverscan,
-                                GleapNotificationStyle.stackWidthPx(finalActivity) + sideOverscan,
-                                clipFrameHeight + bottomShadowAllowance));
                         // The frame keeps one FIXED height, tall enough for any
                         // stack. Resizing it per arrival re-anchored the
                         // bottom-pinned cards mid-animation — the whole deck
@@ -889,7 +876,16 @@ class GleapInvisibleActivityManger {
                 float targetTy;
                 float targetScale;
                 float targetAlpha = 1f;
-                Rect clip = null;
+                int overscan = convertDpToPixel(60, activity);
+                // Every card carries a clip at ALL times. The default opens
+                // generously past the body (a visual no-op — the elevation
+                // shadow is outline-based and ignores clipBounds entirely, so
+                // nothing is ever cut in a resting state). Collapsed cards
+                // behind the front clip to the front card's height in card
+                // space, like the web widget, and every transition ANIMATES
+                // the clip in lockstep with the card's motion — so a tall
+                // card's body can never poke out below the stack mid-flight.
+                Rect clip = new Rect(-overscan, -overscan, stackWidth + overscan, heights[i] + overscan);
 
                 if (collapsed && depth > 0) {
                     // Tuck the card's top edge `peek`px above the front card's
@@ -901,18 +897,8 @@ class GleapInvisibleActivityManger {
                         targetAlpha = 0f;
                     }
 
-                    // Clips a taller card behind to the front card's own
-                    // height (in card space, like the web widget), so e.g. a
-                    // news cover can't hang out below the stack. After the
-                    // peek offset and scale-back, the clipped bottom lands
-                    // above the front card's bottom — the area behind its
-                    // rounded corners stays clear, nothing shines through
-                    // them. The generous negative insets keep the shadow
-                    // outside the clipped edge alive.
-                    int visibleHeight = frontHeight;
-                    if (heights[i] > visibleHeight) {
-                        int overscan = convertDpToPixel(40, activity);
-                        clip = new Rect(-overscan, -overscan, stackWidth + overscan, visibleHeight);
+                    if (heights[i] > frontHeight) {
+                        clip = new Rect(-overscan, -overscan, stackWidth + overscan, frontHeight);
                     }
                 } else {
                     targetScale = 1f;
@@ -924,15 +910,23 @@ class GleapInvisibleActivityManger {
                 card.setPivotY(0f);
 
                 if (animate || (arrival && card != entranceView)) {
-                    // Release the clip before the motion so nothing pops
-                    // mid-animation; a card that needs one gets it back once
-                    // it has settled. The gentle standard-easing curve keeps
-                    // even a long tuck travel readable — an aggressive
-                    // decelerate front-loads the motion into the first frames
-                    // and the deck appears to teleport.
-                    card.setClipBounds(null);
-                    final Rect settledClip = clip;
-                    final View animatedCard = card;
+                    // The clip animates in lockstep with the card (same
+                    // duration and curve), starting clamped to the card's
+                    // body — a visual no-op, but it guarantees the sweeping
+                    // edge stays at or above the front card's bottom for the
+                    // whole flight.
+                    Rect startClip = card.getClipBounds();
+                    if (startClip == null) {
+                        startClip = new Rect(-overscan, -overscan, stackWidth + overscan, heights[i]);
+                    } else if (startClip.bottom > heights[i]) {
+                        startClip = new Rect(startClip.left, startClip.top, startClip.right, heights[i]);
+                    }
+                    card.setClipBounds(startClip);
+                    ObjectAnimator clipAnimator = ObjectAnimator.ofObject(card, "clipBounds", new RectEvaluator(), startClip, clip);
+                    clipAnimator.setDuration(350);
+                    clipAnimator.setInterpolator(new PathInterpolator(0.4f, 0f, 0.2f, 1f));
+                    clipAnimator.start();
+
                     card.animate()
                             .translationY(targetTy)
                             .scaleX(targetScale)
@@ -940,18 +934,13 @@ class GleapInvisibleActivityManger {
                             .alpha(targetAlpha)
                             .setDuration(350)
                             .setInterpolator(new PathInterpolator(0.4f, 0f, 0.2f, 1f))
-                            .withEndAction(new Runnable() {
-                                @Override
-                                public void run() {
-                                    animatedCard.setClipBounds(settledClip);
-                                }
-                            })
                             .start();
                 } else if (arrival) {
                     // The new front card materializes in its slot — a fade
                     // with a slight scale-up and NO travel, so it can never
                     // read as arriving from somewhere else on the screen.
                     card.animate().cancel();
+                    card.setClipBounds(clip);
                     card.setTranslationY(targetTy);
                     card.setScaleX(0.97f);
                     card.setScaleY(0.97f);
