@@ -8,6 +8,7 @@ import android.animation.ObjectAnimator;
 import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
@@ -18,7 +19,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.view.WindowInsets;
+import android.view.animation.DecelerateInterpolator;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -31,6 +34,7 @@ import androidx.constraintlayout.widget.ConstraintSet;
 
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -47,10 +51,12 @@ class GleapInvisibleActivityManger {
     private ConstraintLayout layout;
     private TextView notificationCountTextView;
     private LinearLayout notificationContainerLayout;
-    private LinearLayout notificationListContainer;
+    private FrameLayout notificationStackFrame;
     private ImageButton imageButton;
     private Bitmap fabIcon;
-    private RelativeLayout closeButtonContainer;
+    private FrameLayout closeButtonContainer;
+    private boolean stackExpanded = false;
+    private View pendingEntranceView;
     private Button squareButton;
     private GleapBanner banner;
     private JSONObject bannerData;
@@ -160,7 +166,7 @@ class GleapInvisibleActivityManger {
                         int containerOffsetX = GleapConfig.getInstance().getNotificationContainerOffsetX();
                         int containerOffsetY = GleapConfig.getInstance().getNotificationContainerOffsetY();
                         set.connect(notificationContainerLayout.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, convertDpToPixel(20 + containerOffsetY, finalActivity));
-                        set.connect(notificationContainerLayout.getId(), ConstraintSet.START, layout.getId(), ConstraintSet.START, convertDpToPixel(containerOffsetX, finalActivity));
+                        set.connect(notificationContainerLayout.getId(), ConstraintSet.START, layout.getId(), ConstraintSet.START, convertDpToPixel(20 + containerOffsetX, finalActivity));
                     } else {
                         // Apply constraints based on feedback button type.
                         int containerOffsetX = GleapConfig.getInstance().getNotificationContainerOffsetX();
@@ -171,7 +177,7 @@ class GleapInvisibleActivityManger {
                             viewPadding = offsetX;
                         } else if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.BOTTOM_RIGHT) {
                             set.connect(notificationContainerLayout.getId(), ConstraintSet.BOTTOM, feedbackButtonRelativeLayout.getId(), ConstraintSet.TOP, convertDpToPixel(15 + containerOffsetY, finalActivity));
-                            set.connect(notificationContainerLayout.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, convertDpToPixel(offsetX - 20 + containerOffsetX, finalActivity));
+                            set.connect(notificationContainerLayout.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, convertDpToPixel(offsetX + containerOffsetX, finalActivity));
                             viewPadding = offsetX;
                             notificationContainerLayout.setGravity(Gravity.RIGHT);
                         } else if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.CLASSIC_LEFT) {
@@ -179,11 +185,11 @@ class GleapInvisibleActivityManger {
                             set.connect(notificationContainerLayout.getId(), ConstraintSet.START, layout.getId(), ConstraintSet.START, convertDpToPixel(offsetX + containerOffsetX, finalActivity));
                         } else if (GleapConfig.getInstance().getWidgetPosition() == WidgetPosition.CLASSIC_BOTTOM) {
                             set.connect(notificationContainerLayout.getId(), ConstraintSet.BOTTOM, feedbackButtonRelativeLayout.getId(), ConstraintSet.TOP, convertDpToPixel(15 + containerOffsetY, finalActivity));
-                            set.connect(notificationContainerLayout.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, convertDpToPixel(containerOffsetX, finalActivity));
+                            set.connect(notificationContainerLayout.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, convertDpToPixel(20 + containerOffsetX, finalActivity));
                             notificationContainerLayout.setGravity(Gravity.RIGHT);
                         } else {
                             set.connect(notificationContainerLayout.getId(), ConstraintSet.BOTTOM, layout.getId(), ConstraintSet.BOTTOM, convertDpToPixel(offsetY + containerOffsetY, finalActivity));
-                            set.connect(notificationContainerLayout.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, convertDpToPixel(containerOffsetX, finalActivity));
+                            set.connect(notificationContainerLayout.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, convertDpToPixel(20 + containerOffsetX, finalActivity));
                             notificationContainerLayout.setGravity(Gravity.RIGHT);
                         }
                     }
@@ -201,45 +207,50 @@ class GleapInvisibleActivityManger {
 
                     set.applyTo(layout);
 
-                    // Initialize close button.
+                    // The stack frame holds the cards (bottom-anchored, the
+                    // newest in front) plus the floating close button. Nothing
+                    // on this path may clip — peeking card edges, the close
+                    // button overhang and the card shadows all draw outside
+                    // their parents' bounds.
+                    notificationContainerLayout.setClipChildren(false);
+                    notificationContainerLayout.setClipToPadding(false);
+                    layout.setClipChildren(false);
+                    layout.setClipToPadding(false);
+
+                    if (notificationStackFrame == null) {
+                        notificationStackFrame = new FrameLayout(finalActivity);
+                        notificationStackFrame.setClipChildren(false);
+                        notificationStackFrame.setClipToPadding(false);
+                        notificationContainerLayout.addView(notificationStackFrame, new LinearLayout.LayoutParams(GleapNotificationStyle.stackWidthPx(finalActivity), LinearLayout.LayoutParams.WRAP_CONTENT));
+                    }
+
+                    // The close button floats over the stack's top corner
+                    // instead of taking a row of its own above it. Its
+                    // elevation keeps it above the cards' shadows.
                     if (closeButtonContainer == null) {
-                        ImageButton closeButton = new ImageButton(finalActivity);
+                        closeButtonContainer = new FrameLayout(finalActivity);
+                        GradientDrawable closeBackground = new GradientDrawable();
+                        closeBackground.setShape(GradientDrawable.OVAL);
+                        closeBackground.setColor(GleapNotificationStyle.backgroundColor());
+                        closeButtonContainer.setBackground(closeBackground);
+                        closeButtonContainer.setElevation(convertDpToPixel(8, finalActivity));
 
-                        GradientDrawable gradientDrawable = new GradientDrawable();
-                        gradientDrawable.setCornerRadius(1000);
-                        gradientDrawable.setColor(Color.parseColor("#878787"));
+                        ImageView closeCross = new ImageView(finalActivity);
+                        closeCross.setImageResource(R.drawable.close_white);
+                        closeCross.setColorFilter(GleapNotificationStyle.contrastColor());
+                        int crossSize = convertDpToPixel(10, finalActivity);
+                        closeButtonContainer.addView(closeCross, new FrameLayout.LayoutParams(crossSize, crossSize, Gravity.CENTER));
 
-                        closeButtonContainer = new RelativeLayout(finalActivity);
-                        closeButtonContainer.setGravity(Gravity.RIGHT);
-
-                        LinearLayout.LayoutParams closeContainerParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
-                        closeContainerParams.setMargins(convertDpToPixel(20, finalActivity), convertDpToPixel(0, finalActivity), convertDpToPixel(20, finalActivity), 0);
-                        closeButtonContainer.setLayoutParams(closeContainerParams);
-
-                        closeButton.setBackgroundResource(R.drawable.close_white);
-                        closeButton.setOnClickListener(new View.OnClickListener() {
+                        closeButtonContainer.setOnClickListener(new View.OnClickListener() {
                             @Override
                             public void onClick(View v) {
                                 clearMessages();
                             }
                         });
 
-                        RelativeLayout view = new RelativeLayout(finalActivity);
-                        view.addView(closeButton, convertDpToPixel(18, finalActivity), convertDpToPixel(18, finalActivity));
-                        view.setBackground(gradientDrawable);
-                        view.setPadding(15, 15, 15, 15);
                         closeButtonContainer.setVisibility(View.GONE);
-                        closeButtonContainer.addView(view);
-                        notificationContainerLayout.addView(closeButtonContainer);
-                    }
-
-                    if (notificationListContainer == null) {
-                        notificationListContainer = new LinearLayout(finalActivity);
-                        notificationListContainer.setOrientation(LinearLayout.VERTICAL);
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                            notificationListContainer.setGravity(notificationContainerLayout.getGravity());
-                        }
-                        notificationContainerLayout.addView(notificationListContainer);
+                        int closeSize = convertDpToPixel(26, finalActivity);
+                        notificationStackFrame.addView(closeButtonContainer, new FrameLayout.LayoutParams(closeSize, closeSize, Gravity.TOP | Gravity.END));
                     }
 
                     // Initially add all messages (if any)
@@ -247,6 +258,7 @@ class GleapInvisibleActivityManger {
                         for (GleapChatMessage notification : messages) {
                             addNotificationViewToLayout(notification, finalActivity);
                         }
+                        updateCloseButtonState();
                     }
                 } catch (Exception ex) {
                     System.out.println(ex);
@@ -257,22 +269,9 @@ class GleapInvisibleActivityManger {
 
     public void removeNotificationViewFromLayout(GleapChatMessage notification) {
         try {
-            LinearLayout layout = notification.getComponent(null);
-            if (layout != null && layout.getParent() != null) {
-                if (layout.getParent() instanceof CardView) {
-                    CardView parent = (CardView) layout.getParent();
-                    if (parent != null) {
-                        parent.removeView(layout);
-
-                        LinearLayout grandParent = (LinearLayout) parent.getParent();
-                        if (grandParent != null) {
-                            grandParent.removeView(parent);
-                        }
-                    }
-                } else if (layout.getParent() instanceof LinearLayout) {
-                    LinearLayout parent = (LinearLayout) layout.getParent();
-                    parent.removeView(layout);
-                }
+            LinearLayout component = notification.getComponent(null);
+            if (component != null && component.getParent() instanceof ViewGroup) {
+                ((ViewGroup) component.getParent()).removeView(component);
             }
         } catch (Exception exp) {
             System.out.println(exp);
@@ -288,6 +287,7 @@ class GleapInvisibleActivityManger {
         this.messages.remove(notification);
 
         updateCloseButtonState();
+        relayoutStack(false);
     }
 
     public void updateCloseButtonState() {
@@ -309,29 +309,18 @@ class GleapInvisibleActivityManger {
             return;
         }
 
-        if (notificationListContainer == null) {
+        if (notificationStackFrame == null) {
             return;
         }
 
         LinearLayout commentComponent = notification.getComponent(activity);
-        if (commentComponent != null) {
-            if (notification.getType().equals("news") || notification.getType().equals("checklist")) {
-                CardView cardView = new CardView(activity);
-                cardView.setBackgroundResource(R.drawable.rounded_corner);
-                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-                params.setMargins(convertDpToPixel(1, activity), convertDpToPixel(10, activity), convertDpToPixel(20, activity), convertDpToPixel(4, activity));
-                cardView.setLayoutParams(params);
-                cardView.setElevation(4f);
-                if(commentComponent.getParent() == null) {
-                    cardView.addView(commentComponent);
-                    notificationListContainer.addView(cardView);
-                }
-            } else {
-                if (commentComponent.getParent() == null) {
-                    notificationListContainer.addView(commentComponent);
-                }
-            }
+        if (commentComponent != null && commentComponent.getParent() == null) {
+            // Bottom-anchored: the stack math positions every card purely via
+            // translationY, and the add order keeps the newest card in front.
+            notificationStackFrame.addView(commentComponent, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM));
+            pendingEntranceView = commentComponent;
         }
+        relayoutStack(true);
     }
 
     public void destroyBanner(boolean clearData) {
@@ -476,29 +465,35 @@ class GleapInvisibleActivityManger {
             }
         }
 
-        // Check notification limit.
-        GleapArrayHelper<GleapChatMessage> helper = new GleapArrayHelper<>();
-        if (this.messages.size() >= 2) {
-            // Remove from layout.
-            GleapChatMessage notificationToRemove = this.messages.get(0);
-            removeNotificationViewFromLayout(notificationToRemove);
-            this.messages = helper.shiftArray(this.messages);
+        // More than one notification renders as a collapsed stack (newest in
+        // front), so a higher cap no longer costs vertical space. The oldest
+        // drop off beyond it.
+        while (this.messages.size() >= 4) {
+            removeNotificationViewFromLayout(this.messages.get(0));
         }
 
-        // Make sure to only show one news or checklist notification at a time. If either is already in the list, remove it first.
+        // Make sure to only show one news or checklist notification at a time. If
+        // either is already in the list, remove it first. Collected up front:
+        // removeNotificationViewFromLayout mutates the message list, so it must
+        // not run inside an iteration over it.
         if (comment.getType().equals("news") || comment.getType().equals("checklist")) {
-            Iterator<GleapChatMessage> iterator = this.messages.iterator();
-            while (iterator.hasNext()) {
-                GleapChatMessage message = iterator.next();
+            List<GleapChatMessage> messagesToRemove = new ArrayList<>();
+            for (GleapChatMessage message : this.messages) {
                 if (message.getType().equals("news") || message.getType().equals("checklist")) {
-                    removeNotificationViewFromLayout(message);
-                    iterator.remove();
+                    messagesToRemove.add(message);
                 }
+            }
+            for (GleapChatMessage message : messagesToRemove) {
+                removeNotificationViewFromLayout(message);
             }
         }
 
+        // A new arrival collapses the stack again.
+        this.stackExpanded = false;
+
         this.messages.add(comment);
         addNotificationViewToLayout(comment, activity);
+        updateCloseButtonState();
     }
 
     public void destoryLayout() {
@@ -533,9 +528,9 @@ class GleapInvisibleActivityManger {
             this.closeButtonContainer = null;
         }
 
-        if (this.notificationListContainer != null) {
-            this.notificationListContainer.removeAllViews();
-            this.notificationListContainer = null;
+        if (this.notificationStackFrame != null) {
+            this.notificationStackFrame.removeAllViews();
+            this.notificationStackFrame = null;
         }
 
         if (this.notificationContainerLayout != null) {
@@ -711,8 +706,205 @@ class GleapInvisibleActivityManger {
 
             // Clear message list.
             this.messages = new LinkedList<>();
+            this.stackExpanded = false;
         }catch (Exception ex) {
             System.out.println(ex);
+        }
+    }
+
+    /**
+     * A collapsed stack expands on the first tap instead of activating the
+     * front card — same as the web widget on touch devices. Returns true when
+     * the tap was consumed by the expansion.
+     */
+    boolean maybeExpandStackOnTap() {
+        if (this.messages.size() > 1 && !stackExpanded) {
+            stackExpanded = true;
+            applyStackLayout(null, true);
+            return true;
+        }
+        return false;
+    }
+
+    private void relayoutStack(boolean withEntrance) {
+        if (notificationStackFrame == null) {
+            return;
+        }
+
+        final View entranceView = withEntrance ? pendingEntranceView : null;
+        pendingEntranceView = null;
+        notificationStackFrame.post(new Runnable() {
+            @Override
+            public void run() {
+                applyStackLayout(entranceView, false);
+            }
+        });
+    }
+
+    /**
+     * Places every card for the current stack state. Cards are bottom-anchored
+     * in the stack frame: expanded they form a column with a fixed gap,
+     * collapsed the newest card sits in front with up to two older cards
+     * peeking out behind its top edge, scaled back like a deck. Anything
+     * deeper stays hidden until the stack expands.
+     *
+     * The frame always keeps the expanded height — collapsing only transforms
+     * the cards. The frame itself is not clickable, so the empty area above a
+     * collapsed stack stays transparent to touches.
+     */
+    private void applyStackLayout(View entranceView, boolean animate) {
+        try {
+            if (notificationStackFrame == null) {
+                return;
+            }
+
+            Activity activity = ActivityUtil.getCurrentActivity();
+            if (activity == null) {
+                return;
+            }
+
+            // Cards in visual order: oldest first, the newest last — the front
+            // card of the stack, and the bottom card of the expanded list.
+            List<View> cards = new ArrayList<>();
+            for (GleapChatMessage message : this.messages) {
+                LinearLayout component = message.getComponent(null);
+                if (component != null && component.getParent() == notificationStackFrame) {
+                    cards.add(component);
+                }
+            }
+
+            if (cards.isEmpty()) {
+                return;
+            }
+
+            int gap = convertDpToPixel(12, activity);
+            int headroom = convertDpToPixel(17, activity);
+            int stackWidth = GleapNotificationStyle.stackWidthPx(activity);
+
+            // Measure the heights — a just-added card has not been laid out yet.
+            int count = cards.size();
+            int[] heights = new int[count];
+            for (int i = 0; i < count; i++) {
+                View card = cards.get(i);
+                int height = card.getHeight();
+                if (height <= 0) {
+                    card.measure(View.MeasureSpec.makeMeasureSpec(stackWidth, View.MeasureSpec.EXACTLY),
+                            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+                    height = card.getMeasuredHeight();
+                }
+                heights[i] = height;
+            }
+
+            int frontHeight = heights[count - 1];
+            int expandedHeight = (count - 1) * gap;
+            for (int i = 0; i < count; i++) {
+                expandedHeight += heights[i];
+            }
+
+            ViewGroup.LayoutParams frameParams = notificationStackFrame.getLayoutParams();
+            if (frameParams != null && frameParams.height != expandedHeight) {
+                frameParams.height = expandedHeight;
+                notificationStackFrame.setLayoutParams(frameParams);
+            }
+
+            boolean collapsed = count > 1 && !stackExpanded;
+
+            int newerHeights = 0;
+            for (int i = count - 1; i >= 0; i--) {
+                View card = cards.get(i);
+                int depth = (count - 1) - i;
+
+                float targetTy;
+                float targetScale;
+                float targetAlpha = 1f;
+                Rect clip = null;
+
+                if (collapsed && depth > 0) {
+                    // Tuck the card's top edge `peek`px above the front card's
+                    // top; anything deeper than two peeks hides entirely.
+                    int peek = convertDpToPixel(depth == 1 ? 9 : 17, activity);
+                    targetScale = depth == 1 ? 0.955f : 0.91f;
+                    targetTy = heights[i] - frontHeight - peek;
+                    if (depth > 2) {
+                        targetAlpha = 0f;
+                    }
+
+                    // Clips a taller card behind down to the front card's
+                    // bottom edge, so e.g. a news cover can't hang out below
+                    // the stack. The generous negative insets keep the shadow
+                    // outside the clipped edge alive.
+                    int visibleHeight = (int) ((frontHeight + peek) / targetScale);
+                    if (heights[i] > visibleHeight) {
+                        int overscan = convertDpToPixel(40, activity);
+                        clip = new Rect(-overscan, -overscan, stackWidth + overscan, visibleHeight);
+                    }
+                } else {
+                    targetScale = 1f;
+                    targetTy = -(newerHeights + (depth * gap));
+                }
+
+                // transform-origin: top center.
+                card.setPivotX(stackWidth / 2f);
+                card.setPivotY(0f);
+
+                if (animate) {
+                    // Release the clip before the spread so nothing pops
+                    // mid-animation.
+                    card.setClipBounds(null);
+                    card.animate()
+                            .translationY(targetTy)
+                            .scaleX(targetScale)
+                            .scaleY(targetScale)
+                            .alpha(targetAlpha)
+                            .setDuration(300)
+                            .setInterpolator(new DecelerateInterpolator(2f))
+                            .start();
+                } else {
+                    card.animate().cancel();
+                    card.setTranslationY(targetTy);
+                    card.setScaleX(targetScale);
+                    card.setScaleY(targetScale);
+                    card.setAlpha(targetAlpha);
+                    card.setClipBounds(clip);
+                }
+
+                newerHeights += heights[i];
+            }
+
+            // Only the just-arrived front card plays the entrance animation —
+            // a slide-up with a fade, matching the web widget.
+            if (entranceView != null && !animate) {
+                float restingTy = entranceView.getTranslationY();
+                entranceView.setAlpha(0f);
+                entranceView.setTranslationY(restingTy + convertDpToPixel(12, activity));
+                entranceView.animate()
+                        .alpha(1f)
+                        .translationY(restingTy)
+                        .setDuration(450)
+                        .setInterpolator(new DecelerateInterpolator(2f))
+                        .start();
+            }
+
+            // The close button floats 9dp outside the stack's visual top
+            // corner and rides along as the stack expands or collapses.
+            if (closeButtonContainer != null) {
+                int overhang = convertDpToPixel(9, activity);
+                float visualTop = collapsed ? expandedHeight - (frontHeight + headroom) : 0;
+                float closeTy = visualTop - overhang;
+                boolean isRTL = notificationStackFrame.getLayoutDirection() == View.LAYOUT_DIRECTION_RTL;
+                closeButtonContainer.setTranslationX(isRTL ? -overhang : overhang);
+                if (animate) {
+                    closeButtonContainer.animate()
+                            .translationY(closeTy)
+                            .setDuration(300)
+                            .setInterpolator(new DecelerateInterpolator(2f))
+                            .start();
+                } else {
+                    closeButtonContainer.animate().cancel();
+                    closeButtonContainer.setTranslationY(closeTy);
+                }
+            }
+        } catch (Exception exp) {
         }
     }
 
