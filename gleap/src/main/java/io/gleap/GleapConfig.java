@@ -82,6 +82,7 @@ class GleapConfig {
     private String buttonColor = "#485bff";
     private String color = "#485bff";
     private String backgroundColor = "#ffffff";
+    private int borderRadius = 20;
     private String headerColor = "#485bff";
     // Loading-background config (mirrors the web/iOS SDK loaders). headerColor2/3
     // fall back to headerColor via their getters, like the messenger's
@@ -225,6 +226,13 @@ class GleapConfig {
                 try {
                     int contrastColor = getContrastColor(Color.parseColor(this.backgroundColor));
                     this.loaderColor = contrastColor;
+                } catch (Exception ignore) {
+                }
+            }
+
+            if (flowConfigs.has("borderRadius")) {
+                try {
+                    this.borderRadius = flowConfigs.optInt("borderRadius", 20);
                 } catch (Exception ignore) {
                 }
             }
@@ -641,6 +649,10 @@ class GleapConfig {
 
     public String getBackgroundColor() {
         return backgroundColor;
+    }
+
+    public int getBorderRadius() {
+        return borderRadius;
     }
 
     public String getHeaderColor() {

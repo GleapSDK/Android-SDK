@@ -201,7 +201,7 @@ class GleapEventService {
         return result;
     }
 
-    private GleapChatMessage createComment(String outboundId, JSONObject messageData) throws Exception {
+    private GleapChatMessage createComment(String outboundId, JSONObject messageData, String sendAt, String createdAt) throws Exception {
         String senderName = "";
         String profileImageUrl = "";
         String text = "";
@@ -213,6 +213,7 @@ class GleapEventService {
         String nextStepTitle = "";
         int currentStep = 0;
         int totalSteps = 0;
+        boolean senderIsBot = false;
 
         if (messageData.has("type")) {
             type = messageData.getString("type");
@@ -231,6 +232,10 @@ class GleapEventService {
 
             if (sender.has("profileImageUrl")) {
                 profileImageUrl = sender.getString("profileImageUrl");
+            }
+
+            if (sender.has("isBot")) {
+                senderIsBot = sender.optBoolean("isBot", false);
             }
         }
 
@@ -271,9 +276,9 @@ class GleapEventService {
             nextStepTitle = messageData.getString("nextStepTitle");
         }
 
-        GleapSender sender = new GleapSender(senderName, profileImageUrl);
+        GleapSender sender = new GleapSender(senderName, profileImageUrl, senderIsBot);
         return new GleapChatMessage(outboundId, type, text, shareToken, sender, newsId, coverImageUrl, currentStep,
-                totalSteps, nextStepTitle, checklistId);
+                totalSteps, nextStepTitle, checklistId, sendAt, createdAt);
     }
 
     public void processEventData(JSONObject data) throws Exception {
@@ -336,7 +341,7 @@ class GleapEventService {
                                                 outboundId = currentAction.getString("outbound");
                                             }
                                             JSONObject data = currentAction.getJSONObject("data");
-                                            GleapChatMessage comment = createComment(outboundId, data);
+                                            GleapChatMessage comment = createComment(outboundId, data, currentAction.optString("sendAt", ""), currentAction.optString("createdAt", ""));
                                             GleapInvisibleActivityManger.getInstance().addNotification(comment, null);
                                         } catch (JSONException e) {
 
