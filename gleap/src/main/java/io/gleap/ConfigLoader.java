@@ -19,11 +19,25 @@ import java.net.URL;
  */
 class ConfigLoader extends AsyncTask<GleapBug, Void, JSONObject> {
     private final OnHttpResponseListener listener;
+    private final boolean isReload;
     private static final int MAX_RETRIES = 3;
     private static final long INITIAL_RETRY_DELAY_MS = 1000;
 
     public ConfigLoader(OnHttpResponseListener listener) {
+        this(listener, false);
+    }
+
+    /**
+     * @param isReload true when the config is fetched again for an already running SDK
+     *                 (e.g. after a language change). The config itself is applied as
+     *                 usual, but the one-time initialization side effects — adding the
+     *                 overlay layout and firing the configLoaded / initialized
+     *                 callbacks — are skipped so the host app is not told it just
+     *                 initialized a second time.
+     */
+    public ConfigLoader(OnHttpResponseListener listener, boolean isReload) {
         this.listener = listener;
+        this.isReload = isReload;
     }
 
     @Override
@@ -105,6 +119,13 @@ class ConfigLoader extends AsyncTask<GleapBug, Void, JSONObject> {
                     GleapConfig.getInstance().initConfig(result);
 
                     if(result.has("flowConfig")) {
+                        if (isReload) {
+                            // The overlay is already attached and the app has already been
+                            // told the SDK is initialized — only the config content changed.
+                            con.disconnect();
+                            return;
+                        }
+
                         mainThreadHandler.post(new Runnable() {
                             @Override
                             public void run() {

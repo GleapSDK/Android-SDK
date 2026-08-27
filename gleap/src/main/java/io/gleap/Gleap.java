@@ -1363,13 +1363,39 @@ public class Gleap implements iGleap {
      * Set the language for the Gleap Report Flow. Otherwise the default language is
      * used.
      * Supported Languages "en", "es", "fr", "it", "de", "nl", "cz"
+     * <p>
+     * Call this BEFORE {@link #initialize(String, Application)} so the very first
+     * config load already uses it. When it is called later, the widget config is
+     * fetched again in the new language — an already open widget keeps the previous
+     * copy until it is reopened.
      *
      * @param language ISO Country Code eg. "cz," "en", "de", "es", "nl"
      */
     @Override
     public void setLanguage(String language) {
         try {
-            GleapConfig.getInstance().setLanguage(language);
+            GleapConfig config = GleapConfig.getInstance();
+            String previousLanguage = config.getLanguage();
+            config.setLanguage(language);
+
+            boolean languageChanged = language != null && !language.equalsIgnoreCase(previousLanguage);
+
+            // The widget config is loaded once during initialize() and carries every
+            // piece of copy already translated by the server (reply times,
+            // out-of-office notice, ...). Without this reload a language set after
+            // initialization would leave that copy on the previous language for the
+            // rest of the process, while the session reports the new one. Before
+            // initialize() there is nothing to reload — the regular config load picks
+            // the language up on its own.
+            if (languageChanged && config.getPlainConfig() != null) {
+                new ConfigLoader(new OnHttpResponseListener() {
+                    @Override
+                    public void onTaskComplete(JSONObject response) {
+                        // Nothing to do: ConfigLoader has already applied the config, and
+                        // the widget requests it on open.
+                    }
+                }, true).execute(GleapBug.getInstance());
+            }
         } catch (Error | Exception ignore) {
             handleError(ignore, "setLanguage");
         }
