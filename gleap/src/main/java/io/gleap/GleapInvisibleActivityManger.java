@@ -1161,7 +1161,7 @@ class GleapInvisibleActivityManger {
             feedbackButtonRelativeLayout.addView(notificationCountTextView, convertDpToPixel(18, local), convertDpToPixel(18, local));
 
             if (fabIcon == null) {
-                new GleapRoundImageHandler(GleapConfig.getInstance().getButtonLogo(), imageButton, new GleapImageLoaded() {
+                GleapImageLoader.loadRound(GleapConfig.getInstance().getButtonLogo(), imageButton, new GleapImageLoaded() {
                     @Override
                     public void invoke(Bitmap bitmap) {
                         fabIcon = bitmap;
@@ -1173,7 +1173,7 @@ class GleapInvisibleActivityManger {
                             }
                         });
                     }
-                }).execute();
+                });
             } else {
                 // Instantly show FAB if icon is already loaded.
                 imageButton.setImageBitmap(fabIcon);

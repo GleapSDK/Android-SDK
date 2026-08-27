@@ -155,12 +155,12 @@ class GleapChatMessage {
         });
         avatarImage.setClipToOutline(true);
 
-        new GleapImageHandler(getSender().getProfileImageUrl(), avatarImage, new GleapImageLoaded() {
+        GleapImageLoader.load(getSender().getProfileImageUrl(), avatarImage, convertDpToPixel(sizeDp, local), new GleapImageLoaded() {
             @Override
             public void invoke(Bitmap bitmap) {
                 avatarBitmap = bitmap;
             }
-        }).execute();
+        });
 
         return avatarImage;
     }
@@ -212,12 +212,12 @@ class GleapChatMessage {
         topImage.setScaleType(ImageView.ScaleType.CENTER_CROP);
         topImage.setBackgroundColor(GleapNotificationStyle.shadeOfColor(GleapNotificationStyle.backgroundColor(), GleapNotificationStyle.isDarkTheme() ? 30 : -12));
         cardContent.addView(topImage, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, convertDpToPixel(155, local)));
-        new GleapImageHandler(image, topImage, new GleapImageLoaded() {
+        GleapImageLoader.load(image, topImage, new GleapImageLoaded() {
             @Override
             public void invoke(Bitmap bitmap) {
                 topImageBitmap = bitmap;
             }
-        }).execute();
+        });
 
         LinearLayout bottomPart = new LinearLayout(local);
         bottomPart.setOrientation(LinearLayout.VERTICAL);
