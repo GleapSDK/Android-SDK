@@ -48,7 +48,9 @@ class GleapImageLoader {
     private static final LruCache<String, Bitmap> cache = new LruCache<String, Bitmap>(cacheSizeKb()) {
         @Override
         protected int sizeOf(String key, Bitmap bitmap) {
-            return bitmap.getByteCount() / 1024;
+            // A consumer that recycled a shared entry would otherwise throw
+            // IllegalStateException here during evictAll/trimToSize.
+            return bitmap.isRecycled() ? 0 : bitmap.getByteCount() / 1024;
         }
     };
     private static boolean trimCallbacksRegistered = false;
@@ -242,10 +244,14 @@ class GleapImageLoader {
         applicationContext.registerComponentCallbacks(new ComponentCallbacks2() {
             @Override
             public void onTrimMemory(int level) {
-                if (level >= TRIM_MEMORY_BACKGROUND) {
-                    cache.evictAll();
-                } else if (level >= TRIM_MEMORY_UI_HIDDEN) {
-                    cache.trimToSize(cache.size() / 2);
+                // Runs on the main thread; must never crash the host app.
+                try {
+                    if (level >= TRIM_MEMORY_BACKGROUND) {
+                        cache.evictAll();
+                    } else if (level >= TRIM_MEMORY_UI_HIDDEN) {
+                        cache.trimToSize(cache.size() / 2);
+                    }
+                } catch (Exception ignored) {
                 }
             }
 
@@ -255,7 +261,10 @@ class GleapImageLoader {
 
             @Override
             public void onLowMemory() {
-                cache.evictAll();
+                try {
+                    cache.evictAll();
+                } catch (Exception ignored) {
+                }
             }
         });
         trimCallbacksRegistered = true;
