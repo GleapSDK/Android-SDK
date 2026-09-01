@@ -90,15 +90,13 @@ class GleapChatMessage {
     }
 
     public void clearComponent() {
-        if (this.avatarBitmap != null) {
-            this.avatarBitmap.recycle();
-            this.avatarBitmap = null;
-        }
-
-        if (this.topImageBitmap != null) {
-            this.topImageBitmap.recycle();
-            this.topImageBitmap = null;
-        }
+        // These bitmaps come from GleapImageLoader, which still holds each one
+        // in its in-memory cache. The loader owns their lifecycle (it evicts
+        // under memory pressure and lets GC reclaim native memory); recycling
+        // a cache-shared entry here leaves a recycled bitmap in the cache that
+        // throws when onTrimMemory measures it. Just drop the reference.
+        this.avatarBitmap = null;
+        this.topImageBitmap = null;
 
         this.layout = null;
     }
