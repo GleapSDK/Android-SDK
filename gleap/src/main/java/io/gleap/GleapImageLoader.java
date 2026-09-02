@@ -44,11 +44,23 @@ class GleapImageLoader {
     private static final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     // Bitmaps handed out can be redrawn at any time, so entries are never
-    // recycled — eviction just drops the reference.
-    private static final LruCache<String, Bitmap> cache = new LruCache<String, Bitmap>(cacheSizeKb()) {
+    // recycled — eviction just drops the reference. The entry snapshots its
+    // size at insert time: LruCache re-reads sizeOf on eviction and throws if
+    // the value changed, which a recycled bitmap's getByteCount would do.
+    private static final class CacheEntry {
+        final Bitmap bitmap;
+        final int sizeKb;
+
+        CacheEntry(Bitmap bitmap) {
+            this.bitmap = bitmap;
+            this.sizeKb = Math.max(1, bitmap.getByteCount() / 1024);
+        }
+    }
+
+    private static final LruCache<String, CacheEntry> cache = new LruCache<String, CacheEntry>(cacheSizeKb()) {
         @Override
-        protected int sizeOf(String key, Bitmap bitmap) {
-            return bitmap.getByteCount() / 1024;
+        protected int sizeOf(String key, CacheEntry entry) {
+            return entry.sizeKb;
         }
     };
     private static boolean trimCallbacksRegistered = false;
@@ -90,10 +102,13 @@ class GleapImageLoader {
         }
         final String cacheKey = (round ? "round|" : "plain|") + targetWidth + "x" + targetHeight + "|" + url;
 
-        Bitmap cached = cache.get(cacheKey);
-        if (cached != null && !cached.isRecycled()) {
-            deliver(cached, imageView, imageLoaded, round);
-            return;
+        CacheEntry cached = cache.get(cacheKey);
+        if (cached != null) {
+            if (!cached.bitmap.isRecycled()) {
+                deliver(cached.bitmap, imageView, imageLoaded, round);
+                return;
+            }
+            cache.remove(cacheKey);
         }
 
         executor.execute(new Runnable() {
@@ -113,7 +128,7 @@ class GleapImageLoader {
                     }
 
                     final Bitmap result = bitmap;
-                    cache.put(cacheKey, result);
+                    cache.put(cacheKey, new CacheEntry(result));
                     mainHandler.post(new Runnable() {
                         @Override
                         public void run() {
@@ -242,10 +257,15 @@ class GleapImageLoader {
         applicationContext.registerComponentCallbacks(new ComponentCallbacks2() {
             @Override
             public void onTrimMemory(int level) {
-                if (level >= TRIM_MEMORY_BACKGROUND) {
-                    cache.evictAll();
-                } else if (level >= TRIM_MEMORY_UI_HIDDEN) {
-                    cache.trimToSize(cache.size() / 2);
+                // Trimming must never take the host app down — this runs on
+                // the main thread at moments the app can't control.
+                try {
+                    if (level >= TRIM_MEMORY_BACKGROUND) {
+                        cache.evictAll();
+                    } else if (level >= TRIM_MEMORY_UI_HIDDEN) {
+                        cache.trimToSize(cache.size() / 2);
+                    }
+                } catch (Exception ignored) {
                 }
             }
 
@@ -255,7 +275,10 @@ class GleapImageLoader {
 
             @Override
             public void onLowMemory() {
-                cache.evictAll();
+                try {
+                    cache.evictAll();
+                } catch (Exception ignored) {
+                }
             }
         });
         trimCallbacksRegistered = true;

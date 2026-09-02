@@ -4,7 +4,6 @@ import static io.gleap.GleapHelper.convertDpToPixel;
 
 import android.app.Activity;
 import android.content.res.Resources;
-import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Outline;
 import android.graphics.Typeface;
@@ -36,8 +35,6 @@ class GleapChatMessage {
     private String nextStepTitle;
     private String sendAt;
     private String createdAt;
-    private Bitmap avatarBitmap = null;
-    private Bitmap topImageBitmap = null;
     private LinearLayout layout;
 
     public GleapChatMessage(String outboundId, String type, String text, String shareToken, GleapSender sender, String newsId, String image, int currentStep, int totalSteps, String nextStepTitle, String checklistId, String sendAt, String createdAt) {
@@ -90,16 +87,8 @@ class GleapChatMessage {
     }
 
     public void clearComponent() {
-        if (this.avatarBitmap != null) {
-            this.avatarBitmap.recycle();
-            this.avatarBitmap = null;
-        }
-
-        if (this.topImageBitmap != null) {
-            this.topImageBitmap.recycle();
-            this.topImageBitmap = null;
-        }
-
+        // Bitmaps set on the views are owned by GleapImageLoader's cache and
+        // may be shared with other views — never recycle them here.
         this.layout = null;
     }
 
@@ -155,12 +144,7 @@ class GleapChatMessage {
         });
         avatarImage.setClipToOutline(true);
 
-        GleapImageLoader.load(getSender().getProfileImageUrl(), avatarImage, convertDpToPixel(sizeDp, local), new GleapImageLoaded() {
-            @Override
-            public void invoke(Bitmap bitmap) {
-                avatarBitmap = bitmap;
-            }
-        });
+        GleapImageLoader.load(getSender().getProfileImageUrl(), avatarImage, convertDpToPixel(sizeDp, local), null);
 
         return avatarImage;
     }
@@ -212,12 +196,7 @@ class GleapChatMessage {
         topImage.setScaleType(ImageView.ScaleType.CENTER_CROP);
         topImage.setBackgroundColor(GleapNotificationStyle.shadeOfColor(GleapNotificationStyle.backgroundColor(), GleapNotificationStyle.isDarkTheme() ? 30 : -12));
         cardContent.addView(topImage, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, convertDpToPixel(155, local)));
-        GleapImageLoader.load(image, topImage, new GleapImageLoaded() {
-            @Override
-            public void invoke(Bitmap bitmap) {
-                topImageBitmap = bitmap;
-            }
-        });
+        GleapImageLoader.load(image, topImage, null);
 
         LinearLayout bottomPart = new LinearLayout(local);
         bottomPart.setOrientation(LinearLayout.VERTICAL);
