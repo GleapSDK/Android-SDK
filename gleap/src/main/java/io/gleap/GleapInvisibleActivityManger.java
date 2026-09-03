@@ -690,10 +690,10 @@ class GleapInvisibleActivityManger {
             this.imageButton = null;
         }
 
-        if (this.fabIcon != null) {
-            this.fabIcon.recycle();
-            this.fabIcon = null;
-        }
+        // fabIcon is owned by GleapImageLoader's cache — drop the reference
+        // but never recycle it, or the cache's size accounting breaks and
+        // onTrimMemory crashes.
+        this.fabIcon = null;
 
         if (this.notificationCountTextView != null) {
             this.notificationCountTextView = null;
