@@ -42,9 +42,15 @@ class GleapConfig {
     private static GleapConfig instance;
 
     //bb config
-    private volatile String apiUrl = "https://api.gleap.io";
-    private volatile String wsApiUrl = "wss://ws.gleap.io";
+    // Regional hosts. Defaults to the EU region, see GleapRegion for the region table.
+    private volatile String apiUrl = GleapRegion.EU.getApiUrl();
+    private volatile String wsApiUrl = GleapRegion.EU.getWsApiUrl();
+    // Optional realtime host passed to the widget. null = widget default.
+    private volatile String realtimeHost = null;
+    // Static widget hosts. These are global and not affected by the region.
     private volatile String iFrameUrl = "https://messenger-app.gleap.io/appnew";
+    private volatile String bannerUrl = "https://outboundmedia.gleap.io";
+    private volatile String modalUrl = "https://outboundmedia.gleap.io/modal";
     private volatile String sdkKey = "";
     private String feedbackFlow = "";
     private ValueCallback<Uri[]> mUploadMessage;
@@ -340,6 +346,27 @@ class GleapConfig {
         this.wsApiUrl = wsApiUrl;
     }
 
+    public String getRealtimeHost() {
+        return realtimeHost;
+    }
+
+    public void setRealtimeHost(String realtimeHost) {
+        this.realtimeHost = realtimeHost;
+    }
+
+    /**
+     * Applies all regional hosts at once. The static widget hosts stay untouched.
+     */
+    public synchronized void setRegion(GleapRegion region) {
+        if (region == null) {
+            return;
+        }
+
+        this.apiUrl = region.getApiUrl();
+        this.wsApiUrl = region.getWsApiUrl();
+        this.realtimeHost = region.getRealtimeHost();
+    }
+
     public String getLanguage() {
         return language;
     }
@@ -573,6 +600,22 @@ class GleapConfig {
 
     public void setiFrameUrl(String iFrameUrl) {
         this.iFrameUrl = iFrameUrl;
+    }
+
+    public String getBannerUrl() {
+        return bannerUrl;
+    }
+
+    public void setBannerUrl(String bannerUrl) {
+        this.bannerUrl = bannerUrl;
+    }
+
+    public String getModalUrl() {
+        return modalUrl;
+    }
+
+    public void setModalUrl(String modalUrl) {
+        this.modalUrl = modalUrl;
     }
 
     public void setInterval(int interval) {

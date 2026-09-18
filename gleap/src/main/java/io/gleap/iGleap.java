@@ -386,6 +386,17 @@ interface iGleap {
      * Configure Gleap
      */
     /**
+     * Sets the data region of your Gleap project. Supported regions: "eu" (default) and "us" (case-insensitive).
+     * Sets the API url, the websocket url and the realtime host at once. Unknown regions are ignored.
+     * Must be called before Gleap.initialize. A manual setter (setApiUrl, setWSApiUrl, setRealtimeHost)
+     * called after setRegion overrides that single host.
+     * The static widget hosts (frame, banner, modal) are global and are not changed by the region.
+     *
+     * @param region "eu" | "us"
+     */
+    void setRegion(String region);
+
+    /**
      * Sets the API url to your internal Gleap server. Please make sure that the server is reachable within the network
      * If you use a http url pls add android:usesCleartextTraffic="true" to your main activity to allow cleartext traffic
      *
@@ -408,6 +419,30 @@ interface iGleap {
      * @author Gleap
      */
     void setFrameUrl(String frameUrl);
+
+    /**
+     * Sets the realtime hostname used by the widget (without protocol or path), e.g. "sockets.gleap.io".
+     *
+     * @param realtimeHost The realtime hostname.
+     * @author Gleap
+     */
+    void setRealtimeHost(String realtimeHost);
+
+    /**
+     * Sets a custom banner url.
+     *
+     * @param bannerUrl The custom banner url.
+     * @author Gleap
+     */
+    void setBannerUrl(String bannerUrl);
+
+    /**
+     * Sets a custom modal url.
+     *
+     * @param modalUrl The custom modal url.
+     * @author Gleap
+     */
+    void setModalUrl(String modalUrl);
 
     /**
      * Set the language for the Gleap Report Flow. Otherwise the default language is used.
