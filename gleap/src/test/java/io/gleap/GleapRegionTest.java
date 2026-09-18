@@ -39,9 +39,9 @@ public class GleapRegionTest {
 
     @Test
     public void regionTableMatchesTheSpec() {
-        assertEquals("https://api.gleap.io", GleapRegion.EU.getApiUrl());
-        assertEquals("wss://ws.gleap.io", GleapRegion.EU.getWsApiUrl());
-        assertEquals("sockets.gleap.io", GleapRegion.EU.getRealtimeHost());
+        assertEquals("https://api.eu.gleap.ai", GleapRegion.EU.getApiUrl());
+        assertEquals("wss://ws.eu.gleap.ai", GleapRegion.EU.getWsApiUrl());
+        assertEquals("sockets.eu.gleap.ai", GleapRegion.EU.getRealtimeHost());
 
         assertEquals("https://api.us.gleap.ai", GleapRegion.US.getApiUrl());
         assertEquals("wss://ws.us.gleap.ai", GleapRegion.US.getWsApiUrl());
@@ -51,8 +51,8 @@ public class GleapRegionTest {
     @Test
     public void defaultsStayEuWithoutRealtimeHost() {
         GleapConfig config = GleapConfig.getInstance();
-        assertEquals("https://api.gleap.io", config.getApiUrl());
-        assertEquals("wss://ws.gleap.io", config.getWsApiUrl());
+        assertEquals("https://api.eu.gleap.ai", config.getApiUrl());
+        assertEquals("wss://ws.eu.gleap.ai", config.getWsApiUrl());
         assertNull(config.getRealtimeHost());
     }
 

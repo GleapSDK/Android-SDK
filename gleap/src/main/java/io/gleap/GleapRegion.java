@@ -10,7 +10,7 @@ import java.util.Locale;
  * (messenger frame, banner, modal, sdk assets) are global and not part of a region.
  */
 enum GleapRegion {
-    EU("eu", "https://api.gleap.io", "wss://ws.gleap.io", "sockets.gleap.io"),
+    EU("eu", "https://api.eu.gleap.ai", "wss://ws.eu.gleap.ai", "sockets.eu.gleap.ai"),
     US("us", "https://api.us.gleap.ai", "wss://ws.us.gleap.ai", "sockets.us.gleap.ai");
 
     private final String key;
