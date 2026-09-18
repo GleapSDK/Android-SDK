@@ -28,9 +28,8 @@ dependencies {
 dependencies {
 ...
 
-implementation group: 'io.gleap', name: 'android-sdk', version: '7.0.35'
-
-
+implementation group: 'io.gleap', name: 'gleap-android-sdk', version: '18.0.0'
+}
 ```
 
 Sync the gradle file to start the download of the library.
@@ -58,3 +57,23 @@ Gleap.initialize("YOUR_API_KEY", this);
 ```
 
 (Your API key can be found in the project settings within Gleap)
+
+## Data regions
+
+Gleap projects are hosted in the EU by default. If your project lives in the US region, select the region **before** calling `Gleap.initialize`:
+
+```
+Gleap.getInstance().setRegion("us");
+Gleap.initialize("YOUR_API_KEY", this);
+```
+
+`setRegion` accepts `"eu"` (default) or `"us"` (case-insensitive) and sets all regional hosts at once. Unknown values are ignored with a warning.
+
+| Region | API url | WebSocket url | Realtime host |
+|--------|---------|---------------|---------------|
+| `eu` (default) | `https://api.eu.gleap.ai` | `wss://ws.eu.gleap.ai` | `sockets.eu.gleap.ai` |
+| `us` | `https://api.us.gleap.ai` | `wss://ws.us.gleap.ai` | `sockets.us.gleap.ai` |
+
+**Order matters:** call `setRegion` first, then `Gleap.initialize`. The manual setters (`setApiUrl`, `setWSApiUrl`, `setRealtimeHost`) are still available — a manual setter called after `setRegion` overrides that single host.
+
+The static widget hosts are global and are **not** changed by the region: the messenger frame (`messenger-app.gleap.io/appnew`), banners and modals (`outboundmedia.gleap.io`) and SDK assets (`sdk.gleap.io`). Self-hosted setups can override them with `setFrameUrl`, `setBannerUrl` and `setModalUrl`.

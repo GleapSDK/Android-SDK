@@ -16,7 +16,7 @@ import javax.net.ssl.HttpsURLConnection;
 import gleap.io.gleap.BuildConfig;
 
 public class GleapUpdateSessionService extends AsyncTask<Void, Void, Integer> {
-    private static final String httpsUrl = GleapConfig.getInstance().getApiUrl() + "/sessions/partialupdate";
+    private static final String URL_POSTFIX = "/sessions/partialupdate";
 
     @Override
     protected Integer doInBackground(Void... voids) {
@@ -47,7 +47,7 @@ public class GleapUpdateSessionService extends AsyncTask<Void, Void, Integer> {
             GleapSessionController.getInstance().setPendingUpdateAction(null);
 
             try {
-                URL url = new URL(httpsUrl);
+                URL url = new URL(GleapConfig.getInstance().getApiUrl() + URL_POSTFIX);
                 HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
                 conn.setRequestMethod("POST");
                 conn.setRequestProperty("Api-Token", GleapConfig.getInstance().getSdkKey());

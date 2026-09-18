@@ -1055,6 +1055,10 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 JSONObject data = new JSONObject();
                 data.put("sessionData", sessionData);
                 data.put("apiUrl", GleapConfig.getInstance().getApiUrl());
+                String realtimeHost = GleapConfig.getInstance().getRealtimeHost();
+                if (realtimeHost != null) {
+                    data.put("realtimeHost", realtimeHost);
+                }
                 data.put("sdkKey", GleapConfig.getInstance().getSdkKey());
 
                 sendMessage(generateGleapMessage("session-update", data));

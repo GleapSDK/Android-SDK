@@ -1319,6 +1319,32 @@ public class Gleap implements iGleap {
     }
 
     /**
+     * Sets the data region of your Gleap project. Supported regions: "eu" (default)
+     * and "us" (case-insensitive). Sets the API url, the websocket url and the
+     * realtime host at once. Unknown regions are ignored.
+     * Must be called before Gleap.initialize. A manual setter (setApiUrl,
+     * setWSApiUrl, setRealtimeHost) called after setRegion overrides that single host.
+     * The static widget hosts (frame, banner, modal) are global and are not changed
+     * by the region.
+     *
+     * @param region "eu" | "us"
+     */
+    @Override
+    public void setRegion(String region) {
+        try {
+            GleapRegion gleapRegion = GleapRegion.fromString(region);
+            if (gleapRegion == null) {
+                Log.w("Gleap", "Unknown region '" + region + "'. Supported regions: eu, us. Keeping the current hosts.");
+                return;
+            }
+
+            GleapConfig.getInstance().setRegion(gleapRegion);
+        } catch (Error | Exception ignore) {
+            handleError(ignore, "setRegion");
+        }
+    }
+
+    /**
      * Sets the API url to your internal Gleap server. Please make sure that the
      * server is reachable within the network
      * If you use a http url pls add android:usesCleartextTraffic="true" to your
@@ -1356,6 +1382,51 @@ public class Gleap implements iGleap {
             GleapConfig.getInstance().setiFrameUrl(frameUrl);
         } catch (Error | Exception ignore) {
             handleError(ignore, "setFrameUrl");
+        }
+    }
+
+    /**
+     * Sets the realtime hostname used by the widget (without protocol or path).
+     *
+     * @param realtimeHost The realtime hostname, e.g. "sockets.gleap.io".
+     * @author Gleap
+     */
+    @Override
+    public void setRealtimeHost(String realtimeHost) {
+        try {
+            GleapConfig.getInstance().setRealtimeHost(realtimeHost);
+        } catch (Error | Exception ignore) {
+            handleError(ignore, "setRealtimeHost");
+        }
+    }
+
+    /**
+     * Sets a custom banner url.
+     *
+     * @param bannerUrl The custom banner url.
+     * @author Gleap
+     */
+    @Override
+    public void setBannerUrl(String bannerUrl) {
+        try {
+            GleapConfig.getInstance().setBannerUrl(bannerUrl);
+        } catch (Error | Exception ignore) {
+            handleError(ignore, "setBannerUrl");
+        }
+    }
+
+    /**
+     * Sets a custom modal url.
+     *
+     * @param modalUrl The custom modal url.
+     * @author Gleap
+     */
+    @Override
+    public void setModalUrl(String modalUrl) {
+        try {
+            GleapConfig.getInstance().setModalUrl(modalUrl);
+        } catch (Error | Exception ignore) {
+            handleError(ignore, "setModalUrl");
         }
     }
 

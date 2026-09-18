@@ -50,7 +50,7 @@ class GleapModal {
     // ------------------------------------------------------------------
     private final Activity parentActivity;
     private JSONObject modalData;
-    private final String modalUrl = "https://outboundmedia.gleap.io/modal";
+    private final String modalUrl = GleapConfig.getInstance().getModalUrl();
     private WebView webView;
     private LinearLayout backdrop;
     private CardView cardView;

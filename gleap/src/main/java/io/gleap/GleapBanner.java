@@ -35,7 +35,7 @@ import gleap.io.gleap.R;
 
 class GleapBanner {
     private JSONObject bannerData;
-    private String bannerUrl = "https://outboundmedia.gleap.io";
+    private final String bannerUrl = GleapConfig.getInstance().getBannerUrl();
     private WebView webView = null;
     private LinearLayout layout;
     private Activity parentActivity;

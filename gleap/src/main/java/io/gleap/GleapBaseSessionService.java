@@ -21,7 +21,7 @@ class GleapBaseSessionService extends AsyncTask<Void, Void, Integer> {
         void invoke(boolean success);
     }
 
-    private static final String httpsUrl = GleapConfig.getInstance().getApiUrl() + "/sessions";
+    private static final String URL_POSTFIX = "/sessions";
     private static final int MAX_RETRIES = 3;
     private static final long INITIAL_RETRY_DELAY_MS = 1000;
 
@@ -87,7 +87,7 @@ class GleapBaseSessionService extends AsyncTask<Void, Void, Integer> {
     }
 
     private void performSessionRequest() throws Exception {
-        URL url = new URL(httpsUrl);
+        URL url = new URL(GleapConfig.getInstance().getApiUrl() + URL_POSTFIX);
         HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
         conn.setRequestMethod("POST");
         conn.setRequestProperty("Api-Token", GleapConfig.getInstance().getSdkKey());
