@@ -2,13 +2,13 @@
 
 ![Gleap Android SDK Intro](https://raw.githubusercontent.com/GleapSDK/Gleap-iOS-SDK/main/Resources/GleapHeaderImage.png)
 
-The Gleap SDK for Android is the easiest way to integrate Gleap into your apps!
+Add AI-native customer support, live chat, in-app bug reporting, a help center and surveys to your Android apps with [Gleap](https://www.gleap.ai). Gleap is an Intercom alternative for software teams that connects customer conversations and feedback with product development.
 
-You have two ways to set up the Gleap SDK for Android. The easiest way ist to use the maven repository to add Gleap SDK to your project.  (it's super easy to get started & worth using 😍)
+[SDK documentation](https://docs.gleap.ai/documentation/android/README) · [Website](https://www.gleap.ai) · [Plans and pricing](https://www.gleap.ai/pricing)
 
 ## Docs & Examples
 
-Checkout our [documentation](https://docs.gleap.io/android/) for full reference.
+Checkout our [documentation](https://docs.gleap.ai/documentation/android/README) for full reference.
 
 ## Installation with Maven
 
