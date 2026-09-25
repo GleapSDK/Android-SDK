@@ -77,3 +77,14 @@ Gleap.initialize("YOUR_API_KEY", this);
 **Order matters:** call `setRegion` first, then `Gleap.initialize`. The manual setters (`setApiUrl`, `setWSApiUrl`, `setRealtimeHost`) are still available — a manual setter called after `setRegion` overrides that single host.
 
 The static widget hosts are global and are **not** changed by the region: the messenger frame (`messenger-app.gleap.io/appnew`), banners and modals (`outboundmedia.gleap.io`) and SDK assets (`sdk.gleap.io`). Self-hosted setups can override them with `setFrameUrl`, `setBannerUrl` and `setModalUrl`.
+
+## Env data
+
+With every ticket the SDK sends env data (device model, OS version, screen size, locale, battery and memory state, …), shown under the **Env data** tab in Gleap. To leave out individual keys, pass them to `setEnvDataPropsToIgnore`; to stop collecting env data entirely, use `setDisableEnvData`:
+
+```
+Gleap.getInstance().setEnvDataPropsToIgnore(new String[]{"deviceName", "batteryLevel"});
+Gleap.getInstance().setDisableEnvData(true);
+```
+
+Both can be called at any time and apply to the next ticket. Each `setEnvDataPropsToIgnore` call replaces the previous list, an empty array resets it. `setDisableEnvData(false)` turns the collection back on.
