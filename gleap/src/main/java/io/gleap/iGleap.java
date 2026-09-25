@@ -276,6 +276,21 @@ interface iGleap {
     void setNetworkLogPropsToIgnore(String[] propsToIgnore);
 
     /**
+     * Sets the env data props to ignore. These keys (e.g. deviceName) are removed from the
+     * env data before a ticket is sent. Each call replaces the previous list, an empty array resets it.
+     *
+     * @param envDataPropsToIgnore the env data keys to ignore
+     */
+    void setEnvDataPropsToIgnore(String[] envDataPropsToIgnore);
+
+    /**
+     * Disables the env data. While disabled, no env data is collected at all.
+     *
+     * @param disableEnvData true to stop collecting env data, false to collect it again
+     */
+    void setDisableEnvData(boolean disableEnvData);
+
+    /**
      * Clears a user session.
      *
      * @author Gleap

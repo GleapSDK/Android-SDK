@@ -46,6 +46,8 @@ class PhoneMeta {
     private static String buildVersionNumber;
     private static String releaseVersionNumber;
     private static final String sdkVersion = BuildConfig.VERSION_NAME;
+    private static volatile String[] envDataPropsToIgnore = new String[0];
+    private static volatile boolean envDataDisabled = false;
 
     public PhoneMeta(@NonNull Context context) {
         startTime = new Date().getTime();
@@ -53,13 +55,41 @@ class PhoneMeta {
         getPhoneMeta();
     }
 
+    static void setEnvDataPropsToIgnore(String[] propsToIgnore) {
+        envDataPropsToIgnore = propsToIgnore != null ? propsToIgnore.clone() : new String[0];
+    }
+
+    static void setEnvDataDisabled(boolean disabled) {
+        envDataDisabled = disabled;
+    }
+
+    static boolean isEnvDataDisabled() {
+        return envDataDisabled;
+    }
+
     /**
-     * get the meta information for the phone
+     * get the meta information for the phone, without the env data props to ignore
      *
      * @return the metainformation gathered from the phone
      * @throws JSONException cant create JSON Object
      */
     public JSONObject getJSONObj() throws JSONException {
+        // Disabled env data is never gathered, rather than gathered and dropped.
+        if (envDataDisabled) {
+            return new JSONObject();
+        }
+
+        return removeIgnoredProps(collectJSONObj());
+    }
+
+    static JSONObject removeIgnoredProps(JSONObject envData) {
+        for (String prop : envDataPropsToIgnore) {
+            envData.remove(prop);
+        }
+        return envData;
+    }
+
+    private JSONObject collectJSONObj() throws JSONException {
         if (getCurrentActivity() != null) {
             lastScreenName = getCurrentActivity().getClass().getSimpleName();
         }

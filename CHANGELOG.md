@@ -1,5 +1,13 @@
 # Changelog
 
+## 18.1.0
+
+### Added
+
+- Env data controls: `Gleap.getInstance().setEnvDataPropsToIgnore(new String[]{"deviceName", "batteryLevel"})` removes individual env data keys (the device, OS, screen, locale, battery and memory details shown under the Env data tab of a ticket) from every ticket and conversation before it is sent. Each call replaces the previous list; an empty array resets it.
+- `Gleap.getInstance().setDisableEnvData(true)` stops collecting env data entirely (tickets arrive with an empty Env data tab); `setDisableEnvData(false)` turns it back on.
+- Both can be called before or after `Gleap.initialize` and apply to the next ticket. The per-form "Exclude data → Env data" switch in the dashboard keeps working as before.
+
 ## 18.0.0
 
 ### Added
