@@ -87,6 +87,7 @@ class GleapConfig {
     private String buttonLogo = "https://sdk.gleap.io/res/chatbubble.png";
     private String buttonColor = "#485bff";
     private String color = "#485bff";
+    // As configured in the dashboard — getBackgroundColor() applies the color scheme.
     private String backgroundColor = "#ffffff";
     private int borderRadius = 20;
     private String headerColor = "#485bff";
@@ -690,8 +691,24 @@ class GleapConfig {
         this.gleapWebViewMessages = new LinkedList<>();
     }
 
+    /**
+     * The widget background color with the active color scheme applied (see GleapThemeHelper).
+     */
     public String getBackgroundColor() {
-        return backgroundColor;
+        return GleapThemeHelper.getInstance().getBackgroundColor(getFlowConfig());
+    }
+
+    /**
+     * The flow config to send to the widget: the server's flow config with the
+     * active color scheme applied. The cached server config is never modified.
+     */
+    public JSONObject getThemedFlowConfig() {
+        return GleapThemeHelper.getInstance().applyToFlowConfig(getFlowConfig());
+    }
+
+    private JSONObject getFlowConfig() {
+        JSONObject config = plainConfig;
+        return config != null ? config.optJSONObject("flowConfig") : null;
     }
 
     public int getBorderRadius() {

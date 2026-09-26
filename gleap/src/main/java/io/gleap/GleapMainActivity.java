@@ -7,6 +7,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -63,6 +64,8 @@ import gleap.io.gleap.R;
 public class GleapMainActivity extends AppCompatActivity implements OnHttpResponseListener {
     public static boolean isActive = false;
     public static WeakReference<Activity> callerActivity;
+    // The open widget, so a color scheme change can reach it.
+    private static WeakReference<GleapMainActivity> openInstance;
     private WebView webView;
     private OnBackPressedCallback onBackPressedCallback;
     private String url = GleapConfig.getInstance().getiFrameUrl();
@@ -272,6 +275,9 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     return insets;   // don't consume
                 });
 
+                // Read the night mode from this activity: the host activity is
+                // already paused, and this one reflects the app's night mode too.
+                GleapThemeHelper.getInstance().checkNightMode(this);
                 int backgroundColor = Color.parseColor(GleapConfig.getInstance().getBackgroundColor());
 
                 View progressHeaderView = findViewById(R.id.gleap_progressBarHeader);
@@ -335,8 +341,69 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     url += GleapURLGenerator.generateURL();
                     initBrowser();
                 }
+
+                openInstance = new WeakReference<>(this);
             }
         } catch (Exception ex) {
+        }
+    }
+
+    @Override
+    public void onConfigurationChanged(@NonNull Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        // uiMode is handled here (see the manifest) instead of recreating the
+        // activity, so a night mode switch re-themes the open widget live.
+        GleapThemeHelper.getInstance().checkNightMode(this);
+    }
+
+    /**
+     * Pushes the color scheme to the open widget: sends the themed config and
+     * updates the loading background behind it. No-op when no widget is open.
+     */
+    static void refreshColorScheme() {
+        final GleapMainActivity activity = openInstance != null ? openInstance.get() : null;
+        if (activity == null || activity.isFinishing()) {
+            return;
+        }
+
+        activity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    activity.applyLoaderBackground();
+                    // Before the first ping the widget isn't listening yet —
+                    // the ping sends the config anyway.
+                    if (activity.hasInitiallyLoaded) {
+                        activity.sendConfigUpdate();
+                    }
+                } catch (Error | Exception ignore) {
+                }
+            }
+        });
+    }
+
+    private void applyLoaderBackground() {
+        if (isSurvey) {
+            return;
+        }
+
+        FrameLayout loaderView = findViewById(R.id.loader);
+        if (loaderView == null) {
+            return;
+        }
+
+        try {
+            loaderView.setBackgroundColor(Color.parseColor(GleapConfig.getInstance().getBackgroundColor()));
+        } catch (Exception ignore) {
+        }
+
+        // The loading background reads its colors once — replace it.
+        if (loaderView.getChildCount() > 0 && loaderView.getChildAt(0) instanceof GleapLoadingBackgroundView) {
+            loaderView.removeViewAt(0);
+            loaderView.addView(new GleapLoadingBackgroundView(this), 0,
+                    new FrameLayout.LayoutParams(
+                            FrameLayout.LayoutParams.MATCH_PARENT,
+                            FrameLayout.LayoutParams.MATCH_PARENT));
         }
     }
 
@@ -369,6 +436,9 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
             GleapConfig.getInstance().setmUploadMessage(null);
 
             isActive = false;
+            if (openInstance != null && openInstance.get() == this) {
+                openInstance = null;
+            }
             webView.removeJavascriptInterface("GleapJSBridge");
             webView.stopLoading();
             webView.clearHistory();
@@ -980,20 +1050,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
             });
         }
 
-        private void sendConfigUpdate() {
-            try {
-                JSONObject jsonObject = GleapConfig.getInstance().getPlainConfig();
-                JSONObject data = new JSONObject();
-                data.put("config", jsonObject.getJSONObject("flowConfig"));
-                data.put("actions", jsonObject.getJSONObject("projectActions"));
-                data.put("overrideLanguage", GleapConfig.getInstance().getLanguage());
-                data.put("isApp", true);
-
-                sendMessage(generateGleapMessage("config-update", data));
-            } catch (Exception err) {
-            }
-        }
-
         private void sendPrefillData() {
             try {
                 JSONObject data = PrefillHelper.getInstancen().getPreFillData();
@@ -1084,6 +1140,21 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
         private void closeGleap() {
             closeMainGleapActivity();
+        }
+    }
+
+    private void sendConfigUpdate() {
+        try {
+            JSONObject jsonObject = GleapConfig.getInstance().getPlainConfig();
+            JSONObject data = new JSONObject();
+            // The flow config with the active color scheme applied.
+            data.put("config", GleapConfig.getInstance().getThemedFlowConfig());
+            data.put("actions", jsonObject.getJSONObject("projectActions"));
+            data.put("overrideLanguage", GleapConfig.getInstance().getLanguage());
+            data.put("isApp", true);
+
+            sendMessage(generateGleapMessage("config-update", data));
+        } catch (Exception err) {
         }
     }
 

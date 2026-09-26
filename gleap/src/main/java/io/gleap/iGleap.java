@@ -1,5 +1,7 @@
 package io.gleap;
 
+import androidx.annotation.Nullable;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -715,6 +717,26 @@ interface iGleap {
      * Default is 0, 0.
      */
     void setNotificationContainerOffset(int x, int y);
+
+    /**
+     * Sets the widget color scheme. Overrides the color scheme set in the dashboard.
+     * "auto" follows the app's dark / light mode, "light" / "dark" force a scheme and
+     * "default" (or null) removes the override. Can be called before or after initialize.
+     *
+     * @param colorScheme "default", "auto", "light" or "dark"
+     */
+    void setColorScheme(String colorScheme);
+
+    /**
+     * Sets the widget color scheme and the background colors used for it.
+     * The dashboard background color is kept when it already matches the active scheme,
+     * otherwise the light or dark background color is used.
+     *
+     * @param colorScheme          "default", "auto", "light" or "dark"
+     * @param lightBackgroundColor background (#rrggbb) in light mode, null for the dashboard setting (default #ffffff)
+     * @param darkBackgroundColor  background (#rrggbb) in dark mode, null for the dashboard setting (default #18181b)
+     */
+    void setColorScheme(String colorScheme, @Nullable String lightBackgroundColor, @Nullable String darkBackgroundColor);
 
     void openFeatureRequests();
 

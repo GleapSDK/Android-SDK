@@ -603,6 +603,36 @@ class GleapInvisibleActivityManger {
         }
     }
 
+    /**
+     * Re-renders everything that is colored from the widget background after
+     * the color scheme changed: the notification cards with their close button,
+     * and the modal (which gets its colors resent). The FAB only uses the
+     * button color and the banner has no themed colors.
+     */
+    public void refreshColorScheme() {
+        try {
+            for (GleapChatMessage message : this.messages) {
+                LinearLayout component = message.getComponent(null);
+                if (component != null && component.getParent() instanceof ViewGroup) {
+                    ((ViewGroup) component.getParent()).removeView(component);
+                }
+                message.clearComponent();
+            }
+
+            if (this.notificationContainerLayout != null && this.layout != null) {
+                this.layout.removeView(this.notificationContainerLayout);
+            }
+            destroyNotificationLayout();
+            createNotificationLayout(null);
+        } catch (Exception exp) {
+            System.out.println(exp);
+        }
+
+        if (this.modal != null) {
+            this.modal.resendModalData();
+        }
+    }
+
     public void addLayoutToActivity(Activity activity) {
         if (GleapConfig.getInstance().getPlainConfig() == null) {
             return;

@@ -9,6 +9,8 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
+import androidx.annotation.Nullable;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -125,6 +127,7 @@ public class Gleap implements iGleap {
         try {
             Gleap.application = application;
             GleapConfig.getInstance().setSdkKey(sdkKey.trim());
+            GleapThemeHelper.getInstance().start(application);
             if (!isInitialized) {
                 isInitialized = true;
                 GleapSessionController.initialize(application);
@@ -2271,6 +2274,43 @@ public class Gleap implements iGleap {
     public void setNotificationContainerOffset(int x, int y) {
         GleapConfig.getInstance().setNotificationContainerOffsetX(x);
         GleapConfig.getInstance().setNotificationContainerOffsetY(y);
+    }
+
+    /**
+     * Sets the widget color scheme. Overrides the color scheme set in the dashboard.
+     * <ul>
+     *     <li>"auto": follows the app's dark / light mode and switches live when it changes.</li>
+     *     <li>"light" / "dark": forces a scheme, e.g. from your app's own theme setting.</li>
+     *     <li>"default" (or null): removes the override, the dashboard setting applies again.</li>
+     * </ul>
+     * The dashboard background color is kept when it already matches the active scheme,
+     * otherwise the light or dark background color is used. Can be called before or after
+     * {@link #initialize(String, Application)}.
+     *
+     * @param colorScheme "default", "auto", "light" or "dark"
+     * @author Gleap
+     */
+    @Override
+    public void setColorScheme(String colorScheme) {
+        setColorScheme(colorScheme, null, null);
+    }
+
+    /**
+     * Sets the widget color scheme and the background colors used for it. Overrides the
+     * color scheme set in the dashboard, see {@link #setColorScheme(String)}.
+     *
+     * @param colorScheme          "default", "auto", "light" or "dark"
+     * @param lightBackgroundColor background (#rrggbb) in light mode when the dashboard background is dark, null for the dashboard setting (default #ffffff)
+     * @param darkBackgroundColor  background (#rrggbb) in dark mode when the dashboard background is light, null for the dashboard setting (default #18181b)
+     * @author Gleap
+     */
+    @Override
+    public void setColorScheme(String colorScheme, @Nullable String lightBackgroundColor, @Nullable String darkBackgroundColor) {
+        try {
+            GleapThemeHelper.getInstance().setColorScheme(colorScheme, lightBackgroundColor, darkBackgroundColor);
+        } catch (Error | Exception ignore) {
+            handleError(ignore, "setColorScheme");
+        }
     }
 
     @Override

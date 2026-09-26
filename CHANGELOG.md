@@ -1,5 +1,18 @@
 # Changelog
 
+## 18.2.0
+
+### Added
+
+- Color scheme: `Gleap.getInstance().setColorScheme("auto")` matches the widget to the app's dark / light mode. `auto` follows the night mode of the current activity (so `AppCompatDelegate.setDefaultNightMode` is respected) and switches live, `light` / `dark` force a scheme, `default` (or null) removes the override so the dashboard setting applies again.
+- `setColorScheme(colorScheme, lightBackgroundColor, darkBackgroundColor)` sets the backgrounds (`#rrggbb`) used when the dashboard background doesn't match the active scheme (defaults `#ffffff` / `#18181b`, or the dashboard's light / dark background colors). A dashboard background that already fits the scheme is kept.
+- The dashboard's color scheme setting (`colorScheme`, `lightBackgroundColor`, `darkBackgroundColor` in the widget config) is applied the same way; `setColorScheme` overrides it.
+- The scheme applies to the widget, its loading screen, the in-app notifications and modals. Callable before or after `Gleap.initialize`.
+
+### Changed
+
+- `GleapMainActivity` now handles `uiMode` configuration changes itself: a dark mode switch re-themes the open widget instead of recreating the activity (which left the widget on its loading background).
+
 ## 18.1.0
 
 ### Added
