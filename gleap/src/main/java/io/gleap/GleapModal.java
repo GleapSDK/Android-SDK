@@ -55,6 +55,7 @@ class GleapModal {
     private LinearLayout backdrop;
     private CardView cardView;
     private FrameLayout clipper; // container that controls visible height
+    private boolean modalLoaded = false;
 
     private static final int MAX_LANDSCAPE_WIDTH_DP = 400;
     private int maxAllowedHeightPx; // recalculated after every rotation
@@ -250,7 +251,7 @@ class GleapModal {
             try {
                 JSONObject cb = new JSONObject(raw);
                 switch (cb.getString("name")) {
-                    case "modal-loaded":       sendModalData(); break;
+                    case "modal-loaded":       modalLoaded = true; sendModalData(); break;
                     case "modal-data-set":     GleapInvisibleActivityManger.animateViewInOut(getComponent(), true); break;
                     case "modal-close":        GleapInvisibleActivityManger.getInstance().destroyModal(true, false); break;
                     case "start-conversation": startConversation(cb); break;
@@ -275,23 +276,6 @@ class GleapModal {
             lp.height = newHeight;
             clipper.setLayoutParams(lp);
             clipper.invalidateOutline();
-        }
-
-        private void sendModalData() {
-            try { 
-                // Get config values with fallbacks
-                String primaryColor = GleapConfig.getInstance().getColor() != null ? GleapConfig.getInstance().getColor() : "#485BFF";
-                String backgroundColor = GleapConfig.getInstance().getBackgroundColor() != null ? GleapConfig.getInstance().getBackgroundColor() : "#FFFFFF";
-                
-                // Create a copy of modalData to avoid modifying the original
-                JSONObject dataToSend = new JSONObject(modalData.toString());
-
-                // Add the color fields at the root level
-                dataToSend.put("primaryColor", primaryColor);
-                dataToSend.put("backgroundColor", backgroundColor);
-                
-                sendMessage(generateGleapMessage("modal-data", dataToSend)); 
-            } catch (Exception ignored) {}
         }
 
         // ---- helper methods ------------------------------------------
@@ -327,6 +311,33 @@ class GleapModal {
     // ------------------------------------------------------------------
     // WebView helpers
     // ------------------------------------------------------------------
+    private void sendModalData() {
+        try { 
+            // Get config values with fallbacks
+            String primaryColor = GleapConfig.getInstance().getColor() != null ? GleapConfig.getInstance().getColor() : "#485BFF";
+            String backgroundColor = GleapConfig.getInstance().getBackgroundColor() != null ? GleapConfig.getInstance().getBackgroundColor() : "#FFFFFF";
+            
+            // Create a copy of modalData to avoid modifying the original
+            JSONObject dataToSend = new JSONObject(modalData.toString());
+
+            // Add the color fields at the root level
+            dataToSend.put("primaryColor", primaryColor);
+            dataToSend.put("backgroundColor", backgroundColor);
+            
+            sendMessage(generateGleapMessage("modal-data", dataToSend)); 
+        } catch (Exception ignored) {}
+    }
+
+    /**
+     * Resends the modal data, e.g. with new colors after a color scheme change.
+     * Before the modal page loaded, modal-loaded sends it anyway.
+     */
+    void resendModalData() {
+        if (modalLoaded) {
+            sendModalData();
+        }
+    }
+
     void sendMessage(String message) {
         if (webView != null) {
             webView.evaluateJavascript("window.appMessage(" + message + ");", null);
