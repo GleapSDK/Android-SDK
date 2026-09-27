@@ -7,9 +7,17 @@ import android.os.Bundle;
 import android.view.View;
 
 import io.gleap.Gleap;
+import io.gleap.GleapOkHttpInterceptor;
 import io.gleap.Networklog;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 public class NetworkLogging extends AppCompatActivity {
+    // Every request of this client shows up in the network logs of the next ticket.
+    private final OkHttpClient client = new OkHttpClient.Builder()
+            .addInterceptor(new GleapOkHttpInterceptor())
+            .build();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,6 +38,19 @@ public class NetworkLogging extends AppCompatActivity {
                 Gleap.getInstance().trackEvent("NEW");
 
                 new HttpCall().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                AsyncTask.THREAD_POOL_EXECUTOR.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        Request request = new Request.Builder()
+                                .url("https://613750b8eac1410017c18290.mockapi.io/key/1")
+                                .build();
+                        try (Response response = client.newCall(request).execute()) {
+                            response.body().string();
+                        } catch (Exception e) {
+                            // Failed requests are logged by the interceptor as well.
+                        }
+                    }
+                });
                 Gleap.getInstance().trackEvent("HEY");
             }
         });

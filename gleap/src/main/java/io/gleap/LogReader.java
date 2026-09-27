@@ -1,42 +1,56 @@
 package io.gleap;
 
+import android.os.Build;
+
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
-import java.text.ParseException;
+import java.nio.charset.Charset;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.LinkedList;
+import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static io.gleap.DateUtil.dateToString;
-import static io.gleap.DateUtil.formatDate;
-import static io.gleap.DateUtil.stringToDate;
-
+/**
+ * One console log entry: {@code { "date": ISO, "priority": "INFO" | "WARNING" | "ERROR", "log": "..." }}.
+ */
 class Log {
-    private String date;
-    private String log;
-    private String priority;
+    private final long time;
+    private final String log;
+    private final String priority;
 
-    public Log(String date, String log, String priority) {
-        this.date = date;
-        this.log = log;
+    Log(long time, String log, String priority) {
+        this.time = time;
         this.priority = priority;
+        this.log = LogReader.capLog(log, priority);
+    }
+
+    long getTime() {
+        return time;
+    }
+
+    String getLog() {
+        return log;
+    }
+
+    String getPriority() {
+        return priority;
     }
 
     public JSONObject toJSON() {
         JSONObject jo = new JSONObject();
         try {
-            jo.put("date", date);
+            jo.put("date", DateUtil.dateToString(new Date(time)));
             jo.put("log", log);
             jo.put("priority", priority);
         } catch (Exception ex) {
@@ -44,134 +58,258 @@ class Log {
 
         return jo;
     }
-
-    public String getDate() {
-        return date;
-    }
 }
 
 /**
- * Read the log of the application.
+ * The console logs sent with a ticket: the app's logcat output (read when a ticket is sent), the
+ * messages logged with {@link Gleap#log(String)} and the attached console logs.
  */
 class LogReader {
-    private static LogReader instance;
-    private List<Log> customLogs = new LinkedList<Log>();
+    static final int MAX_CUSTOM_LOGS = 500;
+    static final int LOGCAT_LINES = 500;
+    static final int MAX_LOG_LENGTH = 1000;
+    static final int MAX_ERROR_LOG_LENGTH = 5000;
+    static final String TRUNCATED_MARKER = "… [truncated]";
+    private static final long ONE_DAY_MS = 24L * 60 * 60 * 1000;
 
+    // threadtime: "09-27 10:00:00.123  1234  1256 E Tag     : message"
+    private static final Pattern THREADTIME = Pattern.compile(
+            "^(\\d\\d)-(\\d\\d)\\s+(\\d\\d):(\\d\\d):(\\d\\d)\\.(\\d{3})\\s+(\\d+)\\s+(\\d+)\\s+([VDIWEFA])\\s+(.*?)\\s*: (.*)$");
+    private static final Pattern THREADTIME_WITHOUT_TAG = Pattern.compile(
+            "^(\\d\\d)-(\\d\\d)\\s+(\\d\\d):(\\d\\d):(\\d\\d)\\.(\\d{3})\\s+(\\d+)\\s+(\\d+)\\s+([VDIWEFA])\\s+(.*)$");
+
+    private static final LogReader instance = new LogReader();
+
+    private final ArrayDeque<Log> customLogs = new ArrayDeque<>();
+    private JSONArray attachedLogs = new JSONArray();
 
     private LogReader() {
     }
 
     public static LogReader getInstance() {
-        if (instance == null) {
-            instance = new LogReader();
-        }
         return instance;
     }
 
     /**
-     * Reads the stacktrace, formats the string
-     *
-     * @return {@link JSONArray} formatted log
+     * Reads the newest logcat lines of this process. Blocks for the duration of the logcat call,
+     * so never call it on the main thread.
      */
-    public List<Log> readLog() {
+    List<Log> readLog() {
+        // --pid needs API 24; before that the lines are filtered by pid after parsing.
+        return readLogcat(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N);
+    }
+
+    List<Log> readLogcat(boolean usePidOption) {
+        List<Log> logs = new ArrayList<>();
+        Process process = null;
         try {
-            int id = android.os.Process.myPid();
-            Process process = Runtime.getRuntime().exec(new String[]{"logcat", "--pid", "" + id, "-T", "150", "-d"});
-            BufferedReader bufferedReader = new BufferedReader(
-                    new InputStreamReader(process.getInputStream()));
-            List<Log> log = new LinkedList<>();
-            String line;
-            Pattern pattern = Pattern.compile("^\\d{1,2}-\\d{1,2} \\d{1,2}:\\d{1,2}:\\d{1,2}.\\d{1,3}");
+            int pid = android.os.Process.myPid();
+            List<String> command = new ArrayList<>(Arrays.asList(
+                    "logcat", "-d", "-v", "threadtime", "-T", String.valueOf(LOGCAT_LINES)));
+            if (usePidOption) {
+                command.add("--pid=" + pid);
+            }
+            process = new ProcessBuilder(command).redirectErrorStream(true).start();
 
-            while ((line = bufferedReader.readLine()) != null) {
-                Matcher mt = pattern.matcher(line);
-                if (mt.lookingAt()) {
-                    try {
-                        String[] splittedLine = line.split(" ");
-                        
-                        // Ensure splittedLine has enough elements to avoid ArrayIndexOutOfBoundsException
-                        if (splittedLine.length > 5) {
-                            String formattedDate = formatDate(splittedLine[1], splittedLine[0]);
-                            String logText = "";
-
-                            try {
-                                // Safely compute logText
-                                int index = line.indexOf(splittedLine[5]);
-                                if (index != -1) {
-                                    logText = line.substring(index + splittedLine[5].length());
-                                }
-                            } catch (Exception ex) {
-                                // Fallback to building logText manually
-                                StringBuilder text = new StringBuilder();
-                                for (int i = 5; i < splittedLine.length; i++) {
-                                    text.append(splittedLine[i]).append(" ");
-                                }
-                                logText = text.toString().trim(); // Trim to remove trailing spaces
-                            }
-
-                            // Add to log only if formattedDate and logText are valid
-                            log.add(new Log(formattedDate, logText, getConsoleLineType(splittedLine[4])));
-                        } else {
-                            // Handle cases where the line does not meet the expected structure
-                            System.err.println("Invalid line structure: " + line);
-                        }
-                    } catch (Exception ex) {
-                        // Log the exception for debugging
-                        ex.printStackTrace();
-                    }
+            List<String> lines = new ArrayList<>();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), Charset.forName("UTF-8")));
+            try {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    lines.add(line);
                 }
+            } finally {
+                reader.close();
             }
 
-            return log;
-        } catch (IOException e) {
+            long now = System.currentTimeMillis();
+            TimeZone timeZone = TimeZone.getDefault();
+            for (String line : lines) {
+                Log log = parseLogcatLine(line, pid, now, timeZone);
+                if (log != null) {
+                    logs.add(log);
+                }
+            }
+        } catch (Throwable ignore) {
+        } finally {
+            if (process != null) {
+                try {
+                    process.destroy();
+                } catch (Throwable ignore) {
+                }
+            }
+        }
+        return logs;
+    }
+
+    /**
+     * Parses one line of {@code logcat -v threadtime}.
+     *
+     * @param pid only lines of this process are returned; a negative pid accepts every process
+     * @param now the current time; a date in the future belongs to the previous year
+     * @return the entry, or null for other lines (e.g. "--------- beginning of main")
+     */
+    static Log parseLogcatLine(String line, int pid, long now, TimeZone timeZone) {
+        if (line == null) {
             return null;
         }
+        String message;
+        Matcher matcher = THREADTIME.matcher(line);
+        if (matcher.matches()) {
+            String tag = matcher.group(10).trim();
+            message = tag.isEmpty() ? matcher.group(11) : tag + ": " + matcher.group(11);
+        } else {
+            matcher = THREADTIME_WITHOUT_TAG.matcher(line);
+            if (!matcher.matches()) {
+                return null;
+            }
+            message = matcher.group(10).trim();
+        }
+
+        try {
+            if (pid >= 0 && Integer.parseInt(matcher.group(7)) != pid) {
+                return null;
+            }
+        } catch (NumberFormatException ignore) {
+            return null;
+        }
+
+        Calendar calendar = new GregorianCalendar(timeZone);
+        calendar.setTimeInMillis(now);
+        int year = calendar.get(Calendar.YEAR);
+        calendar.clear();
+        calendar.set(year,
+                Integer.parseInt(matcher.group(1)) - 1,
+                Integer.parseInt(matcher.group(2)),
+                Integer.parseInt(matcher.group(3)),
+                Integer.parseInt(matcher.group(4)),
+                Integer.parseInt(matcher.group(5)));
+        calendar.set(Calendar.MILLISECOND, Integer.parseInt(matcher.group(6)));
+        if (calendar.getTimeInMillis() > now + ONE_DAY_MS) {
+            // logcat has no year: a line from December read in January.
+            calendar.add(Calendar.YEAR, -1);
+        }
+
+        return new Log(calendar.getTimeInMillis(), message, priorityFor(matcher.group(9)));
+    }
+
+    static String priorityFor(String level) {
+        if ("E".equals(level) || "F".equals(level) || "A".equals(level)) {
+            return GleapLogLevel.ERROR.name();
+        }
+        if ("W".equals(level)) {
+            return GleapLogLevel.WARNING.name();
+        }
+        return GleapLogLevel.INFO.name();
+    }
+
+    /**
+     * Keeps a log at most 1000 characters long (5000 for errors), including the truncation marker.
+     */
+    static String capLog(String log, String priority) {
+        if (log == null) {
+            return "";
+        }
+        int max = GleapLogLevel.ERROR.name().equals(priority) ? MAX_ERROR_LOG_LENGTH : MAX_LOG_LENGTH;
+        if (log.length() <= max) {
+            return log;
+        }
+        int cut = max - TRUNCATED_MARKER.length();
+        if (Character.isHighSurrogate(log.charAt(cut - 1))) {
+            cut--;
+        }
+        return log.substring(0, cut) + TRUNCATED_MARKER;
     }
 
     public void log(String msg, GleapLogLevel level) {
-        this.customLogs.add(new Log(dateToString(new Date()), msg, level.name()));
+        Log log = new Log(System.currentTimeMillis(), msg, (level != null ? level : GleapLogLevel.INFO).name());
+        synchronized (this) {
+            while (customLogs.size() >= MAX_CUSTOM_LOGS) {
+                customLogs.removeFirst();
+            }
+            customLogs.addLast(log);
+        }
     }
 
-    private String getConsoleLineType(String input) {
-        if (input.equalsIgnoreCase("e")) {
-            return "ERROR";
-        }
-        if (input.equalsIgnoreCase("w")) {
-            return "WARNING";
-        }
-        return "INFO";
-    }
-
-    public JSONArray getLogs() {
-
-        List<Log> toBeSorted = new LinkedList<>();
-
-        if (GleapConfig.getInstance().isEnableConsoleLogsFromCode()) {
-            toBeSorted = readLog();
-        }
-        toBeSorted.addAll(customLogs);
-
-        Collections.sort(toBeSorted, new Comparator() {
-            @Override
-            public int compare(Object o1, Object o2) {
-                try {
-                    Date o1Date = stringToDate(((Log) o1).getDate());
-                    Date o2Date = stringToDate(((Log) o2).getDate());
-                    return o1Date.compareTo(o2Date);
-                } catch (ParseException e) {
-                    e.printStackTrace();
+    /**
+     * Replaces the attached console logs with copies of the given entries (objects only).
+     */
+    void attachLogs(JSONArray logs) {
+        JSONArray attached = new JSONArray();
+        if (logs != null) {
+            for (int i = 0; i < logs.length(); i++) {
+                Object entry = logs.opt(i);
+                if (entry instanceof JSONObject) {
+                    try {
+                        attached.put(GleapNetworkLogSanitizer.deepCopy(entry));
+                    } catch (Exception ignore) {
+                    }
                 }
-                return 0;
+            }
+        }
+        synchronized (this) {
+            attachedLogs = attached;
+        }
+    }
+
+    /**
+     * All console logs, oldest first. Reads logcat (unless disabled with
+     * {@link Gleap#disableConsoleLog()}), so never call it on the main thread. Reading does not
+     * clear the logs.
+     */
+    public JSONArray getLogs() {
+        final List<Object[]> entries = new ArrayList<>();
+        if (GleapConfig.getInstance().isEnableConsoleLogsFromCode()) {
+            for (Log log : readLog()) {
+                entries.add(new Object[]{log.getTime(), log.toJSON()});
+            }
+        }
+
+        JSONArray attached;
+        synchronized (this) {
+            for (Log log : customLogs) {
+                entries.add(new Object[]{log.getTime(), log.toJSON()});
+            }
+            attached = attachedLogs;
+        }
+        for (int i = 0; i < attached.length(); i++) {
+            Object entry = attached.opt(i);
+            if (!(entry instanceof JSONObject)) {
+                continue;
+            }
+            try {
+                JSONObject copy = (JSONObject) GleapNetworkLogSanitizer.deepCopy(entry);
+                Object log = copy.opt("log");
+                if (log instanceof String) {
+                    copy.put("log", capLog((String) log, copy.optString("priority")));
+                }
+                long time = Long.MAX_VALUE;
+                Object date = copy.opt("date");
+                if (date instanceof String) {
+                    try {
+                        time = DateUtil.stringToDate((String) date).getTime();
+                    } catch (Exception ignore) {
+                    }
+                }
+                entries.add(new Object[]{time, copy});
+            } catch (Exception ignore) {
+            }
+        }
+
+        // Stable: entries with the same time keep their order.
+        Collections.sort(entries, new Comparator<Object[]>() {
+            @Override
+            public int compare(Object[] a, Object[] b) {
+                long timeA = (Long) a[0];
+                long timeB = (Long) b[0];
+                return timeA < timeB ? -1 : (timeA == timeB ? 0 : 1);
             }
         });
 
-        JSONArray sortedJsonArray = new JSONArray();
-        for (int i = 0; i < toBeSorted.size(); i++) {
-            sortedJsonArray.put(toBeSorted.get(i).toJSON());
+        JSONArray result = new JSONArray();
+        for (Object[] entry : entries) {
+            result.put(entry[1]);
         }
-
-        this.customLogs = new LinkedList<>();
-
-        return sortedJsonArray;
+        return result;
     }
 }

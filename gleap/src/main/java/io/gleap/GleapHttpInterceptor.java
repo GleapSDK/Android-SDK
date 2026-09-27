@@ -1,34 +1,22 @@
 package io.gleap;
 
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.math.BigDecimal;
 import java.net.HttpURLConnection;
-import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import javax.net.ssl.HttpsURLConnection;
 
+/**
+ * Manual network logging ({@link Gleap#logNetwork}).
+ */
 class GleapHttpInterceptor {
 
     /**
-     * Log Http calls sent from the device. Call this function at the end of your request.
-     * Request and Response can be null
-     *
-     * @param urlConnection url the request sent to
-     * @param requestType   type of request. (GET, POST, PUT, DELETE, PATCH)
-     * @param status        http status code
-     * @param duration      duration in milliseconds
-     * @param request       JSON  Object including important informations of the request. Recommanded:
-     *                      headers, payload
-     * @param response      JSON  Object including important informations of the response. Recommanded:
-     *                      headers, payload, body
+     * Logs a request described by the caller.
      */
     public static void log(String urlConnection, RequestType requestType, int status, int duration, JSONObject request, JSONObject response) {
         Networklog networklog = new Networklog(urlConnection, requestType, status, duration, request, response);
@@ -36,119 +24,93 @@ class GleapHttpInterceptor {
     }
 
     public static void log(HttpsURLConnection httpsURLConnection, String requestBody, String responseBody) {
-        JSONObject responseBodyJSON = new JSONObject();
-        if(isJSONValid(responseBody)) {
-            try {
-                responseBodyJSON = new JSONObject(responseBody);
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-        }else {
-            try {
-                responseBodyJSON.put("data", responseBody);
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-        }
-
-        JSONObject requesteBodyJSON = new JSONObject();
-        if(isJSONValid(requestBody)) {
-            try {
-                requesteBodyJSON = new JSONObject(requestBody);
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-        }else {
-            try {
-                requesteBodyJSON.put("data", requestBody);
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-        }
-
-        log(httpsURLConnection, requesteBodyJSON, responseBodyJSON);
+        record(httpsURLConnection, requestBody, responseBody);
     }
-
 
     public static void log(HttpsURLConnection httpsURLConnection, JSONObject requestBody, JSONObject responseBody) {
-
-        JSONObject headers = new JSONObject();
-        if(httpsURLConnection != null) {
-            headers = generateJSONFromMap(httpsURLConnection.getHeaderFields());
-        }
-        JSONObject request = new JSONObject();
-        try {
-            request.put("payload", requestBody);
-            request.put("headers", headers);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        try {
-            BigDecimal from = new BigDecimal(0);
-            if(headers.has("X-Android-Sent-Millis")) {
-                assert httpsURLConnection != null;
-                from = new BigDecimal(httpsURLConnection.getHeaderFields().get("X-Android-Sent-Millis").get(0));
-            }
-
-            BigDecimal to =  new BigDecimal(-1);
-            if(headers.has("X-Android-Received-Millis")) {
-                assert httpsURLConnection != null;
-                to =  new BigDecimal(httpsURLConnection.getHeaderFields().get("X-Android-Received-Millis").get(0));
-            }
-
-   
-            Networklog networklog = new Networklog(httpsURLConnection != null ? httpsURLConnection.getURL().toString() : null, mapStringToRequestType(httpsURLConnection), httpsURLConnection != null ? httpsURLConnection.getResponseCode() : 0, to.subtract(from).intValue(), request, responseBody);
-            GleapBug.getInstance().addRequest(networklog);
-        } catch (IOException exception) {
-            exception.printStackTrace();
-        }
+        record(httpsURLConnection,
+                requestBody != null ? requestBody.toString() : null,
+                responseBody != null ? responseBody.toString() : null);
     }
 
-    private static RequestType mapStringToRequestType(HttpsURLConnection httpsURLConnection) {
-        if(httpsURLConnection != null) {
-            String type = httpsURLConnection.getRequestMethod();
-            switch (type) {
-                case "POST":
-                    return RequestType.POST;
-                case "PUT":
-                    return RequestType.PUT;
-                case "GET":
-                    return RequestType.GET;
-                case "DELETE":
-                    return RequestType.DELETE;
-            }
+    /**
+     * Logs a finished request of a connection: url, method, status and response headers are read
+     * from the connection. The request headers can't be read after the request was sent.
+     */
+    private static void record(HttpURLConnection connection, String requestBody, String responseBody) {
+        if (connection == null) {
+            return;
         }
-        return RequestType.GET;
-    }
+        try {
+            Map<String, List<String>> fields = connection.getHeaderFields();
+            long sentMillis = headerMillis(fields, "X-Android-Sent-Millis");
+            long receivedMillis = headerMillis(fields, "X-Android-Received-Millis");
+            int duration = sentMillis > 0 && receivedMillis >= sentMillis ? (int) (receivedMillis - sentMillis) : -1;
+            long startMillis = sentMillis > 0 ? sentMillis : System.currentTimeMillis() - Math.max(0, duration);
 
-    private static JSONObject generateJSONFromMap(Map<String, List<String>> headers) {
-        JSONObject result = new JSONObject();
-        for (String key : headers.keySet()) {
+            JSONObject request = new JSONObject();
+            request.put("headers", new JSONObject());
+            if (requestBody != null) {
+                request.put("payload", Networklog.capBody(requestBody));
+            }
+
+            JSONObject response = new JSONObject();
+            boolean success;
             try {
-                if (headers.get(key) != null && headers.get(key).get(0) != null) {
-                    if(key != null) {
-                        result.put(key, headers.get(key).get(0));
+                int status = connection.getResponseCode();
+                success = status > 0;
+                if (success) {
+                    response.put("status", status);
+                    String message = connection.getResponseMessage();
+                    response.put("statusText", message != null ? message : "");
+                    response.put("headers", headersToJson(fields));
+                    if (responseBody != null) {
+                        response.put("responseText", Networklog.capBody(responseBody));
+                    }
+                } else {
+                    response.put("errorText", "No valid HTTP response");
+                }
+            } catch (IOException error) {
+                success = false;
+                response.put("errorText", Networklog.describeError(error));
+            }
+
+            GleapBug.getInstance().addRequest(new Networklog(connection.getRequestMethod(),
+                    connection.getURL().toString(), startMillis, duration, success, request, response));
+        } catch (Throwable ignore) {
+        }
+    }
+
+    private static JSONObject headersToJson(Map<String, List<String>> fields) {
+        JSONObject headers = new JSONObject();
+        if (fields == null) {
+            return headers;
+        }
+        for (Map.Entry<String, List<String>> field : fields.entrySet()) {
+            String name = field.getKey();
+            // null is the status line; X-Android-* are added by the platform's HTTP client.
+            if (name == null || name.toLowerCase(Locale.ROOT).startsWith("x-android-") || field.getValue() == null) {
+                continue;
+            }
+            try {
+                headers.put(name, Networklog.headerValue(name, field.getValue()));
+            } catch (Exception ignore) {
+            }
+        }
+        return headers;
+    }
+
+    private static long headerMillis(Map<String, List<String>> fields, String name) {
+        try {
+            if (fields != null) {
+                for (Map.Entry<String, List<String>> field : fields.entrySet()) {
+                    if (name.equalsIgnoreCase(field.getKey()) && field.getValue() != null && !field.getValue().isEmpty()) {
+                        return Long.parseLong(field.getValue().get(0).trim());
                     }
                 }
-            } catch (JSONException e) {
-                e.printStackTrace();
             }
+        } catch (Exception ignore) {
         }
-        return result;
-    }
-
-    private static boolean isJSONValid(String test) {
-        try {
-            new JSONObject(test);
-        } catch (Exception ex) {
-            // edited, to include @Arthur's comment
-            // e.g. in case JSONArray is valid as well...
-            try {
-                new JSONArray(test);
-            } catch (Exception ex1) {
-                return false;
-            }
-        }
-        return true;
+        return -1;
     }
 }

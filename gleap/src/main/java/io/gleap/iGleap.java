@@ -264,14 +264,23 @@ interface iGleap {
     void updateContact(GleapSessionProperties gleapSessionProperties);
 
     /**
-     * Sets the network log blacklist.
-     * @param blacklist
+     * Leaves requests whose url contains one of these strings out of the network logs, in addition
+     * to the blacklist configured in the dashboard. Requests to gleap.io and gleap.ai are always
+     * left out. Each call replaces the previous list, an empty array or null resets it.
+     *
+     * @param blacklist url parts to leave out
      */
     void setNetworkLogsBlacklist(String[] blacklist);
 
     /**
-     * Sets the network log props to ignore.
-     * @param propsToIgnore
+     * Removes these props from the network logs before they are sent, in addition to the ones
+     * configured in the dashboard: request and response headers with this name, keys in JSON
+     * bodies at any depth (a prop with dots such as {@code user.password} is also a path from the
+     * body root), form fields and url query parameters. Names match case-insensitively. The
+     * authorization, proxy-authorization, cookie and set-cookie headers are always masked.
+     * Each call replaces the previous list, an empty array or null resets it.
+     *
+     * @param propsToIgnore the prop names to remove
      */
     void setNetworkLogPropsToIgnore(String[] propsToIgnore);
 
@@ -606,37 +615,67 @@ interface iGleap {
      */
 
     /**
-     * Replace the current network logs.
+     * Replaces the attached network logs (the ones passed with the previous attachNetworkLogs call).
+     * The requests recorded by the SDK itself ({@link GleapOkHttpInterceptor}, logNetwork) are kept.
+     * null or an empty array removes the attached network logs.
+     *
+     * @param networklogs the network logs to attach
      */
     void attachNetworkLogs(Networklog[] networklogs);
+
     /**
-     * Log network traffic by logging it manually.
+     * Replaces the attached network logs with entries in the Gleap network log format, e.g. the
+     * requests recorded by the React Native, Flutter or Capacitor SDK. Pass the full current list:
+     * each call replaces the previous one. The entries are kept as given and sent together with the
+     * requests recorded by the SDK itself; the blacklist and the props to ignore are applied when a
+     * ticket is sent. null or an empty array removes the attached network logs.
+     *
+     * @param networkLogs the network log entries
+     */
+    void attachNetworkLogs(JSONArray networkLogs);
+
+    /**
+     * Replaces the attached console logs with entries in the Gleap console log format
+     * ({@code date}, {@code priority} INFO / WARNING / ERROR, {@code log}), e.g. the console output
+     * recorded by the React Native, Flutter or Capacitor SDK. Pass the full current list: each call
+     * replaces the previous one. null or an empty array removes the attached console logs.
+     *
+     * @param consoleLogs the console log entries
+     */
+    void attachConsoleLogs(JSONArray consoleLogs);
+
+    /**
+     * Log network traffic by logging it manually. For OkHttp, add {@link GleapOkHttpInterceptor}
+     * to the client instead.
      *
      * @param urlConnection URL where the request is sent to
-     * @param requestType   GET, POST, PUT, DELETE
-     * @param status        status of the response (e.g. 200, 404)
-     * @param duration      duration of the request
-     * @param request       Add the data you want. e.g the body sent in the request
-     * @param response      Response of the call. You can add just the information you want and need.
+     * @param requestType   the request method
+     * @param status        status of the response (e.g. 200, 404), 0 when no response arrived
+     * @param duration      duration of the request in milliseconds
+     * @param request       request details, recommended: {@code headers} (object) and {@code payload} (string)
+     * @param response      response details, recommended: {@code headers} (object), {@code statusText} and
+     *                      {@code responseText} (string); {@code errorText} when the request failed
      */
     void logNetwork(String urlConnection, RequestType requestType, int status, int duration, JSONObject request, JSONObject response);
 
 
     /**
-     * Log network traffic by logging it manually.
+     * Log network traffic by logging it manually. Call it after the response arrived: the url,
+     * method, status and response headers are read from the connection.
      *
-     * @param urlConnection UrlHttpConnection
-     * @param request       Add the data you want. e.g the body sent in the request
-     * @param response      Response of the call. You can add just the information you want and need.
+     * @param urlConnection the connection of the request
+     * @param request       the request body, sent as its JSON text
+     * @param response      the response body, sent as its JSON text
      */
     void logNetwork(HttpsURLConnection urlConnection, JSONObject request, JSONObject response);
 
     /**
-     * Log network traffic by logging it manually.
+     * Log network traffic by logging it manually. Call it after the response arrived: the url,
+     * method, status and response headers are read from the connection.
      *
-     * @param urlConnection UrlHttpConnection
-     * @param request       Add the data you want. e.g the body sent in the request
-     * @param response      Response of the call. You can add just the information you want and need.
+     * @param urlConnection the connection of the request
+     * @param request       the request body
+     * @param response      the response body
      */
     void logNetwork(HttpsURLConnection urlConnection, String request, String response);
 
@@ -702,7 +741,8 @@ interface iGleap {
     void log(String msg, GleapLogLevel gleapLogLevel);
 
     /**
-     * Disables the console logging. This must be called BEFORE initializing the SDK.
+     * Stops sending the app's logcat output with tickets. Messages logged with {@link #log(String)}
+     * are still sent.
      * @author Gleap
      *
      */

@@ -102,15 +102,16 @@ class GleapConfig {
     private boolean bgBlur = true;
     private int loaderColor = Color.BLACK;
 
-    private boolean enableConsoleLogs = true;
-    private boolean enableConsoleLogsFromCode = true;
+    private volatile boolean enableConsoleLogs = true;
+    private volatile boolean enableConsoleLogsFromCode = true;
     private boolean enableReplays = false;
     private boolean activationMethodShake = false;
     private boolean activationMethodScreenshotGesture = false;
     private boolean activationMethodFeedbackButton = false;
     private volatile String language = "en";
-    private JSONArray networkLogPropsToIgnore = new JSONArray();
-    private JSONArray blackList = new JSONArray();
+    // Read when network logs are recorded and sent (background threads).
+    private volatile JSONArray networkLogPropsToIgnore = new JSONArray();
+    private volatile JSONArray blackList = new JSONArray();
     private JSONObject plainConfig;
 
     private WidgetPositionType widgetPositionType = WidgetPositionType.NEW;

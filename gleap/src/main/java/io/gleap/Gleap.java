@@ -65,7 +65,6 @@ public class Gleap implements iGleap {
             // prepare Gleap
             Gleap.application = application;
             screenshotTaker = new ScreenshotTaker();
-            ConsoleUtil.clearConsole();
             // init config and load from the server
             GleapConfig.getInstance().setSdkKey(sdkKey);
 
@@ -1033,15 +1032,20 @@ public class Gleap implements iGleap {
         }
     }
 
+    /**
+     * Removes these props from the network logs before they are sent, in addition to the ones
+     * configured in the dashboard: request and response headers with this name, keys in JSON
+     * bodies at any depth (a prop with dots such as {@code user.password} is also a path from the
+     * body root), form fields and url query parameters. Names match case-insensitively. The
+     * authorization, proxy-authorization, cookie and set-cookie headers are always masked.
+     * Each call replaces the previous list, an empty array or null resets it.
+     *
+     * @param propsToIgnore the prop names to remove
+     * @author Gleap
+     */
     @Override
     public void setNetworkLogPropsToIgnore(String[] propsToIgnore) {
-        JSONArray jsonArray = new JSONArray();
-
-        for (String item : propsToIgnore) {
-            jsonArray.put(item);
-        }
-
-        Gleap.propsToIgnore = jsonArray;
+        Gleap.propsToIgnore = toJSONArray(propsToIgnore);
     }
 
     /**
@@ -1067,15 +1071,34 @@ public class Gleap implements iGleap {
         PhoneMeta.setEnvDataDisabled(disableEnvData);
     }
 
+    /**
+     * Leaves requests whose url contains one of these strings out of the network logs, in addition
+     * to the blacklist configured in the dashboard. Requests to gleap.io and gleap.ai are always
+     * left out. Each call replaces the previous list, an empty array or null resets it.
+     *
+     * @param blacklist url parts to leave out
+     * @author Gleap
+     */
     @Override
     public void setNetworkLogsBlacklist(String[] blacklist) {
-        JSONArray jsonArray = new JSONArray();
+        Gleap.blacklist = toJSONArray(blacklist);
+    }
 
-        for (String item : blacklist) {
+    // Trimmed, without empty entries and duplicates.
+    private static JSONArray toJSONArray(String[] items) {
+        JSONArray raw = new JSONArray();
+        if (items != null) {
+            for (String item : items) {
+                if (item != null) {
+                    raw.put(item);
+                }
+            }
+        }
+        JSONArray jsonArray = new JSONArray();
+        for (String item : GleapNetworkLogSanitizer.mergeStrings(raw)) {
             jsonArray.put(item);
         }
-
-        Gleap.blacklist = jsonArray;
+        return jsonArray;
     }
 
     @Override
@@ -1833,8 +1856,13 @@ public class Gleap implements iGleap {
      */
 
     /**
-     * Replace the current network logs.
+     * Replaces the attached network logs (the ones passed with the previous attachNetworkLogs call).
+     * The requests recorded by the SDK itself ({@link GleapOkHttpInterceptor}, logNetwork) are kept.
+     * null or an empty array removes the attached network logs.
+     *
+     * @param networklogs the network logs to attach
      */
+    @Override
     public void attachNetworkLogs(Networklog[] networklogs) {
         try {
             GleapBug.getInstance().getNetworkBuffer().attachNetworkLogs(networklogs);
@@ -1844,15 +1872,63 @@ public class Gleap implements iGleap {
     }
 
     /**
-     * Log network traffic by logging it manually.
+     * Replaces the attached network logs with entries in the Gleap network log format, e.g. the
+     * requests recorded by the React Native, Flutter or Capacitor SDK. Pass the full current list:
+     * each call replaces the previous one. The entries are kept as given and sent together with the
+     * requests recorded by the SDK itself; the blacklist and the props to ignore are applied when a
+     * ticket is sent. null or an empty array removes the attached network logs.
+     * <pre>
+     * { "date": "2026-09-27T10:00:00.123Z", "type": "POST", "url": "https://...", "duration": 120,
+     *   "success": true,
+     *   "request":  { "headers": { ... }, "payload": "..." },
+     *   "response": { "status": 200, "statusText": "OK", "headers": { ... }, "responseText": "..." } }
+     * </pre>
+     * Failed requests have {@code "success": false} and {@code "response": { "errorText": "..." }}.
+     *
+     * @param networkLogs the network log entries
+     */
+    @Override
+    public void attachNetworkLogs(JSONArray networkLogs) {
+        try {
+            GleapBug.getInstance().getNetworkBuffer().attachNetworkLogs(networkLogs);
+        } catch (Error | Exception ignore) {
+            handleError(ignore, "attachNetworkLogs");
+        }
+    }
+
+    /**
+     * Replaces the attached console logs with entries in the Gleap console log format, e.g. the
+     * console output recorded by the React Native, Flutter or Capacitor SDK. Pass the full current
+     * list: each call replaces the previous one. The entries are sent together with the SDK's own
+     * console logs. null or an empty array removes the attached console logs.
+     * <pre>
+     * { "date": "2026-09-27T10:00:00.123Z", "priority": "INFO" | "WARNING" | "ERROR", "log": "..." }
+     * </pre>
+     *
+     * @param consoleLogs the console log entries
+     */
+    @Override
+    public void attachConsoleLogs(JSONArray consoleLogs) {
+        try {
+            LogReader.getInstance().attachLogs(consoleLogs);
+        } catch (Error | Exception ignore) {
+            handleError(ignore, "attachConsoleLogs");
+        }
+    }
+
+    /**
+     * Log network traffic by logging it manually. For OkHttp, add {@link GleapOkHttpInterceptor}
+     * to the client instead.
      *
      * @param urlConnection URL where the request is sent to
-     * @param requestType   GET, POST, PUT, DELETE
-     * @param status        status of the response (e.g. 200, 404)
-     * @param duration      duration of the request
-     * @param request       Add the data you want. e.g the body sent in the request
-     * @param response      Response of the call. You can add just the information
-     *                      you want and need.
+     * @param requestType   the request method
+     * @param status        status of the response (e.g. 200, 404), 0 when no response arrived
+     * @param duration      duration of the request in milliseconds
+     * @param request       request details, recommended: {@code headers} (object) and
+     *                      {@code payload} (string)
+     * @param response      response details, recommended: {@code headers} (object),
+     *                      {@code statusText} and {@code responseText} (string); {@code errorText}
+     *                      when the request failed
      */
     @Override
     public void logNetwork(String urlConnection, RequestType requestType, int status,
@@ -1865,12 +1941,12 @@ public class Gleap implements iGleap {
     }
 
     /**
-     * Log network traffic by logging it manually.
+     * Log network traffic by logging it manually. Call it after the response arrived: the url,
+     * method, status and response headers are read from the connection.
      *
-     * @param urlConnection UrlHttpConnection
-     * @param request       Add the data you want. e.g the body sent in the request
-     * @param response      Response of the call. You can add just the information
-     *                      you want and need.
+     * @param urlConnection the connection of the request
+     * @param request       the request body, sent as its JSON text
+     * @param response      the response body, sent as its JSON text
      */
     @Override
     public void logNetwork(HttpsURLConnection urlConnection, JSONObject request, JSONObject response) {
@@ -1882,12 +1958,12 @@ public class Gleap implements iGleap {
     }
 
     /**
-     * Log network traffic by logging it manually.
+     * Log network traffic by logging it manually. Call it after the response arrived: the url,
+     * method, status and response headers are read from the connection.
      *
-     * @param urlConnection UrlHttpConnection
-     * @param request       Add the data you want. e.g the body sent in the request
-     * @param response      Response of the call. You can add just the information
-     *                      you want and need.
+     * @param urlConnection the connection of the request
+     * @param request       the request body
+     * @param response      the response body
      */
     @Override
     public void logNetwork(HttpsURLConnection urlConnection, String request, String response) {
@@ -2242,8 +2318,8 @@ public class Gleap implements iGleap {
     }
 
     /**
-     * Disables the console logging. This must be called BEFORE initializing the
-     * SDK.
+     * Stops sending the app's logcat output with tickets. Messages logged with
+     * {@link #log(String)} are still sent.
      *
      * @author Gleap
      */
