@@ -111,7 +111,7 @@ class GleapConnectivityManager {
                         new Gleap.GleapListener();
                     } else if (needsSession) {
                         // Config loaded but no session — just create a session.
-                        new GleapBaseSessionService().execute();
+                        new GleapBaseSessionService().executeOnExecutor(GleapExecutor.SERIAL);
                     } else {
                         // Both loaded — connection was temporarily lost.
                         // Refresh the launcher UI and reconnect WebSocket.

@@ -58,7 +58,7 @@ public class GleapSessionController {
             return;
         }
 
-        new GleapIdentifyService().execute();
+        new GleapIdentifyService().executeOnExecutor(GleapExecutor.SERIAL);
     }
 
     private void tryExecuteContactUpdate() {
@@ -66,7 +66,7 @@ public class GleapSessionController {
             return;
         }
 
-        new GleapUpdateSessionService().execute();
+        new GleapUpdateSessionService().executeOnExecutor(GleapExecutor.SERIAL);
     }
 
     public GleapSessionProperties getPendingUpdateAction() {

@@ -48,10 +48,10 @@ final class GleapInitializer {
      */
     static void startLoading(OnHttpResponseListener configListener) {
         try {
-            new ConfigLoader(configListener).execute(GleapBug.getInstance());
+            new ConfigLoader(configListener).executeOnExecutor(GleapExecutor.SERIAL, GleapBug.getInstance());
 
             GleapBaseSessionService sessionLoader = new GleapBaseSessionService();
-            sessionLoader.execute();
+            sessionLoader.executeOnExecutor(GleapExecutor.SERIAL);
         } catch (Error | Exception error) {
             GleapErrors.report(error, "GleapListener constructor");
         }

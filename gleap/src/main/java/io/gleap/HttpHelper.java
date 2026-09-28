@@ -34,7 +34,7 @@ class HttpHelper extends AsyncTask<GleapBug, Void, JSONObject> {
     private static final Sender ASYNC = new Sender() {
         @Override
         public void send(OnHttpResponseListener listener, Context context) {
-            new HttpHelper(listener, context).execute(GleapBug.getInstance());
+            new HttpHelper(listener, context).executeOnExecutor(GleapExecutor.SERIAL, GleapBug.getInstance());
         }
     };
 

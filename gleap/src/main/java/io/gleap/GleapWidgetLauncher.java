@@ -167,13 +167,13 @@ final class GleapWidgetLauncher {
                                     showOfflineAlert();
                                 }
                             }
-                        }).execute(GleapBug.getInstance());
+                        }).executeOnExecutor(GleapExecutor.SERIAL, GleapBug.getInstance());
                     } catch (Error | Exception exception) {
                         sessionRecoveryInProgress.set(false);
                         GleapErrors.report(exception, "recoverSessionAndRetry - callback");
                     }
                 }
-            }).execute();
+            }).executeOnExecutor(GleapExecutor.SERIAL);
         } catch (Error | Exception exception) {
             sessionRecoveryInProgress.set(false);
             GleapErrors.report(exception, "recoverSessionAndRetry");

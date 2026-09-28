@@ -98,7 +98,7 @@ class GleapEventService {
                     if (GleapSessionController.getInstance() != null
                             && GleapSessionController.getInstance().isSessionLoaded()) {
                         if (!eventQueue.isEmpty()) {
-                            new EventHttpHelper().execute();
+                            new EventHttpHelper().executeOnExecutor(GleapExecutor.SERIAL);
                         }
                     }
 

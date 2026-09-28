@@ -568,7 +568,7 @@ public class Gleap implements iGleap {
 
             GleapEventService.getInstance().stop();
             GleapBaseSessionService sessionLoader = new GleapBaseSessionService();
-            sessionLoader.execute();
+            sessionLoader.executeOnExecutor(GleapExecutor.SERIAL);
         } catch (Error | Exception ignore) {
             handleError(ignore, "run");
         }
@@ -697,7 +697,7 @@ public class Gleap implements iGleap {
                         // Nothing to do: ConfigLoader has already applied the config, and
                         // the widget requests it on open.
                     }
-                }, true).execute(GleapBug.getInstance());
+                }, true).executeOnExecutor(GleapExecutor.SERIAL, GleapBug.getInstance());
             }
         } catch (Error | Exception ignore) {
             handleError(ignore, "setLanguage");
