@@ -35,7 +35,8 @@ import io.gleap.callbacks.WidgetOpenedCallback;
 import io.gleap.callbacks.ErrorCallback;
 
 public class Gleap implements iGleap {
-    private static Gleap instance;
+    // Created with the class: getInstance() is called from several threads.
+    private static final Gleap instance = new Gleap();
     public static JSONArray blacklist = new JSONArray();
     public static JSONArray propsToIgnore = new JSONArray();
     public static boolean internalCloseWidgetOnExternalLinkOpen = false;
@@ -49,9 +50,6 @@ public class Gleap implements iGleap {
      * @return instance of Gleap
      */
     public static Gleap getInstance() {
-        if (instance == null) {
-            instance = new Gleap();
-        }
         return instance;
     }
 

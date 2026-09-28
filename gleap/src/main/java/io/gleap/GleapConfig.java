@@ -17,7 +17,8 @@ import java.util.Locale;
  * exclusions the widget sends.
  */
 class GleapConfig {
-    private static GleapConfig instance;
+    // Created with the class: getInstance() is called from several threads.
+    private static volatile GleapConfig instance = new GleapConfig();
 
     // Regional hosts. Defaults to the EU region, see GleapRegion for the region table.
     private volatile String apiUrl = GleapRegion.EU.getApiUrl();
@@ -87,9 +88,6 @@ class GleapConfig {
     }
 
     public static GleapConfig getInstance() {
-        if (instance == null) {
-            instance = new GleapConfig();
-        }
         return instance;
     }
 

@@ -7,12 +7,10 @@ class GleapFileHelper {
     private static final int MAX_FILE_SIZE = 10 * 1024 * 1024;
     private File[] files = new File[MAX_AMOUNT];
     private int currentIndex = 0;
-    private static GleapFileHelper instance;
+    // Created with the class: getInstance() is called from several threads.
+    private static final GleapFileHelper instance = new GleapFileHelper();
 
     public static GleapFileHelper getInstance() {
-        if(instance == null){
-            instance = new GleapFileHelper();
-        }
         return instance;
     }
 

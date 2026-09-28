@@ -10,7 +10,7 @@ import java.util.List;
 
 class GleapDetectorUtil {
     // True while the widget is open (or opening): the activation methods are paused meanwhile.
-    private static boolean widgetOpen = false;
+    private static volatile boolean widgetOpen = false;
 
     public static void resumeAllDetectors() {
         widgetOpen = false;

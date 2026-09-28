@@ -27,7 +27,8 @@ import gleap.io.gleap.R;
  * cards, banners and modals. It is rebuilt for every activity that resumes.
  */
 class GleapOverlayManager {
-    private static GleapOverlayManager instance;
+    // Created with the class: getInstance() is called from several threads.
+    private static final GleapOverlayManager instance = new GleapOverlayManager();
     // The overlay's root view, added to the shown activity.
     ConstraintLayout layout;
     final GleapFeedbackButton button = new GleapFeedbackButton(this);
@@ -77,9 +78,6 @@ class GleapOverlayManager {
     }
 
     public static GleapOverlayManager getInstance() {
-        if (instance == null) {
-            instance = new GleapOverlayManager();
-        }
         return instance;
     }
 

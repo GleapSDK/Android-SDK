@@ -5,12 +5,13 @@ import android.app.Application;
 import org.json.JSONObject;
 
 public class GleapSessionController {
-    private static GleapSessionController instance;
+    // Read from the request threads.
+    private static volatile GleapSessionController instance;
     private GleapSessionProperties gleapSessionProperties;
-    private GleapSession gleapSession;
+    private volatile GleapSession gleapSession;
     private GleapSessionProperties pendingIdentificationAction;
     private GleapSessionProperties pendingUpdateAction;
-    private boolean isSessionLoaded = false;
+    private volatile boolean isSessionLoaded = false;
     private String lastRegisteredUserHash;
     // Where the session and the identified user are kept between app starts.
     private final KeyValueStore store;
@@ -34,10 +35,12 @@ public class GleapSessionController {
     }
 
     public static GleapSessionController initialize(Application application) {
-        if (instance == null) {
-            instance = new GleapSessionController(application);
+        synchronized (GleapSessionController.class) {
+            if (instance == null) {
+                instance = new GleapSessionController(application);
+            }
+            return instance;
         }
-        return instance;
     }
 
     // Tests only.

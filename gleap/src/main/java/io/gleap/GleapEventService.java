@@ -19,7 +19,8 @@ import java.util.Date;
 import static io.gleap.DateUtil.dateToString;
 
 class GleapEventService {
-    private static GleapEventService instance;
+    // Created with the class: getInstance() is called from several threads.
+    private static volatile GleapEventService instance = new GleapEventService();
     private static GleapWebSocketListener webSocketListener;
     private boolean disableInAppNotifications = false;
     private final GleapEventQueue eventQueue = new GleapEventQueue();
@@ -47,9 +48,6 @@ class GleapEventService {
     }
 
     public static GleapEventService getInstance() {
-        if (instance == null) {
-            instance = new GleapEventService();
-        }
         return instance;
     }
 

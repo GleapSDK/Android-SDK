@@ -16,7 +16,8 @@ import org.json.JSONObject;
 import java.util.Date;
 
 class GleapActivityManager {
-    private static GleapActivityManager gleapActivityManager;
+    // Created with the class: getInstance() is called from several threads.
+    private static final GleapActivityManager gleapActivityManager = new GleapActivityManager();
     private Application application;
     private String currentPage = "";
     private boolean started = false;
@@ -24,9 +25,6 @@ class GleapActivityManager {
     private GleapActivityManager(){}
 
     public static GleapActivityManager getInstance() {
-        if(gleapActivityManager == null) {
-            gleapActivityManager = new GleapActivityManager();
-        }
         return gleapActivityManager;
     }
 

@@ -25,7 +25,8 @@ import io.gleap.callbacks.WidgetOpenedCallback;
  * close hook.
  */
 class GleapCallbacks {
-    private static GleapCallbacks instance;
+    // Created with the class: getInstance() is called from several threads.
+    private static volatile GleapCallbacks instance = new GleapCallbacks();
 
     private ConfigLoadedCallback configLoadedCallback;
     private InitializedCallback initializedCallback;
@@ -53,9 +54,6 @@ class GleapCallbacks {
     }
 
     public static GleapCallbacks getInstance() {
-        if (instance == null) {
-            instance = new GleapCallbacks();
-        }
         return instance;
     }
 
