@@ -9,7 +9,7 @@ import io.gleap.callbacks.GetActivityCallback;
 
 class ActivityUtil {
     public static Activity getCurrentActivity() {
-        GetActivityCallback activityCallback =  GleapConfig.getInstance().getGetActivityCallback();
+        GetActivityCallback activityCallback =  GleapCallbacks.getInstance().getGetActivityCallback();
         if(activityCallback != null) {
             return activityCallback.getActivity();
         }

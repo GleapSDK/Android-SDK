@@ -189,8 +189,8 @@ class GleapBanner {
                                 case "start-custom-action":
                                     try {
                                         String action = gleapCallback.getJSONObject("data").getString("action");
-                                        if (GleapConfig.getInstance().getCustomActions() != null) {
-                                            GleapConfig.getInstance().getCustomActions().invoke(action, null);
+                                        if (GleapCallbacks.getInstance().getCustomActions() != null) {
+                                            GleapCallbacks.getInstance().getCustomActions().invoke(action, null);
                                         }
                                     }catch (Exception exp) {}
                                     break;

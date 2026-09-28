@@ -260,8 +260,8 @@ public class GleapSessionController {
                 // Process push actions.
                 Gleap.getInstance().processOpenPushActions();
 
-                if (sendInitDelegate && GleapConfig.getInstance().getInitializationDoneCallback() != null) {
-                    GleapConfig.getInstance().getInitializationDoneCallback().invoke();
+                if (sendInitDelegate && GleapCallbacks.getInstance().getInitializationDoneCallback() != null) {
+                    GleapCallbacks.getInstance().getInitializationDoneCallback().invoke();
                 }
             }
         } catch (Exception exp) {}
@@ -290,8 +290,8 @@ public class GleapSessionController {
         GleapMainThread.postWithActivity(new Runnable() {
             @Override
             public void run() throws RuntimeException {
-                if (GleapConfig.getInstance().getRegisterPushMessageGroupCallback() != null && userHash != null && !userHash.isEmpty()) {
-                    GleapConfig.getInstance().getRegisterPushMessageGroupCallback().invoke("gleapuser-" + userHash);
+                if (GleapCallbacks.getInstance().getRegisterPushMessageGroupCallback() != null && userHash != null && !userHash.isEmpty()) {
+                    GleapCallbacks.getInstance().getRegisterPushMessageGroupCallback().invoke("gleapuser-" + userHash);
                 }
             }
         });
@@ -301,12 +301,12 @@ public class GleapSessionController {
         this.lastRegisteredUserHash = null;
 
         // Unregister old user.
-        if (GleapConfig.getInstance().getUnRegisterPushMessageGroupCallback() != null && userHash != null && !userHash.isEmpty()) {
+        if (GleapCallbacks.getInstance().getUnRegisterPushMessageGroupCallback() != null && userHash != null && !userHash.isEmpty()) {
             try {
                 GleapMainThread.postWithActivity(new Runnable() {
                     @Override
                     public void run() throws RuntimeException {
-                        GleapConfig.getInstance().getUnRegisterPushMessageGroupCallback().invoke("gleapuser-" + userHash);
+                        GleapCallbacks.getInstance().getUnRegisterPushMessageGroupCallback().invoke("gleapuser-" + userHash);
                     }
                 });
             } catch (Exception ignore) {

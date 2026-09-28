@@ -1047,8 +1047,8 @@ class GleapOverlayManager {
         this.messageCounter = messageCounter;
 
         try {
-            if (GleapConfig.getInstance().getNotificationUnreadCountUpdatedCallback() != null) {
-                GleapConfig.getInstance().getNotificationUnreadCountUpdatedCallback().invoke(messageCounter);
+            if (GleapCallbacks.getInstance().getNotificationUnreadCountUpdatedCallback() != null) {
+                GleapCallbacks.getInstance().getNotificationUnreadCountUpdatedCallback().invoke(messageCounter);
             }
         } catch (Exception exp) {}
 

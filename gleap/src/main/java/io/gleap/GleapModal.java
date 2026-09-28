@@ -309,9 +309,9 @@ class GleapModal {
         }
 
         private void startCustomAction(JSONObject cb) throws JSONException {
-            if (GleapConfig.getInstance().getCustomActions() == null) return;
+            if (GleapCallbacks.getInstance().getCustomActions() == null) return;
             String action = cb.optJSONObject("data") == null ? "" : cb.getJSONObject("data").optString("action", "");
-            GleapConfig.getInstance().getCustomActions().invoke(action, null);
+            GleapCallbacks.getInstance().getCustomActions().invoke(action, null);
         }
 
         private void showSurvey(JSONObject cb) throws JSONException {

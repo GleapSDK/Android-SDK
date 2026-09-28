@@ -36,8 +36,8 @@ class ScreenshotUtil {
             }
 
             Bitmap bitmap = null;
-            if (GleapConfig.getInstance().getGetBitmapCallback() != null) {
-                bitmap = GleapConfig.getInstance().getGetBitmapCallback().getBitmap();
+            if (GleapCallbacks.getInstance().getGetBitmapCallback() != null) {
+                bitmap = GleapCallbacks.getInstance().getGetBitmapCallback().getBitmap();
                 if(bitmap != null) {
                     getImageCallback.getImage(getResizedBitmap(bitmap));
                 } else {

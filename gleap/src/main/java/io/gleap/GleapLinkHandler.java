@@ -32,8 +32,8 @@ final class GleapLinkHandler {
                 }
 
                 // Use custom link handler.
-                if (GleapConfig.getInstance().getCustomLinkHandler() != null) {
-                    GleapConfig.getInstance().getCustomLinkHandler().invoke(url);
+                if (GleapCallbacks.getInstance().getCustomLinkHandler() != null) {
+                    GleapCallbacks.getInstance().getCustomLinkHandler().invoke(url);
                     return;
                 }
 

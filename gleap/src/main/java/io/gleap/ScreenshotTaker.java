@@ -86,8 +86,8 @@ class ScreenshotTaker {
 
                     GleapOverlayManager.getInstance().clearMessages();
 
-                    if(GleapConfig.getInstance().getWidgetOpenedCallback() != null) {
-                        GleapConfig.getInstance().getWidgetOpenedCallback().invoke();
+                    if(GleapCallbacks.getInstance().getWidgetOpenedCallback() != null) {
+                        GleapCallbacks.getInstance().getWidgetOpenedCallback().invoke();
                     }
 
                     GleapMainThread.post(new Runnable() {

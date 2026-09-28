@@ -64,25 +64,25 @@ class HttpHelper extends AsyncTask<GleapBug, Void, JSONObject> {
     @Override
     protected void onPostExecute(JSONObject result) {
         // Default form submission callback.
-        if (GleapConfig.getInstance().getFeedbackSentCallback() != null) {
+        if (GleapCallbacks.getInstance().getFeedbackSentCallback() != null) {
             if (dataToSend != null && dataToSend.has("formData")) {
                 try {
-                    GleapConfig.getInstance().getFeedbackSentCallback().invoke(dataToSend.getJSONObject("formData"));
+                    GleapCallbacks.getInstance().getFeedbackSentCallback().invoke(dataToSend.getJSONObject("formData"));
                 } catch (JSONException e) {
-                    GleapConfig.getInstance().getFeedbackSentCallback().invoke(null);
+                    GleapCallbacks.getInstance().getFeedbackSentCallback().invoke(null);
                 }
             } else {
-                GleapConfig.getInstance().getFeedbackSentCallback().invoke(null);
+                GleapCallbacks.getInstance().getFeedbackSentCallback().invoke(null);
             }
         }
 
         // Send outbound sent.
         try {
-            if (GleapConfig.getInstance().getOutboundSentCallback() != null) {
+            if (GleapCallbacks.getInstance().getOutboundSentCallback() != null) {
                 if (dataToSend != null) {
-                    GleapConfig.getInstance().getOutboundSentCallback().invoke(dataToSend);
+                    GleapCallbacks.getInstance().getOutboundSentCallback().invoke(dataToSend);
                 } else {
-                    GleapConfig.getInstance().getOutboundSentCallback().invoke(null);
+                    GleapCallbacks.getInstance().getOutboundSentCallback().invoke(null);
                 }
             }
         } catch (Exception exp) {}

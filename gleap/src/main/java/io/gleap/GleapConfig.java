@@ -11,33 +11,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 
-import io.gleap.callbacks.AiToolExecutedCallback;
-import io.gleap.callbacks.ConfigLoadedCallback;
-import io.gleap.callbacks.CustomActionCallback;
-import io.gleap.callbacks.CustomLinkHandlerCallback;
-import io.gleap.callbacks.FeedbackFlowStartedCallback;
-import io.gleap.callbacks.FeedbackSendingFailedCallback;
-import io.gleap.callbacks.FeedbackSentCallback;
-import io.gleap.callbacks.FeedbackWillBeSentCallback;
-import io.gleap.callbacks.GetActivityCallback;
-import io.gleap.callbacks.GetBitmapCallback;
-import io.gleap.callbacks.InitializationDoneCallback;
-import io.gleap.callbacks.InitializedCallback;
-import io.gleap.callbacks.NotificationUnreadCountUpdatedCallback;
-import io.gleap.callbacks.OutboundSentCallback;
-import io.gleap.callbacks.RegisterPushMessageGroupCallback;
-import io.gleap.callbacks.UnRegisterPushMessageGroupCallback;
-import io.gleap.callbacks.WidgetClosedCallback;
-import io.gleap.callbacks.WidgetOpenedCallback;
-import io.gleap.callbacks.ErrorCallback;
-
 /**
- * Configuration received by the server
+ * The SDK configuration: hosts, SDK key and language set by the app, the values of the remote
+ * config (package-private fields, written by {@link GleapRemoteConfig}) and the report
+ * exclusions the widget sends.
  */
 class GleapConfig {
     private static GleapConfig instance;
 
-    //bb config
     // Regional hosts. Defaults to the EU region, see GleapRegion for the region table.
     private volatile String apiUrl = GleapRegion.EU.getApiUrl();
     private volatile String wsApiUrl = GleapRegion.EU.getWsApiUrl();
@@ -52,68 +33,48 @@ class GleapConfig {
 
     private JSONObject stripModel = new JSONObject();
     private JSONObject crashStripModel = new JSONObject();
-    private ConfigLoadedCallback configLoadedCallback;
-    private InitializedCallback initializedCallback;
-    private FeedbackSentCallback feedbackSentCallback;
-    private OutboundSentCallback outboundSentCallback;
-    private FeedbackWillBeSentCallback feedbackWillBeSentCallback;
-    private FeedbackFlowStartedCallback feedbackFlowStartedCallback;
-    private FeedbackSendingFailedCallback feedbackSendingFailedCallback;
-    private CallCloseCallback callCloseCallback;
-    private WidgetOpenedCallback widgetOpenedCallback;
-    private AiToolExecutedCallback aiToolExecutedCallback;
-    private WidgetClosedCallback widgetClosedCallback;
-    private NotificationUnreadCountUpdatedCallback notificationUnreadCountUpdatedCallback;
-    private GetActivityCallback getActivityCallback;
-    private CustomActionCallback customAction;
-    private CustomLinkHandlerCallback customLinkHandler;
-    private GetBitmapCallback getBitmapCallback;
-    private RegisterPushMessageGroupCallback registerPushMessageGroupCallback;
-    private UnRegisterPushMessageGroupCallback unRegisterPushMessageGroupCallback;
-    private InitializationDoneCallback initializationDoneCallback;
-    private ErrorCallback errorCallback;
     private List<GleapDetector> gestureDetectors = new LinkedList<>();
     private List<GleapActivationMethod> prioritizedActivationMethods = new LinkedList<>();
-    private int interval = 5;
+    int interval = 5;
 
-    //user config
-    private String buttonLogo = "https://sdk.gleap.io/res/chatbubble.png";
-    private String buttonColor = "#485bff";
-    private String color = "#485bff";
-    private String backgroundColor = "#ffffff";
-    private int borderRadius = 20;
-    private String headerColor = "#485bff";
+    // Set from the remote config (flowConfig).
+    String buttonLogo = "https://sdk.gleap.io/res/chatbubble.png";
+    String buttonColor = "#485bff";
+    String color = "#485bff";
+    String backgroundColor = "#ffffff";
+    int borderRadius = 20;
+    String headerColor = "#485bff";
     // Loading-background config (mirrors the web/iOS SDK loaders). headerColor2/3
     // fall back to headerColor via their getters, like the messenger's
     // getHeaderColorSecondary.
-    private String headerColor2 = "";
-    private String headerColor3 = "";
-    private String bgType = "";
-    private String bgImage = "";
-    private int homeVersion = 0;
-    private boolean fadeBg = true;
-    private boolean bgBlur = true;
+    String headerColor2 = "";
+    String headerColor3 = "";
+    String bgType = "";
+    String bgImage = "";
+    int homeVersion = 0;
+    boolean fadeBg = true;
+    boolean bgBlur = true;
 
-    private volatile boolean enableConsoleLogs = true;
+    volatile boolean enableConsoleLogs = true;
     private volatile boolean enableConsoleLogsFromCode = true;
-    private boolean enableReplays = false;
-    private boolean activationMethodShake = false;
-    private boolean activationMethodScreenshotGesture = false;
-    private boolean activationMethodFeedbackButton = false;
+    boolean enableReplays = false;
+    boolean activationMethodShake = false;
+    boolean activationMethodScreenshotGesture = false;
+    boolean activationMethodFeedbackButton = false;
     private volatile String language = "en";
     // Read when network logs are recorded and sent (background threads).
-    private volatile JSONArray networkLogPropsToIgnore = new JSONArray();
-    private volatile JSONArray blackList = new JSONArray();
-    private JSONObject plainConfig;
+    volatile JSONArray networkLogPropsToIgnore = new JSONArray();
+    volatile JSONArray blackList = new JSONArray();
+    JSONObject plainConfig;
 
-    private WidgetPositionType widgetPositionType = WidgetPositionType.NEW;
-    private WidgetPosition widgetPosition = WidgetPosition.BOTTOM_RIGHT;
-    private String widgetButtonText = "Feedback";
-    private boolean hideFeedbackButton = false;
+    WidgetPositionType widgetPositionType = WidgetPositionType.NEW;
+    WidgetPosition widgetPosition = WidgetPosition.BOTTOM_RIGHT;
+    String widgetButtonText = "Feedback";
+    boolean hideFeedbackButton = false;
     private boolean feedbackButtonManuallySet = false;
 
-    private int buttonX = 20; //horizontal
-    private int buttonY = 20; //vertical
+    int buttonX = 20; //horizontal
+    int buttonY = 20; //vertical
 
     /** X/Y offset for the notification container when feedback button is hidden (default 0). */
     private int notificationContainerOffsetX = 0;
@@ -135,179 +96,18 @@ class GleapConfig {
         return instance;
     }
 
+    // Tests only.
+    static void resetForTesting() {
+        instance = new GleapConfig();
+    }
+
     /**
-     * Read Values from the config
+     * Applies the remote config (see {@link GleapRemoteConfig}).
      *
      * @param config response from the server with all the configuration data in it
      */
     public void initConfig(JSONObject config) {
-        if (config != null) {
-            this.plainConfig = config;
-        }
-
-        JSONObject flowConfigs = new JSONObject();
-        if (config.has("flowConfig")) {
-            try {
-                flowConfigs = config.getJSONObject("flowConfig");
-            } catch (JSONException e) {
-                GleapLog.w("Invalid flowConfig in the remote config", e);
-            }
-        }
-
-        JSONObject projectActions = new JSONObject();
-        if (config.has("projectActions")) {
-            try {
-                projectActions = config.getJSONObject("projectActions");
-            } catch (JSONException e) {
-                GleapLog.w("Invalid projectActions in the remote config", e);
-            }
-        }
-
-        try {
-            if (flowConfigs.has("enableConsoleLogs")) {
-                this.enableConsoleLogs = flowConfigs.getBoolean("enableConsoleLogs");
-            }
-
-            if (flowConfigs.has("feedbackButtonPosition")) {
-                switch (flowConfigs.getString("feedbackButtonPosition")) {
-                    case "BOTTOM_RIGHT":
-                        this.widgetPosition = WidgetPosition.BOTTOM_RIGHT;
-                        GleapOverlayManager.getInstance().setShowFab(true);
-                        break;
-                    case "BOTTOM_LEFT":
-                        this.widgetPosition = WidgetPosition.BOTTOM_LEFT;
-                        GleapOverlayManager.getInstance().setShowFab(true);
-                        break;
-                    case "BUTTON_CLASSIC":
-                        this.widgetPosition = WidgetPosition.CLASSIC_RIGHT;
-                        this.widgetPositionType = WidgetPositionType.CLASSIC;
-                        GleapOverlayManager.getInstance().setShowFab(true);
-                        break;
-                    case "BUTTON_CLASSIC_LEFT":
-                        this.widgetPosition = WidgetPosition.CLASSIC_LEFT;
-                        this.widgetPositionType = WidgetPositionType.CLASSIC;
-                        GleapOverlayManager.getInstance().setShowFab(true);
-                        break;
-                    case "BUTTON_CLASSIC_BOTTOM":
-                        this.widgetPosition = WidgetPosition.CLASSIC_BOTTOM;
-                        this.widgetPositionType = WidgetPositionType.CLASSIC;
-                        GleapOverlayManager.getInstance().setShowFab(true);
-                        break;
-                    default:
-                        this.widgetPosition = WidgetPosition.HIDDEN;
-
-                        if (!this.isFeedbackButtonManuallySet()) {
-                            GleapOverlayManager.getInstance().setShowFab(false);
-                            hideFeedbackButton = true;
-                        }
-                        break;
-                }
-            }
-
-            if (flowConfigs.has("widgetButtonText")) {
-                this.widgetButtonText =  flowConfigs.getString("widgetButtonText");
-            }
-
-            if (flowConfigs.has("buttonLogo") && !flowConfigs.getString("buttonLogo").equals("")) {
-                this.buttonLogo = flowConfigs.getString("buttonLogo");
-            }
-
-            if (flowConfigs.has("color")) {
-                this.color = flowConfigs.getString("color");
-            }
-
-            if (flowConfigs.has("buttonColor")) {
-                this.buttonColor = flowConfigs.getString("buttonColor");
-            }
-
-            if (flowConfigs.has("backgroundColor")) {
-                this.backgroundColor = flowConfigs.getString("backgroundColor");
-            }
-
-            if (flowConfigs.has("borderRadius")) {
-                try {
-                    this.borderRadius = flowConfigs.optInt("borderRadius", 20);
-                } catch (Exception ignore) {
-                }
-            }
-
-            if (flowConfigs.has("headerColor")) {
-                this.headerColor = flowConfigs.getString("headerColor");
-            }
-
-            if (flowConfigs.has("headerColor2")) {
-                this.headerColor2 = flowConfigs.getString("headerColor2");
-            }
-
-            if (flowConfigs.has("headerColor3")) {
-                this.headerColor3 = flowConfigs.getString("headerColor3");
-            }
-
-            if (flowConfigs.has("bgType")) {
-                this.bgType = flowConfigs.getString("bgType");
-            }
-
-            if (flowConfigs.has("bgImage")) {
-                this.bgImage = flowConfigs.getString("bgImage");
-            }
-
-            if (flowConfigs.has("v")) {
-                this.homeVersion = flowConfigs.getInt("v");
-            }
-
-            if (flowConfigs.has("fadebg")) {
-                this.fadeBg = flowConfigs.getBoolean("fadebg");
-            }
-
-            if (flowConfigs.has("bgBlur")) {
-                this.bgBlur = flowConfigs.getBoolean("bgBlur");
-            }
-
-            if (flowConfigs.has("enableReplays")) {
-                this.enableReplays = flowConfigs.getBoolean("enableReplays");
-            }
-
-            if (flowConfigs.has("activationMethodShake")) {
-                this.activationMethodShake = flowConfigs.getBoolean("activationMethodShake");
-            }
-
-            if (flowConfigs.has("activationMethodScreenshotGesture")) {
-                this.activationMethodScreenshotGesture = flowConfigs.getBoolean("activationMethodScreenshotGesture");
-            }
-
-            if (flowConfigs.has("activationMethodFeedbackButton")) {
-                this.activationMethodFeedbackButton = flowConfigs.getBoolean("activationMethodFeedbackButton");
-            }
-
-            if (flowConfigs.has("replaysInterval")) {
-                this.interval = flowConfigs.getInt("replaysInterval");
-            }
-
-            if (flowConfigs.has("buttonX")) {
-                this.buttonX = flowConfigs.getInt("buttonX");
-            }
-
-            if (flowConfigs.has("buttonY")) {
-                this.buttonY = flowConfigs.getInt("buttonY");
-            }
-
-            if (flowConfigs.has("networkLogPropsToIgnore")) {
-                this.networkLogPropsToIgnore = flowConfigs.getJSONArray("networkLogPropsToIgnore");
-            }
-
-            if (flowConfigs.has("replaysInterval")) {
-                this.interval = flowConfigs.getInt("replaysInterval");
-                GleapBug.getInstance().setReplay(new Replay(60 / this.interval, 1000 * this.interval));
-            }
-
-            if (flowConfigs.has("networkLogBlacklist")) {
-                this.blackList = flowConfigs.getJSONArray("networkLogBlacklist");
-            }
-        } catch (JSONException e) {
-            GleapLog.w("Could not read the remote config", e);
-        }
-
-        Gleap.getInstance().processOpenPushActions();
+        GleapRemoteConfig.apply(this, config);
     }
 
     public synchronized String getSdkKey() {
@@ -363,86 +163,6 @@ class GleapConfig {
         this.language = language;
     }
 
-    public FeedbackSentCallback getFeedbackSentCallback() {
-        return feedbackSentCallback;
-    }
-
-    public void setFeedbackSentCallback(FeedbackSentCallback feedbackSentCallback) {
-        this.feedbackSentCallback = feedbackSentCallback;
-    }
-
-    public OutboundSentCallback getOutboundSentCallback() {
-        return outboundSentCallback;
-    }
-
-    public void setOutboundSentCallback(OutboundSentCallback outboundSentCallback) {
-        this.outboundSentCallback = outboundSentCallback;
-    }
-
-    public FeedbackWillBeSentCallback getFeedbackWillBeSentCallback() {
-        return feedbackWillBeSentCallback;
-    }
-
-    public void setFeedbackWillBeSentCallback(FeedbackWillBeSentCallback feedbackWillBeSentCallback) {
-        this.feedbackWillBeSentCallback = feedbackWillBeSentCallback;
-    }
-
-    public FeedbackFlowStartedCallback getFeedbackFlowStartedCallback() {
-        return feedbackFlowStartedCallback;
-    }
-
-    public void setFeedbackFlowStartedCallback(FeedbackFlowStartedCallback feedbackFlowStartedCallback) {
-        this.feedbackFlowStartedCallback = feedbackFlowStartedCallback;
-    }
-
-    public FeedbackSendingFailedCallback getFeedbackSendingFailedCallback() {
-        return feedbackSendingFailedCallback;
-    }
-
-    public void setFeedbackSendingFailedCallback(FeedbackSendingFailedCallback feedbackSendingFailedCallback) {
-        this.feedbackSendingFailedCallback = feedbackSendingFailedCallback;
-    }
-
-    public WidgetOpenedCallback getWidgetOpenedCallback() {
-        return widgetOpenedCallback;
-    }
-
-    public void setAiToolExecutedCallback(AiToolExecutedCallback aiToolExecutedCallback) {
-        this.aiToolExecutedCallback = aiToolExecutedCallback;
-    }
-
-    public AiToolExecutedCallback getAiToolExecutedCallback() {
-        return aiToolExecutedCallback;
-    }
-
-    public void setWidgetOpenedCallback(WidgetOpenedCallback widgetOpenedCallback) {
-        this.widgetOpenedCallback = widgetOpenedCallback;
-    }
-
-    public WidgetClosedCallback getWidgetClosedCallback() {
-        return widgetClosedCallback;
-    }
-
-    public void setWidgetClosedCallback(WidgetClosedCallback widgetClosedCallback) {
-        this.widgetClosedCallback = widgetClosedCallback;
-    }
-
-    public void setNotificationUnreadCountUpdatedCallback(NotificationUnreadCountUpdatedCallback notificationUnreadCountUpdatedCallback) {
-        this.notificationUnreadCountUpdatedCallback = notificationUnreadCountUpdatedCallback;
-    }
-
-    public NotificationUnreadCountUpdatedCallback getNotificationUnreadCountUpdatedCallback() {
-        return notificationUnreadCountUpdatedCallback;
-    }
-
-    public GetBitmapCallback getGetBitmapCallback() {
-        return getBitmapCallback;
-    }
-
-    public void setGetBitmapCallback(GetBitmapCallback getBitmapCallback) {
-        this.getBitmapCallback = getBitmapCallback;
-    }
-
     public List<GleapDetector> getGestureDetectors() {
         return gestureDetectors;
     }
@@ -479,38 +199,6 @@ class GleapConfig {
         return enableReplays;
     }
 
-    public void registerCustomAction(CustomActionCallback customAction) {
-        this.customAction = customAction;
-    }
-
-    public CustomActionCallback getCustomActions() {
-        return customAction;
-    }
-
-    public void registerCustomLinkHandler(CustomLinkHandlerCallback customLinkHandler) {
-        this.customLinkHandler = customLinkHandler;
-    }
-
-    public CustomLinkHandlerCallback getCustomLinkHandler() {
-        return customLinkHandler;
-    }
-
-    public ConfigLoadedCallback getConfigLoadedCallback() {
-        return configLoadedCallback;
-    }
-
-    public void setConfigLoadedCallback(ConfigLoadedCallback configLoadedCallback) {
-        this.configLoadedCallback = configLoadedCallback;
-    }
-
-    public InitializedCallback getInitializedCallback() {
-        return initializedCallback;
-    }
-
-    public void setInitializedCallback(InitializedCallback initializedCallback) {
-        this.initializedCallback = initializedCallback;
-    }
-
     public int getInterval() {
         return interval;
     }
@@ -536,14 +224,6 @@ class GleapConfig {
 
     public JSONObject getPlainConfig() {
         return plainConfig;
-    }
-
-    public GetActivityCallback getGetActivityCallback() {
-        return getActivityCallback;
-    }
-
-    public void setGetActivityCallback(GetActivityCallback getActivityCallback) {
-        this.getActivityCallback = getActivityCallback;
     }
 
     public String getiFrameUrl() {
@@ -585,22 +265,6 @@ class GleapConfig {
         return blackList;
     }
 
-    public CallCloseCallback getCallCloseCallback() {
-        return callCloseCallback;
-    }
-
-    public void setCallCloseCallback(CallCloseCallback callCloseCallback) {
-        this.callCloseCallback = callCloseCallback;
-    }
-
-    public InitializationDoneCallback getInitializationDoneCallback() {
-        return initializationDoneCallback;
-    }
-
-    public void setInitializationDoneCallback(InitializationDoneCallback initializationDoneCallback) {
-        this.initializationDoneCallback = initializationDoneCallback;
-    }
-
     public boolean isEnableConsoleLogsFromCode() {
         return enableConsoleLogsFromCode;
     }
@@ -628,7 +292,6 @@ class GleapConfig {
     public void addGleapWebViewMessage(GleapWebViewMessage gleapWebViewMessage) {
         this.gleapWebViewMessages.push(gleapWebViewMessage);
     }
-
 
     public LinkedList<GleapWebViewMessage> getGleapWebViewMessages() {
         return gleapWebViewMessages;
@@ -732,22 +395,6 @@ class GleapConfig {
         GleapConfig.getInstance().setFileUploadCallback(null);
     }
 
-    public RegisterPushMessageGroupCallback getRegisterPushMessageGroupCallback() {
-        return registerPushMessageGroupCallback;
-    }
-
-    public void setRegisterPushMessageGroupCallback(RegisterPushMessageGroupCallback registerPushMessageGroupCallback) {
-        this.registerPushMessageGroupCallback = registerPushMessageGroupCallback;
-    }
-
-    public UnRegisterPushMessageGroupCallback getUnRegisterPushMessageGroupCallback() {
-        return unRegisterPushMessageGroupCallback;
-    }
-
-    public void setUnRegisterPushMessageGroupCallback(UnRegisterPushMessageGroupCallback unRegisterPushMessageGroupCallback) {
-        this.unRegisterPushMessageGroupCallback = unRegisterPushMessageGroupCallback;
-    }
-
     public String getWidgetButtonText() {
         return widgetButtonText;
     }
@@ -756,11 +403,4 @@ class GleapConfig {
         return widgetPositionType;
     }
 
-    public ErrorCallback getErrorCallback() {
-        return errorCallback;
-    }
-
-    public void setErrorCallback(ErrorCallback errorCallback) {
-        this.errorCallback = errorCallback;
-    }
 }

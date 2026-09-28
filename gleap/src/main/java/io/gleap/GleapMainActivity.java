@@ -319,7 +319,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 this.handler = new Handler(Looper.getMainLooper());
                 this.handler.postDelayed(exitAfterFifteenSeconds, 15000);
 
-                GleapConfig.getInstance().setCallCloseCallback(new CallCloseCallback() {
+                GleapCallbacks.getInstance().setCallCloseCallback(new CallCloseCallback() {
                     @Override
                     public void invoke() {
                         GleapDetectorUtil.resumeAllDetectors();
@@ -356,8 +356,8 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         try {
             GleapDetectorUtil.resumeAllDetectors();
             GleapAgentToolManager.getInstance().clearExecutionState();
-            if (GleapConfig.getInstance().getWidgetClosedCallback() != null) {
-                GleapConfig.getInstance().getWidgetClosedCallback().invoke();
+            if (GleapCallbacks.getInstance().getWidgetClosedCallback() != null) {
+                GleapCallbacks.getInstance().getWidgetClosedCallback().invoke();
             }
 
             GleapOverlayManager.getInstance().setShowFab(true);
@@ -385,7 +385,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 onBackPressedCallback = null;
             }
 
-            GleapConfig.getInstance().setCallCloseCallback(null);
+            GleapCallbacks.getInstance().setCallCloseCallback(null);
 
             if (this.exitAfterFifteenSeconds != null) {
                 this.handler.removeCallbacks(this.exitAfterFifteenSeconds);
@@ -656,8 +656,8 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
             AlertDialog alertDialog = new AlertDialog.Builder(GleapMainActivity.this).setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialogInterface, int i) {
-                    if (GleapConfig.getInstance().getWidgetClosedCallback() != null) {
-                        GleapConfig.getInstance().getWidgetClosedCallback().invoke();
+                    if (GleapCallbacks.getInstance().getWidgetClosedCallback() != null) {
+                        GleapCallbacks.getInstance().getWidgetClosedCallback().invoke();
                     }
                     GleapDetectorUtil.resumeAllDetectors();
                     closeMainGleapActivity();
@@ -755,8 +755,8 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                                 break;
                             case "tool-execution":
                                 try {
-                                    if (GleapConfig.getInstance().getAiToolExecutedCallback() != null) {
-                                        GleapConfig.getInstance().getAiToolExecutedCallback().aiToolExecuted(gleapCallback.getJSONObject("data"));
+                                    if (GleapCallbacks.getInstance().getAiToolExecutedCallback() != null) {
+                                        GleapCallbacks.getInstance().getAiToolExecutedCallback().aiToolExecuted(gleapCallback.getJSONObject("data"));
                                     }
                                 } catch (Exception exp) {}
                                 break;
@@ -870,14 +870,14 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         private void customActionCalled(JSONObject object) {
             try {
                 String data = object.getString("data");
-                if (GleapConfig.getInstance().getCustomActions() != null) {
+                if (GleapCallbacks.getInstance().getCustomActions() != null) {
 
                     String shareToken = null;
                     if (object.has("shareToken")) {
                         shareToken = object.getString("shareToken");
                     }
 
-                    GleapConfig.getInstance().getCustomActions().invoke(data, shareToken);
+                    GleapCallbacks.getInstance().getCustomActions().invoke(data, shareToken);
                 }
             } catch (JSONException e) {
                 GleapLog.w("Invalid custom action message", e);
@@ -906,8 +906,8 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 JSONObject eventData = data.getJSONObject("data");
 
                 if (eventType.equals("flow-started")) {
-                    if (GleapConfig.getInstance().getFeedbackFlowStartedCallback() != null) {
-                        GleapConfig.getInstance().getFeedbackFlowStartedCallback().invoke(eventData.toString());
+                    if (GleapCallbacks.getInstance().getFeedbackFlowStartedCallback() != null) {
+                        GleapCallbacks.getInstance().getFeedbackFlowStartedCallback().invoke(eventData.toString());
                     }
                 }
             } catch (Exception ex) {

@@ -20,7 +20,7 @@ final class GleapErrors {
      */
     static void report(Throwable error, String context) {
         try {
-            ErrorCallback errorCallback = GleapConfig.getInstance().getErrorCallback();
+            ErrorCallback errorCallback = GleapCallbacks.getInstance().getErrorCallback();
             if (errorCallback != null) {
                 errorCallback.onError(error, context);
             }

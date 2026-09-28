@@ -711,23 +711,23 @@ public class Gleap implements iGleap {
 
     @Override
     public void setAiToolExecutedCallback(AiToolExecutedCallback aiToolExecutedCallback) {
-        GleapErrors.guard("setAiToolExecutedCallback", () -> GleapConfig.getInstance().setAiToolExecutedCallback(aiToolExecutedCallback));
+        GleapErrors.guard("setAiToolExecutedCallback", () -> GleapCallbacks.getInstance().setAiToolExecutedCallback(aiToolExecutedCallback));
     }
 
     @Override
     public void setWidgetOpenedCallback(WidgetOpenedCallback widgetOpenedCallback) {
-        GleapErrors.guard("setWidgetOpenedCallback", () -> GleapConfig.getInstance().setWidgetOpenedCallback(widgetOpenedCallback));
+        GleapErrors.guard("setWidgetOpenedCallback", () -> GleapCallbacks.getInstance().setWidgetOpenedCallback(widgetOpenedCallback));
     }
 
     @Override
     public void setWidgetClosedCallback(WidgetClosedCallback widgetClosedCallback) {
-        GleapErrors.guard("setWidgetClosedCallback", () -> GleapConfig.getInstance().setWidgetClosedCallback(widgetClosedCallback));
+        GleapErrors.guard("setWidgetClosedCallback", () -> GleapCallbacks.getInstance().setWidgetClosedCallback(widgetClosedCallback));
     }
 
     @Override
     public void setNotificationUnreadCountUpdatedCallback(
             NotificationUnreadCountUpdatedCallback notificationUnreadCountUpdatedCallback) {
-        GleapErrors.guard("setNotificationUnreadCountUpdatedCallback", () -> GleapConfig.getInstance().setNotificationUnreadCountUpdatedCallback(notificationUnreadCountUpdatedCallback));
+        GleapErrors.guard("setNotificationUnreadCountUpdatedCallback", () -> GleapCallbacks.getInstance().setNotificationUnreadCountUpdatedCallback(notificationUnreadCountUpdatedCallback));
     }
 
     /**
@@ -866,7 +866,7 @@ public class Gleap implements iGleap {
      */
     @Override
     public void setFeedbackWillBeSentCallback(FeedbackWillBeSentCallback feedbackWillBeSentCallback) {
-        GleapErrors.guard("setFeedbackWillBeSentCallback", () -> GleapConfig.getInstance().setFeedbackWillBeSentCallback(feedbackWillBeSentCallback));
+        GleapErrors.guard("setFeedbackWillBeSentCallback", () -> GleapCallbacks.getInstance().setFeedbackWillBeSentCallback(feedbackWillBeSentCallback));
     }
 
     /**
@@ -876,7 +876,7 @@ public class Gleap implements iGleap {
      */
     @Override
     public void setFeedbackSentCallback(FeedbackSentCallback feedbackSentCallback) {
-        GleapErrors.guard("setFeedbackSentCallback", () -> GleapConfig.getInstance().setFeedbackSentCallback(feedbackSentCallback));
+        GleapErrors.guard("setFeedbackSentCallback", () -> GleapCallbacks.getInstance().setFeedbackSentCallback(feedbackSentCallback));
     }
 
     /**
@@ -886,12 +886,12 @@ public class Gleap implements iGleap {
      */
     @Override
     public void setOutboundSentCallback(OutboundSentCallback outboundSentCallback) {
-        GleapErrors.guard("setOutboundSentCallback", () -> GleapConfig.getInstance().setOutboundSentCallback(outboundSentCallback));
+        GleapErrors.guard("setOutboundSentCallback", () -> GleapCallbacks.getInstance().setOutboundSentCallback(outboundSentCallback));
     }
 
     @Override
     public void setFeedbackSendingFailedCallback(FeedbackSendingFailedCallback feedbackSendingFailedCallback) {
-        GleapErrors.guard("setFeedbackSendingFailedCallback", () -> GleapConfig.getInstance().setFeedbackSendingFailedCallback(feedbackSendingFailedCallback));
+        GleapErrors.guard("setFeedbackSendingFailedCallback", () -> GleapCallbacks.getInstance().setFeedbackSendingFailedCallback(feedbackSendingFailedCallback));
     }
 
     /**
@@ -902,7 +902,7 @@ public class Gleap implements iGleap {
      */
     @Override
     public void setBitmapCallback(GetBitmapCallback getBitmapCallback) {
-        GleapErrors.guard("setBitmapCallback", () -> GleapConfig.getInstance().setGetBitmapCallback(getBitmapCallback));
+        GleapErrors.guard("setBitmapCallback", () -> GleapCallbacks.getInstance().setGetBitmapCallback(getBitmapCallback));
     }
 
     /**
@@ -912,7 +912,7 @@ public class Gleap implements iGleap {
      */
     @Override
     public void setConfigLoadedCallback(ConfigLoadedCallback configLoadedCallback) {
-        GleapErrors.guard("setConfigLoadedCallback", () -> GleapConfig.getInstance().setConfigLoadedCallback(configLoadedCallback));
+        GleapErrors.guard("setConfigLoadedCallback", () -> GleapCallbacks.getInstance().setConfigLoadedCallback(configLoadedCallback));
     }
 
     /**
@@ -922,17 +922,17 @@ public class Gleap implements iGleap {
      */
     @Override
     public void setInitializedCallback(InitializedCallback initializedCallback) {
-        GleapErrors.guard("setInitializedCallback", () -> GleapConfig.getInstance().setInitializedCallback(initializedCallback));
+        GleapErrors.guard("setInitializedCallback", () -> GleapCallbacks.getInstance().setInitializedCallback(initializedCallback));
     }
 
     @Override
     public void setFeedbackFlowStartedCallback(FeedbackFlowStartedCallback feedbackFlowStartedCallback) {
-        GleapErrors.guard("setFeedbackFlowStartedCallback", () -> GleapConfig.getInstance().setFeedbackFlowStartedCallback(feedbackFlowStartedCallback));
+        GleapErrors.guard("setFeedbackFlowStartedCallback", () -> GleapCallbacks.getInstance().setFeedbackFlowStartedCallback(feedbackFlowStartedCallback));
     }
 
     @Override
     public void setInitializationDoneCallback(InitializationDoneCallback initializationDoneCallback) {
-        GleapErrors.guard("setInitializationDoneCallback", () -> GleapConfig.getInstance().setInitializationDoneCallback(initializationDoneCallback));
+        GleapErrors.guard("setInitializationDoneCallback", () -> GleapCallbacks.getInstance().setInitializationDoneCallback(initializationDoneCallback));
     }
 
     /**
@@ -1042,12 +1042,12 @@ public class Gleap implements iGleap {
      */
     @Override
     public void registerCustomAction(CustomActionCallback customAction) {
-        GleapErrors.guard("registerCustomAction", () -> GleapConfig.getInstance().registerCustomAction(customAction));
+        GleapErrors.guard("registerCustomAction", () -> GleapCallbacks.getInstance().registerCustomAction(customAction));
     }
 
     @Override
     public void registerCustomLinkHandler(CustomLinkHandlerCallback customLinkHandler) {
-        GleapErrors.guard("registerCustomLinkHandler", () -> GleapConfig.getInstance().registerCustomLinkHandler(customLinkHandler));
+        GleapErrors.guard("registerCustomLinkHandler", () -> GleapCallbacks.getInstance().registerCustomLinkHandler(customLinkHandler));
     }
 
     @Override
@@ -1189,8 +1189,8 @@ public class Gleap implements iGleap {
             GleapMainThread.runWithActivity(new Runnable() {
                 @Override
                 public void run() {
-                    if (GleapInitializer.getApplication() != null && GleapConfig.getInstance().getCallCloseCallback() != null && isOpened()) {
-                        GleapConfig.getInstance().getCallCloseCallback().invoke();
+                    if (GleapInitializer.getApplication() != null && GleapCallbacks.getInstance().getCallCloseCallback() != null && isOpened()) {
+                        GleapCallbacks.getInstance().getCallCloseCallback().invoke();
                     }
                 }
             });
@@ -1260,7 +1260,7 @@ public class Gleap implements iGleap {
      * @param getActivityCallback get the current activity
      */
     public void setGetActivityCallback(GetActivityCallback getActivityCallback) {
-        GleapErrors.guard("setGetActivityCallback", () -> GleapConfig.getInstance().setGetActivityCallback(getActivityCallback));
+        GleapErrors.guard("setGetActivityCallback", () -> GleapCallbacks.getInstance().setGetActivityCallback(getActivityCallback));
     }
 
     @Override
@@ -1307,12 +1307,12 @@ public class Gleap implements iGleap {
 
     @Override
     public void setRegisterPushMessageGroupCallback(RegisterPushMessageGroupCallback callback) {
-        GleapConfig.getInstance().setRegisterPushMessageGroupCallback(callback);
+        GleapCallbacks.getInstance().setRegisterPushMessageGroupCallback(callback);
     }
 
     @Override
     public void setUnRegisterPushMessageGroupCallback(UnRegisterPushMessageGroupCallback callback) {
-        GleapConfig.getInstance().setUnRegisterPushMessageGroupCallback(callback);
+        GleapCallbacks.getInstance().setUnRegisterPushMessageGroupCallback(callback);
     }
 
     public void finishImageUpload(Uri[] uris) {
@@ -1366,7 +1366,7 @@ public class Gleap implements iGleap {
 
     @Override
     public void setErrorCallback(ErrorCallback errorCallback) {
-        GleapErrors.guard("setErrorCallback", () -> GleapConfig.getInstance().setErrorCallback(errorCallback));
+        GleapErrors.guard("setErrorCallback", () -> GleapCallbacks.getInstance().setErrorCallback(errorCallback));
     }
 
 }
