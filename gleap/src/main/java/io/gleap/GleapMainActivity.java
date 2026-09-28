@@ -467,17 +467,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
     private class GleapWebViewClient extends WebViewClient {
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, String url) {
-            try {
-                if (!url.contains(GleapConfig.getInstance().getiFrameUrl())) {
-                    Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                    if (browserIntent.resolveActivity(getPackageManager()) != null) {
-                        startActivity(browserIntent);
-                    }
-                    return true;
-                }
-            } catch (Error | Exception ignore) {
-            }
-            return false;
+            return GleapExternalLinks.openOutside(GleapMainActivity.this, url, GleapConfig.getInstance().getiFrameUrl());
         }
 
         @Override

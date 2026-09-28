@@ -3,12 +3,10 @@ package io.gleap;
 import static io.gleap.GleapHelper.convertDpToPixel;
 
 import android.app.Activity;
-import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.Insets;
 import android.graphics.Outline;
-import android.net.Uri;
 import android.net.http.SslError;
 import android.os.Build;
 import android.util.DisplayMetrics;
@@ -16,12 +14,8 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewOutlineProvider;
-import android.webkit.ConsoleMessage;
 import android.webkit.JavascriptInterface;
-import android.webkit.JsPromptResult;
-import android.webkit.JsResult;
 import android.webkit.SslErrorHandler;
-import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -134,7 +128,7 @@ class GleapModal {
         s.setDefaultTextEncodingName("utf-8");
 
         webView.addJavascriptInterface(new GleapModalJSBridge(), "GleapModalJSBridge");
-        webView.setWebChromeClient(new GleapModalWebChromeClient());
+        webView.setWebChromeClient(new GleapQuietChromeClient());
         webView.setWebViewClient(new GleapModalWebViewClient());
         webView.loadUrl(modalUrl);
 
@@ -342,16 +336,7 @@ class GleapModal {
     // ------------------------------------------------------------------
     private class GleapModalWebViewClient extends WebViewClient {
         @Override public boolean shouldOverrideUrlLoading(WebView view, String url) {
-            try {
-                if (!url.contains(modalUrl)) {
-                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                    if (intent.resolveActivity(parentActivity.getPackageManager()) != null) {
-                        parentActivity.startActivity(intent);
-                    }
-                    return true;
-                }
-            } catch (Exception ignored) {}
-            return false;
+            return GleapExternalLinks.openOutside(parentActivity, url, modalUrl);
         }
 
         @Override public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
@@ -363,10 +348,4 @@ class GleapModal {
         }
     }
 
-    private static class GleapModalWebChromeClient extends WebChromeClient {
-        @Override public boolean onJsAlert(WebView v, String u, String m, JsResult r) { return true; }
-        @Override public boolean onJsConfirm(WebView v, String u, String m, JsResult r) { return true; }
-        @Override public boolean onJsPrompt(WebView v, String u, String m, String d, JsPromptResult r) { return true; }
-        @Override public boolean onConsoleMessage(ConsoleMessage m) { return true; }
-    }
 }

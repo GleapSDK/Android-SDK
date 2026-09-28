@@ -3,29 +3,17 @@ package io.gleap;
 import static io.gleap.GleapHelper.convertDpToPixel;
 
 import android.app.Activity;
-import android.content.DialogInterface;
-import android.content.Intent;
-import android.graphics.Color;
-import android.net.Uri;
 import android.net.http.SslError;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
-import android.webkit.ConsoleMessage;
 import android.webkit.JavascriptInterface;
-import android.webkit.JsPromptResult;
-import android.webkit.JsResult;
 import android.webkit.SslErrorHandler;
-import android.webkit.WebChromeClient;
-import android.webkit.WebResourceRequest;
-import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 
-import androidx.appcompat.app.AlertDialog;
 import androidx.cardview.widget.CardView;
 
 import org.json.JSONException;
@@ -101,7 +89,7 @@ class GleapBanner {
                     settings.setSupportZoom(false);
                     settings.setDefaultTextEncodingName("utf-8");
                     webView.addJavascriptInterface(new GleapBanner.GleapBannerJSBridge(), "GleapBannerJSBridge");
-                    webView.setWebChromeClient(new GleapBanner.GleapBannerWebChromeClient());
+                    webView.setWebChromeClient(new GleapQuietChromeClient());
                     webView.setWebViewClient(new GleapBanner.GleapWebViewClient());
                     webView.loadUrl(bannerUrl);
 
@@ -135,7 +123,6 @@ class GleapBanner {
 
         return bannerContainer;
     }
-
 
     private class GleapBannerJSBridge {
         public GleapBannerJSBridge() {}
@@ -285,17 +272,7 @@ class GleapBanner {
     private class GleapWebViewClient extends WebViewClient {
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, String url) {
-            try {
-                if (!url.contains(bannerUrl)) {
-                    Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                    if (browserIntent.resolveActivity(parentActivity.getPackageManager()) != null) {
-                        parentActivity.startActivity(browserIntent);
-                    }
-                    return true;
-                }
-            } catch (Error | Exception ignore) {
-            }
-            return false;
+            return GleapExternalLinks.openOutside(parentActivity, url, bannerUrl);
         }
 
         @Override
@@ -308,39 +285,6 @@ class GleapBanner {
             if (layout != null) {
                 layout.setVisibility(View.GONE);
             }
-        }
-
-        @Override
-        public void onReceivedHttpError(WebView view, WebResourceRequest request, WebResourceResponse errorResponse) {
-            super.onReceivedHttpError(view, request, errorResponse);
-        }
-
-        @Override
-        public void onPageFinished(WebView view, String url) {
-            super.onPageFinished(view, url);
-        }
-    }
-
-    private class GleapBannerWebChromeClient extends WebChromeClient {
-        @Override
-        public boolean onJsAlert(WebView view, String url, String message, final JsResult result) {
-            return true;
-        }
-
-        @Override
-        public boolean onJsConfirm(WebView view, String url, String message, final JsResult result) {
-            return true;
-        }
-
-        @Override
-        public boolean onJsPrompt(WebView view, String url, String message, String defaultValue,
-                                  final JsPromptResult result) {
-            return true;
-        }
-
-        @Override
-        public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
-            return true;
         }
     }
 }
