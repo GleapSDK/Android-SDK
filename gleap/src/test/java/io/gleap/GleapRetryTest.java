@@ -82,6 +82,36 @@ public class GleapRetryTest {
     }
 
     @Test
+    public void answersWithoutASessionDoNotTouchTheStoredSession() {
+        for (String body : new String[]{"{}", "{\"status\":\"overloaded\"}",
+                "{\"gleapId\":\"\",\"gleapHash\":\"\"}", "{\"gleapId\":null,\"gleapHash\":null}"}) {
+            sdk.storeSession("id-1", "hash-1");
+            sdk.server.clear("/sessions").respond("/sessions", 200, body);
+
+            new GleapBaseSessionService().doInBackground();
+
+            assertEquals(body, "id-1", sdk.controller.getUserSession().getId());
+            assertEquals(body, "hash-1", sdk.store.getString("session_hash", ""));
+        }
+    }
+
+    @Test
+    public void aFailedContactUpdateDoesNotTouchTheStoredSession() {
+        for (int status : new int[]{400, 500, 503}) {
+            sdk.storeSession("id-1", "hash-1");
+            GleapSessionProperties update = new GleapSessionProperties();
+            update.setPlan("pro");
+            sdk.controller.setPendingUpdateAction(update);
+            sdk.server.clear("/sessions/partialupdate").respond("/sessions/partialupdate", status, "{\"status\":\"overloaded\"}");
+
+            new GleapUpdateSessionService().doInBackground();
+
+            assertEquals("HTTP " + status, "id-1", sdk.controller.getUserSession().getId());
+            assertEquals("HTTP " + status, "hash-1", sdk.store.getString("session_hash", ""));
+        }
+    }
+
+    @Test
     public void configConnectionFailuresAreRetried() {
         sdk.server.fail("/config/", new IOException("offline"));
 
@@ -102,16 +132,89 @@ public class GleapRetryTest {
         assertNull(GleapConfig.getInstance().getPlainConfig());
     }
 
-    @Test
-    public void aFailedIdentifyClearsTheStoredSession() {
+    /**
+     * Runs an identify for user-1 on the stored session id-1 of user-0 against the answers
+     * queued by {@code answers}.
+     */
+    private GleapSessionProperties identify(Runnable answers) {
+        sdk.server.requests.clear();
+        sdk.server.clear("/sessions/identify");
+        answers.run();
         sdk.storeSession("id-1", "hash-1");
-        sdk.controller.setPendingIdentificationAction(new GleapSessionProperties("user-1"));
-        sdk.server.respond("/sessions/identify", 500, "");
+        sdk.controller.setGleapUserSession(new GleapSessionProperties("user-0"));
+        GleapSessionProperties identify = new GleapSessionProperties("user-1");
+        sdk.controller.setPendingIdentificationAction(identify);
+
+        new GleapIdentifyService().doInBackground();
+        return identify;
+    }
+
+    @Test
+    public void anIdentifyThatDoesNotGetThroughKeepsTheSessionAndStaysPending() {
+        Object[][] failures = {
+                {"offline", new IOException("offline")},
+                {"timeout", new java.net.SocketTimeoutException("Read timed out")},
+                {"overloaded", 503, "{\"status\":\"overloaded\"}"},
+                {"server error", 500, ""},
+                {"rate limited", 429, "Too Many Requests"},
+                {"timeout status", 408, "{\"error\":\"timeout\"}"},
+                {"4xx without a JSON body", 403, "<html>Blocked by proxy</html>"},
+        };
+        for (final Object[] failure : failures) {
+            String name = (String) failure[0];
+            GleapSessionProperties pending = identify(new Runnable() {
+                @Override
+                public void run() {
+                    if (failure[1] instanceof IOException) {
+                        sdk.server.fail("/sessions/identify", (IOException) failure[1]);
+                    } else {
+                        sdk.server.respond("/sessions/identify", (Integer) failure[1], (String) failure[2]);
+                    }
+                }
+            });
+
+            assertEquals(name, 3, sdk.server.requestsTo("/sessions/identify").size());
+            assertEquals(name, "id-1", sdk.controller.getUserSession().getId());
+            assertEquals(name, "hash-1", sdk.store.getString("session_hash", ""));
+            assertEquals(name, "user-0", sdk.store.getString("userId", ""));
+            assertEquals(name, "user-0", sdk.controller.getGleapUserSession().getUserId());
+            assertEquals(name, pending, sdk.controller.getPendingIdentificationAction());
+        }
+    }
+
+    @Test
+    public void aPendingIdentifyGoesThroughOnItsNextRun() {
+        identify(new Runnable() {
+            @Override
+            public void run() {
+                sdk.server.fail("/sessions/identify", new IOException("offline"));
+            }
+        });
+        sdk.server.clear("/sessions/identify")
+                .respond("/sessions/identify", 200, "{\"gleapId\":\"id-1\",\"gleapHash\":\"hash-2\",\"userId\":\"user-1\"}");
 
         new GleapIdentifyService().doInBackground();
 
-        assertEquals(3, sdk.server.requestsTo("/sessions/identify").size());
+        assertEquals("user-1", sdk.controller.getGleapUserSession().getUserId());
+        assertEquals("hash-2", sdk.store.getString("session_hash", ""));
+        assertNull(sdk.controller.getPendingIdentificationAction());
+    }
+
+    @Test
+    public void anIdentifyTheApiRejectsClearsTheSession() {
+        identify(new Runnable() {
+            @Override
+            public void run() {
+                sdk.server.respond("/sessions/identify", 401,
+                        "{\"error\":{\"statusCode\":401,\"title\":\"Unauthorized\",\"message\":\"Not Authorized\"}}");
+            }
+        });
+
+        assertEquals(1, sdk.server.requestsTo("/sessions/identify").size());
         assertNull(sdk.controller.getUserSession());
+        assertNull(sdk.controller.getGleapUserSession());
         assertTrue(sdk.store.values.isEmpty());
+        assertNull(sdk.controller.getPendingIdentificationAction());
+        assertTrue(sdk.controller.isSessionLoaded());
     }
 }

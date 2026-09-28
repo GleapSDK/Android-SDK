@@ -138,6 +138,8 @@ public class GleapSessionControllerTest {
         controller.processSessionActionResult(new JSONObject(), false, false);
         controller.processSessionActionResult(new JSONObject().put("gleapId", "id-9"), false, false);
         controller.processSessionActionResult(new JSONObject().put("gleapHash", "hash-9"), false, false);
+        controller.processSessionActionResult(session("", ""), false, false);
+        controller.processSessionActionResult(new JSONObject().put("gleapId", JSONObject.NULL).put("gleapHash", JSONObject.NULL), false, false);
 
         assertEquals("id-0", controller.getUserSession().getId());
         assertEquals("hash-0", controller.getUserSession().getHash());

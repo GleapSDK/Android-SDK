@@ -216,16 +216,10 @@ public class GleapSessionController {
         }
 
         try {
-            String id = null;
-            String hash = null;
-
-            if (result.has("gleapId")) {
-                id = result.getString("gleapId");
-            }
-
-            if (result.has("gleapHash")) {
-                hash = result.getString("gleapHash");
-            }
+            // An answer without a session (no or empty id and hash, e.g. from an error page)
+            // never replaces the stored one.
+            String id = sessionValue(result, "gleapId");
+            String hash = sessionValue(result, "gleapHash");
 
             // Notify the session controller.
             if (id != null && hash != null) {
@@ -274,6 +268,11 @@ public class GleapSessionController {
                 }
             }
         } catch (Exception exp) {}
+    }
+
+    private static String sessionValue(JSONObject result, String key) {
+        Object value = result.opt(key);
+        return value instanceof String && !((String) value).isEmpty() ? (String) value : null;
     }
 
     public GleapSessionProperties getGleapUserSession() {

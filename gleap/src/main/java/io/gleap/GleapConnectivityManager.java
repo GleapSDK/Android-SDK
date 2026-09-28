@@ -114,6 +114,8 @@ class GleapConnectivityManager {
                         new GleapBaseSessionService().executeOnExecutor(GleapExecutor.SERIAL);
                     } else {
                         // Both loaded — connection was temporarily lost.
+                        // An identify that could not get through runs again.
+                        GleapSessionController.getInstance().executePendingUpdates();
                         // Refresh the launcher UI and reconnect WebSocket.
                         GleapOverlayManager.getInstance().addLayoutToActivity(null);
                         GleapEventService.getInstance().startWebSocketListener();
