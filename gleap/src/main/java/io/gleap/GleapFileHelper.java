@@ -23,10 +23,10 @@ class GleapFileHelper {
                     files[currentIndex] = file;
                     currentIndex++;
                 } else {
-                    System.err.println("Gleap: Already " + MAX_AMOUNT + " appended. This is the maximum amount.");
+                    GleapLog.w("Already " + MAX_AMOUNT + " attachments added. This is the maximum amount.");
                 }
             } else {
-                System.err.println("Gleap: File is too big. The maximum attachment size is " + (MAX_FILE_SIZE / (1024 * 1024)) + " MB.");
+                GleapLog.w("File is too big. The maximum attachment size is " + (MAX_FILE_SIZE / (1024 * 1024)) + " MB.");
             }
         }
     }

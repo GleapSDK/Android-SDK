@@ -103,7 +103,7 @@ public class GleapWebSocketListener extends WebSocketListener {
             try {
                 Thread.sleep(5000); // Sleep for 5 seconds
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                GleapLog.w("WebSocket reconnect interrupted", e);
             }
 
             if (currentUrl != null) {

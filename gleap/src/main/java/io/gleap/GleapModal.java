@@ -264,7 +264,7 @@ class GleapModal {
                     case "modal-height":       updateMinHeight(cb.getJSONObject("data").getInt("height")); break;
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                GleapLog.w("Could not handle the modal message", e);
             }
         }
 

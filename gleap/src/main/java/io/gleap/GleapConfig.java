@@ -150,7 +150,7 @@ class GleapConfig {
             try {
                 flowConfigs = config.getJSONObject("flowConfig");
             } catch (JSONException e) {
-                e.printStackTrace();
+                GleapLog.w("Invalid flowConfig in the remote config", e);
             }
         }
 
@@ -159,7 +159,7 @@ class GleapConfig {
             try {
                 projectActions = config.getJSONObject("projectActions");
             } catch (JSONException e) {
-                e.printStackTrace();
+                GleapLog.w("Invalid projectActions in the remote config", e);
             }
         }
 
@@ -304,7 +304,7 @@ class GleapConfig {
                 this.blackList = flowConfigs.getJSONArray("networkLogBlacklist");
             }
         } catch (JSONException e) {
-            e.printStackTrace();
+            GleapLog.w("Could not read the remote config", e);
         }
 
         Gleap.getInstance().processOpenPushActions();

@@ -30,8 +30,8 @@ class Replay {
             }
 
             screenshots.push(new ScreenshotReplay(bitmap, screenName, new Date()));
-        }catch (Exception ex) {
-      ex.printStackTrace();
+        } catch (Exception ex) {
+            GleapLog.w("Could not add a replay frame", ex);
         }
     }
 

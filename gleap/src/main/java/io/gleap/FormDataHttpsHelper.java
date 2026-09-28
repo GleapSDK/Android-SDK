@@ -78,7 +78,7 @@ class FormDataHttpsHelper {
             buf.read(bytes, 0, bytes.length);
             buf.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            GleapLog.w("Could not read the attachment " + fileName, e);
         }
         request.write(bytes);
         request.writeBytes(this.crlf);

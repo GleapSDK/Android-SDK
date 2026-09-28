@@ -136,7 +136,7 @@ class GleapImageLoader {
                         }
                     });
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    GleapLog.w("Could not load the image " + url, e);
                 }
             }
         });

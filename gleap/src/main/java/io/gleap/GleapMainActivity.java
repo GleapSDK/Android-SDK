@@ -177,7 +177,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     GleapMainActivity.urlToOpenAfterClose = null;
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                GleapLog.w("Could not return to the app normally", e);
                 GleapOverlayManager.getInstance().setShowFab(true);
                 finish();
             }
@@ -710,12 +710,12 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                                         try {
                                             data.put("isWidgetOpen", true);
                                         } catch (JSONException e) {
-                                            e.printStackTrace();
+                                            GleapLog.w("Could not build the widget status", e);
                                         }
                                         try {
                                             sendMessage(generateGleapMessage("widget-status-update", data));
                                         } catch (JSONException e) {
-                                            e.printStackTrace();
+                                            GleapLog.w("Could not send the widget status", e);
                                         }
                                     }
                                 }, 100);
@@ -881,7 +881,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     GleapConfig.getInstance().getCustomActions().invoke(data, shareToken);
                 }
             } catch (JSONException e) {
-                e.printStackTrace();
+                GleapLog.w("Invalid custom action message", e);
             }
         }
 
@@ -922,7 +922,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 try {
                     sendMessage(generateGleapMessage(action.getCommand(), action.getData()));
                 } catch (JSONException e) {
-                    e.printStackTrace();
+                    GleapLog.w("Could not send a pending widget action", e);
                 }
             }
 
@@ -948,7 +948,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                         GleapBug.getInstance().setScreenshot(decodedByte);
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    GleapLog.w("Could not read the edited screenshot", e);
                 }
             }
         }
@@ -987,7 +987,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                                 gleapBug.setData(formData);
                             }
                         } catch (JSONException e) {
-                            e.printStackTrace();
+                            GleapLog.w("Invalid feedback data from the widget", e);
                         }
                         
                         new HttpHelper(GleapMainActivity.this, getApplicationContext()).execute(gleapBug);
@@ -1020,7 +1020,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     sendMessage(message);
                 }
             } catch (Exception err) {
-                err.printStackTrace();
+                GleapLog.w("Could not send the prefill data", err);
             }
         }
 

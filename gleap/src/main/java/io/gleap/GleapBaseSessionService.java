@@ -2,7 +2,6 @@ package io.gleap;
 
 import android.annotation.SuppressLint;
 import android.os.AsyncTask;
-import android.util.Log;
 import android.os.Handler;
 import android.os.Looper;
 
@@ -50,7 +49,7 @@ class GleapBaseSessionService extends AsyncTask<Void, Void, Integer> {
                 break;
             } catch (Exception e) {
                 lastException = e;
-                Log.w("Gleap", "Session request attempt " + attempt + " failed", e);
+                GleapLog.w("Session request attempt " + attempt + " failed", e);
                 
                 if (attempt < MAX_RETRIES) {
                     try {
@@ -65,7 +64,7 @@ class GleapBaseSessionService extends AsyncTask<Void, Void, Integer> {
         }
 
         if (!success) {
-            Log.e("Gleap", "All session request attempts failed after " + MAX_RETRIES + " retries", lastException);
+            GleapLog.e("All session request attempts failed after " + MAX_RETRIES + " retries", lastException);
 
             if (GleapSessionController.getInstance() != null) {
                 GleapSessionController.getInstance().setSessionLoaded(true);

@@ -1,0 +1,27 @@
+package io.gleap;
+
+import io.gleap.callbacks.ErrorCallback;
+
+/**
+ * Hands SDK errors to the app's {@link ErrorCallback}, if one is set. Without a callback the
+ * error is dropped, so the SDK never crashes or spams the host app.
+ */
+final class GleapErrors {
+    private GleapErrors() {
+    }
+
+    /**
+     * @param error   the error or exception that occurred
+     * @param context where it occurred
+     */
+    static void report(Throwable error, String context) {
+        try {
+            ErrorCallback errorCallback = GleapConfig.getInstance().getErrorCallback();
+            if (errorCallback != null) {
+                errorCallback.onError(error, context);
+            }
+        } catch (Exception ignore) {
+            // The error callback itself threw: ignore it rather than loop.
+        }
+    }
+}

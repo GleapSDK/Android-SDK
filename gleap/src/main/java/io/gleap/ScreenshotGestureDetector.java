@@ -88,8 +88,8 @@ class ScreenshotGestureDetector extends GleapDetector {
                                 }
                             }
                         }
-                    } catch (Exception ignore) {
-                        ignore.printStackTrace();
+                    } catch (Exception error) {
+                        GleapLog.w("Could not check the new image for a screenshot", error);
                     }
                 } else {
                     try {

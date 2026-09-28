@@ -3,7 +3,6 @@ package io.gleap;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 
 import org.json.JSONObject;
 
@@ -72,7 +71,7 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                     break;
                 } catch (Exception e) {
                     lastException = e;
-                    Log.w("Gleap", "Identify request attempt " + attempt + " failed", e);
+                    GleapLog.w("Identify request attempt " + attempt + " failed", e);
                     
                     if (attempt < MAX_RETRIES) {
                         try {
@@ -87,7 +86,7 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
             }
 
             if (!success) {
-                Log.e("Gleap", "All identify request attempts failed after " + MAX_RETRIES + " retries", lastException);
+                GleapLog.e("All identify request attempts failed after " + MAX_RETRIES + " retries", lastException);
                 
                 if (GleapSessionController.getInstance() != null) {
                     GleapSessionController.getInstance().clearUserSession();

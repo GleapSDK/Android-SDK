@@ -307,7 +307,7 @@ class GleapOverlayManager {
                         updateCloseButtonState();
                     }
                 } catch (Exception ex) {
-                    System.out.println(ex);
+                    GleapLog.w("Could not build the notification layout", ex);
                 }
             }
         });
@@ -320,13 +320,13 @@ class GleapOverlayManager {
                 ((ViewGroup) component.getParent()).removeView(component);
             }
         } catch (Exception exp) {
-            System.out.println(exp);
+            GleapLog.w("Could not remove a notification", exp);
         }
 
         try {
             notification.clearComponent();
         } catch (Exception exp) {
-            System.out.println(exp);
+            GleapLog.w("Could not clear a notification", exp);
         }
 
         // Remove from list.
@@ -768,8 +768,8 @@ class GleapOverlayManager {
             // Clear message list.
             this.messages = new LinkedList<>();
             this.stackExpanded = false;
-        }catch (Exception ex) {
-            System.out.println(ex);
+        } catch (Exception ex) {
+            GleapLog.w("Could not clear the notifications", ex);
         }
     }
 
@@ -1273,7 +1273,7 @@ class GleapOverlayManager {
                 feedbackButtonRelativeLayout.addView(squareButton, 0, convertDpToPixel(36, local));
             }
         } catch (Exception ex) {
-            System.out.println(ex);
+            GleapLog.w("Could not render the feedback button", ex);
         }
     }
 }

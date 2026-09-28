@@ -3,7 +3,6 @@ package io.gleap;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -54,7 +53,7 @@ class ConfigLoader extends AsyncTask<GleapBug, Void, JSONObject> {
 
         String sdkKey = GleapConfig.getInstance().getSdkKey();
         if (sdkKey == null || sdkKey.trim().isEmpty()) {
-            Log.e("Gleap", "SDK key is missing in ConfigLoader");
+            GleapLog.e("SDK key is missing in ConfigLoader");
             return new JSONObject();
         }
 
@@ -73,7 +72,7 @@ class ConfigLoader extends AsyncTask<GleapBug, Void, JSONObject> {
                 break;
             } catch (IOException e) {
                 lastException = e;
-                Log.w("Gleap", "Config load attempt " + attempt + " failed", e);
+                GleapLog.w("Config load attempt " + attempt + " failed", e);
 
                 if (attempt < MAX_RETRIES) {
                     try {
@@ -88,7 +87,7 @@ class ConfigLoader extends AsyncTask<GleapBug, Void, JSONObject> {
         }
 
         if (!success) {
-            Log.e("Gleap", "All config load attempts failed after " + MAX_RETRIES + " retries", lastException);
+            GleapLog.e("All config load attempts failed after " + MAX_RETRIES + " retries", lastException);
         }
 
         JSONObject response = new JSONObject();
@@ -144,13 +143,13 @@ class ConfigLoader extends AsyncTask<GleapBug, Void, JSONObject> {
                             GleapConfig.getInstance().getInitializedCallback().initialized();
                         }
                     } else {
-                        Gleap.getInstance().handleError(new Exception("Config could not be loaded. Incorrect API key."), "Gleap config loader");
+                        GleapErrors.report(new Exception("Config could not be loaded. Incorrect API key."), "Gleap config loader");
                     }
                 }
 
                 con.disconnect();
             } catch (IOException | JSONException e) {
-                Gleap.getInstance().handleError(e, "Gleap config loader");
+                GleapErrors.report(e, "Gleap config loader");
             }
 
         }

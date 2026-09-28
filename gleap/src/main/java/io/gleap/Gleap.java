@@ -7,7 +7,6 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -1372,7 +1371,7 @@ public class Gleap implements iGleap {
         try {
             GleapRegion gleapRegion = GleapRegion.fromString(region);
             if (gleapRegion == null) {
-                Log.w("Gleap", "Unknown region '" + region + "'. Supported regions: eu, us. Keeping the current hosts.");
+                GleapLog.w("Unknown region '" + region + "'. Supported regions: eu, us. Keeping the current hosts.");
                 return;
             }
 
@@ -2063,10 +2062,10 @@ public class Gleap implements iGleap {
                     this.startChecklist(checklistId, true);
                     break;
                 case "tour":
-                    System.out.println("Product tours are not supported on mobile.");
+                    GleapLog.w("Product tours are not supported on mobile.");
                     break;
                 default:
-                    System.out.println("Invalid type provided in href: " + href);
+                    GleapLog.w("Invalid type provided in href: " + href);
                     break;
             }
         } catch (Exception e) {
@@ -2456,15 +2455,7 @@ public class Gleap implements iGleap {
      * @param context Context information about where the error occurred
      */
     public void handleError(Throwable error, String context) {
-        try {
-            ErrorCallback errorCallback = GleapConfig.getInstance().getErrorCallback();
-            if (errorCallback != null) {
-                errorCallback.onError(error, context);
-            }
-        } catch (Exception ignore) {
-            // If the error callback itself throws an exception, we ignore it to prevent
-            // infinite loops
-        }
+        GleapErrors.report(error, context);
     }
 
     /**
@@ -2476,15 +2467,7 @@ public class Gleap implements iGleap {
      * @param context Context information about where the error occurred
      */
     private static void handleErrorStatic(Throwable error, String context) {
-        try {
-            ErrorCallback errorCallback = GleapConfig.getInstance().getErrorCallback();
-            if (errorCallback != null) {
-                errorCallback.onError(error, context);
-            }
-        } catch (Exception ignore) {
-            // If the error callback itself throws an exception, we ignore it to prevent
-            // infinite loops
-        }
+        GleapErrors.report(error, context);
     }
 
     /**

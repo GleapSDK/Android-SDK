@@ -1,7 +1,6 @@
 package io.gleap;
 
 import android.os.AsyncTask;
-import android.util.Log;
 
 import org.json.JSONObject;
 
@@ -89,15 +88,15 @@ public class GleapUpdateSessionService extends AsyncTask<Void, Void, Integer> {
                     GleapSessionController.getInstance().processSessionActionResult(result, false, false);
                 } catch (Exception e) {
                     // Log the error.
-                    Log.e("Gleap", "Error processing update session action", e);
+                    GleapLog.e("Error processing update session action", e);
                 }
             } catch (Exception e) {
                 // Log the error.
-                Log.e("Gleap", "Error processing update session action", e);
+                GleapLog.e("Error processing update session action", e);
             }
         } catch (Exception e) {
             // Log the error.
-            Log.e("Gleap", "Error processing update session action", e);
+            GleapLog.e("Error processing update session action", e);
         }
 
         return 200;

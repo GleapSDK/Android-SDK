@@ -128,7 +128,7 @@ class GleapBanner {
                     }
 
                 } catch (Exception exp) {
-                    System.out.println(exp);
+                    GleapLog.w("Could not build the banner", exp);
                 }
             }
         });
@@ -237,7 +237,7 @@ class GleapBanner {
                                     break;
                             }
                         } catch (Exception err) {
-                            System.out.println(err);
+                            GleapLog.w("Could not handle the banner message", err);
                         }
                     }
                 });
