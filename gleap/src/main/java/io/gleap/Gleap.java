@@ -96,7 +96,6 @@ public class Gleap implements iGleap {
      * Manually shows the feedback menu or default feedback flow. This is used, when
      * you use the activation method "NONE".
      *
-     * @throws GleapNotInitialisedException thrown when Gleap is not initialised
      * @author Gleap
      */
     @Override
@@ -158,7 +157,6 @@ public class Gleap implements iGleap {
     /**
      * Manually shows the news section
      *
-     * @throws GleapNotInitialisedException thrown when Gleap is not initialised
      * @author Gleap
      */
     @Override
@@ -170,7 +168,6 @@ public class Gleap implements iGleap {
      * Manually shows the news section
      *
      * @param showBackButton show back button
-     * @throws GleapNotInitialisedException thrown when Gleap is not initialised
      * @author Gleap
      */
     public void openNews(boolean showBackButton) {
@@ -827,9 +824,8 @@ public class Gleap implements iGleap {
     }
 
     /**
-     * Attach Data to the request. The Data will be merged into the body sent with
-     * the bugreport.
-     * !!Existing keys can be overriten
+     * Attaches custom data, which can be viewed in the Gleap dashboard. New data is merged
+     * with the existing custom data; keys that already exist are overwritten.
      *
      * @param data Data, which is added
      */
@@ -901,10 +897,10 @@ public class Gleap implements iGleap {
     }
 
     /**
-     * Customize the way, the Bitmap is generated. If this is overritten,
-     * only the custom way is used
+     * Provides the screenshot for tickets instead of the SDK taking one. When the callback
+     * returns null, the SDK takes the screenshot itself.
      *
-     * @param getBitmapCallback get the Bitmap
+     * @param getBitmapCallback returns the screenshot
      */
     @Override
     public void setBitmapCallback(GetBitmapCallback getBitmapCallback) {
@@ -1075,6 +1071,9 @@ public class Gleap implements iGleap {
         GleapErrors.guard("setApplicationType", () -> GleapBug.getInstance().setApplicationType(applicationType));
     }
 
+    /**
+     * Does nothing. Use {@link #setNotificationUnreadCountUpdatedCallback(NotificationUnreadCountUpdatedCallback)}.
+     */
     public void setNotificationUnreadCountUpdatedCallback() {
     }
 
@@ -1174,9 +1173,9 @@ public class Gleap implements iGleap {
     }
 
     /**
-     * Disables the console logging. This must be called BEFORE initializing the
-     * SDK.
+     * Whether the widget is open (or opening).
      *
+     * @return true while the widget is shown
      * @author Gleap
      */
     @Override

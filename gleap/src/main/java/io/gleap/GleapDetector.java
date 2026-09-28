@@ -4,7 +4,7 @@ import android.app.Application;
 import android.content.Context;
 
 /**
- * All methods to activate BB must include this abstract class
+ * An activation method that opens the widget (shake, screenshot, replay capture).
  */
 abstract class GleapDetector {
 
