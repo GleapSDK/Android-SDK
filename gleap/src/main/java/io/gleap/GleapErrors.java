@@ -7,6 +7,10 @@ import io.gleap.callbacks.ErrorCallback;
  * error is dropped, so the SDK never crashes or spams the host app.
  */
 final class GleapErrors {
+    interface Action {
+        void run() throws Exception;
+    }
+
     private GleapErrors() {
     }
 
@@ -22,6 +26,18 @@ final class GleapErrors {
             }
         } catch (Exception ignore) {
             // The error callback itself threw: ignore it rather than loop.
+        }
+    }
+
+    /**
+     * Runs the action; anything it throws (errors included) is reported with the context
+     * instead of reaching the app.
+     */
+    static void guard(String context, Action action) {
+        try {
+            action.run();
+        } catch (Error | Exception error) {
+            report(error, context);
         }
     }
 }
