@@ -1000,7 +1000,7 @@ public class Gleap implements iGleap {
 
     @Override
     public void openHelpCenterCollection(String collectionId) {
-        openHelpCenterArticle(collectionId, false);
+        openHelpCenterCollection(collectionId, false);
     }
 
     @Override
