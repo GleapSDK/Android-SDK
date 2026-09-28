@@ -831,7 +831,7 @@ public class Gleap implements iGleap {
      */
     @Override
     public void attachCustomData(JSONObject data) {
-        GleapErrors.guard("attachCustomData", () -> GleapBug.getInstance().setCustomData(data));
+        GleapErrors.guard("attachCustomData", () -> GleapBug.getInstance().attachCustomData(data));
     }
 
     /**

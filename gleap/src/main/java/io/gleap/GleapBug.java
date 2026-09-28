@@ -104,8 +104,20 @@ class GleapBug {
         return ticketAttributes;
     }
 
-    public void setCustomData(JSONObject customData) {
-        this.customData = customData;
+    /**
+     * Merges the keys of {@code customData} into the custom data (attachCustomData), like the
+     * iOS and JS SDKs: existing keys are overwritten, the others stay. The app's object is
+     * copied, so changing it later does not change the custom data.
+     */
+    public void attachCustomData(JSONObject customData) throws Exception {
+        if (customData == null) {
+            return;
+        }
+        JSONObject copy = (JSONObject) GleapNetworkLogSanitizer.deepCopy(customData);
+        for (Iterator<String> keys = copy.keys(); keys.hasNext(); ) {
+            String key = keys.next();
+            this.customData.put(key, copy.get(key));
+        }
     }
 
     public void setTicketAttribute(String key, Object value) throws JSONException {
