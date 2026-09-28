@@ -167,7 +167,7 @@ class GleapEventService {
      */
     static int postEvents(JSONArray events) throws IOException, JSONException {
         HttpURLConnection conn = GleapHttp.openReportPost("/sessions/ping",
-                GleapSessionController.getInstance().getUserSession());
+                GleapSessionController.getInstance().getUserSession(), GleapHttp.READ_TIMEOUT_MS);
 
         JSONObject body = new JSONObject();
         body.put("events", events);

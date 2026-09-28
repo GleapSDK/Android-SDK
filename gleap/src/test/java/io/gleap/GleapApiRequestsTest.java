@@ -226,6 +226,34 @@ public class GleapApiRequestsTest {
         assertTrue(body.getBoolean("ws"));
     }
 
+    @Test
+    public void everyRequestTimesOutAndTicketsAndUploadsGetLongerToAnswer() throws Exception {
+        sdk.storeSession("id-1", "hash-1");
+        sdk.server.respond("/config/", 200, "{\"flowConfig\":{}}");
+        sdk.server.respond("/sessions", 200, "{\"gleapId\":\"id-1\",\"gleapHash\":\"hash-1\"}");
+        sdk.server.respond("/sessions/ping", 200, "");
+        sdk.server.respond("/uploads/sdk", 200, "{\"fileUrl\":\"https://files.example.com/screenshot.png\"}");
+        sdk.server.respond("/uploads/sdksteps", 200, "{\"fileUrls\":[]}");
+        sdk.server.respond("/uploads/attachments", 200, "{\"fileUrls\":[]}");
+        sdk.server.respond("/bugs/v2", 201, "{}");
+
+        new ConfigLoader(NO_LISTENER).doInBackground();
+        new GleapBaseSessionService().doInBackground();
+        GleapEventService.postEvents(new JSONArray());
+        new HttpHelper(NO_LISTENER, null).doInBackground(GleapBug.getInstance());
+
+        List<String> paths = new ArrayList<>();
+        for (FakeGleapServer.Request request : sdk.server.requests) {
+            String path = request.getURL().getPath();
+            paths.add(path);
+            boolean carriesFiles = path.startsWith("/uploads/") || path.equals("/bugs/v2");
+            assertEquals(path, 15000, request.getConnectTimeout());
+            assertEquals(path, carriesFiles ? 60000 : 30000, request.getReadTimeout());
+        }
+        assertTrue(paths.toString(), paths.containsAll(java.util.Arrays.asList(
+                "/config/sdk-key/", "/sessions", "/sessions/ping", "/uploads/sdk", "/bugs/v2")));
+    }
+
     @Test(expected = java.io.IOException.class)
     public void aFailedPingKeepsTheEvents() throws Exception {
         sdk.storeSession("id-1", "hash-1");

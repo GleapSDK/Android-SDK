@@ -16,8 +16,16 @@ import java.nio.charset.StandardCharsets;
  * The SDK's HTTP requests to the Gleap API. All of them authenticate with the SDK key and,
  * once there is one, the session id and hash. The API url is read when a request is made, so
  * setRegion and setApiUrl apply to every later request.
+ *
+ * <p>The requests run one after another (see {@link GleapExecutor}), so every request has a
+ * timeout: without one, a connection that never answers would hold back all later requests.
  */
 final class GleapHttp {
+    static final int CONNECT_TIMEOUT_MS = 15000;
+    static final int READ_TIMEOUT_MS = 30000;
+    // Tickets and uploads carry screenshots, replays and attachments.
+    static final int UPLOAD_READ_TIMEOUT_MS = 60000;
+
     interface ConnectionFactory {
         HttpURLConnection open(URL url) throws IOException;
     }
@@ -35,7 +43,14 @@ final class GleapHttp {
     }
 
     static HttpURLConnection open(String url) throws IOException {
-        return factory.open(new URL(url));
+        return open(url, READ_TIMEOUT_MS);
+    }
+
+    static HttpURLConnection open(String url, int readTimeoutMs) throws IOException {
+        HttpURLConnection conn = factory.open(new URL(url));
+        conn.setConnectTimeout(CONNECT_TIMEOUT_MS);
+        conn.setReadTimeout(readTimeoutMs);
+        return conn;
     }
 
     /**
@@ -63,8 +78,8 @@ final class GleapHttp {
     /**
      * A JSON POST to {@code apiUrl + path} with the headers of the report and event requests.
      */
-    static HttpURLConnection openReportPost(String path, GleapSession session) throws IOException {
-        HttpURLConnection conn = open(GleapConfig.getInstance().getApiUrl() + path);
+    static HttpURLConnection openReportPost(String path, GleapSession session, int readTimeoutMs) throws IOException {
+        HttpURLConnection conn = open(GleapConfig.getInstance().getApiUrl() + path, readTimeoutMs);
         conn.setRequestProperty("api-token", GleapConfig.getInstance().getSdkKey());
         conn.setDoOutput(true);
         conn.setRequestProperty("Accept", "application/json");

@@ -31,7 +31,7 @@ class FormDataHttpsHelper {
      */
     public FormDataHttpsHelper(String requestURL, String apiToken)
             throws IOException {
-        httpConn = GleapHttp.open(requestURL);
+        httpConn = GleapHttp.open(requestURL, GleapHttp.UPLOAD_READ_TIMEOUT_MS);
         httpConn.setUseCaches(false);
         httpConn.setDoOutput(true); // indicates POST method
         httpConn.setDoInput(true);

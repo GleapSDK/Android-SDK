@@ -184,7 +184,7 @@ class HttpHelper extends AsyncTask<GleapBug, Void, JSONObject> {
 
     private JSONObject postFeedback() throws JSONException, IOException {
         HttpURLConnection conn = GleapHttp.openReportPost(REPORT_BUG_URL_POSTFIX,
-                GleapSessionController.getInstance().getUserSession());
+                GleapSessionController.getInstance().getUserSession(), GleapHttp.UPLOAD_READ_TIMEOUT_MS);
 
         JSONObject body = FeedbackPayloadBuilder.build(submission, GleapConfig.getInstance().isEnableConsoleLogs(),
                 new FeedbackUploader(context), DEVICE_DATA);
