@@ -60,6 +60,41 @@ public class GleapEventQueueTest {
     }
 
     @Test
+    public void eventsTrackedDuringAPingWaitForTheNextOne() throws Exception {
+        sdk.server.respond("/sessions/ping", 200, "")
+                .whileAnswering("/sessions/ping", new Runnable() {
+                    @Override
+                    public void run() {
+                        Gleap.getInstance().trackEvent("checkout");
+                    }
+                });
+        Gleap.getInstance().trackEvent("signup");
+
+        GleapEventService.getInstance().sendQueuedEvents();
+
+        JSONArray queued = GleapEventService.getInstance().getEventQueue().toJSONArray();
+        assertEquals(1, queued.length());
+        assertEquals("checkout", queued.getJSONObject(0).getString("name"));
+    }
+
+    @Test
+    public void theSessionStartIsTrackedOncePerSessionNotPerReconnect() throws Exception {
+        sdk.controller.processSessionActionResult(new JSONObject().put("gleapId", "id-1").put("gleapHash", "hash-1"), true, true);
+        // The WebSocket connects, drops and connects again.
+        GleapEventService.getInstance().start();
+        GleapEventService.getInstance().start();
+
+        JSONArray queued = GleapEventService.getInstance().getEventQueue().toJSONArray();
+        int sessionStarts = 0;
+        for (int i = 0; i < queued.length(); i++) {
+            if ("sessionStarted".equals(queued.getJSONObject(i).getString("name"))) {
+                sessionStarts++;
+            }
+        }
+        assertEquals(1, sessionStarts);
+    }
+
+    @Test
     public void aFailedPingKeepsTheEventsForTheNextOne() throws Exception {
         sdk.server.respond("/sessions/ping", 503, "{\"status\":\"overloaded\"}");
         Gleap.getInstance().trackEvent("signup");

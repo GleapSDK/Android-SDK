@@ -4,7 +4,11 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 /**
  * The events (trackEvent, page views, session start) waiting for the next ping. Thread-safe: the
@@ -49,6 +53,27 @@ final class GleapEventQueue {
             result.put(event);
         }
         return result;
+    }
+
+    /**
+     * The queued events, oldest first, to send; remove them with {@link #removeSent(List)} once
+     * they went through.
+     */
+    synchronized List<JSONObject> snapshot() {
+        return new ArrayList<>(events);
+    }
+
+    /**
+     * Removes the events a ping delivered. Events added while it was in flight stay queued.
+     */
+    synchronized void removeSent(List<JSONObject> sent) {
+        Set<JSONObject> delivered = Collections.newSetFromMap(new IdentityHashMap<JSONObject, Boolean>());
+        delivered.addAll(sent);
+        for (Iterator<JSONObject> it = events.iterator(); it.hasNext(); ) {
+            if (delivered.contains(it.next())) {
+                it.remove();
+            }
+        }
     }
 
     synchronized void clear() {

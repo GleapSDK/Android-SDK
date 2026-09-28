@@ -11,6 +11,7 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.util.List;
 
 
 import gleap.io.gleap.BuildConfig;
@@ -68,11 +69,11 @@ class GleapEventService {
         webSocketListener.connect();
     }
 
-    public void start() {
-        if (intervalHandler != null) {
-            intervalHandler.removeCallbacksAndMessages(null);
-        }
-
+    /**
+     * Queues the session start (and the page shown) for the next ping: once per session load or
+     * identify, like iOS, not on every WebSocket (re)connect.
+     */
+    void sessionStarted() {
         try {
             JSONObject sessionStarted = new JSONObject();
             sessionStarted.put("name", "sessionStarted");
@@ -88,6 +89,15 @@ class GleapEventService {
             pageView.put("date", dateToString(new Date()));
             eventQueue.addUncapped(pageView);
         } catch (Exception ex) {
+        }
+    }
+
+    /**
+     * Starts sending the queued events every 3 s (the WebSocket is connected).
+     */
+    public void start() {
+        if (intervalHandler != null) {
+            intervalHandler.removeCallbacksAndMessages(null);
         }
 
         intervalHandler = new Handler(Looper.getMainLooper());
@@ -148,13 +158,19 @@ class GleapEventService {
     }
 
     /**
-     * Sends the queued events; they are removed once the ping went through.
+     * Sends the queued events; they are removed once the ping went through. Events tracked
+     * while the ping is in flight wait for the next one.
      */
     void sendQueuedEvents() {
         try {
-            int status = postEvents(eventQueue.toJSONArray());
+            List<JSONObject> events = eventQueue.snapshot();
+            JSONArray body = new JSONArray();
+            for (JSONObject event : events) {
+                body.put(event);
+            }
+            int status = postEvents(body);
             if (status == 200) {
-                eventQueue.clear();
+                eventQueue.removeSent(events);
             }
         } catch (Exception exception) {
         }

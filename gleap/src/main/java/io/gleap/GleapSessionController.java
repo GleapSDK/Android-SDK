@@ -325,6 +325,7 @@ public class GleapSessionController {
                 if (restartEventServices) {
                     // Restart event service.
                     GleapEventService.getInstance().stop(false);
+                    GleapEventService.getInstance().sessionStarted();
                     GleapEventService.getInstance().startWebSocketListener();
                 }
 
