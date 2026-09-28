@@ -33,7 +33,6 @@ class GleapConfig {
     private ValueCallback<Uri[]> fileUploadCallback;
 
     private JSONObject stripModel = new JSONObject();
-    private JSONObject crashStripModel = new JSONObject();
     private List<GleapDetector> gestureDetectors = new LinkedList<>();
     private List<GleapActivationMethod> prioritizedActivationMethods = new LinkedList<>();
     int interval = 5;
@@ -239,14 +238,6 @@ class GleapConfig {
 
     public void setModalUrl(String modalUrl) {
         this.modalUrl = modalUrl;
-    }
-
-    public JSONObject getCrashStripModel() {
-        return crashStripModel;
-    }
-
-    public void setCrashStripModel(JSONObject crashStripModel) {
-        this.crashStripModel = crashStripModel;
     }
 
     public JSONArray getBlackList() {

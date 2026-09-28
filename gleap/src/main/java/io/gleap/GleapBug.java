@@ -25,11 +25,9 @@ import static io.gleap.DateUtil.dateToString;
 class GleapBug {
     private static GleapBug instance;
     private NetworkBuffer networkBuffer = new NetworkBuffer();
-    private boolean isSilent = false;
     //bug specific data
     private APPLICATIONTYPE applicationType = APPLICATIONTYPE.NATIVE;
     private String type = "";
-    private String severity = "MEDIUM";
     private Bitmap screenshot;
     private Replay replay;
     private JSONObject ticketAttributes;
@@ -157,14 +155,6 @@ class GleapBug {
 
     public void clearCustomData() {
         this.customData = new JSONObject();
-    }
-
-    public String getSeverity() {
-        return severity;
-    }
-
-    public void setSeverity(String severity) {
-        this.severity = severity;
     }
 
     public APPLICATIONTYPE getApplicationType() {
@@ -302,14 +292,6 @@ class GleapBug {
 
     public JSONArray getCustomEventLog() {
         return customEventLog;
-    }
-
-    public boolean isSilent() {
-        return isSilent;
-    }
-
-    public void setSilent(boolean silent) {
-        isSilent = silent;
     }
 
     public String getSpamToken() {

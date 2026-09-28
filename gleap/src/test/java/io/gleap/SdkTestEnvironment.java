@@ -74,8 +74,9 @@ class SdkTestEnvironment {
         // Tickets are sent right away, on the test thread.
         HttpHelper.setSenderForTesting(new HttpHelper.Sender() {
             @Override
-            public void send(OnHttpResponseListener listener, android.content.Context context) {
-                HttpHelper task = new HttpHelper(listener, context);
+            public void send(OnHttpResponseListener listener, android.content.Context context,
+                             FeedbackSubmission submission) {
+                HttpHelper task = new HttpHelper(listener, context, submission);
                 task.onPreExecute();
                 task.onPostExecute(task.doInBackground(GleapBug.getInstance()));
             }

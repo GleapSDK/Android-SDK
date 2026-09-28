@@ -28,13 +28,13 @@ class HttpHelper extends AsyncTask<GleapBug, Void, JSONObject> {
     private static final String REPORT_BUG_URL_POSTFIX = "/bugs/v2";
 
     interface Sender {
-        void send(OnHttpResponseListener listener, Context context);
+        void send(OnHttpResponseListener listener, Context context, FeedbackSubmission submission);
     }
 
     private static final Sender ASYNC = new Sender() {
         @Override
-        public void send(OnHttpResponseListener listener, Context context) {
-            new HttpHelper(listener, context).executeOnExecutor(GleapExecutor.SERIAL, GleapBug.getInstance());
+        public void send(OnHttpResponseListener listener, Context context, FeedbackSubmission submission) {
+            new HttpHelper(listener, context, submission).executeOnExecutor(GleapExecutor.SERIAL, GleapBug.getInstance());
         }
     };
 
@@ -65,9 +65,13 @@ class HttpHelper extends AsyncTask<GleapBug, Void, JSONObject> {
     private final JSONObject sentData;
 
     public HttpHelper(OnHttpResponseListener listener, Context context) {
+        this(listener, context, FeedbackSubmission.takeWidgetTicket());
+    }
+
+    HttpHelper(OnHttpResponseListener listener, Context context, FeedbackSubmission submission) {
         this.listener = listener;
         this.context = context;
-        this.submission = FeedbackSubmission.capture();
+        this.submission = submission;
 
         JSONObject data = new JSONObject();
         try {
@@ -79,10 +83,14 @@ class HttpHelper extends AsyncTask<GleapBug, Void, JSONObject> {
     }
 
     /**
-     * Sends the current report data as a ticket; the listener gets the result on the main thread.
+     * Sends the ticket the widget submitted; the listener gets the result on the main thread.
      */
     static void send(OnHttpResponseListener listener, Context context) {
-        sender.send(listener, context);
+        send(listener, context, FeedbackSubmission.takeWidgetTicket());
+    }
+
+    static void send(OnHttpResponseListener listener, Context context, FeedbackSubmission submission) {
+        sender.send(listener, context, submission);
     }
 
     // Tests only; null restores the background task.
@@ -128,8 +136,6 @@ class HttpHelper extends AsyncTask<GleapBug, Void, JSONObject> {
             notifySendingFailed(result);
         }
 
-        GleapBug.getInstance().setSilent(false);
-        GleapConfig.getInstance().setCrashStripModel(new JSONObject());
         try {
             listener.onTaskComplete(result);
         } catch (GleapAlreadyInitialisedException e) {

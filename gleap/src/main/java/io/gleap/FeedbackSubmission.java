@@ -8,9 +8,13 @@ import org.json.JSONObject;
 /**
  * A ticket as it is submitted: a copy of the report data, taken on the thread that submits it,
  * so later changes by the app (custom data, events) cannot change or break a ticket that is
- * being sent.
+ * being sent. What belongs to one ticket only (its type, outbound, form data, excluded data,
+ * a crash report's severity) never stays behind for the next one.
  */
 final class FeedbackSubmission {
+    // The priority of the tickets from the widget.
+    static final String WIDGET_SEVERITY = "MEDIUM";
+
     final String type;
     // As set by the widget; null or empty for a plain bug report.
     final String outboundId;
@@ -46,13 +50,14 @@ final class FeedbackSubmission {
     }
 
     /**
-     * Copies the current report data.
+     * Takes the ticket the widget submits: copies the report data and clears what the widget set
+     * for this ticket only (type, outbound, spam token, form data, excluded data).
      */
-    static FeedbackSubmission capture() {
+    static FeedbackSubmission takeWidgetTicket() {
         GleapBug bug = GleapBug.getInstance();
         GleapConfig config = GleapConfig.getInstance();
         String[] tags = bug.getTags();
-        return new FeedbackSubmission(
+        FeedbackSubmission submission = new FeedbackSubmission(
                 bug.getType(),
                 bug.getOutboundId(),
                 bug.getSpamToken(),
@@ -60,11 +65,47 @@ final class FeedbackSubmission {
                 copy(bug.getCustomData()),
                 copy(bug.getCustomEventLog()),
                 tags != null ? tags.clone() : null,
-                bug.getSeverity(),
-                bug.isSilent(),
+                WIDGET_SEVERITY,
+                false,
                 bug.getScreenshot(),
                 copy(config.getStripModel()),
-                copy(config.getCrashStripModel()));
+                new JSONObject());
+
+        bug.setType("");
+        bug.setOutboundId(null);
+        bug.setSpamToken(null);
+        bug.setData(null);
+        config.setStripModel(new JSONObject());
+        return submission;
+    }
+
+    /**
+     * A silent crash report: the app's data (custom data, events, tags, ticket attributes) with
+     * the report's own description, type, severity, screenshot and excluded data. The widget's
+     * ticket data is not touched.
+     */
+    static FeedbackSubmission silentReport(String type, String description, String severity, Bitmap screenshot,
+                                           JSONObject excludeData) {
+        GleapBug bug = GleapBug.getInstance();
+        JSONObject formData = new JSONObject();
+        try {
+            formData = bug.mergeJSONObjects(new JSONObject().put("description", description), bug.getTicketAttributes());
+        } catch (Exception ignore) {
+        }
+        String[] tags = bug.getTags();
+        return new FeedbackSubmission(
+                type,
+                null,
+                null,
+                copy(formData),
+                copy(bug.getCustomData()),
+                copy(bug.getCustomEventLog()),
+                tags != null ? tags.clone() : null,
+                severity,
+                true,
+                screenshot,
+                new JSONObject(),
+                copy(excludeData));
     }
 
     @SuppressWarnings("unchecked")
