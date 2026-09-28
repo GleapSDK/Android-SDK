@@ -11,8 +11,6 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
-import java.util.ArrayList;
-import java.util.List;
 
 
 import gleap.io.gleap.BuildConfig;
@@ -21,11 +19,10 @@ import java.util.Date;
 import static io.gleap.DateUtil.dateToString;
 
 class GleapEventService {
-    private GleapArrayHelper<JSONObject> gleapArrayHelper;
     private static GleapEventService instance;
     private static GleapWebSocketListener webSocketListener;
     private boolean disableInAppNotifications = false;
-    private List<JSONObject> eventsToBeSent = new ArrayList<>();
+    private final GleapEventQueue eventQueue = new GleapEventQueue();
     private Handler intervalHandler;
 
     interface WebSocketFactory {
@@ -42,7 +39,6 @@ class GleapEventService {
     private static volatile WebSocketFactory webSocketFactory = OKHTTP_WEBSOCKETS;
 
     private GleapEventService() {
-        gleapArrayHelper = new GleapArrayHelper<>();
     }
 
     // Tests only; null restores the real WebSocket.
@@ -55,6 +51,12 @@ class GleapEventService {
             instance = new GleapEventService();
         }
         return instance;
+    }
+
+    // Tests only.
+    static void resetForTesting() {
+        instance = new GleapEventService();
+        webSocketListener = null;
     }
 
     public void setDisableInAppNotifications(boolean disableInAppNotifications) {
@@ -77,7 +79,7 @@ class GleapEventService {
             JSONObject sessionStarted = new JSONObject();
             sessionStarted.put("name", "sessionStarted");
             sessionStarted.put("date", dateToString(new Date()));
-            eventsToBeSent.add(sessionStarted);
+            eventQueue.addUncapped(sessionStarted);
 
             Activity activity = ActivityUtil.getCurrentActivity();
             JSONObject pageView = new JSONObject();
@@ -86,7 +88,7 @@ class GleapEventService {
             pageView.put("name", "pageView");
             pageView.put("data", page);
             pageView.put("date", dateToString(new Date()));
-            eventsToBeSent.add(pageView);
+            eventQueue.addUncapped(pageView);
         } catch (Exception ex) {
         }
 
@@ -97,7 +99,7 @@ class GleapEventService {
                 try {
                     if (GleapSessionController.getInstance() != null
                             && GleapSessionController.getInstance().isSessionLoaded()) {
-                        if (eventsToBeSent.size() > 0) {
+                        if (!eventQueue.isEmpty()) {
                             new EventHttpHelper().execute();
                         }
                     }
@@ -115,7 +117,7 @@ class GleapEventService {
 
     public void stop(Boolean clear) {
         if (clear) {
-            eventsToBeSent.clear();
+            eventQueue.clear();
         }
         clearWebsocketListener();
 
@@ -132,24 +134,31 @@ class GleapEventService {
     }
 
     public void addEvent(JSONObject event) {
+        eventQueue.add(event);
+    }
 
-        if (eventsToBeSent.size() == GleapConfig.getInstance().getMaxEventLength()) {
-            eventsToBeSent = gleapArrayHelper.shiftArray(eventsToBeSent);
-        }
-        eventsToBeSent.add(event);
+    GleapEventQueue getEventQueue() {
+        return eventQueue;
     }
 
     private class EventHttpHelper extends AsyncTask {
         @Override
         protected Object doInBackground(Object[] objects) {
-            try {
-                int status = postEvents(arrayToJSONArray(eventsToBeSent));
-                if (status == 200) {
-                    eventsToBeSent = new ArrayList<>();
-                }
-            } catch (Exception exception) {
-            }
+            sendQueuedEvents();
             return null;
+        }
+    }
+
+    /**
+     * Sends the queued events; they are removed once the ping went through.
+     */
+    void sendQueuedEvents() {
+        try {
+            int status = postEvents(eventQueue.toJSONArray());
+            if (status == 200) {
+                eventQueue.clear();
+            }
+        } catch (Exception exception) {
         }
     }
 
@@ -177,14 +186,6 @@ class GleapEventService {
         return status;
     }
 
-    private JSONArray arrayToJSONArray(List<JSONObject> arrayList) {
-        JSONArray result = new JSONArray();
-        for (JSONObject jsonObject : arrayList) {
-            result.put(jsonObject);
-        }
-
-        return result;
-    }
 
     private GleapChatMessage createComment(String outboundId, JSONObject messageData, String sendAt, String createdAt) throws Exception {
         String senderName = "";

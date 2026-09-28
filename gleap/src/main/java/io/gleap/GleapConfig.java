@@ -80,9 +80,6 @@ class GleapConfig {
     private int notificationContainerOffsetX = 0;
     private int notificationContainerOffsetY = 0;
 
-    //Streamedevent
-    private int maxEventLength = 500;
-
     private LinkedList<GleapWebViewMessage> gleapWebViewMessages = new LinkedList<>();
 
     private GleapConfig() {
@@ -209,10 +206,6 @@ class GleapConfig {
 
     public void setStripModel(JSONObject stripModel) {
         this.stripModel = stripModel;
-    }
-
-    public int getMaxEventLength() {
-        return maxEventLength;
     }
 
     public JSONArray getNetworkLogPropsToIgnore() {
