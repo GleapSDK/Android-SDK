@@ -2,6 +2,7 @@ package io.gleap;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
@@ -90,8 +91,11 @@ class PhoneMeta {
     }
 
     private JSONObject collectJSONObj() throws JSONException {
-        if (getCurrentActivity() != null) {
-            lastScreenName = getCurrentActivity().getClass().getSimpleName();
+        // The app's screen, not the widget on top of it: while the widget is open the screen it
+        // was opened from stays the last one.
+        Activity current = getCurrentActivity();
+        if (current != null && !ActivityUtil.isGleapActivity(current)) {
+            lastScreenName = current.getClass().getSimpleName();
         }
 
         JSONObject obj = new JSONObject();

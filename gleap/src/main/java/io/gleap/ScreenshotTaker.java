@@ -49,7 +49,8 @@ class ScreenshotTaker {
                 Context applicationContext = activity.getApplicationContext();
                 if (applicationContext != null) {
                     if (GleapBug.getInstance().getPhoneMeta() != null) {
-                        GleapBug.getInstance().getPhoneMeta().setLastScreen(applicationContext.getClass().getSimpleName());
+                        // The screen the widget opens over.
+                        GleapBug.getInstance().getPhoneMeta().setLastScreen(activity.getClass().getSimpleName());
                     }
                     SharedPreferences pref = applicationContext.getSharedPreferences("prefs", 0);
                     SharedPreferences.Editor editor = pref.edit();
