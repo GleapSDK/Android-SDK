@@ -93,14 +93,14 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         super.onBackPressed();
     }
 
+    /**
+     * Closes the widget. It always finishes, also when the activity that opened it is gone (the
+     * app recreated or closed it meanwhile); a singleInstance caller is brought back to the front.
+     */
     public void closeMainGleapActivity() {
-        if (GleapMainActivity.callerActivity == null) {
-            return;
-        }
-
-        Activity mainActivity = GleapMainActivity.callerActivity.get();
-        if (mainActivity != null) {
-            try {
+        Activity mainActivity = GleapMainActivity.callerActivity != null ? GleapMainActivity.callerActivity.get() : null;
+        try {
+            if (mainActivity != null) {
                 PackageManager pm = mainActivity.getPackageManager();
                 ActivityInfo info = pm.getActivityInfo(mainActivity.getComponentName(), 0);
 
@@ -110,20 +110,23 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     intentToMain.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
                     startActivity(intentToMain);
                 }
-
-                GleapOverlayManager.getInstance().setShowFab(true);
-
-                finish();
-
-                if (GleapMainActivity.urlToOpenAfterClose != null) {
-                    Gleap.getInstance().handleLink(GleapMainActivity.urlToOpenAfterClose);
-                    GleapMainActivity.urlToOpenAfterClose = null;
-                }
-            } catch (Exception e) {
-                GleapLog.w("Could not return to the app normally", e);
-                GleapOverlayManager.getInstance().setShowFab(true);
-                finish();
             }
+
+            GleapOverlayManager.getInstance().setShowFab(true);
+
+            finish();
+
+            if (GleapMainActivity.urlToOpenAfterClose != null) {
+                Gleap.getInstance().handleLink(GleapMainActivity.urlToOpenAfterClose);
+                GleapMainActivity.urlToOpenAfterClose = null;
+            }
+        } catch (Exception e) {
+            GleapLog.w("Could not return to the app normally", e);
+            try {
+                GleapOverlayManager.getInstance().setShowFab(true);
+            } catch (Exception ignore) {
+            }
+            finish();
         }
     }
 
@@ -168,12 +171,21 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     }
                 });
 
-                if (savedInstanceState == null) {
-                    url += GleapURLGenerator.generateURL();
-                    initBrowser();
+                if (savedInstanceState != null && !GleapWidgetLauncher.isGleapReady()) {
+                    // Recreated after the process was restarted: the SDK has not loaded again
+                    // yet, so there is no widget to show.
+                    finish();
+                    return;
                 }
+
+                // Also after the activity was recreated (dark mode, font size, language or
+                // window size changed): the widget loads again, a WebView cannot keep its page
+                // across the recreation.
+                url += GleapURLGenerator.generateURL();
+                initBrowser();
             }
         } catch (Exception ex) {
+            GleapLog.w("Could not show the widget", ex);
         }
     }
 
@@ -341,18 +353,26 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
     @Override
     protected void onDestroy() {
+        // Recreated for a configuration change: the new instance shows the widget again, so the
+        // widget stays open for the app (no WidgetClosed, activation methods stay paused).
+        boolean recreating = isChangingConfigurations();
         try {
-            GleapDetectorUtil.resumeAllDetectors();
             GleapAgentToolManager.getInstance().clearExecutionState();
-            if (GleapCallbacks.getInstance().getWidgetClosedCallback() != null) {
-                GleapCallbacks.getInstance().getWidgetClosedCallback().invoke();
-            }
-
-            GleapOverlayManager.getInstance().setShowFab(true);
-            GleapOverlayManager.getInstance().clearMessages();
             GleapConfig.getInstance().setFileUploadCallback(null);
+            if (!recreating) {
+                GleapDetectorUtil.resumeAllDetectors();
+                if (GleapCallbacks.getInstance().getWidgetClosedCallback() != null) {
+                    GleapCallbacks.getInstance().getWidgetClosedCallback().invoke();
+                }
 
-            isActive = false;
+                GleapOverlayManager.getInstance().setShowFab(true);
+                GleapOverlayManager.getInstance().clearMessages();
+                isActive = false;
+            }
+        } catch (Error | Exception ignore) {
+        }
+
+        try {
             webView.removeJavascriptInterface("GleapJSBridge");
             webView.stopLoading();
             webView.clearHistory();
@@ -373,7 +393,9 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 onBackPressedCallback = null;
             }
 
-            GleapCallbacks.getInstance().setCallCloseCallback(null);
+            if (!recreating) {
+                GleapCallbacks.getInstance().setCallCloseCallback(null);
+            }
 
             if (this.exitAfterFifteenSeconds != null) {
                 this.handler.removeCallbacks(this.exitAfterFifteenSeconds);
@@ -381,7 +403,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
             }
             this.handler = null;
 
-            if (callerActivity != null && callerActivity.get() != null) {
+            if (!recreating && callerActivity != null && callerActivity.get() != null) {
                 callerActivity.clear();
             }
 
