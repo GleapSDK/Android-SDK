@@ -17,6 +17,30 @@
 - Network log entries now carry the start time of the request and its method, and failed requests are marked as failed with their error.
 - Console logs: errors and warnings were often sent as info and cut in the wrong place, Android 5 and 6 sent no logcat output at all, and lines from December read in January got the wrong year. The newest 500 logcat lines are now read correctly, off the main thread, and long lines are shortened (1000 characters, 5000 for errors).
 - The SDK started a `logcat` process at launch that never exited.
+- A failed `identifyUser` (offline, a timeout, a rate limit or a server error) deleted the stored session and user, and the identify was lost. Both are now kept and the identify runs again with the next session load or when the network comes back; only an identify the API rejects (e.g. an invalid user hash) still clears the session.
+- `clearIdentity` did not cancel an `identifyUser` that was waiting for the session, so the logged-out user was identified again on the new session. Answers to requests still in flight during the logout could also bring the previous session back.
+- The widget could stay marked as open when its screenshot failed (PixelCopy error, low memory): every `open*` call was ignored, `isOpened()` stayed true, notifications, surveys, banners and modals were dropped and shake stayed off until the app restarted. The widget now opens without a screenshot, and tickets without a screenshot are sent.
+- Silent crash reports were only sent together with a screenshot, so they were lost without an activity on screen or when the screenshot failed. They are now sent right away when the screenshot is excluded (the default), otherwise with or without one.
+- `sendSilentCrashReport`'s `excludeData` only removed the screenshot: console logs, network logs, custom data, metadata, the event log and attachments were still sent. Every key is now applied, and `replays`, the key used by the dashboard and the React Native, Flutter and Capacitor SDKs, now also excludes the replay on Android.
+- A ticket's data leaked into later ones: a crash report sent after a survey answer was posted as another answer to that survey, widget tickets took over the priority of the last crash report, and an action's excluded data stayed excluded for all later tickets.
+- The widget could not be closed after its activity was recreated (dark mode, font size, language or window size changed while it was open). It now loads again and closes normally.
+- When the session loaded without an activity on screen (e.g. the app was started from a push), the push group was never registered and the WebSocket and `InitializationDone` were skipped; unregistering after a logout was dropped the same way.
+- Events tracked while earlier events were being sent were lost, and every WebSocket reconnect sent `sessionStarted` again. `sessionStarted` is now sent once per session start or identify.
+- `attachCustomData` replaced all custom data instead of merging into it as documented; later changes to the passed object also changed the tickets' data.
+- Links in the widget, banners and modals did nothing on Android 11+ unless the app declared matching `<queries>`.
+- The SDK overrode Material's `ThemeOverlay.MaterialComponents.Light.BottomSheetDialog` with an empty style, so bottom sheet dialogs in apps using Gleap lost their transparent background and slide animation.
+- Requests had no timeouts, so one connection that never answered held back every later request. They now give up after 15 s without a connection and 30 s without an answer (60 s for tickets and uploads). The SDK's requests also no longer wait in the app's `AsyncTask` queue, nor hold it up.
+- The config request is now retried on server errors, and WebSocket reconnects back off from 5 s to at most 60 s instead of retrying every 5 s on one of OkHttp's threads.
+- Crashes: a replay interval of 0 in the project settings crashed the app at start; saving the widget's state without a WebView, and `finishImageUpload` without a pending file picker, threw a `NullPointerException`.
+- Tickets from the widget named `GleapMainActivity` as the last screen; they now name the app screen the widget was opened over. `buildMode` was always `RELEASE`; it now follows the app (`DEBUG` for debuggable builds). Without an active network the device data failed to collect, and RAM values were sent as 0 on devices set to Arabic or Persian.
+- `setLanguage(null)` broke the widget; null or empty now means the device language.
+- Replays kept their oldest frames after the first minute and the dashboard played them backwards. They now keep the newest frames in the order they were taken.
+- Banners and modals stopped responding after their page tried to show a JavaScript dialog.
+- App activities with "Gleap" in their class name got no feedback button, banner or page views.
+- The screenshot and replay images of every ticket stayed in the app's cache directory; they are now deleted after the upload. Attachment files are closed after reading, the event log sent with tickets keeps the newest 500 events, and the overlay no longer keeps destroyed activities in memory.
+- The SDK wrote a `descriptionEditText` key into a SharedPreferences file named `prefs`, which may be the app's own. It no longer touches that file.
+- Security: links from the widget, banners and modals with the schemes `intent:`, `file:`, `content:`, `javascript:` and `data:` are no longer opened, neither through the widget's `open-url` nor as navigations. http(s), `mailto:`, `tel:`, `gleap:` smart links and app deep links open as before.
+- Security: the widget's WebView is only granted the microphone and the camera, once the app holds the Android permission. Other WebView permission requests (protected media ids, MIDI devices, ...) are denied.
 
 ### Notes
 
