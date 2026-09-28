@@ -197,10 +197,14 @@ class PhoneMeta {
                 == PackageManager.PERMISSION_GRANTED) {
             ConnectivityManager cm =
                     (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+            if (cm == null) {
+                return "";
+            }
 
             //Only called when the permission is granted
             @SuppressLint("MissingPermission") NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-            return activeNetwork.getTypeName();
+            // No active network (offline, airplane mode): the data is still collected.
+            return activeNetwork != null ? activeNetwork.getTypeName() : "";
 
         } else {
             return "";
