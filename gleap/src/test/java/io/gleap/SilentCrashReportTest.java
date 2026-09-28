@@ -1,6 +1,7 @@
 package io.gleap;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.json.JSONObject;
@@ -23,6 +24,7 @@ public class SilentCrashReportTest {
         sdk.server.respond("/uploads/sdksteps", 200, "{\"fileUrls\":[]}");
         sdk.server.respond("/uploads/attachments", 200, "{\"fileUrls\":[]}");
         sdk.server.respond("/bugs/v2", 201, "{}");
+        GleapBug.getInstance().setCustomData("plan", "pro");
     }
 
     @After
@@ -31,27 +33,40 @@ public class SilentCrashReportTest {
     }
 
     @Test
-    public void withoutExcludeDataTheScreenshotAndReplayAreLeftOut() throws Exception {
+    public void byDefaultTheReportIsSentRightAwayWithoutScreenshotAndReplay() throws Exception {
         SilentBugReportUtil.createSilentBugReport(null, "Checkout failed", Gleap.SEVERITY.HIGH, "CRASH", null);
 
-        JSONObject exclude = GleapConfig.getInstance().getCrashStripModel();
-        assertTrue(exclude.getBoolean("screenshot"));
-        assertTrue(exclude.getBoolean("replay"));
-        assertEquals(2, exclude.length());
+        JSONObject body = sdk.server.last("/bugs/v2").bodyJson();
+        assertEquals("CRASH", body.getString("type"));
+        assertEquals("true", body.getString("isSilent"));
+        assertEquals("HIGH", body.getString("priority"));
+        assertEquals("Checkout failed", body.getJSONObject("formData").getString("description"));
+        assertFalse(body.has("screenshotUrl"));
+        assertFalse(body.has("replay"));
+        assertTrue(sdk.server.requestsTo("/uploads/sdk").isEmpty());
+        assertTrue(sdk.server.requestsTo("/uploads/sdksteps").isEmpty());
+        assertEquals("pro", body.getJSONObject("customData").getString("plan"));
+        assertTrue(body.has("networkLogs"));
     }
 
     @Test
     public void theAppsExcludeDataIsUsed() throws Exception {
-        JSONObject exclude = new JSONObject().put("consoleLog", true);
-        SilentBugReportUtil.createSilentBugReport(null, "Checkout failed", Gleap.SEVERITY.HIGH, "CRASH", exclude);
+        SilentBugReportUtil.createSilentBugReport(null, "Checkout failed", Gleap.SEVERITY.HIGH,
+                new JSONObject().put("screenshot", true).put("customData", true));
 
-        assertTrue(GleapConfig.getInstance().getCrashStripModel().getBoolean("consoleLog"));
+        JSONObject body = sdk.server.last("/bugs/v2").bodyJson();
+        assertFalse(body.has("customData"));
+        assertTrue(body.has("networkLogs"));
     }
 
     @Test
-    public void withoutAScreenshotNoReportIsSent() {
-        SilentBugReportUtil.createSilentBugReport(null, "Checkout failed", Gleap.SEVERITY.HIGH);
+    public void aScreenshotThatCannotBeTakenDoesNotStopTheReport() throws Exception {
+        // The screenshot is not excluded, but the test activity has no window to capture.
+        SilentBugReportUtil.createSilentBugReport(null, "Checkout failed", null, new JSONObject().put("consoleLog", true));
 
-        assertTrue(sdk.server.requestsTo("/bugs/v2").isEmpty());
+        JSONObject body = sdk.server.last("/bugs/v2").bodyJson();
+        assertEquals("LOW", body.getString("priority"));
+        assertFalse(body.has("screenshotUrl"));
+        assertTrue(sdk.server.requestsTo("/uploads/sdk").isEmpty());
     }
 }

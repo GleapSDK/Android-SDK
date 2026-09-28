@@ -25,34 +25,43 @@ class SilentBugReportUtil {
             }
         }
         GleapConfig.getInstance().setCrashStripModel(excludeData);
-        GleapBug model = GleapBug.getInstance();
+
+        // The screenshot is excluded by default: the report is sent right away. Otherwise it goes
+        // with the screenshot, or without one when none could be taken.
+        if (excludeData.optBoolean("screenshot", false)) {
+            send(context, description, severity, type, null);
+            return;
+        }
         ScreenshotUtil.takeScreenshot(new ScreenshotUtil.GetImageCallback() {
             @Override
             public void getImage(Bitmap bitmap) {
-                JSONObject obj = new JSONObject();
-                try {
-                    obj.put("description", description);
-                } catch (JSONException e) {
-                }
-                model.setType(type);
-                model.setData(obj);
-                if (severity != null) {
-                    model.setSeverity(severity.name());
-                } else {
-                    model.setSeverity(Gleap.SEVERITY.LOW.name());
-                }
-                model.setSilent(true);
-
-                if (bitmap != null) {
-                    model.setScreenshot(bitmap);
-
-                    try {
-                        HttpHelper.send(IGNORE_RESPONSE, context);
-                    } catch (Exception e) {
-                    }
-                }
+                send(context, description, severity, type, bitmap);
             }
         });
+    }
+
+    private static void send(Context context, String description, Gleap.SEVERITY severity, String type, Bitmap screenshot) {
+        GleapBug model = GleapBug.getInstance();
+        JSONObject obj = new JSONObject();
+        try {
+            obj.put("description", description);
+        } catch (JSONException e) {
+        }
+        model.setType(type);
+        model.setData(obj);
+        if (severity != null) {
+            model.setSeverity(severity.name());
+        } else {
+            model.setSeverity(Gleap.SEVERITY.LOW.name());
+        }
+        model.setSilent(true);
+        model.setScreenshot(screenshot);
+
+        try {
+            HttpHelper.send(IGNORE_RESPONSE, context);
+        } catch (Exception e) {
+            GleapLog.w("Could not send the silent crash report", e);
+        }
     }
 
     public static void createSilentBugReport(Context context, String description, Gleap.SEVERITY severity) {
