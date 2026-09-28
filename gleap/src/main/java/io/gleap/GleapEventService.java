@@ -9,17 +9,11 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.net.ssl.HttpsURLConnection;
 
 import gleap.io.gleap.BuildConfig;
 import java.util.Date;
@@ -34,8 +28,26 @@ class GleapEventService {
     private List<JSONObject> eventsToBeSent = new ArrayList<>();
     private Handler intervalHandler;
 
+    interface WebSocketFactory {
+        GleapWebSocketListener create();
+    }
+
+    private static final WebSocketFactory OKHTTP_WEBSOCKETS = new WebSocketFactory() {
+        @Override
+        public GleapWebSocketListener create() {
+            return new GleapWebSocketListener();
+        }
+    };
+
+    private static volatile WebSocketFactory webSocketFactory = OKHTTP_WEBSOCKETS;
+
     private GleapEventService() {
         gleapArrayHelper = new GleapArrayHelper<>();
+    }
+
+    // Tests only; null restores the real WebSocket.
+    static void setWebSocketFactoryForTesting(WebSocketFactory factory) {
+        webSocketFactory = factory != null ? factory : OKHTTP_WEBSOCKETS;
     }
 
     public static GleapEventService getInstance() {
@@ -52,7 +64,7 @@ class GleapEventService {
     public void startWebSocketListener() {
         clearWebsocketListener();
 
-        webSocketListener = new GleapWebSocketListener();
+        webSocketListener = webSocketFactory.create();
         webSocketListener.connect();
     }
 
@@ -131,7 +143,7 @@ class GleapEventService {
         @Override
         protected Object doInBackground(Object[] objects) {
             try {
-                int status = postEvent();
+                int status = postEvents(arrayToJSONArray(eventsToBeSent));
                 if (status == 200) {
                     eventsToBeSent = new ArrayList<>();
                 }
@@ -139,53 +151,30 @@ class GleapEventService {
             }
             return null;
         }
+    }
 
-        private int postEvent() throws IOException, JSONException {
-            URL url = new URL(GleapConfig.getInstance().getApiUrl() + "/sessions/ping");
-            HttpURLConnection conn;
-            if (GleapConfig.getInstance().getApiUrl().contains("https")) {
-                conn = (HttpsURLConnection) url.openConnection();
-            } else {
-                conn = (HttpURLConnection) url.openConnection();
-            }
+    /**
+     * Sends the events (POST /sessions/ping).
+     *
+     * @return the HTTP status; an error status throws, the events stay queued then
+     */
+    static int postEvents(JSONArray events) throws IOException, JSONException {
+        HttpURLConnection conn = GleapHttp.openReportPost("/sessions/ping",
+                GleapSessionController.getInstance().getUserSession());
 
-            conn.setRequestProperty("api-token", GleapConfig.getInstance().getSdkKey());
-            conn.setDoOutput(true);
-            conn.setRequestProperty("Accept", "application/json");
-            conn.setRequestProperty("Content-Type", "application/json");
-            conn.setRequestMethod("POST");
+        JSONObject body = new JSONObject();
+        body.put("events", events);
+        body.put("time", PhoneMeta.calculateDurationInDouble());
+        body.put("opened", Gleap.getInstance().isOpened());
+        body.put("ws", true);
+        body.put("sdkVersion", BuildConfig.VERSION_NAME);
+        GleapHttp.writeJson(conn, body);
 
-            GleapSession gleapSession = GleapSessionController.getInstance().getUserSession();
-            if (gleapSession != null) {
-                conn.setRequestProperty("gleap-id", gleapSession.getId());
-                conn.setRequestProperty("gleap-hash", gleapSession.getHash());
-            }
-
-            JSONObject body = new JSONObject();
-            body.put("events", arrayToJSONArray(eventsToBeSent));
-            body.put("time", PhoneMeta.calculateDurationInDouble());
-            body.put("opened", Gleap.getInstance().isOpened());
-            body.put("ws", true);
-            body.put("sdkVersion", BuildConfig.VERSION_NAME);
-
-            try (OutputStream os = conn.getOutputStream()) {
-                byte[] input = body.toString().getBytes(StandardCharsets.UTF_8);
-                os.write(input, 0, input.length);
-                os.close();
-                os.flush();
-            }
-            conn.getOutputStream().close();
-
-            try (BufferedReader br = new BufferedReader(
-                    new InputStreamReader(conn.getInputStream(), "utf-8"))) {
-            } catch (Error | Exception e) {
-            }
-
-            conn.getInputStream().close();
-            int status = conn.getResponseCode();
-            conn.disconnect();
-            return status;
-        }
+        // Throws for an error status.
+        conn.getInputStream().close();
+        int status = conn.getResponseCode();
+        conn.disconnect();
+        return status;
     }
 
     private JSONArray arrayToJSONArray(List<JSONObject> arrayList) {

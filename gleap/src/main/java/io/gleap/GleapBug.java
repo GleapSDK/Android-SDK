@@ -64,6 +64,11 @@ class GleapBug {
         return instance;
     }
 
+    // Tests only.
+    static synchronized void resetForTesting() {
+        instance = new GleapBug();
+    }
+
     public String getType() {
         return type;
     }

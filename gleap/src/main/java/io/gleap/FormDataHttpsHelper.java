@@ -9,10 +9,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.URL;
 import java.net.URLConnection;
 
-import javax.net.ssl.HttpsURLConnection;
 
 /**
  * Upload the image as form-data
@@ -33,12 +31,7 @@ class FormDataHttpsHelper {
      */
     public FormDataHttpsHelper(String requestURL, String apiToken)
             throws IOException {
-        URL url = new URL(requestURL);
-        if (requestURL.contains("https")) {
-            httpConn = (HttpsURLConnection) url.openConnection();
-        } else {
-            httpConn = (HttpURLConnection) url.openConnection();
-        }
+        httpConn = GleapHttp.open(requestURL);
         httpConn.setUseCaches(false);
         httpConn.setDoOutput(true); // indicates POST method
         httpConn.setDoInput(true);
@@ -47,11 +40,7 @@ class FormDataHttpsHelper {
         httpConn.setRequestProperty("Connection", "Keep-Alive");
         httpConn.setRequestProperty("Cache-Control", "no-cache");
         httpConn.setRequestProperty("api-token", apiToken);
-        GleapSession gleapSession = GleapSessionController.getInstance().getUserSession();
-        if(gleapSession != null) {
-            httpConn.setRequestProperty("gleap-id", gleapSession.getId());
-            httpConn.setRequestProperty("gleap-hash", gleapSession.getHash());
-        }
+        GleapHttp.addReportSessionHeaders(httpConn, GleapSessionController.getInstance().getUserSession());
         httpConn.setRequestProperty(
                 "Content-Type", "multipart/form-data;boundary=" + this.boundary);
 

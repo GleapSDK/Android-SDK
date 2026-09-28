@@ -1,28 +1,21 @@
 package io.gleap;
 
-import android.annotation.SuppressLint;
 import android.os.AsyncTask;
-import android.os.Handler;
-import android.os.Looper;
 
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-
 import java.net.HttpURLConnection;
 
+/**
+ * Starts or resumes the session (POST /sessions): the stored session id and hash, if any, are
+ * sent along, the server answers with the session to use from now on.
+ */
 class GleapBaseSessionService extends AsyncTask<Void, Void, Integer> {
     interface SessionLoadedCallback {
         void invoke(boolean success);
     }
 
     private static final String URL_POSTFIX = "/sessions";
-    private static final int MAX_RETRIES = 3;
-    private static final long INITIAL_RETRY_DELAY_MS = 1000;
 
     private final SessionLoadedCallback sessionLoadedCallback;
     private boolean sessionEstablished = false;
@@ -35,37 +28,16 @@ class GleapBaseSessionService extends AsyncTask<Void, Void, Integer> {
         this.sessionLoadedCallback = sessionLoadedCallback;
     }
 
-    @SuppressLint("WrongThread")
     @Override
     protected Integer doInBackground(Void... voids) {
-        // Attempt the request with retry logic
-        boolean success = false;
-        Exception lastException = null;
-        
-        for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-            try {
+        boolean success = GleapRetry.withBackoff("Session request", Exception.class, new GleapRetry.Attempt() {
+            @Override
+            public void run() throws Exception {
                 performSessionRequest();
-                success = true;
-                break;
-            } catch (Exception e) {
-                lastException = e;
-                GleapLog.w("Session request attempt " + attempt + " failed", e);
-                
-                if (attempt < MAX_RETRIES) {
-                    try {
-                        long delay = INITIAL_RETRY_DELAY_MS * (long) Math.pow(2, attempt - 1);
-                        Thread.sleep(delay);
-                    } catch (InterruptedException ie) {
-                        Thread.currentThread().interrupt();
-                        break;
-                    }
-                }
             }
-        }
+        });
 
         if (!success) {
-            GleapLog.e("All session request attempts failed after " + MAX_RETRIES + " retries", lastException);
-
             if (GleapSessionController.getInstance() != null) {
                 GleapSessionController.getInstance().setSessionLoaded(true);
             }
@@ -86,42 +58,18 @@ class GleapBaseSessionService extends AsyncTask<Void, Void, Integer> {
     }
 
     private void performSessionRequest() throws Exception {
-        URL url = new URL(GleapConfig.getInstance().getApiUrl() + URL_POSTFIX);
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestMethod("POST");
-        conn.setRequestProperty("Api-Token", GleapConfig.getInstance().getSdkKey());
-        conn.setRequestProperty("Accept", "application/json");
-        conn.setRequestProperty("Content-Type", "application/json");
-        conn.setDoOutput(true);
-        conn.setDoInput(true);
-
         // Append credentials, if they exist.
-        GleapSession gleapSession = GleapSessionController.getInstance().getUserSession();
-        if (gleapSession != null && gleapSession.getId() != null && !gleapSession.getId().isEmpty()) {
-            conn.setRequestProperty("Gleap-Id", gleapSession.getId());
-        }
-        if (gleapSession != null && gleapSession.getHash() != null && !gleapSession.getHash().isEmpty()) {
-            conn.setRequestProperty("Gleap-Hash", gleapSession.getHash());
-        }
+        HttpURLConnection conn = GleapHttp.openSessionPost(URL_POSTFIX,
+                GleapSessionController.getInstance().getUserSession());
 
-        try (OutputStream os = conn.getOutputStream()) {
-            JSONObject body = new JSONObject();
-            body.put("lang", GleapConfig.getInstance().getLanguage());
-            body.put("platform", "android");
-            body.put("deviceType", GleapHelper.getDeviceType());
-            byte[] input = body.toString().getBytes(StandardCharsets.UTF_8);
-            os.write(input, 0, input.length);
-        }
+        JSONObject body = new JSONObject();
+        body.put("lang", GleapConfig.getInstance().getLanguage());
+        body.put("platform", "android");
+        body.put("deviceType", GleapHelper.getDeviceType());
+        GleapHttp.writeJson(conn, body);
 
-        try (BufferedReader br = new BufferedReader(
-                new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
-            JSONObject result = null;
-            String input;
-            while ((input = br.readLine()) != null) {
-                result = new JSONObject(input);
-            }
-
-
+        try {
+            JSONObject result = GleapHttp.readLastJsonLine(conn.getInputStream());
             if (GleapSessionController.getInstance() != null) {
                 GleapSessionController.getInstance().processSessionActionResult(result, true, true);
             }

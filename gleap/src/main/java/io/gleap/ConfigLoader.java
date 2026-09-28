@@ -5,11 +5,8 @@ import android.os.AsyncTask;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.URL;
 
 /**
  * Loads the configuration from the server.
@@ -17,8 +14,6 @@ import java.net.URL;
 class ConfigLoader extends AsyncTask<GleapBug, Void, JSONObject> {
     private final OnHttpResponseListener listener;
     private final boolean isReload;
-    private static final int MAX_RETRIES = 3;
-    private static final long INITIAL_RETRY_DELAY_MS = 1000;
 
     public ConfigLoader(OnHttpResponseListener listener) {
         this(listener, false);
@@ -47,46 +42,23 @@ class ConfigLoader extends AsyncTask<GleapBug, Void, JSONObject> {
 
     @Override
     protected JSONObject doInBackground(GleapBug... gleapBugs) {
-
-
         String sdkKey = GleapConfig.getInstance().getSdkKey();
         if (sdkKey == null || sdkKey.trim().isEmpty()) {
             GleapLog.e("SDK key is missing in ConfigLoader");
             return new JSONObject();
         }
 
-        String httpsUrl = GleapConfig.getInstance().getApiUrl() + "/config/" + GleapConfig.getInstance().getSdkKey();
+        final String configUrl = GleapConfig.getInstance().getApiUrl() + "/config/" + GleapConfig.getInstance().getSdkKey();
 
-        boolean success = false;
-        Exception lastException = null;
-
-        for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-            try {
-                URL url = new URL(httpsUrl + "/?lang=" + GleapConfig.getInstance().getLanguage());
-                HttpURLConnection con = (HttpURLConnection) url.openConnection();
+        // Only connection failures are retried; readResponse reports every other failure.
+        GleapRetry.withBackoff("Config load", IOException.class, new GleapRetry.Attempt() {
+            @Override
+            public void run() throws Exception {
+                HttpURLConnection con = GleapHttp.open(configUrl + "/?lang=" + GleapConfig.getInstance().getLanguage());
                 con.connect();
                 readResponse(con);
-                success = true;
-                break;
-            } catch (IOException e) {
-                lastException = e;
-                GleapLog.w("Config load attempt " + attempt + " failed", e);
-
-                if (attempt < MAX_RETRIES) {
-                    try {
-                        long delay = INITIAL_RETRY_DELAY_MS * (long) Math.pow(2, attempt - 1);
-                        Thread.sleep(delay);
-                    } catch (InterruptedException ie) {
-                        Thread.currentThread().interrupt();
-                        break;
-                    }
-                }
             }
-        }
-
-        if (!success) {
-            GleapLog.e("All config load attempts failed after " + MAX_RETRIES + " retries", lastException);
-        }
+        });
 
         JSONObject response = new JSONObject();
         try{
@@ -100,15 +72,7 @@ class ConfigLoader extends AsyncTask<GleapBug, Void, JSONObject> {
         if (con != null) {
 
             try {
-                BufferedReader br =
-                        new BufferedReader(
-                                new InputStreamReader(con.getInputStream()));
-                String input;
-                JSONObject result = null;
-                while ((input = br.readLine()) != null) {
-                    result = new JSONObject(input);
-                }
-                br.close();
+                JSONObject result = GleapHttp.readLastJsonLine(con.getInputStream());
 
                 if (result != null) {
                     GleapConfig.getInstance().initConfig(result);

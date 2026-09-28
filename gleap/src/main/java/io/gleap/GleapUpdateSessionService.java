@@ -4,16 +4,14 @@ import android.os.AsyncTask;
 
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-
 import java.net.HttpURLConnection;
 
 import gleap.io.gleap.BuildConfig;
 
+/**
+ * Updates the session's contact (POST /sessions/partialupdate) with the pending update action.
+ * Started by the SDK; there is no need to run it from the app.
+ */
 public class GleapUpdateSessionService extends AsyncTask<Void, Void, Integer> {
     private static final String URL_POSTFIX = "/sessions/partialupdate";
 
@@ -46,22 +44,7 @@ public class GleapUpdateSessionService extends AsyncTask<Void, Void, Integer> {
             GleapSessionController.getInstance().setPendingUpdateAction(null);
 
             try {
-                URL url = new URL(GleapConfig.getInstance().getApiUrl() + URL_POSTFIX);
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("POST");
-                conn.setRequestProperty("Api-Token", GleapConfig.getInstance().getSdkKey());
-                conn.setRequestProperty("Accept", "application/json");
-                conn.setRequestProperty("Content-Type", "application/json");
-                conn.setDoOutput(true);
-                conn.setDoInput(true);
-
-                if (gleapSession.getId() != null && !gleapSession.getId().equals("")) {
-                    conn.setRequestProperty("Gleap-Id", gleapSession.getId());
-                }
-
-                if (gleapSession.getHash() != null && !gleapSession.getHash().equals("")) {
-                    conn.setRequestProperty("Gleap-Hash", gleapSession.getHash());
-                }
+                HttpURLConnection conn = GleapHttp.openSessionPost(URL_POSTFIX, gleapSession);
 
                 JSONObject dataPayload = pendingUpdateAction.getJSONPayload();
                 dataPayload.put("platform", "android");
@@ -72,19 +55,10 @@ public class GleapUpdateSessionService extends AsyncTask<Void, Void, Integer> {
                 jsonObject.put("sdkVersion", BuildConfig.VERSION_NAME);
                 jsonObject.put("type", "android");
 
-                try (OutputStream os = conn.getOutputStream()) {
-                    byte[] input = jsonObject.toString().getBytes(StandardCharsets.UTF_8);
-                    os.write(input, 0, input.length);
-                }
+                GleapHttp.writeJson(conn, jsonObject);
 
-                try (BufferedReader br = new BufferedReader(
-                        new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
-                    JSONObject result = null;
-                    String input;
-                    while ((input = br.readLine()) != null) {
-                        result = new JSONObject(input);
-                    }
-
+                try {
+                    JSONObject result = GleapHttp.readLastJsonLine(conn.getInputStream());
                     GleapSessionController.getInstance().processSessionActionResult(result, false, false);
                 } catch (Exception e) {
                     // Log the error.

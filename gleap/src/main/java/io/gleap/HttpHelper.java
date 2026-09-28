@@ -19,14 +19,12 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
-import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-import javax.net.ssl.HttpsURLConnection;
 
 /**
  * Sends the report to the gleap dashboard.
@@ -164,25 +162,8 @@ class HttpHelper extends AsyncTask<GleapBug, Void, JSONObject> {
             stripImages = stripConfig.getBoolean("screenshot");
         }
 
-        URL url = new URL(gleapConfig.getApiUrl() + REPORT_BUG_URL_POSTFIX);
-        HttpURLConnection conn;
-        if (gleapConfig.getApiUrl().contains("https")) {
-            conn = (HttpsURLConnection) url.openConnection();
-        } else {
-            conn = (HttpURLConnection) url.openConnection();
-        }
-
-        conn.setRequestProperty("api-token", gleapConfig.getSdkKey());
-        conn.setDoOutput(true);
-        conn.setRequestProperty("Accept", "application/json");
-        conn.setRequestProperty("Content-Type", "application/json");
-        conn.setRequestMethod("POST");
-        GleapSession gleapSession = GleapSessionController.getInstance().getUserSession();
-
-        if (gleapSession != null) {
-            conn.setRequestProperty("gleap-id", gleapSession.getId());
-            conn.setRequestProperty("gleap-hash", gleapSession.getHash());
-        }
+        HttpURLConnection conn = GleapHttp.openReportPost(REPORT_BUG_URL_POSTFIX,
+                GleapSessionController.getInstance().getUserSession());
         JSONObject body = new JSONObject();
 
         String outboundId = null;
