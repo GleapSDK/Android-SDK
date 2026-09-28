@@ -158,7 +158,7 @@ public class Gleap implements iGleap {
                             return;
                         }
 
-                        if (GleapDetectorUtil.isIsRunning()) {
+                        if (GleapDetectorUtil.isWidgetOpen()) {
                             return;
                         }
 
@@ -229,7 +229,7 @@ public class Gleap implements iGleap {
                         @Override
                         public void run() throws RuntimeException {
                             try {
-                                if (!GleapDetectorUtil.isIsRunning() && isGleapReady() && instance != null) {
+                                if (!GleapDetectorUtil.isWidgetOpen() && isGleapReady() && instance != null) {
                                     try {
                                         if (screenshotTaker != null) {
                                             JSONObject message = new JSONObject();
@@ -241,7 +241,7 @@ public class Gleap implements iGleap {
                                     } catch (Exception e) {
                                         handleError(e, "openConversations - inner");
                                     }
-                                } else if (!GleapDetectorUtil.isIsRunning() && instance != null) {
+                                } else if (!GleapDetectorUtil.isWidgetOpen() && instance != null) {
                                     recoverSessionAndRetry(new Runnable() {
                                         @Override
                                         public void run() {
@@ -273,7 +273,7 @@ public class Gleap implements iGleap {
                         @Override
                         public void run() throws RuntimeException {
                             try {
-                                if (!GleapDetectorUtil.isIsRunning() && isGleapReady() && instance != null) {
+                                if (!GleapDetectorUtil.isWidgetOpen() && isGleapReady() && instance != null) {
                                     try {
                                         if (screenshotTaker != null) {
                                             JSONObject message = new JSONObject();
@@ -286,7 +286,7 @@ public class Gleap implements iGleap {
                                     } catch (Exception e) {
                                         handleError(e, "run");
                                     }
-                                } else if (!GleapDetectorUtil.isIsRunning() && instance != null) {
+                                } else if (!GleapDetectorUtil.isWidgetOpen() && instance != null) {
                                     recoverSessionAndRetry(new Runnable() {
                                         @Override
                                         public void run() {
@@ -340,7 +340,7 @@ public class Gleap implements iGleap {
                         @Override
                         public void run() throws RuntimeException {
                             try {
-                                if (!GleapDetectorUtil.isIsRunning() && isGleapReady() && instance != null) {
+                                if (!GleapDetectorUtil.isWidgetOpen() && isGleapReady() && instance != null) {
                                     try {
                                         if (screenshotTaker != null) {
                                             screenshotTaker.takeScreenshot(type);
@@ -348,7 +348,7 @@ public class Gleap implements iGleap {
                                     } catch (Exception e) {
                                         handleError(e, "run");
                                     }
-                                } else if (type == SurveyType.NONE && !GleapDetectorUtil.isIsRunning() && instance != null) {
+                                } else if (type == SurveyType.NONE && !GleapDetectorUtil.isWidgetOpen() && instance != null) {
                                     recoverSessionAndRetry(new Runnable() {
                                         @Override
                                         public void run() {
@@ -475,7 +475,7 @@ public class Gleap implements iGleap {
                         @Override
                         public void run() throws RuntimeException {
                             try {
-                                if (!GleapDetectorUtil.isIsRunning() && isGleapReady() && instance != null) {
+                                if (!GleapDetectorUtil.isWidgetOpen() && isGleapReady() && instance != null) {
                                     try {
                                         if (screenshotTaker != null) {
                                             JSONObject message = new JSONObject();
@@ -487,7 +487,7 @@ public class Gleap implements iGleap {
                                     } catch (Exception e) {
                                         handleError(e, "run");
                                     }
-                                } else if (!GleapDetectorUtil.isIsRunning() && instance != null) {
+                                } else if (!GleapDetectorUtil.isWidgetOpen() && instance != null) {
                                     recoverSessionAndRetry(new Runnable() {
                                         @Override
                                         public void run() {
@@ -524,7 +524,7 @@ public class Gleap implements iGleap {
                         @Override
                         public void run() throws RuntimeException {
                             try {
-                                if (!GleapDetectorUtil.isIsRunning() && isGleapReady() && instance != null) {
+                                if (!GleapDetectorUtil.isWidgetOpen() && isGleapReady() && instance != null) {
                                     try {
                                         if (screenshotTaker != null) {
                                             JSONObject message = new JSONObject();
@@ -537,7 +537,7 @@ public class Gleap implements iGleap {
                                     } catch (Exception e) {
                                         handleError(e, "run");
                                     }
-                                } else if (!GleapDetectorUtil.isIsRunning() && instance != null) {
+                                } else if (!GleapDetectorUtil.isWidgetOpen() && instance != null) {
                                     recoverSessionAndRetry(new Runnable() {
                                         @Override
                                         public void run() {
@@ -574,7 +574,7 @@ public class Gleap implements iGleap {
                         @Override
                         public void run() throws RuntimeException {
                             try {
-                                if (!GleapDetectorUtil.isIsRunning() && isGleapReady() && instance != null) {
+                                if (!GleapDetectorUtil.isWidgetOpen() && isGleapReady() && instance != null) {
                                     try {
                                         if (screenshotTaker != null) {
                                             JSONObject message = new JSONObject();
@@ -587,7 +587,7 @@ public class Gleap implements iGleap {
                                     } catch (Exception e) {
                                         handleError(e, "run");
                                     }
-                                } else if (!GleapDetectorUtil.isIsRunning() && instance != null) {
+                                } else if (!GleapDetectorUtil.isWidgetOpen() && instance != null) {
                                     recoverSessionAndRetry(new Runnable() {
                                         @Override
                                         public void run() {
@@ -636,7 +636,7 @@ public class Gleap implements iGleap {
                         @Override
                         public void run() throws RuntimeException {
                             try {
-                                if (!GleapDetectorUtil.isIsRunning() && isGleapReady() && instance != null) {
+                                if (!GleapDetectorUtil.isWidgetOpen() && isGleapReady() && instance != null) {
                                     try {
                                         if (screenshotTaker != null) {
                                             JSONObject message = new JSONObject();
@@ -648,7 +648,7 @@ public class Gleap implements iGleap {
                                     } catch (Exception e) {
                                         handleError(e, "run");
                                     }
-                                } else if (!GleapDetectorUtil.isIsRunning() && instance != null) {
+                                } else if (!GleapDetectorUtil.isWidgetOpen() && instance != null) {
                                     recoverSessionAndRetry(new Runnable() {
                                         @Override
                                         public void run() {
@@ -695,7 +695,7 @@ public class Gleap implements iGleap {
                         @Override
                         public void run() throws RuntimeException {
                             try {
-                                if (!GleapDetectorUtil.isIsRunning() && isGleapReady() && instance != null) {
+                                if (!GleapDetectorUtil.isWidgetOpen() && isGleapReady() && instance != null) {
                                     try {
                                         if (screenshotTaker != null) {
                                             JSONObject message = new JSONObject();
@@ -708,7 +708,7 @@ public class Gleap implements iGleap {
                                     } catch (Exception e) {
                                         handleError(e, "run");
                                     }
-                                } else if (!GleapDetectorUtil.isIsRunning() && instance != null) {
+                                } else if (!GleapDetectorUtil.isWidgetOpen() && instance != null) {
                                     recoverSessionAndRetry(new Runnable() {
                                         @Override
                                         public void run() {
@@ -743,7 +743,7 @@ public class Gleap implements iGleap {
                         @Override
                         public void run() throws RuntimeException {
                             try {
-                                if (!GleapDetectorUtil.isIsRunning() && isGleapReady() && instance != null) {
+                                if (!GleapDetectorUtil.isWidgetOpen() && isGleapReady() && instance != null) {
                                     try {
                                         if (screenshotTaker != null) {
                                             JSONObject message = new JSONObject();
@@ -756,7 +756,7 @@ public class Gleap implements iGleap {
                                     } catch (Exception e) {
                                         handleError(e, "run");
                                     }
-                                } else if (!GleapDetectorUtil.isIsRunning() && instance != null) {
+                                } else if (!GleapDetectorUtil.isWidgetOpen() && instance != null) {
                                     recoverSessionAndRetry(new Runnable() {
                                         @Override
                                         public void run() {
@@ -821,7 +821,7 @@ public class Gleap implements iGleap {
                     Runnable gleapRunnable = new Runnable() {
                         @Override
                         public void run() throws RuntimeException {
-                            if (!GleapDetectorUtil.isIsRunning() && isGleapReady()
+                            if (!GleapDetectorUtil.isWidgetOpen() && isGleapReady()
                                     && Gleap.getInstance() != null) {
                                 try {
                                     JSONObject data = new JSONObject();
@@ -835,7 +835,7 @@ public class Gleap implements iGleap {
                                 } catch (Exception e) {
                                     handleError(e, "run");
                                 }
-                            } else if (!GleapDetectorUtil.isIsRunning() && Gleap.getInstance() != null) {
+                            } else if (!GleapDetectorUtil.isWidgetOpen() && Gleap.getInstance() != null) {
                                 recoverSessionAndRetry(new Runnable() {
                                     @Override
                                     public void run() {
@@ -902,7 +902,7 @@ public class Gleap implements iGleap {
                     Runnable gleapRunnable = new Runnable() {
                         @Override
                         public void run() throws RuntimeException {
-                            if (!GleapDetectorUtil.isIsRunning() && isGleapReady()
+                            if (!GleapDetectorUtil.isWidgetOpen() && isGleapReady()
                                     && Gleap.getInstance() != null) {
                                 try {
 
@@ -914,7 +914,7 @@ public class Gleap implements iGleap {
                                 } catch (Exception e) {
                                     handleError(e, "run");
                                 }
-                            } else if (!GleapDetectorUtil.isIsRunning() && Gleap.getInstance() != null) {
+                            } else if (!GleapDetectorUtil.isWidgetOpen() && Gleap.getInstance() != null) {
                                 recoverSessionAndRetry(new Runnable() {
                                     @Override
                                     public void run() {
@@ -947,7 +947,7 @@ public class Gleap implements iGleap {
                     Runnable gleapRunnable = new Runnable() {
                         @Override
                         public void run() throws RuntimeException {
-                            if (!GleapDetectorUtil.isIsRunning() && isGleapReady()
+                            if (!GleapDetectorUtil.isWidgetOpen() && isGleapReady()
                                     && Gleap.getInstance() != null) {
                                 try {
 
@@ -960,7 +960,7 @@ public class Gleap implements iGleap {
                                 } catch (Exception e) {
                                     handleError(e, "run");
                                 }
-                            } else if (!GleapDetectorUtil.isIsRunning() && Gleap.getInstance() != null) {
+                            } else if (!GleapDetectorUtil.isWidgetOpen() && Gleap.getInstance() != null) {
                                 recoverSessionAndRetry(new Runnable() {
                                     @Override
                                     public void run() {
@@ -993,7 +993,7 @@ public class Gleap implements iGleap {
                     Runnable gleapRunnable = new Runnable() {
                         @Override
                         public void run() throws RuntimeException {
-                            if (!GleapDetectorUtil.isIsRunning() && isGleapReady()
+                            if (!GleapDetectorUtil.isWidgetOpen() && isGleapReady()
                                     && Gleap.getInstance() != null) {
                                 try {
 
@@ -1006,7 +1006,7 @@ public class Gleap implements iGleap {
                                 } catch (Exception e) {
                                     handleError(e, "run");
                                 }
-                            } else if (!GleapDetectorUtil.isIsRunning() && Gleap.getInstance() != null) {
+                            } else if (!GleapDetectorUtil.isWidgetOpen() && Gleap.getInstance() != null) {
                                 recoverSessionAndRetry(new Runnable() {
                                     @Override
                                     public void run() {
@@ -1108,7 +1108,7 @@ public class Gleap implements iGleap {
                     Runnable gleapRunnable = new Runnable() {
                         @Override
                         public void run() throws RuntimeException {
-                            if (!GleapDetectorUtil.isIsRunning() && isGleapReady()
+                            if (!GleapDetectorUtil.isWidgetOpen() && isGleapReady()
                                     && Gleap.getInstance() != null) {
                                 try {
 
@@ -1121,7 +1121,7 @@ public class Gleap implements iGleap {
                                 } catch (Exception e) {
                                     handleError(e, "run");
                                 }
-                            } else if (!GleapDetectorUtil.isIsRunning() && Gleap.getInstance() != null) {
+                            } else if (!GleapDetectorUtil.isWidgetOpen() && Gleap.getInstance() != null) {
                                 recoverSessionAndRetry(new Runnable() {
                                     @Override
                                     public void run() {
@@ -1154,7 +1154,7 @@ public class Gleap implements iGleap {
                     Runnable gleapRunnable = new Runnable() {
                         @Override
                         public void run() throws RuntimeException {
-                            if (!GleapDetectorUtil.isIsRunning() && isGleapReady()
+                            if (!GleapDetectorUtil.isWidgetOpen() && isGleapReady()
                                     && Gleap.getInstance() != null) {
                                 try {
 
@@ -1167,7 +1167,7 @@ public class Gleap implements iGleap {
                                 } catch (Exception e) {
                                     handleError(e, "run");
                                 }
-                            } else if (!GleapDetectorUtil.isIsRunning() && Gleap.getInstance() != null) {
+                            } else if (!GleapDetectorUtil.isWidgetOpen() && Gleap.getInstance() != null) {
                                 recoverSessionAndRetry(new Runnable() {
                                     @Override
                                     public void run() {
@@ -1331,9 +1331,9 @@ public class Gleap implements iGleap {
                 Runnable gleapRunnable = new Runnable() {
                     @Override
                     public void run() {
-                        GleapInvisibleActivityManger.getInstance().destroyBanner(true);
-                        GleapInvisibleActivityManger.getInstance().destroyModal(true, true);
-                        GleapInvisibleActivityManger.getInstance().clearMessages();
+                        GleapOverlayManager.getInstance().destroyBanner(true);
+                        GleapOverlayManager.getInstance().destroyModal(true, true);
+                        GleapOverlayManager.getInstance().clearMessages();
                     }
                 };
 
@@ -1710,7 +1710,7 @@ public class Gleap implements iGleap {
     @Override
     public void removeCustomDataForKey(String key) {
         try {
-            GleapBug.getInstance().removeUserAttribute(key);
+            GleapBug.getInstance().removeCustomData(key);
         } catch (Error | Exception ignore) {
             handleError(ignore, "removeCustomDataForKey");
         }
@@ -2001,7 +2001,7 @@ public class Gleap implements iGleap {
             public void run() {
                 // Smartlink, handle internally.
                 if (url.contains("gleap:")) {
-                    if (GleapDetectorUtil.isIsRunning()) {
+                    if (GleapDetectorUtil.isWidgetOpen()) {
                         // Try again later.
                         Gleap.getInstance().handleLink(url);
                     } else {
@@ -2092,7 +2092,7 @@ public class Gleap implements iGleap {
     @Override
     public void setApplicationType(APPLICATIONTYPE applicationType) {
         try {
-            GleapBug.getInstance().setApplicationtype(applicationType);
+            GleapBug.getInstance().setApplicationType(applicationType);
         } catch (Error | Exception ignore) {
             handleError(ignore, "setApplicationType");
         }
@@ -2221,7 +2221,7 @@ public class Gleap implements iGleap {
     public void setActivationMethods(GleapActivationMethod[] activationMethods) {
         try {
             if (application != null) {
-                GleapConfig.getInstance().setPriorizedGestureDetectors(Arrays.asList(activationMethods));
+                GleapConfig.getInstance().setPrioritizedActivationMethods(Arrays.asList(activationMethods));
                 GleapDetectorUtil.clearAllDetectors();
                 List<GleapDetector> detectorList = GleapDetectorUtil.initDetectors(application, activationMethods);
                 GleapConfig.getInstance().setGestureDetectors(detectorList);
@@ -2255,7 +2255,7 @@ public class Gleap implements iGleap {
      */
     @Override
     public boolean isOpened() {
-        return GleapDetectorUtil.isIsRunning();
+        return GleapDetectorUtil.isWidgetOpen();
     }
 
     /**
@@ -2329,7 +2329,7 @@ public class Gleap implements iGleap {
         try {
             GleapConfig.getInstance().setHideFeedbackButton(!show);
             GleapConfig.getInstance().setFeedbackButtonManuallySet(true);
-            GleapInvisibleActivityManger.getInstance().setShowFab(show);
+            GleapOverlayManager.getInstance().setShowFab(show);
         } catch (Exception ignore) {
             handleError(ignore, "showFeedbackButton");
         }
@@ -2380,7 +2380,7 @@ public class Gleap implements iGleap {
                     Runnable gleapRunnable = new Runnable() {
                         @Override
                         public void run() throws RuntimeException {
-                            if (!GleapDetectorUtil.isIsRunning() && isGleapReady()
+                            if (!GleapDetectorUtil.isWidgetOpen() && isGleapReady()
                                     && Gleap.getInstance() != null) {
                                 try {
                                     JSONObject data = new JSONObject();
@@ -2391,7 +2391,7 @@ public class Gleap implements iGleap {
                                 } catch (Exception e) {
                                     handleError(e, "run");
                                 }
-                            } else if (!GleapDetectorUtil.isIsRunning() && Gleap.getInstance() != null) {
+                            } else if (!GleapDetectorUtil.isWidgetOpen() && Gleap.getInstance() != null) {
                                 recoverSessionAndRetry(new Runnable() {
                                     @Override
                                     public void run() {
@@ -2500,7 +2500,7 @@ public class Gleap implements iGleap {
                 @Override
                 public void run() {
                     try {
-                        GleapInvisibleActivityManger.getInstance().showModal(data, null);
+                        GleapOverlayManager.getInstance().showModal(data, null);
                     } catch (Exception exp) {
                         handleError(exp, "showModal - inner");
                     }

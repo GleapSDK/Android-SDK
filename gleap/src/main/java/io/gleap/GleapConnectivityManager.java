@@ -118,7 +118,7 @@ class GleapConnectivityManager {
                     } else {
                         // Both loaded — connection was temporarily lost.
                         // Refresh the launcher UI and reconnect WebSocket.
-                        GleapInvisibleActivityManger.getInstance().addLayoutToActivity(null);
+                        GleapOverlayManager.getInstance().addLayoutToActivity(null);
                         GleapEventService.getInstance().startWebSocketListener();
                     }
                 } catch (Exception ignore) {

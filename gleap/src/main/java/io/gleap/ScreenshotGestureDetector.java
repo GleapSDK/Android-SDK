@@ -44,19 +44,19 @@ class ScreenshotGestureDetector extends GleapDetector {
         this.takeScreenshot();
     }
 
-    private static String storge_permissions =
+    private static final String STORAGE_PERMISSION =
             Manifest.permission.READ_EXTERNAL_STORAGE;
 
     @RequiresApi(api = Build.VERSION_CODES.TIRAMISU)
-    private static String storge_permissions_33 =
+    private static final String MEDIA_IMAGES_PERMISSION =
             Manifest.permission.READ_MEDIA_IMAGES;
 
     private static String permissions() {
         String p;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            p = storge_permissions_33;
+            p = MEDIA_IMAGES_PERMISSION;
         } else {
-            p = storge_permissions;
+            p = STORAGE_PERMISSION;
         }
         return p;
     }

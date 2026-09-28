@@ -45,7 +45,7 @@ class ScreenshotTaker {
 
     public void openScreenshot(Bitmap imageFile, SurveyType type) {
         try {
-            GleapInvisibleActivityManger.getInstance().setInvisible();
+            GleapOverlayManager.getInstance().setInvisible();
             Activity activity = ActivityUtil.getCurrentActivity();
             if (activity != null) {
                 Context applicationContext = activity.getApplicationContext();
@@ -86,7 +86,7 @@ class ScreenshotTaker {
 
                     gleapBug.setScreenshot(imageFile);
 
-                    GleapInvisibleActivityManger.getInstance().clearMessages();
+                    GleapOverlayManager.getInstance().clearMessages();
 
                     if(GleapConfig.getInstance().getWidgetOpenedCallback() != null) {
                         GleapConfig.getInstance().getWidgetOpenedCallback().invoke();
@@ -96,7 +96,7 @@ class ScreenshotTaker {
                     mainThreadHandler.post(new Runnable() {
                         @Override
                         public void run() {
-                            GleapInvisibleActivityManger.getInstance().setMessageCounter(0);
+                            GleapOverlayManager.getInstance().setMessageCounter(0);
                         }
                     });
 

@@ -22,45 +22,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * One console log entry: {@code { "date": ISO, "priority": "INFO" | "WARNING" | "ERROR", "log": "..." }}.
- */
-class Log {
-    private final long time;
-    private final String log;
-    private final String priority;
-
-    Log(long time, String log, String priority) {
-        this.time = time;
-        this.priority = priority;
-        this.log = LogReader.capLog(log, priority);
-    }
-
-    long getTime() {
-        return time;
-    }
-
-    String getLog() {
-        return log;
-    }
-
-    String getPriority() {
-        return priority;
-    }
-
-    public JSONObject toJSON() {
-        JSONObject jo = new JSONObject();
-        try {
-            jo.put("date", DateUtil.dateToString(new Date(time)));
-            jo.put("log", log);
-            jo.put("priority", priority);
-        } catch (Exception ex) {
-        }
-
-        return jo;
-    }
-}
-
-/**
  * The console logs sent with a ticket: the app's logcat output (read when a ticket is sent), the
  * messages logged with {@link Gleap#log(String)} and the attached console logs.
  */
@@ -80,7 +41,7 @@ class LogReader {
 
     private static final LogReader instance = new LogReader();
 
-    private final ArrayDeque<Log> customLogs = new ArrayDeque<>();
+    private final ArrayDeque<ConsoleLogEntry> customLogs = new ArrayDeque<>();
     private JSONArray attachedLogs = new JSONArray();
 
     private LogReader() {
@@ -94,13 +55,13 @@ class LogReader {
      * Reads the newest logcat lines of this process. Blocks for the duration of the logcat call,
      * so never call it on the main thread.
      */
-    List<Log> readLog() {
+    List<ConsoleLogEntry> readLog() {
         // --pid needs API 24; before that the lines are filtered by pid after parsing.
         return readLogcat(Build.VERSION.SDK_INT >= Build.VERSION_CODES.N);
     }
 
-    List<Log> readLogcat(boolean usePidOption) {
-        List<Log> logs = new ArrayList<>();
+    List<ConsoleLogEntry> readLogcat(boolean usePidOption) {
+        List<ConsoleLogEntry> logs = new ArrayList<>();
         Process process = null;
         try {
             int pid = android.os.Process.myPid();
@@ -125,7 +86,7 @@ class LogReader {
             long now = System.currentTimeMillis();
             TimeZone timeZone = TimeZone.getDefault();
             for (String line : lines) {
-                Log log = parseLogcatLine(line, pid, now, timeZone);
+                ConsoleLogEntry log = parseLogcatLine(line, pid, now, timeZone);
                 if (log != null) {
                     logs.add(log);
                 }
@@ -149,7 +110,7 @@ class LogReader {
      * @param now the current time; a date in the future belongs to the previous year
      * @return the entry, or null for other lines (e.g. "--------- beginning of main")
      */
-    static Log parseLogcatLine(String line, int pid, long now, TimeZone timeZone) {
+    static ConsoleLogEntry parseLogcatLine(String line, int pid, long now, TimeZone timeZone) {
         if (line == null) {
             return null;
         }
@@ -190,7 +151,7 @@ class LogReader {
             calendar.add(Calendar.YEAR, -1);
         }
 
-        return new Log(calendar.getTimeInMillis(), message, priorityFor(matcher.group(9)));
+        return new ConsoleLogEntry(calendar.getTimeInMillis(), message, priorityFor(matcher.group(9)));
     }
 
     static String priorityFor(String level) {
@@ -222,7 +183,7 @@ class LogReader {
     }
 
     public void log(String msg, GleapLogLevel level) {
-        Log log = new Log(System.currentTimeMillis(), msg, (level != null ? level : GleapLogLevel.INFO).name());
+        ConsoleLogEntry log = new ConsoleLogEntry(System.currentTimeMillis(), msg, (level != null ? level : GleapLogLevel.INFO).name());
         synchronized (this) {
             while (customLogs.size() >= MAX_CUSTOM_LOGS) {
                 customLogs.removeFirst();
@@ -260,14 +221,14 @@ class LogReader {
     public JSONArray getLogs() {
         final List<Object[]> entries = new ArrayList<>();
         if (GleapConfig.getInstance().isEnableConsoleLogsFromCode()) {
-            for (Log log : readLog()) {
+            for (ConsoleLogEntry log : readLog()) {
                 entries.add(new Object[]{log.getTime(), log.toJSON()});
             }
         }
 
         JSONArray attached;
         synchronized (this) {
-            for (Log log : customLogs) {
+            for (ConsoleLogEntry log : customLogs) {
                 entries.add(new Object[]{log.getTime(), log.toJSON()});
             }
             attached = attachedLogs;

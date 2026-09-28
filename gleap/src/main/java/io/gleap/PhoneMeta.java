@@ -133,19 +133,19 @@ class PhoneMeta {
         }
 
         String applicationType = "Android";
-        if (GleapBug.getInstance().getApplicationtype() == APPLICATIONTYPE.FLUTTER) {
+        if (GleapBug.getInstance().getApplicationType() == APPLICATIONTYPE.FLUTTER) {
             applicationType = "Flutter/Android";
         }
 
-        if (GleapBug.getInstance().getApplicationtype() == APPLICATIONTYPE.REACTNATIVE) {
+        if (GleapBug.getInstance().getApplicationType() == APPLICATIONTYPE.REACTNATIVE) {
             applicationType = "ReactNative/Android";
         }
 
-        if(GleapBug.getInstance().getApplicationtype() == APPLICATIONTYPE.CORDOVA) {
+        if(GleapBug.getInstance().getApplicationType() == APPLICATIONTYPE.CORDOVA) {
             applicationType = "Cordova/Android";
         }
 
-        if(GleapBug.getInstance().getApplicationtype() == APPLICATIONTYPE.CAPACITOR) {
+        if(GleapBug.getInstance().getApplicationType() == APPLICATIONTYPE.CAPACITOR) {
             applicationType = "Capacitor/Android";
         }
 

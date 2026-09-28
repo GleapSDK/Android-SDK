@@ -158,7 +158,7 @@ class GleapBanner {
                                     showWebView();
                                     break;
                                 case "banner-close":
-                                    GleapInvisibleActivityManger.getInstance().destroyBanner(true);
+                                    GleapOverlayManager.getInstance().destroyBanner(true);
                                     break;
                                 case "start-conversation":
                                     try {
@@ -252,7 +252,7 @@ class GleapBanner {
         }
 
         private void showWebView() {
-            GleapInvisibleActivityManger.animateViewInOut(getComponent(), true);
+            GleapOverlayManager.animateViewInOut(getComponent(), true);
         }
 
         private void sendBannerData() {

@@ -61,7 +61,7 @@ class SilentBugReportUtil {
 
     public static void createSilentBugReport(Context context, String description, Gleap.SEVERITY severity, JSONObject excludeData) {
 
-        if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null &&
+        if (!GleapDetectorUtil.isWidgetOpen() && GleapSessionController.getInstance() != null &&
                 GleapSessionController.getInstance().isSessionLoaded() && Gleap.getInstance() != null) {
             
             createSilentBugReport(context, description, severity, "CRASH", excludeData);

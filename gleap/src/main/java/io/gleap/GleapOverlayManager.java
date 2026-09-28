@@ -47,8 +47,8 @@ import gleap.io.gleap.R;
  * Control over invisible overlay
  * adds fab and notifictions if needed
  */
-class GleapInvisibleActivityManger {
-    private static GleapInvisibleActivityManger instance;
+class GleapOverlayManager {
+    private static GleapOverlayManager instance;
     private List<GleapChatMessage> messages;
     private ConstraintLayout layout;
     private TextView notificationCountTextView;
@@ -69,7 +69,7 @@ class GleapInvisibleActivityManger {
     private JSONObject modalData;
     private int originalVisibility = 0;
 
-    private GleapInvisibleActivityManger() {
+    private GleapOverlayManager() {
         messages = new LinkedList<>();
     }
 
@@ -106,9 +106,9 @@ class GleapInvisibleActivityManger {
         fadeInAnimation.start();
     }
 
-    public static GleapInvisibleActivityManger getInstance() {
+    public static GleapOverlayManager getInstance() {
         if (instance == null) {
-            instance = new GleapInvisibleActivityManger();
+            instance = new GleapOverlayManager();
         }
         return instance;
     }
@@ -388,11 +388,11 @@ class GleapInvisibleActivityManger {
 
     public void destroyBanner(boolean clearData) {
         if (this.banner != null) {
-            LinearLayout innerBannerLayoutbanner = this.banner.getComponent();
-            if (innerBannerLayoutbanner != null) {
-                ConstraintLayout parentLayout = (ConstraintLayout) innerBannerLayoutbanner.getParent();
+            LinearLayout bannerLayout = this.banner.getComponent();
+            if (bannerLayout != null) {
+                ConstraintLayout parentLayout = (ConstraintLayout) bannerLayout.getParent();
                 if (parentLayout != null) {
-                    parentLayout.removeView(innerBannerLayoutbanner);
+                    parentLayout.removeView(bannerLayout);
                 }
             }
 
@@ -455,19 +455,19 @@ class GleapInvisibleActivityManger {
         this.banner = new GleapBanner(this.bannerData, activity);
 
         // Attach the banner to the current layout.
-        LinearLayout innerBannerLayoutbanner = this.banner.getComponent();
-        if (innerBannerLayoutbanner != null) {
-            if (innerBannerLayoutbanner.getParent() == null) {
+        LinearLayout bannerLayout = this.banner.getComponent();
+        if (bannerLayout != null) {
+            if (bannerLayout.getParent() == null) {
                 // Setup constraints.
                 ConstraintSet bannerSet = new ConstraintSet();
                 bannerSet.clone(layout);
-                bannerSet.connect(innerBannerLayoutbanner.getId(), ConstraintSet.TOP, layout.getId(), ConstraintSet.TOP, 0); // Connect top of bannerContainer to top of layout
-                bannerSet.connect(innerBannerLayoutbanner.getId(), ConstraintSet.START, layout.getId(), ConstraintSet.START, 0); // Connect start of bannerContainer to start of layout
-                bannerSet.connect(innerBannerLayoutbanner.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, 0); // Connect end of bannerContainer to end of layout
+                bannerSet.connect(bannerLayout.getId(), ConstraintSet.TOP, layout.getId(), ConstraintSet.TOP, 0); // Connect top of bannerContainer to top of layout
+                bannerSet.connect(bannerLayout.getId(), ConstraintSet.START, layout.getId(), ConstraintSet.START, 0); // Connect start of bannerContainer to start of layout
+                bannerSet.connect(bannerLayout.getId(), ConstraintSet.END, layout.getId(), ConstraintSet.END, 0); // Connect end of bannerContainer to end of layout
                 bannerSet.applyTo(layout);
 
                 // Add banner view.
-                layout.addView(innerBannerLayoutbanner);
+                layout.addView(bannerLayout);
             }
         }
     }
@@ -559,7 +559,7 @@ class GleapInvisibleActivityManger {
         updateCloseButtonState();
     }
 
-    public void destoryLayout() {
+    public void destroyLayout() {
         if (this.layout != null) {
             this.layout.removeAllViews();
             this.layout.setOnApplyWindowInsetsListener(null);
@@ -577,12 +577,12 @@ class GleapInvisibleActivityManger {
         }
     }
 
-    public void destoryUI() {
+    public void destroyUI() {
         this.destroyFab();
         this.destroyBanner(false);
         this.destroyModal(false, false);
         this.destroyNotificationLayout();
-        this.destoryLayout();
+        this.destroyLayout();
     }
 
     private void destroyNotificationLayout() {
@@ -620,7 +620,7 @@ class GleapInvisibleActivityManger {
         }
 
         // Cleanup.
-        this.destoryUI();
+        this.destroyUI();
 
         // Recreate layout.
         if (this.layout == null) {
@@ -1166,7 +1166,7 @@ class GleapInvisibleActivityManger {
                         local.runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                GleapInvisibleActivityManger.animateViewInOut(imageButton, true);
+                                GleapOverlayManager.animateViewInOut(imageButton, true);
                             }
                         });
                     }

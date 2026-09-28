@@ -48,7 +48,7 @@ class GleapConfig {
     private volatile String bannerUrl = "https://outboundmedia.gleap.io";
     private volatile String modalUrl = "https://outboundmedia.gleap.io/modal";
     private volatile String sdkKey = "";
-    private ValueCallback<Uri[]> mUploadMessage;
+    private ValueCallback<Uri[]> fileUploadCallback;
 
     private JSONObject stripModel = new JSONObject();
     private JSONObject crashStripModel = new JSONObject();
@@ -73,7 +73,7 @@ class GleapConfig {
     private InitializationDoneCallback initializationDoneCallback;
     private ErrorCallback errorCallback;
     private List<GleapDetector> gestureDetectors = new LinkedList<>();
-    private List<GleapActivationMethod> priorizedGestureDetectors = new LinkedList<>();
+    private List<GleapActivationMethod> prioritizedActivationMethods = new LinkedList<>();
     private int interval = 5;
 
     //user config
@@ -172,32 +172,32 @@ class GleapConfig {
                 switch (flowConfigs.getString("feedbackButtonPosition")) {
                     case "BOTTOM_RIGHT":
                         this.widgetPosition = WidgetPosition.BOTTOM_RIGHT;
-                        GleapInvisibleActivityManger.getInstance().setShowFab(true);
+                        GleapOverlayManager.getInstance().setShowFab(true);
                         break;
                     case "BOTTOM_LEFT":
                         this.widgetPosition = WidgetPosition.BOTTOM_LEFT;
-                        GleapInvisibleActivityManger.getInstance().setShowFab(true);
+                        GleapOverlayManager.getInstance().setShowFab(true);
                         break;
                     case "BUTTON_CLASSIC":
                         this.widgetPosition = WidgetPosition.CLASSIC_RIGHT;
                         this.widgetPositionType = WidgetPositionType.CLASSIC;
-                        GleapInvisibleActivityManger.getInstance().setShowFab(true);
+                        GleapOverlayManager.getInstance().setShowFab(true);
                         break;
                     case "BUTTON_CLASSIC_LEFT":
                         this.widgetPosition = WidgetPosition.CLASSIC_LEFT;
                         this.widgetPositionType = WidgetPositionType.CLASSIC;
-                        GleapInvisibleActivityManger.getInstance().setShowFab(true);
+                        GleapOverlayManager.getInstance().setShowFab(true);
                         break;
                     case "BUTTON_CLASSIC_BOTTOM":
                         this.widgetPosition = WidgetPosition.CLASSIC_BOTTOM;
                         this.widgetPositionType = WidgetPositionType.CLASSIC;
-                        GleapInvisibleActivityManger.getInstance().setShowFab(true);
+                        GleapOverlayManager.getInstance().setShowFab(true);
                         break;
                     default:
                         this.widgetPosition = WidgetPosition.HIDDEN;
 
                         if (!this.isFeedbackButtonManuallySet()) {
-                            GleapInvisibleActivityManger.getInstance().setShowFab(false);
+                            GleapOverlayManager.getInstance().setShowFab(false);
                             hideFeedbackButton = true;
                         }
                         break;
@@ -451,12 +451,12 @@ class GleapConfig {
         this.gestureDetectors = gestureDetectors;
     }
 
-    public List<GleapActivationMethod> getPriorizedGestureDetectors() {
-        return priorizedGestureDetectors;
+    public List<GleapActivationMethod> getPrioritizedActivationMethods() {
+        return prioritizedActivationMethods;
     }
 
-    public void setPriorizedGestureDetectors(List<GleapActivationMethod> priorizedGestureDetectors) {
-        this.priorizedGestureDetectors = priorizedGestureDetectors;
+    public void setPrioritizedActivationMethods(List<GleapActivationMethod> prioritizedActivationMethods) {
+        this.prioritizedActivationMethods = prioritizedActivationMethods;
     }
 
     public boolean isActivationMethodShake() {
@@ -719,17 +719,17 @@ class GleapConfig {
         this.feedbackButtonManuallySet = feedbackButtonManuallySet;
     }
 
-    public ValueCallback<Uri[]> getmUploadMessage() {
-        return mUploadMessage;
+    public ValueCallback<Uri[]> getFileUploadCallback() {
+        return fileUploadCallback;
     }
 
-    public void setmUploadMessage(ValueCallback<Uri[]> mUploadMessage) {
-        this.mUploadMessage = mUploadMessage;
+    public void setFileUploadCallback(ValueCallback<Uri[]> fileUploadCallback) {
+        this.fileUploadCallback = fileUploadCallback;
     }
 
     public void finishImageUpload(Uri[] uris) {
-        this.mUploadMessage.onReceiveValue(uris);
-        GleapConfig.getInstance().setmUploadMessage(null);
+        this.fileUploadCallback.onReceiveValue(uris);
+        GleapConfig.getInstance().setFileUploadCallback(null);
     }
 
     public RegisterPushMessageGroupCallback getRegisterPushMessageGroupCallback() {

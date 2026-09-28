@@ -94,7 +94,7 @@ class GleapActivityManager {
                 public void onActivityResumed(@NonNull Activity activity) {
                     checkPage(activity);
 
-                    GleapInvisibleActivityManger.getInstance().addLayoutToActivity(activity);
+                    GleapOverlayManager.getInstance().addLayoutToActivity(activity);
                 }
 
                 @Override
@@ -104,7 +104,7 @@ class GleapActivityManager {
 
                 @Override
                 public void onActivityStopped(@NonNull Activity activity) {
-                    GleapInvisibleActivityManger.getInstance().setVisible();
+                    GleapOverlayManager.getInstance().setVisible();
                 }
 
                 @Override
@@ -123,7 +123,7 @@ class GleapActivityManager {
     private void checkPage(Activity activity) {
         try {
             if (!currentPage.equals(activity.getClass().getSimpleName()) && !activity.getClass().getSimpleName().contains("Gleap")) {
-                GleapInvisibleActivityManger.getInstance().setVisible();
+                GleapOverlayManager.getInstance().setVisible();
                 currentPage = activity.getClass().getSimpleName();
                 JSONObject object = new JSONObject();
                 try {
@@ -133,9 +133,9 @@ class GleapActivityManager {
                 } catch (JSONException e) {
                 }
             } else if(!activity.getClass().getSimpleName().contains("Gleap")){
-                GleapInvisibleActivityManger.getInstance().setVisible();
+                GleapOverlayManager.getInstance().setVisible();
             } else {
-                GleapInvisibleActivityManger.getInstance().setInvisible();
+                GleapOverlayManager.getInstance().setInvisible();
             }
         }catch (Exception ex){}
     }

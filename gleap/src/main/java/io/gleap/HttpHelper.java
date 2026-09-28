@@ -39,7 +39,7 @@ class HttpHelper extends AsyncTask<GleapBug, Void, JSONObject> {
     private final Context context;
     private static JSONObject dataToSend;
 
-    GleapConfig bbConfig = GleapConfig.getInstance();
+    private final GleapConfig gleapConfig = GleapConfig.getInstance();
 
     private final OnHttpResponseListener listener;
 
@@ -106,7 +106,7 @@ class HttpHelper extends AsyncTask<GleapBug, Void, JSONObject> {
 
 
     private JSONObject uploadImage(Bitmap image) throws IOException, JSONException {
-        FormDataHttpsHelper multipart = new FormDataHttpsHelper(bbConfig.getApiUrl() + UPLOAD_IMAGE_BACKEND_URL_POSTFIX, bbConfig.getSdkKey());
+        FormDataHttpsHelper multipart = new FormDataHttpsHelper(gleapConfig.getApiUrl() + UPLOAD_IMAGE_BACKEND_URL_POSTFIX, gleapConfig.getSdkKey());
         File file = bitmapToFile(image);
         if (file != null) {
             multipart.addFilePart(file);
@@ -121,7 +121,7 @@ class HttpHelper extends AsyncTask<GleapBug, Void, JSONObject> {
 
 
     private JSONObject uploadFiles(File[] files) throws IOException, JSONException {
-        FormDataHttpsHelper multipart = new FormDataHttpsHelper(bbConfig.getApiUrl() + UPLOAD_FILES_MULTI_BACKEND_URL_POSTFIX, bbConfig.getSdkKey());
+        FormDataHttpsHelper multipart = new FormDataHttpsHelper(gleapConfig.getApiUrl() + UPLOAD_FILES_MULTI_BACKEND_URL_POSTFIX, gleapConfig.getSdkKey());
         for (File file : files) {
             try {
                 if (file != null && file.length() > 0) {
@@ -136,7 +136,7 @@ class HttpHelper extends AsyncTask<GleapBug, Void, JSONObject> {
     }
 
     private JSONObject uploadImages(Bitmap[] images) throws IOException, JSONException {
-        FormDataHttpsHelper multipart = new FormDataHttpsHelper(bbConfig.getApiUrl() + UPLOAD_IMAGE_MULTI_BACKEND_URL_POSTFIX, bbConfig.getSdkKey());
+        FormDataHttpsHelper multipart = new FormDataHttpsHelper(gleapConfig.getApiUrl() + UPLOAD_IMAGE_MULTI_BACKEND_URL_POSTFIX, gleapConfig.getSdkKey());
         for (Bitmap bitmap : images) {
             File file = bitmapToFile(bitmap);
             if (file != null) {
@@ -164,15 +164,15 @@ class HttpHelper extends AsyncTask<GleapBug, Void, JSONObject> {
             stripImages = stripConfig.getBoolean("screenshot");
         }
 
-        URL url = new URL(bbConfig.getApiUrl() + REPORT_BUG_URL_POSTFIX);
+        URL url = new URL(gleapConfig.getApiUrl() + REPORT_BUG_URL_POSTFIX);
         HttpURLConnection conn;
-        if (bbConfig.getApiUrl().contains("https")) {
+        if (gleapConfig.getApiUrl().contains("https")) {
             conn = (HttpsURLConnection) url.openConnection();
         } else {
             conn = (HttpURLConnection) url.openConnection();
         }
 
-        conn.setRequestProperty("api-token", bbConfig.getSdkKey());
+        conn.setRequestProperty("api-token", gleapConfig.getSdkKey());
         conn.setDoOutput(true);
         conn.setRequestProperty("Accept", "application/json");
         conn.setRequestProperty("Content-Type", "application/json");

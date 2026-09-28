@@ -62,10 +62,10 @@ class GleapEventService {
         }
 
         try {
-            JSONObject sessiontStarted = new JSONObject();
-            sessiontStarted.put("name", "sessionStarted");
-            sessiontStarted.put("date", dateToString(new Date()));
-            eventsToBeSent.add(sessiontStarted);
+            JSONObject sessionStarted = new JSONObject();
+            sessionStarted.put("name", "sessionStarted");
+            sessionStarted.put("date", dateToString(new Date()));
+            eventsToBeSent.add(sessionStarted);
 
             Activity activity = ActivityUtil.getCurrentActivity();
             JSONObject pageView = new JSONObject();
@@ -289,7 +289,7 @@ class GleapEventService {
                 @Override
                 public void run() {
                     try {
-                        GleapInvisibleActivityManger.getInstance().setMessageCounter(data.getInt("u"));
+                        GleapOverlayManager.getInstance().setMessageCounter(data.getInt("u"));
                     } catch (JSONException e) {
                     }
                 }
@@ -338,7 +338,7 @@ class GleapEventService {
                                             }
                                             JSONObject data = currentAction.getJSONObject("data");
                                             GleapChatMessage comment = createComment(outboundId, data, currentAction.optString("sendAt", ""), currentAction.optString("createdAt", ""));
-                                            GleapInvisibleActivityManger.getInstance().addNotification(comment, null);
+                                            GleapOverlayManager.getInstance().addNotification(comment, null);
                                         } catch (JSONException e) {
 
                                         } catch (Exception e) {
@@ -381,7 +381,7 @@ class GleapEventService {
                         mainThreadHandler.post(new Runnable() {
                             @Override
                             public void run() {
-                                GleapInvisibleActivityManger.getInstance().showBanner(currentAction, null);
+                                GleapOverlayManager.getInstance().showBanner(currentAction, null);
                             }
                         });
                     } else if (currentAction.getString("actionType").contains("modal")) {
@@ -391,7 +391,7 @@ class GleapEventService {
                                 // Get config from current action.
                                 try {
                                     JSONObject config = currentAction.getJSONObject("config");
-                                    GleapInvisibleActivityManger.getInstance().showModal(config, null);
+                                    GleapOverlayManager.getInstance().showModal(config, null);
                                 } catch (Exception e) {
                                     // Do nothing.
                                 }

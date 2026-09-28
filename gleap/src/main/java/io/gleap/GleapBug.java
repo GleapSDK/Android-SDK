@@ -27,7 +27,7 @@ class GleapBug {
     private NetworkBuffer networkBuffer = new NetworkBuffer();
     private boolean isSilent = false;
     //bug specific data
-    private APPLICATIONTYPE applicationtype = APPLICATIONTYPE.NATIVE;
+    private APPLICATIONTYPE applicationType = APPLICATIONTYPE.NATIVE;
     private String type = "";
     private String severity = "MEDIUM";
     private Bitmap screenshot;
@@ -142,7 +142,7 @@ class GleapBug {
         }
     }
 
-    public void removeUserAttribute(String key) {
+    public void removeCustomData(String key) {
         if(key != null) {
             try {
                 this.customData.remove(key);
@@ -162,12 +162,12 @@ class GleapBug {
         this.severity = severity;
     }
 
-    public APPLICATIONTYPE getApplicationtype() {
-        return applicationtype;
+    public APPLICATIONTYPE getApplicationType() {
+        return applicationType;
     }
 
-    public void setApplicationtype(APPLICATIONTYPE applicationtype) {
-        this.applicationtype = applicationtype;
+    public void setApplicationType(APPLICATIONTYPE applicationType) {
+        this.applicationType = applicationType;
     }
 
     public Replay getReplay() {

@@ -130,7 +130,7 @@ class ConfigLoader extends AsyncTask<GleapBug, Void, JSONObject> {
                             @Override
                             public void run() {
                                 // Config loaded. Add layout.
-                                GleapInvisibleActivityManger.getInstance().addLayoutToActivity(null);
+                                GleapOverlayManager.getInstance().addLayoutToActivity(null);
                             }
                         });
 

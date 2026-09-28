@@ -124,8 +124,8 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     if (activityResult.getResultCode() == Activity.RESULT_OK) {
                         // There are no request codes
                         Intent intent = activityResult.getData();
-                        ValueCallback<Uri[]> mUploadMessage = GleapConfig.getInstance().getmUploadMessage();
-                        if (mUploadMessage == null || intent == null) {
+                        ValueCallback<Uri[]> pendingUpload = GleapConfig.getInstance().getFileUploadCallback();
+                        if (pendingUpload == null || intent == null) {
                             return;
                         }
 
@@ -136,8 +136,8 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                             result = new Uri[]{Uri.parse(dataString)};
                         }
 
-                        mUploadMessage.onReceiveValue(result);
-                        GleapConfig.getInstance().setmUploadMessage(null);
+                        pendingUpload.onReceiveValue(result);
+                        GleapConfig.getInstance().setFileUploadCallback(null);
                     }
                 }
             });
@@ -168,7 +168,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     startActivity(intentToMain);
                 }
 
-                GleapInvisibleActivityManger.getInstance().setShowFab(true);
+                GleapOverlayManager.getInstance().setShowFab(true);
 
                 finish();
 
@@ -178,7 +178,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 }
             } catch (Exception e) {
                 e.printStackTrace();
-                GleapInvisibleActivityManger.getInstance().setShowFab(true);
+                GleapOverlayManager.getInstance().setShowFab(true);
                 finish();
             }
         }
@@ -230,7 +230,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
             }
 
             super.onCreate(savedInstanceState);
-            GleapInvisibleActivityManger.getInstance().clearMessages();
+            GleapOverlayManager.getInstance().clearMessages();
 
             setContentView(R.layout.activity_gleap_main);
 
@@ -323,7 +323,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     @Override
                     public void invoke() {
                         GleapDetectorUtil.resumeAllDetectors();
-                        GleapInvisibleActivityManger.getInstance().setShowFab(true);
+                        GleapOverlayManager.getInstance().setShowFab(true);
                         GleapMainActivity.this.closeMainGleapActivity();
                     }
                 });
@@ -360,9 +360,9 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 GleapConfig.getInstance().getWidgetClosedCallback().invoke();
             }
 
-            GleapInvisibleActivityManger.getInstance().setShowFab(true);
-            GleapInvisibleActivityManger.getInstance().clearMessages();
-            GleapConfig.getInstance().setmUploadMessage(null);
+            GleapOverlayManager.getInstance().setShowFab(true);
+            GleapOverlayManager.getInstance().clearMessages();
+            GleapConfig.getInstance().setFileUploadCallback(null);
 
             isActive = false;
             webView.removeJavascriptInterface("GleapJSBridge");
@@ -483,13 +483,13 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 } else {
                     // Fallback for older Android versions
                     try {
-                        ValueCallback<Uri[]> mUploadMessage = GleapConfig.getInstance().getmUploadMessage();
+                        ValueCallback<Uri[]> pendingUpload = GleapConfig.getInstance().getFileUploadCallback();
 
-                        if (mUploadMessage != null) {
-                            mUploadMessage.onReceiveValue(null);
+                        if (pendingUpload != null) {
+                            pendingUpload.onReceiveValue(null);
                         }
 
-                        GleapConfig.getInstance().setmUploadMessage(filePathCallback);
+                        GleapConfig.getInstance().setFileUploadCallback(filePathCallback);
                         Intent i = new Intent(Intent.ACTION_GET_CONTENT);
                         i.addCategory(Intent.CATEGORY_OPENABLE);
                         i.setType("*/*"); // set MIME type to allow all files

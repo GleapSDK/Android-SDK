@@ -9,17 +9,18 @@ import java.util.LinkedList;
 import java.util.List;
 
 class GleapDetectorUtil {
-    private static boolean isRunning = false;
+    // True while the widget is open (or opening): the activation methods are paused meanwhile.
+    private static boolean widgetOpen = false;
 
     public static void resumeAllDetectors() {
-        isRunning = false;
+        widgetOpen = false;
         for (GleapDetector detector : GleapConfig.getInstance().getGestureDetectors()) {
             detector.resume();
         }
     }
 
     public static void stopAllDetectors() {
-        isRunning = true;
+        widgetOpen = true;
 
         for (GleapDetector detector : GleapConfig.getInstance().getGestureDetectors()) {
             detector.pause();
@@ -30,8 +31,8 @@ class GleapDetectorUtil {
         List<GleapDetector> detectorList = new LinkedList<>();
 
         List<GleapActivationMethod> methods;
-        if (GleapConfig.getInstance().getPriorizedGestureDetectors().size() > 0) {
-            methods = new LinkedList<>(GleapConfig.getInstance().getPriorizedGestureDetectors());
+        if (GleapConfig.getInstance().getPrioritizedActivationMethods().size() > 0) {
+            methods = new LinkedList<>(GleapConfig.getInstance().getPrioritizedActivationMethods());
         } else if (activationMethods != null) {
             methods = Arrays.asList(activationMethods);
         } else {
@@ -62,7 +63,7 @@ class GleapDetectorUtil {
         }
     }
 
-    public static boolean isIsRunning() {
-        return isRunning;
+    public static boolean isWidgetOpen() {
+        return widgetOpen;
     }
 }
