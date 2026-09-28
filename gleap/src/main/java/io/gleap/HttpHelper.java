@@ -37,7 +37,6 @@ class HttpHelper extends AsyncTask<GleapBug, Void, JSONObject> {
     private static final String UPLOAD_FILES_MULTI_BACKEND_URL_POSTFIX = "/uploads/attachments";
     private static final String REPORT_BUG_URL_POSTFIX = "/bugs/v2";
     private final Context context;
-    private static JSONObject sentCallbackData;
     private static JSONObject dataToSend;
 
     GleapConfig bbConfig = GleapConfig.getInstance();
@@ -58,8 +57,6 @@ class HttpHelper extends AsyncTask<GleapBug, Void, JSONObject> {
             result = postFeedback(gleapBug);
         } catch (Exception e) {
         }
-
-        GleapConfig.getInstance().setAction(null);
 
         return result;
     }
@@ -98,8 +95,6 @@ class HttpHelper extends AsyncTask<GleapBug, Void, JSONObject> {
                 Gleap.getInstance().trackEvent("outbound-" + outboundId + "-submitted", dataToSend.getJSONObject("formData"));
             } catch (JSONException e) {}
         }
-
-        sentCallbackData = null;
 
         GleapBug.getInstance().setSilent(false);
         GleapConfig.getInstance().setCrashStripModel(new JSONObject());
@@ -217,17 +212,9 @@ class HttpHelper extends AsyncTask<GleapBug, Void, JSONObject> {
 
         JSONObject formData = gleapBug.getData();
 
-        //prepare data for sent
-        JSONObject callBackData = new JSONObject();
-        callBackData.put("type", gleapBug.getType());
-        callBackData.put("formdata", formData);
-
-        sentCallbackData = callBackData;
-
         // Prepare internal data to send ref.
         JSONObject dataToSendObj = new JSONObject();
         dataToSendObj.put("outboundId", gleapBug.getOutboundId());
-        dataToSendObj.put("outbound", gleapBug.getOutboundAction());
         dataToSendObj.put("formData", formData);
 
         dataToSend = dataToSendObj;
@@ -391,46 +378,13 @@ class HttpHelper extends AsyncTask<GleapBug, Void, JSONObject> {
                 entry.put("url", fileUrls.get(i));
                 entry.put("screenname", replays[i].getScreenName());
                 entry.put("date", DateUtil.dateToString(replays[i].getDate()));
-                entry.put("interactions", generateInteractions(replays[i]));
+                // Touch interactions were never recorded on Android.
+                entry.put("interactions", new JSONArray());
                 result.put(entry);
             }
         }
 
         GleapBug.getInstance().getReplay().reset();
-        return result;
-    }
-
-    public JSONArray generateInteractions(ScreenshotReplay replay) throws JSONException {
-        JSONArray result = new JSONArray();
-        for (Interaction interaction : replay.getInteractions()) {
-            JSONObject obj = new JSONObject();
-            obj.put("x", interaction.getX());
-            obj.put("y", interaction.getY());
-            obj.put("date", DateUtil.dateToString(interaction.getOffset()));
-            obj.put("type", interaction.getInteractiontype());
-            result.put(obj);
-        }
-        return result;
-    }
-
-    private static JSONObject concatJSONS(JSONObject json, JSONObject obj) {
-        JSONObject result = new JSONObject();
-
-        try {
-            Iterator<String> iteratorJson = json.keys();
-            while (iteratorJson.hasNext()) {
-                String key = iteratorJson.next();
-                result.put(key, json.get(key));
-            }
-            Iterator<String> iteratorObj = obj.keys();
-            while (iteratorObj.hasNext()) {
-                String key = iteratorObj.next();
-                result.put(key, obj.get(key));
-            }
-        } catch (Exception err) {
-            err.printStackTrace();
-        }
-
         return result;
     }
 

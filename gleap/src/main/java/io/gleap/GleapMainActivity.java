@@ -79,7 +79,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
     private boolean isProcessingPermission = false;
     private java.util.List<String> grantedWebkitPermissions = new java.util.ArrayList<>();
     private boolean isSurvey = false;
-    private boolean hasInitiallyLoaded = false;
     private boolean isImeVisible = false;
     private int lockedScrollY = 0;
 
@@ -293,7 +292,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 // the translucent window doesn't expose the host app.
                 if (savedInstanceState != null) {
                     findViewById(R.id.loading_indicator).setVisibility(View.GONE);
-                    hasInitiallyLoaded = true;
                 }
 
                 if (isSurvey) {
@@ -325,7 +323,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     @Override
                     public void invoke() {
                         GleapDetectorUtil.resumeAllDetectors();
-                        GleapBug.getInstance().setDisabled(false);
                         GleapInvisibleActivityManger.getInstance().setShowFab(true);
                         GleapMainActivity.this.closeMainGleapActivity();
                     }
@@ -358,7 +355,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
     protected void onDestroy() {
         try {
             GleapDetectorUtil.resumeAllDetectors();
-            GleapConfig.getInstance().setAction(null);
             GleapAgentToolManager.getInstance().clearExecutionState();
             if (GleapConfig.getInstance().getWidgetClosedCallback() != null) {
                 GleapConfig.getInstance().getWidgetClosedCallback().invoke();
@@ -605,7 +601,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     sendMessage(generateGleapMessage("feedback-sent", message));
                     GleapDetectorUtil.resumeAllDetectors();
                     GleapBug.getInstance().setScreenshot(null);
-                    GleapBug.getInstance().setDisabled(false);
                 } catch (Exception ex) {
                 }
             } else {
@@ -677,17 +672,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
             } catch (Exception ex) {
             }
         }
-
-        @Override
-        public void onReceivedHttpError(WebView view, WebResourceRequest request, WebResourceResponse errorResponse) {
-            super.onReceivedHttpError(view, request, errorResponse);
-        }
-
-        @Override
-        public void onPageFinished(WebView view, String url) {
-            super.onPageFinished(view, url);
-
-        }
     }
 
     private class GleapJSBridge {
@@ -749,7 +733,6 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                                 // first paint, so an immediate fade briefly
                                 // shows an unpainted webview and the content
                                 // pops in mid-fade — a visible jump.
-                                hasInitiallyLoaded = true;
                                 findViewById(R.id.loading_indicator).setVisibility(View.GONE);
                                 webView.setAlpha(0f);
                                 new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {

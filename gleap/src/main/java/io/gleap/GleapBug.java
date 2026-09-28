@@ -1,8 +1,6 @@
 package io.gleap;
 
-import android.app.Application;
 import android.graphics.Bitmap;
-import android.util.Log;
 
 import androidx.annotation.Nullable;
 
@@ -26,16 +24,12 @@ import static io.gleap.DateUtil.dateToString;
  */
 class GleapBug {
     private static GleapBug instance;
-    private Application application;
     private NetworkBuffer networkBuffer = new NetworkBuffer();
     private boolean isSilent = false;
     //bug specific data
     private APPLICATIONTYPE applicationtype = APPLICATIONTYPE.NATIVE;
     private String type = "";
-    private final Date startUpDate = new Date();
-    private boolean isDisabled = false;
     private String severity = "MEDIUM";
-    private String silentBugreportEmail;
     private Bitmap screenshot;
     private Replay replay;
     private JSONObject ticketAttributes;
@@ -44,8 +38,6 @@ class GleapBug {
     private String spamToken;
     private String outboundId;
     private String[] tags;
-
-    private JSONObject outboundAction;
 
     private @Nullable
     PhoneMeta phoneMeta;
@@ -170,14 +162,6 @@ class GleapBug {
         this.severity = severity;
     }
 
-    public boolean isDisabled() {
-        return isDisabled;
-    }
-
-    public void setDisabled(boolean disabled) {
-        isDisabled = disabled;
-    }
-
     public APPLICATIONTYPE getApplicationtype() {
         return applicationtype;
     }
@@ -194,10 +178,6 @@ class GleapBug {
         this.replay = replay;
     }
 
-    public Date getStartUpDate() {
-        return startUpDate;
-    }
-    
     public void addRequest(Networklog networklog) {
         try {
             networkBuffer.addNetworkLog(networklog);
@@ -292,22 +272,6 @@ class GleapBug {
         return this.data;
     }
 
-    public String getSilentBugreportEmail() {
-        return silentBugreportEmail;
-    }
-
-    public void setSilentBugreportEmail(String silentBugreportEmail) {
-        this.silentBugreportEmail = silentBugreportEmail;
-    }
-
-    public Application getApplication() {
-        return application;
-    }
-
-    public void setApplication(Application application) {
-        this.application = application;
-    }
-
     public void logEvent(String name, JSONObject data) {
         JSONObject event = new JSONObject();
         try {
@@ -369,13 +333,5 @@ class GleapBug {
 
     public void setTags(String[] tags) {
         this.tags = tags;
-    }
-
-    public JSONObject getOutboundAction() {
-        return outboundAction;
-    }
-
-    public void setOutboundAction(JSONObject outboundAction) {
-        this.outboundAction = outboundAction;
     }
 }

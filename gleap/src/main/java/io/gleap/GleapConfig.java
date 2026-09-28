@@ -1,10 +1,7 @@
 package io.gleap;
 
-import android.graphics.Color;
 import android.net.Uri;
 import android.webkit.ValueCallback;
-
-import androidx.core.graphics.ColorUtils;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -18,7 +15,6 @@ import io.gleap.callbacks.AiToolExecutedCallback;
 import io.gleap.callbacks.ConfigLoadedCallback;
 import io.gleap.callbacks.CustomActionCallback;
 import io.gleap.callbacks.CustomLinkHandlerCallback;
-import io.gleap.callbacks.FeedbackFlowClosedCallback;
 import io.gleap.callbacks.FeedbackFlowStartedCallback;
 import io.gleap.callbacks.FeedbackSendingFailedCallback;
 import io.gleap.callbacks.FeedbackSentCallback;
@@ -52,9 +48,7 @@ class GleapConfig {
     private volatile String bannerUrl = "https://outboundmedia.gleap.io";
     private volatile String modalUrl = "https://outboundmedia.gleap.io/modal";
     private volatile String sdkKey = "";
-    private String feedbackFlow = "";
     private ValueCallback<Uri[]> mUploadMessage;
-    private GleapAction action;
 
     private JSONObject stripModel = new JSONObject();
     private JSONObject crashStripModel = new JSONObject();
@@ -64,7 +58,6 @@ class GleapConfig {
     private OutboundSentCallback outboundSentCallback;
     private FeedbackWillBeSentCallback feedbackWillBeSentCallback;
     private FeedbackFlowStartedCallback feedbackFlowStartedCallback;
-    private FeedbackFlowClosedCallback feedbackFlowClosedCallback;
     private FeedbackSendingFailedCallback feedbackSendingFailedCallback;
     private CallCloseCallback callCloseCallback;
     private WidgetOpenedCallback widgetOpenedCallback;
@@ -100,7 +93,6 @@ class GleapConfig {
     private int homeVersion = 0;
     private boolean fadeBg = true;
     private boolean bgBlur = true;
-    private int loaderColor = Color.BLACK;
 
     private volatile boolean enableConsoleLogs = true;
     private volatile boolean enableConsoleLogsFromCode = true;
@@ -230,11 +222,6 @@ class GleapConfig {
 
             if (flowConfigs.has("backgroundColor")) {
                 this.backgroundColor = flowConfigs.getString("backgroundColor");
-                try {
-                    int contrastColor = getContrastColor(Color.parseColor(this.backgroundColor));
-                    this.loaderColor = contrastColor;
-                } catch (Exception ignore) {
-                }
             }
 
             if (flowConfigs.has("borderRadius")) {
@@ -408,14 +395,6 @@ class GleapConfig {
         this.feedbackFlowStartedCallback = feedbackFlowStartedCallback;
     }
 
-    public FeedbackFlowClosedCallback getFeedbackFlowClosedCallback() {
-        return feedbackFlowClosedCallback;
-    }
-
-    public void setFeedbackFlowClosedCallback(FeedbackFlowClosedCallback feedbackFlowClosedCallback) {
-        this.feedbackFlowClosedCallback = feedbackFlowClosedCallback;
-    }
-
     public FeedbackSendingFailedCallback getFeedbackSendingFailedCallback() {
         return feedbackSendingFailedCallback;
     }
@@ -492,24 +471,12 @@ class GleapConfig {
         return activationMethodFeedbackButton;
     }
 
-    public void setActivationMethodFeedbackButton(boolean activationMethodFeedbackButton) {
-        this.activationMethodFeedbackButton = activationMethodFeedbackButton;
-    }
-
     public boolean isEnableConsoleLogs() {
         return enableConsoleLogs;
     }
 
-    public void setEnableConsoleLogs(boolean enableConsoleLogs) {
-        this.enableConsoleLogs = enableConsoleLogs;
-    }
-
     public boolean isEnableReplays() {
         return enableReplays;
-    }
-
-    public void setEnableReplays(boolean enableReplays) {
-        this.enableReplays = enableReplays;
     }
 
     public void registerCustomAction(CustomActionCallback customAction) {
@@ -548,28 +515,12 @@ class GleapConfig {
         return interval;
     }
 
-    public String getFeedbackFlow() {
-        return feedbackFlow;
-    }
-
-    public void setFeedbackFlow(String feedbackFlow) {
-        this.feedbackFlow = feedbackFlow;
-    }
-
     public JSONObject getStripModel() {
         return stripModel;
     }
 
     public void setStripModel(JSONObject stripModel) {
         this.stripModel = stripModel;
-    }
-
-    public GleapAction getAction() {
-        return action;
-    }
-
-    public void setAction(GleapAction action) {
-        this.action = action;
     }
 
     public int getMaxEventLength() {
@@ -617,10 +568,6 @@ class GleapConfig {
 
     public void setModalUrl(String modalUrl) {
         this.modalUrl = modalUrl;
-    }
-
-    public void setInterval(int interval) {
-        this.interval = interval;
     }
 
     public JSONObject getCrashStripModel() {
@@ -732,10 +679,6 @@ class GleapConfig {
         return bgBlur;
     }
 
-    public int getLoaderColor() {
-        return loaderColor;
-    }
-
     public int getButtonX() {
         return buttonX;
     }
@@ -758,14 +701,6 @@ class GleapConfig {
 
     public void setNotificationContainerOffsetY(int notificationContainerOffsetY) {
         this.notificationContainerOffsetY = notificationContainerOffsetY;
-    }
-
-    private int getContrastColor(int color) {
-        double y = ColorUtils.calculateContrast(Color.WHITE, color);
-        if (y <= 5) {
-            return Color.BLACK;
-        }
-        return Color.WHITE;
     }
 
     public boolean isHideFeedbackButton() {

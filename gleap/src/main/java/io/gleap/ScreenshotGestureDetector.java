@@ -63,22 +63,6 @@ class ScreenshotGestureDetector extends GleapDetector {
 
     private final ContentObserver contentObserver = new ContentObserver(new Handler()) {
         @Override
-        public boolean deliverSelfNotifications() {
-            return super.deliverSelfNotifications();
-        }
-
-        @Override
-        public void onChange(boolean selfChange) {
-            super.onChange(selfChange);
-            try {
-                //  startBugReporting();
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                GleapDetectorUtil.resumeAllDetectors();
-            }
-        }
-
-        @Override
         public void onChange(boolean selfChange, Uri uri) {
             super.onChange(selfChange, uri);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {

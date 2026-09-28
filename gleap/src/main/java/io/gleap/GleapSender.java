@@ -7,10 +7,6 @@ class GleapSender {
     // through to the teammate avatar shape.
     private boolean isBot;
 
-    public GleapSender(String name, String profileImageUrl) {
-        this(name, profileImageUrl, false);
-    }
-
     public GleapSender(String name, String profileImageUrl, boolean isBot) {
         this.name = name;
         this.profileImageUrl = profileImageUrl;

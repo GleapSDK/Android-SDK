@@ -71,8 +71,6 @@ public class Gleap implements iGleap {
             // init Gleap bug
             GleapBug.getInstance().setPhoneMeta(new PhoneMeta(application.getApplicationContext()));
 
-            Gleap.getInstance().enableReplays(GleapConfig.getInstance().isEnableReplays());
-
             // start activation methods
             List<GleapDetector> detectorList = GleapDetectorUtil.initDetectors(application, activationMethods);
 
@@ -124,16 +122,10 @@ public class Gleap implements iGleap {
         try {
             Gleap.application = application;
             GleapConfig.getInstance().setSdkKey(sdkKey.trim());
-            if (!isInitialized) {
-                isInitialized = true;
-                GleapSessionController.initialize(application);
-                new GleapListener();
-                GleapConnectivityManager.getInstance().register(application.getApplicationContext());
-            } else {
-                if (GleapConfig.getInstance().getConfigLoadedCallback() != null && GleapConfig.getInstance().getPlainConfig() != null) {
-                    GleapConfig.getInstance().getConfigLoadedCallback().configLoaded(GleapConfig.getInstance().getPlainConfig());
-                }
-            }
+            isInitialized = true;
+            GleapSessionController.initialize(application);
+            new GleapListener();
+            GleapConnectivityManager.getInstance().register(application.getApplicationContext());
         } catch (Error | Exception error) {
             handleErrorStatic(error, "initialize");
         }
@@ -2352,18 +2344,6 @@ public class Gleap implements iGleap {
     @Override
     public void setTags(String[] tags) {
         GleapBug.getInstance().setTags(tags);
-    }
-
-    /**
-     * Enable Replay function for BB
-     * Use with care, check performance on phone
-     */
-    private void enableReplays(boolean enable) {
-        try {
-            GleapConfig.getInstance().setEnableReplays(enable);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "setTags");
-        }
     }
 
     /**

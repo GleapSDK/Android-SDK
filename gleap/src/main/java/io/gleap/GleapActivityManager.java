@@ -120,12 +120,6 @@ class GleapActivityManager {
         }
     }
 
-    public void stop(){
-        if(this.application != null) {
-            this.application.registerActivityLifecycleCallbacks(null);
-        }
-    }
-
     private void checkPage(Activity activity) {
         try {
             if (!currentPage.equals(activity.getClass().getSimpleName()) && !activity.getClass().getSimpleName().contains("Gleap")) {

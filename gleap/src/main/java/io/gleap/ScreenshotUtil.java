@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 import static android.graphics.Bitmap.Config.ARGB_8888;
 import static android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND;
@@ -29,7 +28,7 @@ import static android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND;
 import androidx.annotation.RequiresApi;
 
 class ScreenshotUtil {
-    public static void takeScreenshot(GetImageCallback getImageCallback) throws GleapSessionNotInitialisedException, InterruptedException, ExecutionException {
+    public static void takeScreenshot(GetImageCallback getImageCallback) {
         try {
             if (!GleapSessionController.getInstance().isSessionLoaded()) {
                 throw new GleapSessionNotInitialisedException();
@@ -149,29 +148,6 @@ class ScreenshotUtil {
             return decoded;
         } catch (OutOfMemoryError | Exception error) {
         }
-        return null;
-    }
-
-    public static Bitmap getResizedBitmap(Bitmap bm, float downScale) {
-        try {
-            int width = bm.getWidth();
-            int height = bm.getHeight();
-            Matrix matrix = new Matrix();
-            if (isPortrait(bm)) {
-                matrix.postScale(downScale, downScale);
-            } else {
-                matrix.postScale(downScale - 0.2f, downScale - 0.2f);
-            }
-
-            Bitmap bitmap = Bitmap.createBitmap(
-                    bm, 0, 0, width, height, matrix, false);
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            bitmap.compress(Bitmap.CompressFormat.PNG, 90, out);
-            Bitmap decoded = BitmapFactory.decodeStream(new ByteArrayInputStream(out.toByteArray()));
-            return bm;
-        } catch (OutOfMemoryError | Exception error) {
-        }
-
         return null;
     }
 

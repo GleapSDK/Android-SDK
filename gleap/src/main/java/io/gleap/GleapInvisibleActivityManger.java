@@ -65,7 +65,6 @@ class GleapInvisibleActivityManger {
     private ConstraintLayout feedbackButtonRelativeLayout;
     private int messageCounter = 0;
     boolean showFab = false;
-    public boolean attached = false;
     private GleapModal modal;
     private JSONObject modalData;
     private int originalVisibility = 0;
@@ -646,8 +645,6 @@ class GleapInvisibleActivityManger {
 
         // Initialize notifications views.
         createNotificationLayout(activity);
-
-        this.attached = true;
     }
 
     public void addLocalLayoutToActivity(Activity activity) {

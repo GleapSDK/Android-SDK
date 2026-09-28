@@ -30,7 +30,6 @@ class GleapEventService {
     private GleapArrayHelper<JSONObject> gleapArrayHelper;
     private static GleapEventService instance;
     private static GleapWebSocketListener webSocketListener;
-    private EventsSentCallback eventsSentCallback;
     private boolean disableInAppNotifications = false;
     private List<JSONObject> eventsToBeSent = new ArrayList<>();
     private Handler intervalHandler;
@@ -185,9 +184,6 @@ class GleapEventService {
             conn.getInputStream().close();
             int status = conn.getResponseCode();
             conn.disconnect();
-            if (GleapEventService.getInstance().eventsSentCallback != null) {
-                GleapEventService.getInstance().eventsSentCallback.invoked();
-            }
             return status;
         }
     }
@@ -407,17 +403,5 @@ class GleapEventService {
                 }
             }
         }
-    }
-
-    interface EventsSentCallback {
-        void invoked();
-    }
-
-    public EventsSentCallback getEventsSentCallback() {
-        return eventsSentCallback;
-    }
-
-    public void setEventsSentCallback(EventsSentCallback eventsSentCallback) {
-        this.eventsSentCallback = eventsSentCallback;
     }
 }

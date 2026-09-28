@@ -6,9 +6,14 @@ import android.graphics.Bitmap;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.concurrent.ExecutionException;
-
 class SilentBugReportUtil {
+    // Silent reports have no UI to update when the request finishes.
+    private static final OnHttpResponseListener IGNORE_RESPONSE = new OnHttpResponseListener() {
+        @Override
+        public void onTaskComplete(JSONObject response) {
+        }
+    };
+
     public static void createSilentBugReport(Context context, String description, Gleap.SEVERITY severity, String type, JSONObject excludeData) {
 
         if (excludeData == null || (excludeData != null && excludeData.length() == 0)) {
@@ -20,42 +25,34 @@ class SilentBugReportUtil {
             }
         }
         GleapConfig.getInstance().setCrashStripModel(excludeData);
-        try {
-            GleapBug model = GleapBug.getInstance();
-            ScreenshotUtil.takeScreenshot(new ScreenshotUtil.GetImageCallback() {
-                @Override
-                public void getImage(Bitmap bitmap) {
-                    JSONObject obj = new JSONObject();
+        GleapBug model = GleapBug.getInstance();
+        ScreenshotUtil.takeScreenshot(new ScreenshotUtil.GetImageCallback() {
+            @Override
+            public void getImage(Bitmap bitmap) {
+                JSONObject obj = new JSONObject();
+                try {
+                    obj.put("description", description);
+                } catch (JSONException e) {
+                }
+                model.setType(type);
+                model.setData(obj);
+                if (severity != null) {
+                    model.setSeverity(severity.name());
+                } else {
+                    model.setSeverity(Gleap.SEVERITY.LOW.name());
+                }
+                model.setSilent(true);
+
+                if (bitmap != null) {
+                    model.setScreenshot(bitmap);
+
                     try {
-                        obj.put("description", description);
-                    } catch (JSONException e) {
-                    }
-                    model.setType(type);
-                    model.setData(obj);
-                    if (severity != null) {
-                        model.setSeverity(severity.name());
-                    } else {
-                        model.setSeverity(Gleap.SEVERITY.LOW.name());
-                    }
-                    model.setSilent(true);
-
-
-                    if (bitmap != null) {
-                        model.setScreenshot(bitmap);
-
-
-                        try {
-                            new HttpHelper(new SilentBugReportHTTPListener(), context).execute(model);
-                        } catch (Exception e) {
-                        }
+                        new HttpHelper(IGNORE_RESPONSE, context).execute(model);
+                    } catch (Exception e) {
                     }
                 }
-            });
-
-        } catch (GleapSessionNotInitialisedException gleapSessionNotInitialisedException) {
-            System.err.println("Gleap: Gleap Session not initialized.");
-        } catch (InterruptedException | ExecutionException e) {
-        }
+            }
+        });
     }
 
     public static void createSilentBugReport(Context context, String description, Gleap.SEVERITY severity) {

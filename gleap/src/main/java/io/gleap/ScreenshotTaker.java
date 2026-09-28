@@ -9,10 +9,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
-
 import java.lang.ref.WeakReference;
-import java.util.concurrent.ExecutionException;
 
 
 /**
@@ -23,7 +20,7 @@ class ScreenshotTaker {
     public ScreenshotTaker() {
         gleapBug = GleapBug.getInstance();
     }
-    private boolean alreadyTakingScreenshot = false;
+
     /**
      * Take a screenshot of the current view and opens it in the editor
      */
@@ -31,31 +28,18 @@ class ScreenshotTaker {
        takeScreenshot(SurveyType.NONE);
     }
 
-    protected void takeScreenshot(SurveyType type){
-        if(GleapConfig.getInstance().getPlainConfig() != null) {
-            try {
-                if (!alreadyTakingScreenshot) {
-                    GleapDetectorUtil.stopAllDetectors();
+    protected void takeScreenshot(SurveyType type) {
+        if (GleapConfig.getInstance().getPlainConfig() != null) {
+            GleapDetectorUtil.stopAllDetectors();
 
-                    ScreenshotUtil.takeScreenshot(new ScreenshotUtil.GetImageCallback() {
-                        @Override
-                        public void getImage(Bitmap bitmap) {
-                            if (bitmap != null) {
-                                openScreenshot(bitmap, type);
-                                alreadyTakingScreenshot = false;
-                            }
-                        }
-                    });
+            ScreenshotUtil.takeScreenshot(new ScreenshotUtil.GetImageCallback() {
+                @Override
+                public void getImage(Bitmap bitmap) {
+                    if (bitmap != null) {
+                        openScreenshot(bitmap, type);
+                    }
                 }
-            } catch (GleapSessionNotInitialisedException exception) {
-                GleapDetectorUtil.resumeAllDetectors();
-                System.err.println("Gleap: Gleap Session not initialized.");
-                alreadyTakingScreenshot = false;
-            } catch (InterruptedException e) {
-                alreadyTakingScreenshot = false;
-            } catch (ExecutionException e) {
-                alreadyTakingScreenshot = false;
-            }
+            });
         }
     }
 

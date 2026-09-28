@@ -96,10 +96,8 @@ class ShakeGestureDetector extends GleapDetector implements SensorEventListener 
         if (mShakeCount >= MIN_SHAKE_COUNT) {
             mShakeCount = 0;
             try {
-                if (!GleapBug.getInstance().isDisabled()) {
-                    this.takeScreenshot();
-                    pause();
-                }
+                this.takeScreenshot();
+                pause();
             } catch (Exception e) {
             }
         }

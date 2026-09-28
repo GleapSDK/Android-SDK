@@ -6,8 +6,6 @@ import android.graphics.Bitmap;
 import android.os.Handler;
 import android.os.Looper;
 
-import java.util.concurrent.ExecutionException;
-
 class ReplaysDetector extends GleapDetector {
     private Replay replay;
     private Handler handler;
@@ -49,26 +47,21 @@ class ReplaysDetector extends GleapDetector {
         public void run() {
             try {
                 if (Gleap.getInstance() != null && GleapSessionController.getInstance().isSessionLoaded()) {
-                    try {
-                        Activity activity = ActivityUtil.getCurrentActivity();
+                    Activity activity = ActivityUtil.getCurrentActivity();
 
-                        if (activity != null) {
-                            String screenName = activity.getClass().getSimpleName();
-                            if (!screenName.equals("GleapMainActivity")) {
-                                ScreenshotUtil.takeScreenshot(new ScreenshotUtil.GetImageCallback() {
-                                    @Override
-                                    public void getImage(Bitmap bitmap) {
-                                        if (bitmap != null) {
-                                            replay.addScreenshot(bitmap, screenName);
-                                            handler.postDelayed(runnableCode, replay.getInterval());
-                                        }
+                    if (activity != null) {
+                        String screenName = activity.getClass().getSimpleName();
+                        if (!screenName.equals("GleapMainActivity")) {
+                            ScreenshotUtil.takeScreenshot(new ScreenshotUtil.GetImageCallback() {
+                                @Override
+                                public void getImage(Bitmap bitmap) {
+                                    if (bitmap != null) {
+                                        replay.addScreenshot(bitmap, screenName);
+                                        handler.postDelayed(runnableCode, replay.getInterval());
                                     }
-                                });
-                            }
+                                }
+                            });
                         }
-                    } catch (GleapSessionNotInitialisedException | ExecutionException gleapSessionNotInitialisedException) {
-                        gleapSessionNotInitialisedException.printStackTrace();
-                    } catch (InterruptedException e) {
                     }
                 }
             }catch (Exception ex) {}
