@@ -45,6 +45,18 @@ public class GleapEventQueueTest {
     }
 
     @Test
+    public void ticketsCarryTheNewestTrackedEvents() throws Exception {
+        for (int i = 0; i < GleapBug.MAX_CUSTOM_EVENTS + 5; i++) {
+            Gleap.getInstance().trackEvent("event-" + i);
+        }
+
+        JSONArray log = GleapBug.getInstance().getCustomEventLog();
+        assertEquals(GleapBug.MAX_CUSTOM_EVENTS, log.length());
+        assertEquals("event-5", log.getJSONObject(0).getString("name"));
+        assertEquals("event-" + (GleapBug.MAX_CUSTOM_EVENTS + 4), log.getJSONObject(log.length() - 1).getString("name"));
+    }
+
+    @Test
     public void trackedEventsAreSentAndThenRemoved() throws Exception {
         sdk.server.respond("/sessions/ping", 200, "");
         Gleap.getInstance().trackEvent("signup");

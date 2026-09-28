@@ -41,6 +41,8 @@ class GleapBug {
     PhoneMeta phoneMeta;
 
 
+    // The events a ticket carries (trackEvent), the newest MAX_CUSTOM_EVENTS like in the JS SDK.
+    static final int MAX_CUSTOM_EVENTS = 500;
     private final JSONArray customEventLog = new JSONArray();
 
     private GleapBug() {
@@ -285,7 +287,7 @@ class GleapBug {
             event.put("name", name);
             event.put("data", data);
             event.put("date", dateToString(new Date()));
-            customEventLog.put(event);
+            addToCustomEventLog(event);
             GleapEventService.getInstance().addEvent(event);
         } catch (Exception ex) {
         }
@@ -296,14 +298,32 @@ class GleapBug {
         try {
             event.put("name", name);
             event.put("date", dateToString(new Date()));
-            customEventLog.put(event);
+            addToCustomEventLog(event);
             GleapEventService.getInstance().addEvent(event);
         } catch (Exception ex) {
         }
     }
 
+    private void addToCustomEventLog(JSONObject event) {
+        synchronized (customEventLog) {
+            if (customEventLog.length() >= MAX_CUSTOM_EVENTS) {
+                customEventLog.remove(0);
+            }
+            customEventLog.put(event);
+        }
+    }
+
+    /**
+     * @return a copy of the event log, oldest first (events are logged from any thread)
+     */
     public JSONArray getCustomEventLog() {
-        return customEventLog;
+        synchronized (customEventLog) {
+            JSONArray copy = new JSONArray();
+            for (int i = 0; i < customEventLog.length(); i++) {
+                copy.put(customEventLog.opt(i));
+            }
+            return copy;
+        }
     }
 
     public String getSpamToken() {
