@@ -75,8 +75,9 @@ class FeedbackUploader implements FeedbackPayloadBuilder.Uploads {
                 JSONObject entry = new JSONObject();
                 entry.put("url", fileUrls.get(i));
                 entry.put("name", currentFile.getName());
-                InputStream is = new BufferedInputStream(new FileInputStream(currentFile));
-                entry.put("type", URLConnection.guessContentTypeFromStream(is));
+                try (InputStream is = new BufferedInputStream(new FileInputStream(currentFile))) {
+                    entry.put("type", URLConnection.guessContentTypeFromStream(is));
+                }
                 result.put(entry);
             }
         } catch (Exception ex) {

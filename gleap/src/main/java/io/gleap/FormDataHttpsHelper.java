@@ -62,10 +62,8 @@ class FormDataHttpsHelper {
                 "" + URLConnection.guessContentTypeFromName(fileName) + this.crlf + this.crlf);
         int size = uploadFile != null ? (int) uploadFile.length() : 0;
         byte[] bytes = new byte[size];
-        try {
-            BufferedInputStream buf = new BufferedInputStream(new FileInputStream(uploadFile));
+        try (BufferedInputStream buf = new BufferedInputStream(new FileInputStream(uploadFile))) {
             buf.read(bytes, 0, bytes.length);
-            buf.close();
         } catch (IOException e) {
             GleapLog.w("Could not read the attachment " + fileName, e);
         }
