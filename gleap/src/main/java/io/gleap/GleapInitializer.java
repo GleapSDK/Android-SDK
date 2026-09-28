@@ -33,6 +33,7 @@ final class GleapInitializer {
 
         try {
             application = app;
+            GleapActivityTracker.register(app);
             GleapConfig.getInstance().setSdkKey(sdkKey.trim());
             initialized = true;
             GleapSessionController.initialize(app);

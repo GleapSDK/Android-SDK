@@ -16,10 +16,18 @@ class ActivityUtil {
         return activity instanceof GleapMainActivity;
     }
 
+    /**
+     * The activity on screen: the app's GetActivityCallback, else the tracked resumed activity,
+     * else (not tracked yet) the resumed activity found through hidden framework fields.
+     */
     public static Activity getCurrentActivity() {
         GetActivityCallback activityCallback =  GleapCallbacks.getInstance().getGetActivityCallback();
         if(activityCallback != null) {
             return activityCallback.getActivity();
+        }
+        Activity tracked = GleapActivityTracker.resumedActivity();
+        if (tracked != null) {
+            return tracked;
         }
         try {
             Class activityThreadClass = Class.forName("android.app.ActivityThread");
