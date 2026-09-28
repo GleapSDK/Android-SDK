@@ -702,8 +702,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                                 sendScreenshotUpdate();
                                 sendPendingActions();
 
-                                Handler handler = new Handler();
-                                handler.postDelayed(new Runnable() {
+                                GleapMainThread.postDelayed(new Runnable() {
                                     @Override
                                     public void run() {
                                         JSONObject data = new JSONObject();
@@ -735,7 +734,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                                 // pops in mid-fade — a visible jump.
                                 findViewById(R.id.loading_indicator).setVisibility(View.GONE);
                                 webView.setAlpha(0f);
-                                new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                                GleapMainThread.postDelayed(new Runnable() {
                                     @Override
                                     public void run() {
                                         if (webView == null) {

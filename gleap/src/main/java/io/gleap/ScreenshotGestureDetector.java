@@ -8,6 +8,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
+import android.os.Looper;
 import android.provider.MediaStore;
 
 import androidx.annotation.RequiresApi;
@@ -61,7 +62,7 @@ class ScreenshotGestureDetector extends GleapDetector {
         return p;
     }
 
-    private final ContentObserver contentObserver = new ContentObserver(new Handler()) {
+    private final ContentObserver contentObserver = new ContentObserver(new Handler(Looper.getMainLooper())) {
         @Override
         public void onChange(boolean selfChange, Uri uri) {
             super.onChange(selfChange, uri);

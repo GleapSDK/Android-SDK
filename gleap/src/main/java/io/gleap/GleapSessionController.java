@@ -1,9 +1,6 @@
 package io.gleap;
 
-import android.app.Activity;
 import android.app.Application;
-import android.os.Handler;
-import android.os.Looper;
 
 import org.json.JSONObject;
 
@@ -290,19 +287,12 @@ public class GleapSessionController {
 
         this.lastRegisteredUserHash = userHash;
 
-        ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
+        GleapMainThread.postWithActivity(new Runnable() {
             @Override
-            public void run() {
-                Handler mainHandler = new Handler(Looper.getMainLooper());
-                Runnable gleapRunnable = new Runnable() {
-                    @Override
-                    public void run() throws RuntimeException {
-                        if (GleapConfig.getInstance().getRegisterPushMessageGroupCallback() != null && userHash != null && !userHash.isEmpty()) {
-                            GleapConfig.getInstance().getRegisterPushMessageGroupCallback().invoke("gleapuser-" + userHash);
-                        }
-                    }
-                };
-                mainHandler.post(gleapRunnable);
+            public void run() throws RuntimeException {
+                if (GleapConfig.getInstance().getRegisterPushMessageGroupCallback() != null && userHash != null && !userHash.isEmpty()) {
+                    GleapConfig.getInstance().getRegisterPushMessageGroupCallback().invoke("gleapuser-" + userHash);
+                }
             }
         });
     }
@@ -313,17 +303,10 @@ public class GleapSessionController {
         // Unregister old user.
         if (GleapConfig.getInstance().getUnRegisterPushMessageGroupCallback() != null && userHash != null && !userHash.isEmpty()) {
             try {
-                ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
+                GleapMainThread.postWithActivity(new Runnable() {
                     @Override
-                    public void run() {
-                        Handler mainHandler = new Handler(Looper.getMainLooper());
-                        Runnable gleapRunnable = new Runnable() {
-                            @Override
-                            public void run() throws RuntimeException {
-                                GleapConfig.getInstance().getUnRegisterPushMessageGroupCallback().invoke("gleapuser-" + userHash);
-                            }
-                        };
-                        mainHandler.post(gleapRunnable);
+                    public void run() throws RuntimeException {
+                        GleapConfig.getInstance().getUnRegisterPushMessageGroupCallback().invoke("gleapuser-" + userHash);
                     }
                 });
             } catch (Exception ignore) {

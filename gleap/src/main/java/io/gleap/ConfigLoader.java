@@ -1,8 +1,6 @@
 package io.gleap;
 
 import android.os.AsyncTask;
-import android.os.Handler;
-import android.os.Looper;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -113,8 +111,6 @@ class ConfigLoader extends AsyncTask<GleapBug, Void, JSONObject> {
                 br.close();
 
                 if (result != null) {
-                    Handler mainThreadHandler = new Handler(Looper.getMainLooper());
-
                     GleapConfig.getInstance().initConfig(result);
 
                     if(result.has("flowConfig")) {
@@ -125,7 +121,7 @@ class ConfigLoader extends AsyncTask<GleapBug, Void, JSONObject> {
                             return;
                         }
 
-                        mainThreadHandler.post(new Runnable() {
+                        GleapMainThread.post(new Runnable() {
                             @Override
                             public void run() {
                                 // Config loaded. Add layout.

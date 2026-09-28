@@ -8,6 +8,7 @@ import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.os.Build;
 import android.os.Handler;
+import android.os.Looper;
 import android.util.Base64;
 import android.view.PixelCopy;
 import android.view.View;
@@ -258,7 +259,7 @@ class ScreenshotUtil {
         Bitmap bitmap = Bitmap.createBitmap(view.getWidth(), view.getHeight(), ARGB_8888);
         int[] location = new int[2];
         view.getLocationInWindow(location);
-        ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
+        GleapMainThread.runWithActivity(new Runnable() {
             @Override
             public void run() {
                 PixelCopy.request(window,
@@ -271,7 +272,7 @@ class ScreenshotUtil {
                                 }
                             }
                         },
-                        new Handler()
+                        new Handler(Looper.getMainLooper())
                 );
             }
         });

@@ -6,8 +6,6 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -78,7 +76,7 @@ class GleapActivityManager {
                     bringGleapToFront(activity);
 
                     // Process open push notification action.
-                    new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                    GleapMainThread.postDelayed(new Runnable() {
                         @Override
                         public void run() {
                             if (ActivityUtil.getCurrentActivity() == null) {

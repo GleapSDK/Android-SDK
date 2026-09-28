@@ -282,10 +282,8 @@ class GleapEventService {
             return;
         }
 
-        Handler mainThreadHandler = new Handler(Looper.getMainLooper());
-
         if (data.has("u")) {
-            mainThreadHandler.post(new Runnable() {
+            GleapMainThread.post(new Runnable() {
                 @Override
                 public void run() {
                     try {
@@ -328,7 +326,7 @@ class GleapEventService {
                         } else {
                             // In app notification.
                             if (!this.disableInAppNotifications) {
-                                mainThreadHandler.post(new Runnable() {
+                                GleapMainThread.post(new Runnable() {
                                     @Override
                                     public void run() {
                                         try {
@@ -358,7 +356,7 @@ class GleapEventService {
                         } catch (Exception ex) {
                         }
 
-                        mainThreadHandler.post(new Runnable() {
+                        GleapMainThread.post(new Runnable() {
                             @Override
                             public void run() {
                                 SurveyType surveyType = SurveyType.SURVEY;
@@ -378,14 +376,14 @@ class GleapEventService {
                         });
                     }
                     if (currentAction.getString("actionType").contains("banner")) {
-                        mainThreadHandler.post(new Runnable() {
+                        GleapMainThread.post(new Runnable() {
                             @Override
                             public void run() {
                                 GleapOverlayManager.getInstance().showBanner(currentAction, null);
                             }
                         });
                     } else if (currentAction.getString("actionType").contains("modal")) {
-                        mainThreadHandler.post(new Runnable() {
+                        GleapMainThread.post(new Runnable() {
                             @Override
                             public void run() {
                                 // Get config from current action.

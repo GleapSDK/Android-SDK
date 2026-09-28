@@ -5,8 +5,6 @@ import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.NetworkRequest;
-import android.os.Handler;
-import android.os.Looper;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -98,8 +96,7 @@ class GleapConnectivityManager {
             return;
         }
 
-        Handler mainHandler = new Handler(Looper.getMainLooper());
-        mainHandler.post(new Runnable() {
+        GleapMainThread.post(new Runnable() {
             @Override
             public void run() {
                 try {
@@ -126,7 +123,7 @@ class GleapConnectivityManager {
 
                 // Reset the reconnecting flag after cooldown so subsequent
                 // connectivity changes can trigger another attempt.
-                mainHandler.postDelayed(new Runnable() {
+                GleapMainThread.postDelayed(new Runnable() {
                     @Override
                     public void run() {
                         isReconnecting.set(false);

@@ -7,8 +7,6 @@ import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.os.Handler;
-import android.os.Looper;
 import java.lang.ref.WeakReference;
 
 
@@ -92,8 +90,7 @@ class ScreenshotTaker {
                         GleapConfig.getInstance().getWidgetOpenedCallback().invoke();
                     }
 
-                    Handler mainThreadHandler = new Handler(Looper.getMainLooper());
-                    mainThreadHandler.post(new Runnable() {
+                    GleapMainThread.post(new Runnable() {
                         @Override
                         public void run() {
                             GleapOverlayManager.getInstance().setMessageCounter(0);
