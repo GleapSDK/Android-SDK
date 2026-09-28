@@ -12,15 +12,19 @@ public class GleapSessionController {
     private GleapSessionProperties pendingUpdateAction;
     private boolean isSessionLoaded = false;
     private String lastRegisteredUserHash;
-    private Application application;
+    // Where the session and the identified user are kept between app starts.
+    private final KeyValueStore store;
 
     private GleapSessionController(Application application) {
-        this.application = application;
+        this(GleapPreferencesHelper.getInstance(application));
+    }
+
+    GleapSessionController(KeyValueStore store) {
+        this.store = store;
 
         // Load existing session.
-        GleapPreferencesHelper prefs = GleapPreferencesHelper.getInstance(application);
-        String id = prefs.getString("session_id", "");
-        String hash = prefs.getString("session_hash", "");
+        String id = store.getString("session_id", "");
+        String hash = store.getString("session_hash", "");
         if (!id.equals("") && !hash.equals("")) {
             gleapSession = new GleapSession(id, hash);
         }
@@ -34,6 +38,11 @@ public class GleapSessionController {
             instance = new GleapSessionController(application);
         }
         return instance;
+    }
+
+    // Tests only.
+    static void setInstanceForTesting(GleapSessionController controller) {
+        instance = controller;
     }
 
     public void executePendingUpdates() {
@@ -78,7 +87,7 @@ public class GleapSessionController {
     }
 
     public void clearUserSession() {
-        GleapPreferencesHelper.getInstance(application).clear();
+        store.clear();
 
         if (gleapSession != null) {
             unregisterPushMessageGroup(gleapSession.getHash());
@@ -96,9 +105,8 @@ public class GleapSessionController {
             gleapSession.setHash(hash);
             gleapSession.setId(id);
         }
-        GleapPreferencesHelper prefs = GleapPreferencesHelper.getInstance(application);
-        prefs.putString("session_hash", hash);
-        prefs.putString("session_id", id);
+        store.putString("session_hash", hash);
+        store.putString("session_id", id);
     }
 
     public GleapSession getUserSession() {
@@ -113,50 +121,48 @@ public class GleapSessionController {
         }
 
         // Locally save.
-        GleapPreferencesHelper prefs = GleapPreferencesHelper.getInstance(application);
-        prefs.putString("userId", gleapUser.getUserId());
-        prefs.putString("name", gleapUser.getName());
-        prefs.putString("email", gleapUser.getEmail());
+        store.putString("userId", gleapUser.getUserId());
+        store.putString("name", gleapUser.getName());
+        store.putString("email", gleapUser.getEmail());
         if (gleapUser.getPhone() != null) {
-            prefs.putString("phone", gleapUser.getPhone());
+            store.putString("phone", gleapUser.getPhone());
         }
         if (gleapUser.getPlan() != null) {
-            prefs.putString("plan", gleapUser.getPlan());
+            store.putString("plan", gleapUser.getPlan());
         }
         if (gleapUser.getCompanyId() != null) {
-            prefs.putString("companyId", gleapUser.getCompanyId());
+            store.putString("companyId", gleapUser.getCompanyId());
         }
         if (gleapUser.getCompanyName() != null) {
-            prefs.putString("companyName", gleapUser.getCompanyName());
+            store.putString("companyName", gleapUser.getCompanyName());
         }
         if (gleapUser.getAvatar() != null) {
-            prefs.putString("avatar", gleapUser.getAvatar());
+            store.putString("avatar", gleapUser.getAvatar());
         }
-        prefs.putFloat("value", (float) gleapUser.getValue());
-        prefs.putFloat("sla", (float) gleapUser.getSla());
+        store.putFloat("value", (float) gleapUser.getValue());
+        store.putFloat("sla", (float) gleapUser.getSla());
         if (gleapUser.getHash() != null && !gleapUser.getHash().equals("")) {
-            prefs.putString("hash", gleapUser.getHash());
+            store.putString("hash", gleapUser.getHash());
         }
         if (gleapUser.getCustomData() != null) {
-            prefs.putString("customData", gleapUser.getCustomData().toString());
+            store.putString("customData", gleapUser.getCustomData().toString());
         }
     }
 
     public GleapSessionProperties getStoredGleapUser() {
         GleapSessionProperties gleapUser = new GleapSessionProperties();
         try {
-            GleapPreferencesHelper prefs = GleapPreferencesHelper.getInstance(application);
-            String userId = prefs.getString("userId", "");
-            String userName = prefs.getString("name", "");
-            String email = prefs.getString("email", "");
-            String phone = prefs.getString("phone", "");
-            String plan = prefs.getString("plan", "");
-            String companyId = prefs.getString("companyId", "");
-            String companyName = prefs.getString("companyName", "");
-            String avatar = prefs.getString("avatar", "");
-            String hash = prefs.getString("hash", "");
-            double value = prefs.getFloat("value", 0);
-            double sla = prefs.getFloat("sla", 0);
+            String userId = store.getString("userId", "");
+            String userName = store.getString("name", "");
+            String email = store.getString("email", "");
+            String phone = store.getString("phone", "");
+            String plan = store.getString("plan", "");
+            String companyId = store.getString("companyId", "");
+            String companyName = store.getString("companyName", "");
+            String avatar = store.getString("avatar", "");
+            String hash = store.getString("hash", "");
+            double value = store.getFloat("value", 0);
+            double sla = store.getFloat("sla", 0);
 
             if (!userId.isEmpty()) {
                 gleapUser.setUserId(userId);
@@ -191,7 +197,7 @@ public class GleapSessionController {
 
             JSONObject customData = new JSONObject();
             try {
-                String customDataString = prefs.getString("customData", "");
+                String customDataString = store.getString("customData", "");
                 customData = new JSONObject(customDataString);
             } catch (Exception ex) {
             }
