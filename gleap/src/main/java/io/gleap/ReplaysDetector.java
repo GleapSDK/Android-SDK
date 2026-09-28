@@ -55,10 +55,11 @@ class ReplaysDetector extends GleapDetector {
                             ScreenshotUtil.takeScreenshot(new ScreenshotUtil.GetImageCallback() {
                                 @Override
                                 public void getImage(Bitmap bitmap) {
+                                    // A frame that could not be taken is skipped; the capture goes on.
                                     if (bitmap != null) {
                                         replay.addScreenshot(bitmap, screenName);
-                                        handler.postDelayed(runnableCode, replay.getInterval());
                                     }
+                                    handler.postDelayed(runnableCode, replay.getInterval());
                                 }
                             });
                         }

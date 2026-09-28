@@ -80,8 +80,11 @@ final class FeedbackPayloadBuilder {
         body.put("spamToken", report.spamToken);
 
         if (!stripImages) {
-            JSONObject screenshotUpload = uploads.uploadScreenshot(report.screenshot);
-            body.put("screenshotUrl", screenshotUpload.get("fileUrl"));
+            // No screenshot when none could be taken: the ticket is sent without one.
+            if (report.screenshot != null) {
+                JSONObject screenshotUpload = uploads.uploadScreenshot(report.screenshot);
+                body.put("screenshotUrl", screenshotUpload.get("fileUrl"));
+            }
             body.put("replay", uploads.uploadReplay());
         }
 

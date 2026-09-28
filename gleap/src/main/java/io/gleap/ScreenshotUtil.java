@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static android.graphics.Bitmap.Config.ARGB_8888;
 import static android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND;
@@ -29,27 +30,47 @@ import static android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND;
 import androidx.annotation.RequiresApi;
 
 class ScreenshotUtil {
+    /**
+     * Takes a screenshot of the current activity (or asks the app's GetBitmapCallback for one).
+     * Once the session is loaded the callback always runs exactly once: with the screenshot, or
+     * with null when none could be taken. Without a loaded session it does not run and the
+     * activation methods are resumed.
+     */
     public static void takeScreenshot(GetImageCallback getImageCallback) {
-        try {
-            if (!GleapSessionController.getInstance().isSessionLoaded()) {
-                throw new GleapSessionNotInitialisedException();
-            }
+        GleapSessionController sessionController = GleapSessionController.getInstance();
+        if (sessionController == null || !sessionController.isSessionLoaded()) {
+            GleapDetectorUtil.resumeAllDetectors();
+            return;
+        }
 
+        final GetImageCallback callback = once(getImageCallback);
+        try {
             Bitmap bitmap = null;
             if (GleapCallbacks.getInstance().getGetBitmapCallback() != null) {
                 bitmap = GleapCallbacks.getInstance().getGetBitmapCallback().getBitmap();
                 if(bitmap != null) {
-                    getImageCallback.getImage(getResizedBitmap(bitmap));
+                    callback.getImage(getResizedBitmap(bitmap));
                 } else {
-                    takeNativeScreenshot(getImageCallback);
+                    takeNativeScreenshot(callback);
                 }
             } else {
-                takeNativeScreenshot(getImageCallback);
+                takeNativeScreenshot(callback);
             }
-        } catch (Exception ex) {
-            GleapDetectorUtil.resumeAllDetectors();
-
+        } catch (Exception | OutOfMemoryError ex) {
+            callback.getImage(null);
         }
+    }
+
+    private static GetImageCallback once(final GetImageCallback getImageCallback) {
+        final AtomicBoolean called = new AtomicBoolean(false);
+        return new GetImageCallback() {
+            @Override
+            public void getImage(Bitmap bitmap) {
+                if (called.compareAndSet(false, true)) {
+                    getImageCallback.getImage(bitmap);
+                }
+            }
+        };
     }
 
     private static void takeNativeScreenshot(GetImageCallback getImageCallback) {
@@ -60,7 +81,7 @@ class ScreenshotUtil {
             captureView(view, window, new PixelCopyTask.ImageTaken() {
                 @Override
                 public void invoke(Bitmap bitmap) {
-                    getImageCallback.getImage(getResizedBitmap(bitmap));
+                    getImageCallback.getImage(bitmap != null ? getResizedBitmap(bitmap) : null);
                 }
             });
         } else if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N) {
@@ -68,14 +89,10 @@ class ScreenshotUtil {
                     view.getHeight(), Bitmap.Config.ARGB_8888);
             Canvas canvas = new Canvas(bitmap);
             view.draw(canvas);
-            if (bitmap != null) {
-                getImageCallback.getImage(getResizedBitmap(bitmap));
-            }
+            getImageCallback.getImage(getResizedBitmap(bitmap));
         } else {
             bitmap = generateBitmap(ActivityUtil.getCurrentActivity());
-            if (bitmap != null) {
-                getImageCallback.getImage(getResizedBitmap(bitmap));
-            }
+            getImageCallback.getImage(bitmap != null ? getResizedBitmap(bitmap) : null);
         }
     }
 
@@ -262,18 +279,21 @@ class ScreenshotUtil {
         GleapMainThread.runWithActivity(new Runnable() {
             @Override
             public void run() {
-                PixelCopy.request(window,
-                        new Rect(location[0], location[1], location[0] + view.getWidth(), location[1] + view.getHeight()),
-                        bitmap, new PixelCopy.OnPixelCopyFinishedListener() {
-                            @Override
-                            public void onPixelCopyFinished(int copyResult) {
-                                if (copyResult == PixelCopy.SUCCESS) {
-                                    imageTaken.invoke(bitmap);
+                try {
+                    PixelCopy.request(window,
+                            new Rect(location[0], location[1], location[0] + view.getWidth(), location[1] + view.getHeight()),
+                            bitmap, new PixelCopy.OnPixelCopyFinishedListener() {
+                                @Override
+                                public void onPixelCopyFinished(int copyResult) {
+                                    imageTaken.invoke(copyResult == PixelCopy.SUCCESS ? bitmap : null);
                                 }
-                            }
-                        },
-                        new Handler(Looper.getMainLooper())
-                );
+                            },
+                            new Handler(Looper.getMainLooper())
+                    );
+                } catch (Exception e) {
+                    // E.g. the window has no surface (anymore).
+                    imageTaken.invoke(null);
+                }
             }
         });
     }

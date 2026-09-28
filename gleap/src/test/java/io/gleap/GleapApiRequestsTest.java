@@ -191,6 +191,7 @@ public class GleapApiRequestsTest {
         sdk.server.respond("/uploads/sdksteps", 200, "{\"fileUrls\":[]}");
         sdk.server.respond("/uploads/attachments", 200, "{\"fileUrls\":[]}");
         sdk.server.respond("/bugs/v2", 201, "{\"shareToken\":\"share-1\"}");
+        GleapBug.getInstance().setScreenshot(SdkTestEnvironment.screenshot());
 
         JSONObject result = new HttpHelper(NO_LISTENER, null).doInBackground(GleapBug.getInstance());
 
@@ -236,6 +237,7 @@ public class GleapApiRequestsTest {
         sdk.server.respond("/uploads/sdksteps", 200, "{\"fileUrls\":[]}");
         sdk.server.respond("/uploads/attachments", 200, "{\"fileUrls\":[]}");
         sdk.server.respond("/bugs/v2", 201, "{}");
+        GleapBug.getInstance().setScreenshot(SdkTestEnvironment.screenshot());
 
         new ConfigLoader(NO_LISTENER).doInBackground();
         new GleapBaseSessionService().doInBackground();

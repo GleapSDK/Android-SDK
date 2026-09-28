@@ -69,11 +69,16 @@ public class FeedbackPayloadBuilderTest {
 
     private static FeedbackSubmission report(String outboundId, boolean silent, JSONObject exclude, JSONObject crashExclude)
             throws JSONException {
+        return report(outboundId, silent, SdkTestEnvironment.screenshot(), exclude, crashExclude);
+    }
+
+    private static FeedbackSubmission report(String outboundId, boolean silent, Bitmap screenshot, JSONObject exclude,
+                                             JSONObject crashExclude) throws JSONException {
         return new FeedbackSubmission("BUG", outboundId, "spam-1",
                 new JSONObject().put("description", "It crashed"),
                 new JSONObject().put("plan", "pro"),
                 new JSONArray().put(new JSONObject().put("name", "checkout")),
-                new String[]{"android", "beta"}, "HIGH", silent, null, exclude, crashExclude);
+                new String[]{"android", "beta"}, "HIGH", silent, screenshot, exclude, crashExclude);
     }
 
     private JSONObject build(FeedbackSubmission report) throws Exception {
@@ -146,6 +151,15 @@ public class FeedbackPayloadBuilderTest {
         JSONObject body = build(report(null, true, new JSONObject(), new JSONObject().put("screenshot", true)));
         assertEquals(1, uploads.screenshots);
         assertFalse(body.has("screenshotUrl"));
+    }
+
+    @Test
+    public void aTicketWithoutAScreenshotIsSentWithoutOne() throws Exception {
+        JSONObject body = build(report(null, false, null, new JSONObject(), new JSONObject()));
+
+        assertEquals(0, uploads.screenshots);
+        assertFalse(body.has("screenshotUrl"));
+        assertEquals("It crashed", body.getJSONObject("formData").getString("description"));
     }
 
     @Test

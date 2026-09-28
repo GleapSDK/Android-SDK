@@ -73,6 +73,7 @@ public class FeedbackCallbacksTest {
     private void send(String description) throws Exception {
         GleapBug.getInstance().setData(new JSONObject().put("description", description));
         GleapBug.getInstance().setOutboundId("survey-1");
+        GleapBug.getInstance().setScreenshot(SdkTestEnvironment.screenshot());
         HttpHelper task = new HttpHelper(listener, null);
         task.onPreExecute();
         JSONObject result = task.doInBackground(GleapBug.getInstance());

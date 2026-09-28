@@ -1,6 +1,9 @@
 package io.gleap;
 
 import android.app.Activity;
+import android.graphics.Bitmap;
+
+import java.lang.reflect.Constructor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -87,6 +90,20 @@ class SdkTestEnvironment {
         store.putString("session_hash", hash);
         controller = new GleapSessionController(store);
         GleapSessionController.setInstanceForTesting(controller);
+    }
+
+    /**
+     * A screenshot for the tests. Bitmap has no public constructor; the stubbed one draws
+     * nothing, which is all the uploads need here.
+     */
+    static Bitmap screenshot() {
+        try {
+            Constructor<Bitmap> constructor = Bitmap.class.getDeclaredConstructor();
+            constructor.setAccessible(true);
+            return constructor.newInstance();
+        } catch (Exception e) {
+            throw new AssertionError(e);
+        }
     }
 
     /**

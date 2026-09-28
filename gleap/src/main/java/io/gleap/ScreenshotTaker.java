@@ -33,15 +33,15 @@ class ScreenshotTaker {
             ScreenshotUtil.takeScreenshot(new ScreenshotUtil.GetImageCallback() {
                 @Override
                 public void getImage(Bitmap bitmap) {
-                    if (bitmap != null) {
-                        openScreenshot(bitmap, type);
-                    }
+                    // Without a screenshot (it could not be taken) the widget opens without one.
+                    openScreenshot(bitmap, type);
                 }
             });
         }
     }
 
     public void openScreenshot(Bitmap imageFile, SurveyType type) {
+        boolean opened = false;
         try {
             GleapOverlayManager.getInstance().setInvisible();
             Activity activity = ActivityUtil.getCurrentActivity();
@@ -98,10 +98,18 @@ class ScreenshotTaker {
                     });
 
                     activity.startActivity(intent);
+                    opened = true;
                 }
             }
         } catch (Exception ex) {
+            GleapLog.w("Could not open the widget", ex);
+        }
 
+        if (!opened) {
+            // The widget did not open: resume the activation methods, which takeScreenshot paused,
+            // and show the feedback button again.
+            GleapDetectorUtil.resumeAllDetectors();
+            GleapOverlayManager.getInstance().setVisible();
         }
     }
 }
