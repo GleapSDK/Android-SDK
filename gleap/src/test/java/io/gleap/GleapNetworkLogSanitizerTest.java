@@ -211,12 +211,25 @@ public class GleapNetworkLogSanitizerTest {
     @Test
     public void unchangedAndUnparseableBodiesStayUntouched() throws Exception {
         String formatted = "{ \"url\": \"https://example.com/a/b\",\n  \"count\": 1.50 }";
-        String truncated = "{\"password\":\"hunter2\",\"items\":[1,2" + Networklog.TRUNCATED_PREFIX + "more than 150000 bytes]";
+        String truncated = "{\"name\":\"ada\",\"items\":[1,2" + Networklog.TRUNCATED_PREFIX + "more than 150000 bytes]";
         GleapNetworkLogSanitizer sanitizer = sanitizer("password");
 
         assertSame(formatted, sanitizer.sanitizeBody(formatted, "application/json"));
         assertSame(truncated, sanitizer.sanitizeBody(truncated, "application/json"));
         assertSame("\"password\"", sanitizer.sanitizeBody("\"password\"", "application/json"));
+    }
+
+    // Bodies over the size limit are cut, so they don't parse; the ignored values must not leak.
+    @Test
+    public void truncatedJsonBodiesHaveIgnoredValuesMasked() {
+        String marker = Networklog.TRUNCATED_PREFIX + "200000 bytes]";
+        String truncated = "{\"user\":{\"password\":\"pw-0\",\"name\":\"n\"},\"token\":\"abc\",\"items\":[{\"Token\":\"x\"" + marker;
+
+        assertEquals("{\"user\":{\"password\":\"[REDACTED]\",\"name\":\"n\"},\"token\":\"[REDACTED]\",\"items\":[{\"Token\":\"[REDACTED]\"" + marker,
+                sanitizer("password", "token").sanitizeBody(truncated, "application/json"));
+        // The last segment of a dotted prop counts as a key, and a value cut at the end is masked too.
+        assertEquals("{\"user\":{\"Password\":\"[REDACTED]\"" + marker,
+                sanitizer("user.password").sanitizeBody("{\"user\":{\"Password\":\"pw-" + marker, "application/json"));
     }
 
     @Test

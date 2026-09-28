@@ -16,6 +16,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Applies the network log privacy rules right before network logs leave the device, so the
@@ -29,8 +31,9 @@ import java.util.Set;
  *     is also a path from the body root ({@code user.password}).</li>
  *     <li>Form fields and url query parameters named like a prop are removed.</li>
  * </ol>
- * Props match case-insensitively everywhere. A body that is not changed keeps its exact text, a body
- * that does not parse (for example a truncated one) is left as it is.
+ * Props match case-insensitively everywhere. A body that is not changed keeps its exact text. In a
+ * JSON body that does not parse (for example one cut at the size limit) the values of matching keys
+ * are masked with {@value #REDACTED} instead.
  * <p>
  * Pure org.json code, so it runs in the JVM unit tests.
  */
@@ -50,6 +53,8 @@ final class GleapNetworkLogSanitizer {
     private final Set<String> props = new HashSet<>();
     private final List<String[]> paths = new ArrayList<>();
     private final List<String> blacklist = new ArrayList<>();
+    // Masks the values of ignored keys in JSON text that does not parse.
+    private final List<Pattern> unparsedJsonPatterns = new ArrayList<>();
 
     GleapNetworkLogSanitizer(Collection<String> propsToIgnore, Collection<String> blacklist) {
         if (propsToIgnore != null) {
@@ -72,6 +77,18 @@ final class GleapNetworkLogSanitizer {
                     }
                 }
             }
+        }
+
+        // Every prop as a whole plus the last segment of dotted props (user.password -> password).
+        Set<String> maskedKeys = new LinkedHashSet<>(props);
+        for (String[] path : paths) {
+            maskedKeys.add(path[path.length - 1]);
+        }
+        for (String key : maskedKeys) {
+            // The string value may miss its closing quote when the text was cut inside it.
+            unparsedJsonPatterns.add(Pattern.compile(
+                    "\"(" + Pattern.quote(key) + ")\"(\\s*:\\s*)(\"(?:[^\"\\\\]|\\\\.)*\"?|-?\\d[0-9.eE+-]*|true|false|null)",
+                    Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE));
         }
 
         Set<String> urls = new LinkedHashSet<>();
@@ -286,7 +303,7 @@ final class GleapNetworkLogSanitizer {
         if (first == '{' || first == '[') {
             Object parsed = parseJson(body);
             if (parsed == null) {
-                return body;
+                return maskUnparsedJson(body);
             }
             boolean changed = removeKeys(parsed);
             changed |= removePaths(parsed, false);
@@ -297,6 +314,30 @@ final class GleapNetworkLogSanitizer {
             return cleaned != null ? cleaned : body;
         }
         return body;
+    }
+
+    /**
+     * JSON text that does not parse, e.g. cut at the size limit: masks the string, number, boolean
+     * and null values of ignored keys (objects and arrays are left, their keys are matched on their
+     * own). A trailing truncation marker is kept. Returns the same string instance when nothing matched.
+     */
+    private String maskUnparsedJson(String body) {
+        String head = body;
+        String tail = "";
+        int markerStart = body.lastIndexOf(Networklog.TRUNCATED_PREFIX);
+        if (markerStart >= 0 && body.endsWith(" bytes]")) {
+            head = body.substring(0, markerStart);
+            tail = body.substring(markerStart);
+        }
+        boolean changed = false;
+        for (Pattern pattern : unparsedJsonPatterns) {
+            Matcher matcher = pattern.matcher(head);
+            if (matcher.find()) {
+                head = matcher.replaceAll("\"$1\"$2\"" + Matcher.quoteReplacement(REDACTED) + "\"");
+                changed = true;
+            }
+        }
+        return changed ? head + tail : body;
     }
 
     private boolean removeKeys(Object node) {
