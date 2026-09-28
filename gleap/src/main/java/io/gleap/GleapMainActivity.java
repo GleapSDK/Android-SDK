@@ -340,7 +340,10 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        webView.saveState(outState);
+        // No WebView when the device has none or it failed to load.
+        if (webView != null) {
+            webView.saveState(outState);
+        }
     }
 
     @Override
