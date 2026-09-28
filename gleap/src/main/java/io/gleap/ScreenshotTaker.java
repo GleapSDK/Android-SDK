@@ -3,7 +3,6 @@ package io.gleap;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -52,10 +51,6 @@ class ScreenshotTaker {
                         // The screen the widget opens over.
                         GleapBug.getInstance().getPhoneMeta().setLastScreen(activity.getClass().getSimpleName());
                     }
-                    SharedPreferences pref = applicationContext.getSharedPreferences("prefs", 0);
-                    SharedPreferences.Editor editor = pref.edit();
-                    editor.putString("descriptionEditText", ""); // Storing the description
-                    editor.apply();
                     Activity activityToOpen = ActivityUtil.getCurrentActivity();
                     if (activityToOpen == null) {
                         return;
