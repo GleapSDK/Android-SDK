@@ -299,7 +299,7 @@ class GleapModal {
         }
 
         private void openUrl(String url) {
-            if (url != null && !url.isEmpty()) Gleap.getInstance().handleLink(url);
+            if (url != null && !url.isEmpty() && GleapExternalLinks.mayOpen(url)) Gleap.getInstance().handleLink(url);
         }
 
         private void startCustomAction(JSONObject cb) throws JSONException {

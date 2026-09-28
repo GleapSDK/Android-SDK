@@ -168,7 +168,7 @@ class GleapBanner {
                                 case "open-url":
                                     try {
                                         String url = gleapCallback.getString("data");
-                                        if (url != null && url.length() > 0) {
+                                        if (url != null && url.length() > 0 && GleapExternalLinks.mayOpen(url)) {
                                             Gleap.getInstance().handleLink(url);
                                         }
                                     }catch (Exception exp) {}

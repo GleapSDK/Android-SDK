@@ -188,6 +188,10 @@ final class GleapWidgetBridge {
         try {
             String url = object.getString("data");
             if (url != null && url.length() > 0) {
+                if (!GleapExternalLinks.mayOpen(url)) {
+                    GleapLog.w("Blocked a link with a disallowed scheme");
+                    return;
+                }
                 if (Gleap.internalCloseWidgetOnExternalLinkOpen) {
                     GleapMainActivity.setUrlToOpenAfterClose(url);
                     activity.closeMainGleapActivity();
