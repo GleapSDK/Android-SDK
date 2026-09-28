@@ -50,15 +50,28 @@ class ConfigLoader extends AsyncTask<GleapBug, Void, JSONObject> {
 
         final String configUrl = GleapConfig.getInstance().getApiUrl() + "/config/" + GleapConfig.getInstance().getSdkKey();
 
-        // Only connection failures are retried; readResponse reports every other failure.
-        GleapRetry.withBackoff("Config load", IOException.class, new GleapRetry.Attempt() {
+        // Connection failures and server errors (5xx, e.g. 503 while the API is overloaded) are
+        // retried; readResponse reports every other failure.
+        final IOException[] serverError = {null};
+        boolean loaded = GleapRetry.withBackoff("Config load", IOException.class, new GleapRetry.Attempt() {
             @Override
             public void run() throws Exception {
+                serverError[0] = null;
                 HttpURLConnection con = GleapHttp.open(configUrl + "/?lang=" + GleapConfig.getInstance().getLanguage());
                 con.connect();
+                int status = con.getResponseCode();
+                if (status >= 500) {
+                    con.disconnect();
+                    serverError[0] = new IOException("The config request was answered with HTTP " + status);
+                    throw serverError[0];
+                }
                 readResponse(con);
             }
         });
+        if (!loaded && serverError[0] != null) {
+            // Reported like any other answer the config could not be read from.
+            GleapErrors.report(serverError[0], "Gleap config loader");
+        }
 
         JSONObject response = new JSONObject();
         try{

@@ -123,8 +123,21 @@ public class GleapRetryTest {
     }
 
     @Test
-    public void aConfigServerErrorIsNotRetried() {
-        sdk.server.respond("/config/", 500, "");
+    public void configServerErrorsAreRetried() {
+        sdk.server.respond("/config/", 503, "{\"status\":\"overloaded\"}")
+                .respond("/config/", 500, "")
+                .respond("/config/", 200, "{\"flowConfig\":{\"color\":\"#123456\"}}");
+
+        new ConfigLoader(NO_LISTENER).doInBackground();
+
+        assertEquals(3, sdk.server.requestsTo("/config/").size());
+        assertEquals(Arrays.asList(1000L, 2000L), sdk.sleeps);
+        assertEquals("#123456", GleapConfig.getInstance().getColor());
+    }
+
+    @Test
+    public void aConfigClientErrorIsNotRetried() {
+        sdk.server.respond("/config/", 404, "");
 
         new ConfigLoader(NO_LISTENER).doInBackground();
 
