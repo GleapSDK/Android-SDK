@@ -381,8 +381,14 @@ class GleapConfig {
     }
 
     public void finishImageUpload(Uri[] uris) {
-        this.fileUploadCallback.onReceiveValue(uris);
-        GleapConfig.getInstance().setFileUploadCallback(null);
+        // Only while the widget waits for a file: a second call or one without a pending
+        // picker has nothing to finish.
+        ValueCallback<Uri[]> callback = this.fileUploadCallback;
+        if (callback == null) {
+            return;
+        }
+        this.fileUploadCallback = null;
+        callback.onReceiveValue(uris);
     }
 
     public String getWidgetButtonText() {
