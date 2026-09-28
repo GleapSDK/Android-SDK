@@ -47,6 +47,14 @@ class FakeGleapServer implements GleapHttp.ConnectionFactory {
         return this;
     }
 
+    /**
+     * Forgets the responses queued for the path.
+     */
+    FakeGleapServer clear(String pathPrefix) {
+        responses.remove(pathPrefix);
+        return this;
+    }
+
     FakeGleapServer fail(String pathPrefix, IOException error) {
         queue(pathPrefix).add(new Response(0, null, error));
         return this;

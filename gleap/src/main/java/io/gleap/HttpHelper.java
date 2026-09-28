@@ -25,6 +25,9 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+import io.gleap.callbacks.FeedbackSendingFailedCallback;
+import io.gleap.callbacks.FeedbackWillBeSentCallback;
+
 
 /**
  * Sends the report to the gleap dashboard.
@@ -46,6 +49,26 @@ class HttpHelper extends AsyncTask<GleapBug, Void, JSONObject> {
         this.context = context;
     }
 
+    /**
+     * The report was created: the API answers POST /bugs/v2 with 201, the same check the widget
+     * uses to show the confirmation.
+     */
+    static boolean isSent(JSONObject result) {
+        return result != null && result.optInt("status", 0) == 201;
+    }
+
+    @Override
+    protected void onPreExecute() {
+        try {
+            FeedbackWillBeSentCallback willBeSent = GleapCallbacks.getInstance().getFeedbackWillBeSentCallback();
+            if (willBeSent != null) {
+                JSONObject formData = GleapBug.getInstance().getData();
+                willBeSent.invoke(formData != null ? formData.toString() : "");
+            }
+        } catch (Exception ignore) {
+        }
+    }
+
     @Override
     protected JSONObject doInBackground(GleapBug... gleapBugs) {
         GleapBug gleapBug = gleapBugs[0];
@@ -61,6 +84,34 @@ class HttpHelper extends AsyncTask<GleapBug, Void, JSONObject> {
 
     @Override
     protected void onPostExecute(JSONObject result) {
+        if (isSent(result)) {
+            notifySent();
+        } else {
+            notifySendingFailed(result);
+        }
+
+        GleapBug.getInstance().setSilent(false);
+        GleapConfig.getInstance().setCrashStripModel(new JSONObject());
+        try {
+            listener.onTaskComplete(result);
+        } catch (GleapAlreadyInitialisedException e) {
+        }
+    }
+
+    private static void notifySendingFailed(JSONObject result) {
+        try {
+            FeedbackSendingFailedCallback failed = GleapCallbacks.getInstance().getFeedbackSendingFailedCallback();
+            if (failed != null) {
+                int status = result != null ? result.optInt("status", 0) : 0;
+                failed.invoke(status > 0
+                        ? "The feedback could not be sent (HTTP " + status + ")."
+                        : "The feedback could not be sent.");
+            }
+        } catch (Exception ignore) {
+        }
+    }
+
+    private static void notifySent() {
         // Default form submission callback.
         if (GleapCallbacks.getInstance().getFeedbackSentCallback() != null) {
             if (dataToSend != null && dataToSend.has("formData")) {
@@ -92,13 +143,6 @@ class HttpHelper extends AsyncTask<GleapBug, Void, JSONObject> {
 
                 Gleap.getInstance().trackEvent("outbound-" + outboundId + "-submitted", dataToSend.getJSONObject("formData"));
             } catch (JSONException e) {}
-        }
-
-        GleapBug.getInstance().setSilent(false);
-        GleapConfig.getInstance().setCrashStripModel(new JSONObject());
-        try {
-            listener.onTaskComplete(result);
-        } catch (GleapAlreadyInitialisedException e) {
         }
     }
 

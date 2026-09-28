@@ -548,16 +548,18 @@ interface iGleap {
     void setNotificationUnreadCountUpdatedCallback(NotificationUnreadCountUpdatedCallback notificationUnreadCountUpdatedCallback);
 
     /**
-     * This is called, when the Gleap flow is started
+     * Called right before a ticket (from the widget or a silent crash report) is sent, with its
+     * form data as JSON text.
      *
-     * @param feedbackWillBeSentCallback is called when BB is opened
+     * @param feedbackWillBeSentCallback called before the ticket is sent
      */
     void setFeedbackWillBeSentCallback(FeedbackWillBeSentCallback feedbackWillBeSentCallback);
 
     /**
-     * This method is triggered, when a form got submitted
+     * Called once a ticket (from the widget or a silent crash report) was created, with its form
+     * data.
      *
-     * @param feedbackSentCallback this callback is called when the flow is called
+     * @param feedbackSentCallback called when the ticket was sent
      */
     void setFeedbackSentCallback(FeedbackSentCallback feedbackSentCallback);
 
@@ -569,9 +571,10 @@ interface iGleap {
     void setOutboundSentCallback(OutboundSentCallback outboundSentCallback);
 
     /**
-     * This is called if the sending has failed
+     * Called when a ticket (from the widget or a silent crash report) could not be sent, with a
+     * short description of the failure.
      *
-     * @param feedbackSendingFailedCallback
+     * @param feedbackSendingFailedCallback called when sending failed
      */
     void setFeedbackSendingFailedCallback(FeedbackSendingFailedCallback feedbackSendingFailedCallback);
 
