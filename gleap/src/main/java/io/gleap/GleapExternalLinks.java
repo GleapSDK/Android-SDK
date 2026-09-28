@@ -1,6 +1,7 @@
 package io.gleap;
 
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.net.Uri;
 
@@ -22,8 +23,12 @@ final class GleapExternalLinks {
         try {
             if (!url.contains(ownUrl)) {
                 Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                if (browserIntent.resolveActivity(activity.getPackageManager()) != null) {
+                // No resolveActivity check: since Android 11 it finds nothing for most links
+                // unless the app declares <queries>, so the links were silently dropped.
+                try {
                     activity.startActivity(browserIntent);
+                } catch (ActivityNotFoundException e) {
+                    GleapLog.w("No app can open the link");
                 }
                 return true;
             }
