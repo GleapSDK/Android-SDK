@@ -12,21 +12,34 @@ import androidx.annotation.Nullable;
 
 import org.json.JSONObject;
 
+import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * Applies the widget color scheme (dark / light) to the flow config.
  * <p>
- * The widget has one background color, set in the dashboard. Every surface
- * derives dark vs. light from it (YIQ below 160 = dark, white text), so a
- * color scheme only swaps that background: when the active scheme doesn't
- * match the dashboard background, the light or dark background is used
- * instead. Primary, header and button colors stay unchanged.
+ * The flow config's base colors (headerColor, headerColor2, headerColor3,
+ * color, backgroundColor) are the LIGHT palette. The dashboard saves a DARK
+ * palette (darkHeaderColor, darkHeaderColor2, darkHeaderColor3, darkColor,
+ * darkBackgroundColor) when dark mode is enabled. In dark mode each valid dark
+ * value replaces its base one; the SDK does no color math of its own. Without
+ * any dark color (or a runtime dark background) the widget does not go dark
+ * and keeps the dashboard colors.
  * <p>
- * The scheme comes from {@link Gleap#setColorScheme(String, String, String)}
- * and falls back to the dashboard's flowConfig.colorScheme. "auto" follows the
- * app's night mode — read from the current activity, so
- * AppCompatDelegate.setDefaultNightMode is respected — and switches live.
+ * The logo, header background image and composer glow have their own dark
+ * fields too (darkLogo, darkBgImage, darkAurora), copied from the light ones
+ * when dark mode is enabled in the dashboard. In dark mode a present dark field
+ * replaces its base one as-is ("" = none in dark mode); an absent one (a config
+ * saved before these fields existed) keeps the base value.
+ * <p>
+ * Theming only happens when dark / light mode is enabled in the dashboard
+ * (flowConfig.colorScheme "auto", "light" or "dark"). Missing, unknown or
+ * "default" means disabled: the widget keeps the dashboard colors, whatever
+ * {@link Gleap#setColorScheme(String, String, String)} says. When enabled, the
+ * runtime scheme overrides the dashboard's. "auto" follows the app's night
+ * mode — read from the current activity, so AppCompatDelegate.setDefaultNightMode
+ * is respected — and switches live.
  */
 class GleapThemeHelper {
     static final String COLOR_SCHEME_DEFAULT = "default";
@@ -35,7 +48,23 @@ class GleapThemeHelper {
     static final String COLOR_SCHEME_DARK = "dark";
 
     static final String DEFAULT_LIGHT_BACKGROUND = "#ffffff";
-    static final String DEFAULT_DARK_BACKGROUND = "#18181b";
+
+    // Each base (light) palette key and the dark key that replaces it in dark mode.
+    private static final String[][] DARK_PALETTE_KEYS = {
+            {"headerColor", "darkHeaderColor"},
+            {"headerColor2", "darkHeaderColor2"},
+            {"headerColor3", "darkHeaderColor3"},
+            {"color", "darkColor"},
+            {"backgroundColor", "darkBackgroundColor"}
+    };
+
+    // Each base key (logo, header image, composer glow) and the dark key whose
+    // value replaces it as-is in dark mode when present — no validation.
+    private static final String[][] DARK_ASSET_KEYS = {
+            {"logo", "darkLogo"},
+            {"bgImage", "darkBgImage"},
+            {"aurora", "darkAurora"}
+    };
 
     // Created with the class: getInstance() is called from several threads.
     private static final GleapThemeHelper instance = new GleapThemeHelper();
@@ -47,8 +76,9 @@ class GleapThemeHelper {
 
     // The app's night mode as last seen. null = not read yet.
     private volatile Boolean nightMode = null;
-    // The background the UI was last rendered with, to detect a change.
-    private volatile String appliedBackgroundColor = null;
+    // The palette, logo, header image and composer glow the UI was last
+    // rendered with, to detect a change.
+    private volatile String appliedTheme = null;
 
     private Application application;
     private boolean started = false;
@@ -63,6 +93,7 @@ class GleapThemeHelper {
     /**
      * Sets the runtime color scheme. "default" or null removes the override, so
      * the dashboard setting applies again. Invalid background colors are ignored.
+     * Has no effect while dark / light mode is disabled in the dashboard.
      */
     void setColorScheme(String colorScheme, String lightBackgroundColor, String darkBackgroundColor) {
         this.colorScheme = isScheme(colorScheme) ? colorScheme.toLowerCase(Locale.ROOT) : null;
@@ -142,7 +173,7 @@ class GleapThemeHelper {
     /**
      * Re-reads the night mode (from the given context, else the current
      * activity, else the application) and re-themes the UI when the
-     * resulting background changed.
+     * resulting palette changed.
      */
     void checkNightMode(Context context) {
         Boolean previous = this.nightMode;
@@ -161,8 +192,25 @@ class GleapThemeHelper {
     }
 
     /**
-     * The flow config as sent to the widget: a copy with the themed background
-     * color, or the given config itself when nothing changes. Never mutates it.
+     * The themed value of a palette key (backgroundColor, color, headerColor,
+     * headerColor2, headerColor3), or null when the scheme doesn't change it.
+     */
+    String getThemedColor(JSONObject flowConfig, String key) {
+        return resolvePalette(flowConfig, colorScheme, lightBackgroundColor, darkBackgroundColor, isNightMode()).get(key);
+    }
+
+    /**
+     * The themed value of logo, bgImage or aurora — the dark value as-is in
+     * dark mode when present — or null when the scheme doesn't change it.
+     */
+    Object getThemedAsset(JSONObject flowConfig, String key) {
+        return resolveDarkAssets(flowConfig, colorScheme, darkBackgroundColor, isNightMode()).get(key);
+    }
+
+    /**
+     * The flow config as sent to the widget: a copy with the themed colors,
+     * logo, header image and composer glow, or the given config itself when
+     * nothing changes. Never mutates it.
      */
     JSONObject applyToFlowConfig(JSONObject flowConfig) {
         return applyToFlowConfig(flowConfig, colorScheme, lightBackgroundColor, darkBackgroundColor, isNightMode());
@@ -197,7 +245,8 @@ class GleapThemeHelper {
 
     /**
      * Re-renders the notifications, the modal and the open widget when the
-     * themed background differs from the one they were rendered with.
+     * themed palette, logo, header image or composer glow differs from what
+     * they were rendered with.
      */
     private void notifyIfChanged() {
         try {
@@ -207,11 +256,19 @@ class GleapThemeHelper {
                 return;
             }
 
-            String backgroundColor = GleapConfig.getInstance().getBackgroundColor();
-            if (backgroundColor == null || backgroundColor.equals(appliedBackgroundColor)) {
+            GleapConfig config = GleapConfig.getInstance();
+            StringBuilder theme = new StringBuilder()
+                    .append(config.getBackgroundColor()).append('|').append(config.getColor())
+                    .append('|').append(config.getHeaderColor()).append('|').append(config.getHeaderColor2())
+                    .append('|').append(config.getHeaderColor3());
+            JSONObject themedFlowConfig = config.getThemedFlowConfig();
+            for (String[] keys : DARK_ASSET_KEYS) {
+                theme.append('|').append(themedFlowConfig != null ? themedFlowConfig.opt(keys[0]) : null);
+            }
+            if (theme.toString().equals(appliedTheme)) {
                 return;
             }
-            appliedBackgroundColor = backgroundColor;
+            appliedTheme = theme.toString();
 
             GleapMainThread.post(new Runnable() {
                 @Override
@@ -228,7 +285,7 @@ class GleapThemeHelper {
     }
 
     // ------------------------------------------------------------------
-    // Swap rule — pure functions, shared with the unit tests.
+    // Palette rule — pure functions, shared with the unit tests.
     // ------------------------------------------------------------------
 
     static boolean isScheme(String colorScheme) {
@@ -240,29 +297,12 @@ class GleapThemeHelper {
     }
 
     /**
-     * The effective scheme: the runtime scheme if it is auto, light or dark, else
-     * the dashboard's flowConfig.colorScheme, else "default".
+     * The dashboard's flowConfig.colorScheme: "auto", "light" or "dark" when dark /
+     * light mode is enabled there, else "default" (missing, unknown or "default").
      */
-    static String effectiveColorScheme(JSONObject flowConfig, String runtimeColorScheme) {
-        if (isScheme(runtimeColorScheme)) {
-            return runtimeColorScheme.toLowerCase(Locale.ROOT);
-        }
+    static String dashboardColorScheme(JSONObject flowConfig) {
         String configured = flowConfig != null ? flowConfig.optString("colorScheme", null) : null;
-        if (isScheme(configured)) {
-            return configured.toLowerCase(Locale.ROOT);
-        }
-        return COLOR_SCHEME_DEFAULT;
-    }
-
-    /**
-     * The runtime color if valid, else the flow config field if valid, else the default.
-     */
-    static String effectiveBackgroundColor(JSONObject flowConfig, String key, String runtimeColor, String defaultColor) {
-        String color = normalizeHexColor(runtimeColor);
-        if (color == null && flowConfig != null) {
-            color = normalizeHexColor(flowConfig.optString(key, null));
-        }
-        return color != null ? color : defaultColor;
+        return isScheme(configured) ? configured.toLowerCase(Locale.ROOT) : COLOR_SCHEME_DEFAULT;
     }
 
     static String configuredBackgroundColor(JSONObject flowConfig) {
@@ -270,32 +310,118 @@ class GleapThemeHelper {
         return backgroundColor.isEmpty() ? DEFAULT_LIGHT_BACKGROUND : backgroundColor;
     }
 
-    /**
-     * Resolves the background color for the given state:
-     * <pre>
-     * active = effective scheme ("auto" resolved via nightMode); "default" => unchanged
-     * unchanged when (active == dark) == isDark(configured background)
-     * else the dark or light background
-     * </pre>
-     */
-    static String resolveBackgroundColor(JSONObject flowConfig, String runtimeColorScheme, String runtimeLightBackgroundColor, String runtimeDarkBackgroundColor, boolean nightMode) {
-        String configuredBackgroundColor = configuredBackgroundColor(flowConfig);
+    // The flow config field as #rrggbb, or null when missing or invalid.
+    private static String validColor(JSONObject flowConfig, String key) {
+        return flowConfig != null ? normalizeHexColor(flowConfig.optString(key, null)) : null;
+    }
 
-        String scheme = effectiveColorScheme(flowConfig, runtimeColorScheme);
+    /**
+     * Whether there is a dark palette: a valid dark color in the flow config,
+     * or a runtime dark background.
+     */
+    static boolean hasDarkPalette(JSONObject flowConfig, String runtimeDarkBackgroundColor) {
+        if (normalizeHexColor(runtimeDarkBackgroundColor) != null) {
+            return true;
+        }
+        for (String[] keys : DARK_PALETTE_KEYS) {
+            if (validColor(flowConfig, keys[1]) != null) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * The scheme the widget renders with: "default" (the dashboard colors,
+     * nothing themed), "light" or "dark". "default" whenever dark / light mode
+     * is disabled in the dashboard, even with a runtime scheme. Otherwise the
+     * runtime scheme (auto, light or dark) wins over the dashboard's; "auto"
+     * resolves via nightMode. Dark needs a dark palette — without dark colors
+     * it counts as "default".
+     */
+    static String activeColorScheme(JSONObject flowConfig, String runtimeColorScheme, String runtimeDarkBackgroundColor, boolean nightMode) {
+        String scheme = dashboardColorScheme(flowConfig);
         if (scheme.equals(COLOR_SCHEME_DEFAULT)) {
-            return configuredBackgroundColor;
+            return COLOR_SCHEME_DEFAULT;
+        }
+        if (isScheme(runtimeColorScheme)) {
+            scheme = runtimeColorScheme.toLowerCase(Locale.ROOT);
         }
 
         boolean dark = scheme.equals(COLOR_SCHEME_AUTO) ? nightMode : scheme.equals(COLOR_SCHEME_DARK);
-        if (dark == isDarkColor(configuredBackgroundColor)) {
-            // The dashboard color already fits — keep the brand look.
-            return configuredBackgroundColor;
+        if (!dark) {
+            return COLOR_SCHEME_LIGHT;
+        }
+        return hasDarkPalette(flowConfig, runtimeDarkBackgroundColor) ? COLOR_SCHEME_DARK : COLOR_SCHEME_DEFAULT;
+    }
+
+    /**
+     * The palette values the active scheme sets on the flow config:
+     * <pre>
+     * default => nothing
+     * light   => backgroundColor = runtime light background (if set)
+     * dark    => each base key = its valid dark value (else the base value stays);
+     *            backgroundColor = runtime dark background ?? darkBackgroundColor
+     * </pre>
+     */
+    static Map<String, String> resolvePalette(JSONObject flowConfig, String runtimeColorScheme, String runtimeLightBackgroundColor, String runtimeDarkBackgroundColor, boolean nightMode) {
+        Map<String, String> palette = new LinkedHashMap<>();
+
+        String scheme = activeColorScheme(flowConfig, runtimeColorScheme, runtimeDarkBackgroundColor, nightMode);
+        if (scheme.equals(COLOR_SCHEME_LIGHT)) {
+            String lightBackground = normalizeHexColor(runtimeLightBackgroundColor);
+            if (lightBackground != null) {
+                palette.put("backgroundColor", lightBackground);
+            }
+        } else if (scheme.equals(COLOR_SCHEME_DARK)) {
+            for (String[] keys : DARK_PALETTE_KEYS) {
+                String color = validColor(flowConfig, keys[1]);
+                if (color != null) {
+                    palette.put(keys[0], color);
+                }
+            }
+            String darkBackground = normalizeHexColor(runtimeDarkBackgroundColor);
+            if (darkBackground != null) {
+                palette.put("backgroundColor", darkBackground);
+            }
         }
 
-        if (dark) {
-            return effectiveBackgroundColor(flowConfig, "darkBackgroundColor", runtimeDarkBackgroundColor, DEFAULT_DARK_BACKGROUND);
+        return palette;
+    }
+
+    /**
+     * The logo, header image and composer glow the active scheme sets on the
+     * flow config: in dark mode each present dark key (darkLogo, darkBgImage,
+     * darkAurora — not JSONObject.NULL) replaces its base key as-is, "" included;
+     * an absent one keeps the base value. Light / default: nothing.
+     */
+    static Map<String, Object> resolveDarkAssets(JSONObject flowConfig, String runtimeColorScheme, String runtimeDarkBackgroundColor, boolean nightMode) {
+        if (!COLOR_SCHEME_DARK.equals(activeColorScheme(flowConfig, runtimeColorScheme, runtimeDarkBackgroundColor, nightMode))) {
+            return new LinkedHashMap<>();
         }
-        return effectiveBackgroundColor(flowConfig, "lightBackgroundColor", runtimeLightBackgroundColor, DEFAULT_LIGHT_BACKGROUND);
+        return darkAssets(flowConfig);
+    }
+
+    private static Map<String, Object> darkAssets(JSONObject flowConfig) {
+        Map<String, Object> assets = new LinkedHashMap<>();
+        if (flowConfig == null) {
+            return assets;
+        }
+        for (String[] keys : DARK_ASSET_KEYS) {
+            Object value = flowConfig.opt(keys[1]);
+            if (!JSONObject.NULL.equals(value)) {
+                assets.put(keys[0], value);
+            }
+        }
+        return assets;
+    }
+
+    /**
+     * The background color for the given state (see {@link #resolvePalette}).
+     */
+    static String resolveBackgroundColor(JSONObject flowConfig, String runtimeColorScheme, String runtimeLightBackgroundColor, String runtimeDarkBackgroundColor, boolean nightMode) {
+        String backgroundColor = resolvePalette(flowConfig, runtimeColorScheme, runtimeLightBackgroundColor, runtimeDarkBackgroundColor, nightMode).get("backgroundColor");
+        return backgroundColor != null ? backgroundColor : configuredBackgroundColor(flowConfig);
     }
 
     static JSONObject applyToFlowConfig(JSONObject flowConfig, String runtimeColorScheme, String runtimeLightBackgroundColor, String runtimeDarkBackgroundColor, boolean nightMode) {
@@ -303,31 +429,27 @@ class GleapThemeHelper {
             return null;
         }
 
-        String backgroundColor = resolveBackgroundColor(flowConfig, runtimeColorScheme, runtimeLightBackgroundColor, runtimeDarkBackgroundColor, nightMode);
-        if (backgroundColor.equals(configuredBackgroundColor(flowConfig))) {
+        boolean dark = COLOR_SCHEME_DARK.equals(activeColorScheme(flowConfig, runtimeColorScheme, runtimeDarkBackgroundColor, nightMode));
+        Map<String, String> palette = resolvePalette(flowConfig, runtimeColorScheme, runtimeLightBackgroundColor, runtimeDarkBackgroundColor, nightMode);
+        if (palette.isEmpty() && !dark) {
             return flowConfig;
         }
 
         try {
             JSONObject themedFlowConfig = new JSONObject(flowConfig.toString());
-            themedFlowConfig.put("backgroundColor", backgroundColor);
+            for (Map.Entry<String, String> entry : palette.entrySet()) {
+                themedFlowConfig.put(entry.getKey(), entry.getValue());
+            }
+            if (dark) {
+                // Taken from the copy, so the aurora object isn't shared with the cached config.
+                for (Map.Entry<String, Object> entry : darkAssets(themedFlowConfig).entrySet()) {
+                    themedFlowConfig.put(entry.getKey(), entry.getValue());
+                }
+            }
             return themedFlowConfig;
         } catch (Exception ignore) {
             return flowConfig;
         }
-    }
-
-    /**
-     * Whether the widget renders the color as dark — the same YIQ threshold as
-     * the widget's calculateContrast. Unparsable colors count as light.
-     */
-    static boolean isDarkColor(String color) {
-        int[] rgb = parseHexColor(color);
-        if (rgb == null) {
-            return false;
-        }
-        double yiq = ((rgb[0] * 299d) + (rgb[1] * 587d) + (rgb[2] * 114d)) / 1000d;
-        return yiq < 160d;
     }
 
     /**
@@ -337,50 +459,19 @@ class GleapThemeHelper {
         if (color == null) {
             return null;
         }
-        String value = color.trim();
-        if (value.length() != 4 && value.length() != 7) {
+        String hex = color.trim();
+        if (!hex.startsWith("#") || (hex.length() != 4 && hex.length() != 7)) {
             return null;
         }
-        int[] rgb = parseHexColor(value);
-        if (rgb == null) {
-            return null;
-        }
-        return String.format(Locale.ROOT, "#%02x%02x%02x", rgb[0], rgb[1], rgb[2]);
-    }
-
-    // Parses #rgb, #rrggbb and #rrggbbaa (alpha ignored) into {r, g, b}.
-    private static int[] parseHexColor(String color) {
-        if (color == null) {
-            return null;
-        }
-        String value = color.trim();
-        if (!value.startsWith("#")) {
-            return null;
-        }
-        String hex = value.substring(1);
+        hex = hex.substring(1);
         for (int i = 0; i < hex.length(); i++) {
             if (Character.digit(hex.charAt(i), 16) < 0) {
                 return null;
             }
         }
-
         if (hex.length() == 3) {
-            int[] rgb = new int[3];
-            for (int i = 0; i < 3; i++) {
-                int digit = Character.digit(hex.charAt(i), 16);
-                rgb[i] = digit * 16 + digit;
-            }
-            return rgb;
+            hex = "" + hex.charAt(0) + hex.charAt(0) + hex.charAt(1) + hex.charAt(1) + hex.charAt(2) + hex.charAt(2);
         }
-
-        if (hex.length() == 6 || hex.length() == 8) {
-            return new int[]{
-                    Integer.parseInt(hex.substring(0, 2), 16),
-                    Integer.parseInt(hex.substring(2, 4), 16),
-                    Integer.parseInt(hex.substring(4, 6), 16)
-            };
-        }
-
-        return null;
+        return "#" + hex.toLowerCase(Locale.ROOT);
     }
 }

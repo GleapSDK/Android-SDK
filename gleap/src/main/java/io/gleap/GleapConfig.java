@@ -41,7 +41,8 @@ class GleapConfig {
     String buttonLogo = "https://sdk.gleap.io/res/chatbubble.png";
     String buttonColor = "#485bff";
     String color = "#485bff";
-    // As configured in the dashboard — getBackgroundColor() applies the color scheme.
+    // color, backgroundColor and headerColor* as configured in the dashboard (the
+    // light palette) — their getters apply the color scheme.
     String backgroundColor = "#ffffff";
     int borderRadius = 20;
     String headerColor = "#485bff";
@@ -51,6 +52,7 @@ class GleapConfig {
     String headerColor2 = "";
     String headerColor3 = "";
     String bgType = "";
+    // As configured (light) — getBgImage() applies the color scheme.
     String bgImage = "";
     int homeVersion = 0;
     boolean fadeBg = true;
@@ -272,8 +274,11 @@ class GleapConfig {
         return buttonColor;
     }
 
+    /**
+     * The UI (primary) color with the active color scheme applied (see GleapThemeHelper).
+     */
     public String getColor() {
-        return color;
+        return themedColor("color", color);
     }
 
     public WidgetPosition getWidgetPosition() {
@@ -312,29 +317,46 @@ class GleapConfig {
         return config != null ? config.optJSONObject("flowConfig") : null;
     }
 
+    // The themed palette value, else the configured one.
+    private String themedColor(String key, String configured) {
+        String themed = GleapThemeHelper.getInstance().getThemedColor(getFlowConfig(), key);
+        return (themed != null && !themed.isEmpty()) ? themed : configured;
+    }
+
     public int getBorderRadius() {
         return borderRadius;
     }
 
+    // The header colors with the active color scheme applied.
     public String getHeaderColor() {
-        return headerColor;
+        return themedColor("headerColor", headerColor);
     }
 
     // Falls back to headerColor, mirroring the messenger's getHeaderColorSecondary.
     public String getHeaderColor2() {
-        return (headerColor2 != null && !headerColor2.isEmpty()) ? headerColor2 : headerColor;
+        String color = themedColor("headerColor2", headerColor2);
+        return (color != null && !color.isEmpty()) ? color : getHeaderColor();
     }
 
     public String getHeaderColor3() {
-        return (headerColor3 != null && !headerColor3.isEmpty()) ? headerColor3 : headerColor;
+        String color = themedColor("headerColor3", headerColor3);
+        return (color != null && !color.isEmpty()) ? color : getHeaderColor();
     }
 
     public String getBgType() {
         return bgType;
     }
 
+    /**
+     * The header background image with the active color scheme applied: darkBgImage in dark
+     * mode when the config has it ("" = no image), else the configured one.
+     */
     public String getBgImage() {
-        return bgImage;
+        Object themed = GleapThemeHelper.getInstance().getThemedAsset(getFlowConfig(), "bgImage");
+        if (themed == null) {
+            return bgImage;
+        }
+        return themed instanceof String ? (String) themed : "";
     }
 
     public int getHomeVersion() {

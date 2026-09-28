@@ -397,7 +397,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         } catch (Exception ignore) {
         }
 
-        // The loading background reads its colors once — replace it.
+        // The loading background reads its colors and header image once — replace it.
         if (loaderView.getChildCount() > 0 && loaderView.getChildAt(0) instanceof GleapLoadingBackgroundView) {
             loaderView.removeViewAt(0);
             loaderView.addView(new GleapLoadingBackgroundView(this), 0,

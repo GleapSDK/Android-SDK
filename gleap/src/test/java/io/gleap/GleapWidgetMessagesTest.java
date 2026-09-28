@@ -70,7 +70,7 @@ public class GleapWidgetMessagesTest {
     @Test
     public void theConfigUpdateCarriesTheColorSchemeBackground() throws Exception {
         GleapConfig.getInstance().initConfig(new JSONObject()
-                .put("flowConfig", new JSONObject().put("backgroundColor", "#ffffff"))
+                .put("flowConfig", new JSONObject().put("colorScheme", "auto").put("backgroundColor", "#ffffff"))
                 .put("projectActions", new JSONObject()));
         try {
             Gleap.getInstance().setColorScheme("dark", null, "#121212");

@@ -752,22 +752,27 @@ interface iGleap {
     void setNotificationContainerOffset(int x, int y);
 
     /**
-     * Sets the widget color scheme. Overrides the color scheme set in the dashboard.
+     * Sets the widget color scheme. Overrides the color scheme set in the dashboard. Only takes
+     * effect when "Adapt to dark / light mode" is enabled in the dashboard; while it is disabled
+     * the widget always keeps the dashboard colors.
      * "auto" follows the app's dark / light mode, "light" / "dark" force a scheme and
-     * "default" (or null) removes the override. Can be called before or after initialize.
+     * "default" (or null) removes the override. Dark mode uses the dark colors set in the
+     * dashboard and also the dark logo, header image and composer glow set there; without dark
+     * colors the widget keeps its normal colors. Can be called before or after initialize.
      *
      * @param colorScheme "default", "auto", "light" or "dark"
      */
     void setColorScheme(String colorScheme);
 
     /**
-     * Sets the widget color scheme and the background colors used for it.
-     * The dashboard background color is kept when it already matches the active scheme,
-     * otherwise the light or dark background color is used.
+     * Sets the widget color scheme and the background colors used for it. Only takes effect
+     * when "Adapt to dark / light mode" is enabled in the dashboard. Dark mode uses the
+     * dark colors set in the dashboard (header colors, UI color, background); without dark
+     * colors the widget keeps its normal colors.
      *
      * @param colorScheme          "default", "auto", "light" or "dark"
-     * @param lightBackgroundColor background (#rrggbb) in light mode, null for the dashboard setting (default #ffffff)
-     * @param darkBackgroundColor  background (#rrggbb) in dark mode, null for the dashboard setting (default #18181b)
+     * @param lightBackgroundColor background (#rrggbb) in light mode, null for the dashboard background
+     * @param darkBackgroundColor  background (#rrggbb) in dark mode, null for the dashboard's dark background
      */
     void setColorScheme(String colorScheme, @Nullable String lightBackgroundColor, @Nullable String darkBackgroundColor);
 

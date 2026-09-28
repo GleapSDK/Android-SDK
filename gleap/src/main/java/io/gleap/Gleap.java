@@ -1258,14 +1258,17 @@ public class Gleap implements iGleap {
     }
 
     /**
-     * Sets the widget color scheme. Overrides the color scheme set in the dashboard.
+     * Sets the widget color scheme. Overrides the color scheme set in the dashboard. Only takes
+     * effect when "Adapt to dark / light mode" is enabled in the dashboard; while it is disabled
+     * the widget always keeps the dashboard colors.
      * <ul>
      *     <li>"auto": follows the app's dark / light mode and switches live when it changes.</li>
      *     <li>"light" / "dark": forces a scheme, e.g. from your app's own theme setting.</li>
      *     <li>"default" (or null): removes the override, the dashboard setting applies again.</li>
      * </ul>
-     * The dashboard background color is kept when it already matches the active scheme,
-     * otherwise the light or dark background color is used. Can be called before or after
+     * Dark mode uses the dark colors set in the dashboard (header colors, UI color, background)
+     * and also the dark logo, header image and composer glow set there. Without dark colors the
+     * widget keeps its normal colors. Can be called before or after
      * {@link #initialize(String, Application)}.
      *
      * @param colorScheme "default", "auto", "light" or "dark"
@@ -1278,11 +1281,12 @@ public class Gleap implements iGleap {
 
     /**
      * Sets the widget color scheme and the background colors used for it. Overrides the
-     * color scheme set in the dashboard, see {@link #setColorScheme(String)}.
+     * color scheme set in the dashboard, see {@link #setColorScheme(String)}. Only takes effect
+     * when "Adapt to dark / light mode" is enabled in the dashboard.
      *
      * @param colorScheme          "default", "auto", "light" or "dark"
-     * @param lightBackgroundColor background (#rrggbb) in light mode when the dashboard background is dark, null for the dashboard setting (default #ffffff)
-     * @param darkBackgroundColor  background (#rrggbb) in dark mode when the dashboard background is light, null for the dashboard setting (default #18181b)
+     * @param lightBackgroundColor background (#rrggbb) in light mode, null for the dashboard background
+     * @param darkBackgroundColor  background (#rrggbb) in dark mode, null for the dashboard's dark background
      * @author Gleap
      */
     @Override
