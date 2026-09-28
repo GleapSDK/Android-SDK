@@ -29,6 +29,8 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
             if (controller == null) {
                 return 200;
             }
+            // A logout (clearIdentity) from now on cancels this identify.
+            final int generation = controller.currentGeneration();
 
             // If session is not ready yet, wait for session to load.
             GleapSession gleapSession = controller.getUserSession();
@@ -70,19 +72,17 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
             boolean answered = GleapRetry.withBackoff("Identify request", Exception.class, new GleapRetry.Attempt() {
                 @Override
                 public void run() throws Exception {
-                    rejected[0] = !performIdentifyRequest(session, payload);
+                    rejected[0] = !performIdentifyRequest(session, payload, generation);
                 }
             });
 
             if (answered && rejected[0]) {
                 // The API rejected the identify (e.g. an invalid user hash): start over without
                 // the stored session and user.
-                controller.clearUserSession();
-                controller.setSessionLoaded(true);
-            } else if (!answered && controller.getPendingIdentificationAction() == null) {
-                // Could not get through: keep the session and try again later, unless the app
-                // has asked for another identify meanwhile.
-                controller.setPendingIdentificationAction(pendingAction);
+                controller.clearRejectedIdentity(generation);
+            } else if (!answered) {
+                // Could not get through: keep the session and try again later.
+                controller.keepIdentifyPending(pendingAction, generation);
             }
         } catch (Exception ignored) {}
 
@@ -93,14 +93,14 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
      * @return false when the API rejected the identify
      * @throws Exception when the identify did not get through; it is retried
      */
-    private boolean performIdentifyRequest(GleapSession gleapSession, JSONObject jsonObject) throws Exception {
+    private boolean performIdentifyRequest(GleapSession gleapSession, JSONObject jsonObject, int generation) throws Exception {
         HttpURLConnection conn = GleapHttp.openSessionPost(URL_POSTFIX, gleapSession);
         GleapHttp.writeJson(conn, jsonObject);
 
         int status = conn.getResponseCode();
         if (status >= 200 && status < 300) {
             JSONObject result = GleapHttp.readLastJsonLine(conn.getInputStream());
-            GleapSessionController.getInstance().processSessionActionResult(result, true, false);
+            GleapSessionController.getInstance().processSessionActionResult(result, true, false, generation);
             return true;
         }
 

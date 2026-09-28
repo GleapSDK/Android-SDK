@@ -21,6 +21,8 @@ public class GleapUpdateSessionService extends AsyncTask<Void, Void, Integer> {
             if (GleapSessionController.getInstance() == null) {
                 return 200;
             }
+            // A logout (clearIdentity) from now on drops the answer.
+            final int generation = GleapSessionController.getInstance().currentGeneration();
 
             // Check if we have a session. If not, wait for the session to be fetched.
             GleapSession gleapSession = GleapSessionController.getInstance().getUserSession();
@@ -59,7 +61,7 @@ public class GleapUpdateSessionService extends AsyncTask<Void, Void, Integer> {
 
                 try {
                     JSONObject result = GleapHttp.readLastJsonLine(conn.getInputStream());
-                    GleapSessionController.getInstance().processSessionActionResult(result, false, false);
+                    GleapSessionController.getInstance().processSessionActionResult(result, false, false, generation);
                 } catch (Exception e) {
                     // Log the error.
                     GleapLog.e("Error processing update session action", e);

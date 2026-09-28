@@ -30,10 +30,14 @@ class GleapBaseSessionService extends AsyncTask<Void, Void, Integer> {
 
     @Override
     protected Integer doInBackground(Void... voids) {
+        // A logout (clearIdentity) from now on drops the answer: it would bring back the session
+        // the request was sent with.
+        final int generation = GleapSessionController.getInstance() != null
+                ? GleapSessionController.getInstance().currentGeneration() : 0;
         boolean success = GleapRetry.withBackoff("Session request", Exception.class, new GleapRetry.Attempt() {
             @Override
             public void run() throws Exception {
-                performSessionRequest();
+                performSessionRequest(generation);
             }
         });
 
@@ -57,7 +61,7 @@ class GleapBaseSessionService extends AsyncTask<Void, Void, Integer> {
         }
     }
 
-    private void performSessionRequest() throws Exception {
+    private void performSessionRequest(int generation) throws Exception {
         // Append credentials, if they exist.
         HttpURLConnection conn = GleapHttp.openSessionPost(URL_POSTFIX,
                 GleapSessionController.getInstance().getUserSession());
@@ -71,7 +75,7 @@ class GleapBaseSessionService extends AsyncTask<Void, Void, Integer> {
         try {
             JSONObject result = GleapHttp.readLastJsonLine(conn.getInputStream());
             if (GleapSessionController.getInstance() != null) {
-                GleapSessionController.getInstance().processSessionActionResult(result, true, true);
+                GleapSessionController.getInstance().processSessionActionResult(result, true, true, generation);
             }
         } catch (Exception e) {
             if (GleapSessionController.getInstance() != null) {

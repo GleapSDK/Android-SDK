@@ -4,6 +4,8 @@ import android.app.Application;
 
 import org.json.JSONObject;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 public class GleapSessionController {
     // Read from the request threads.
     private static volatile GleapSessionController instance;
@@ -15,6 +17,9 @@ public class GleapSessionController {
     private String lastRegisteredUserHash;
     // Where the session and the identified user are kept between app starts.
     private final KeyValueStore store;
+    // Counts the logouts (clearUserSession). A request started before a logout neither applies
+    // its result nor acts on its failure: it must not bring the cleared session or user back.
+    private final AtomicInteger identityGeneration = new AtomicInteger();
 
     private GleapSessionController(Application application) {
         this(GleapPreferencesHelper.getInstance(application));
@@ -78,27 +83,74 @@ public class GleapSessionController {
     }
 
     public GleapSessionProperties getPendingIdentificationAction() {
-        return pendingIdentificationAction;
+        synchronized (this) {
+            return pendingIdentificationAction;
+        }
     }
 
     public void setPendingIdentificationAction(GleapSessionProperties pendingIdentificationAction) {
-        this.pendingIdentificationAction = pendingIdentificationAction;
+        synchronized (this) {
+            this.pendingIdentificationAction = pendingIdentificationAction;
+        }
     }
 
     public static GleapSessionController getInstance() {
         return instance;
     }
 
-    public void clearUserSession() {
-        store.clear();
+    /**
+     * Taken when a session request starts; see {@link #isCurrentGeneration(int)}.
+     */
+    int currentGeneration() {
+        return identityGeneration.get();
+    }
 
-        if (gleapSession != null) {
-            unregisterPushMessageGroup(gleapSession.getHash());
+    /**
+     * @return false when the session was cleared (logout) since {@code generation} was taken
+     */
+    boolean isCurrentGeneration(int generation) {
+        return identityGeneration.get() == generation;
+    }
+
+    public void clearUserSession() {
+        synchronized (this) {
+            identityGeneration.incrementAndGet();
+            store.clear();
+
+            if (gleapSession != null) {
+                unregisterPushMessageGroup(gleapSession.getHash());
+            }
+            pendingIdentificationAction = null;
+            pendingUpdateAction = null;
+            gleapSessionProperties = null;
+            gleapSession = null;
+            isSessionLoaded = false;
         }
-        pendingUpdateAction = null;
-        gleapSessionProperties = null;
-        gleapSession = null;
-        isSessionLoaded = false;
+    }
+
+    /**
+     * The API rejected an identify that started in {@code generation}: starts over without the
+     * stored session and user, unless the app logged out meanwhile.
+     */
+    void clearRejectedIdentity(int generation) {
+        synchronized (this) {
+            if (isCurrentGeneration(generation)) {
+                clearUserSession();
+                setSessionLoaded(true);
+            }
+        }
+    }
+
+    /**
+     * An identify that started in {@code generation} did not get through: it stays pending,
+     * unless the app logged out or asked for another identify meanwhile.
+     */
+    void keepIdentifyPending(GleapSessionProperties identify, int generation) {
+        synchronized (this) {
+            if (isCurrentGeneration(generation) && pendingIdentificationAction == null) {
+                pendingIdentificationAction = identify;
+            }
+        }
     }
 
     public void mergeUserSession(String id, String hash) {
@@ -211,6 +263,15 @@ public class GleapSessionController {
     }
 
     public void processSessionActionResult(JSONObject result, boolean restartEventServices, boolean sendInitDelegate) {
+        processSessionActionResult(result, restartEventServices, sendInitDelegate, currentGeneration());
+    }
+
+    /**
+     * Applies the answer of a session request that started in {@code generation}; an answer
+     * to a request from before a logout is dropped.
+     */
+    void processSessionActionResult(JSONObject result, boolean restartEventServices, boolean sendInitDelegate,
+                                    int generation) {
         if (result == null) {
             return;
         }
@@ -235,18 +296,25 @@ public class GleapSessionController {
                 // topic. Without the lastRegisteredUserHash reset the subsequent
                 // registerPushMessageGroup(hash) below would no-op when the previous
                 // value happens to be cached here.
-                String previousHash = (gleapSession != null) ? gleapSession.getHash() : null;
-                if (previousHash != null && !previousHash.equalsIgnoreCase(hash)) {
-                    unregisterPushMessageGroup(previousHash);
+                synchronized (this) {
+                    if (!isCurrentGeneration(generation)) {
+                        GleapLog.i("Dropped a session answer from before the logout");
+                        return;
+                    }
+
+                    String previousHash = (gleapSession != null) ? gleapSession.getHash() : null;
+                    if (previousHash != null && !previousHash.equalsIgnoreCase(hash)) {
+                        unregisterPushMessageGroup(previousHash);
+                    }
+
+                    mergeUserSession(id, hash);
+                    setSessionLoaded(true);
+                    gleapSession = getUserSession();
+
+                    // Update current session in session controller.
+                    GleapSessionProperties gleapSessionProperties = GleapSessionProperties.fromJSONObject(result);
+                    setGleapUserSession(gleapSessionProperties);
                 }
-
-                mergeUserSession(id, hash);
-                setSessionLoaded(true);
-                gleapSession = getUserSession();
-
-                // Update current session in session controller.
-                GleapSessionProperties gleapSessionProperties = GleapSessionProperties.fromJSONObject(result);
-                setGleapUserSession(gleapSessionProperties);
 
                 // Check if there are any other actions to complete.
                 executePendingUpdates();

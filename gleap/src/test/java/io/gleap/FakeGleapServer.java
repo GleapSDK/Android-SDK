@@ -37,6 +37,7 @@ class FakeGleapServer implements GleapHttp.ConnectionFactory {
 
     final List<Request> requests = new ArrayList<>();
     private final Map<String, Deque<Response>> responses = new LinkedHashMap<>();
+    private final Map<String, Runnable> whileAnswering = new LinkedHashMap<>();
 
     /**
      * Answers the next request whose path starts with {@code pathPrefix}; the last queued
@@ -52,6 +53,15 @@ class FakeGleapServer implements GleapHttp.ConnectionFactory {
      */
     FakeGleapServer clear(String pathPrefix) {
         responses.remove(pathPrefix);
+        return this;
+    }
+
+    /**
+     * Runs {@code action} while a request to exactly this path is in flight: after it was sent,
+     * before its answer is read (e.g. the app logs out meanwhile).
+     */
+    FakeGleapServer whileAnswering(String path, Runnable action) {
+        whileAnswering.put(path, action);
         return this;
     }
 
@@ -102,7 +112,7 @@ class FakeGleapServer implements GleapHttp.ConnectionFactory {
             Deque<Response> queue = responses.get(match);
             response = queue.size() > 1 ? queue.poll() : queue.peek();
         }
-        Request request = new Request(url, response);
+        Request request = new Request(url, response, whileAnswering.get(url.getPath()));
         requests.add(request);
         return request;
     }
@@ -115,12 +125,22 @@ class FakeGleapServer implements GleapHttp.ConnectionFactory {
         final Map<String, String> headers = new LinkedHashMap<>();
         final ByteArrayOutputStream body = new ByteArrayOutputStream();
         private final Response response;
+        private Runnable whileAnswering;
         int connectTimeout = 0;
         int readTimeout = 0;
 
-        Request(URL url, Response response) {
+        Request(URL url, Response response, Runnable whileAnswering) {
             super(url);
             this.response = response;
+            this.whileAnswering = whileAnswering;
+        }
+
+        private void answer() {
+            Runnable action = whileAnswering;
+            whileAnswering = null;
+            if (action != null) {
+                action.run();
+            }
         }
 
         String bodyText() {
@@ -187,12 +207,14 @@ class FakeGleapServer implements GleapHttp.ConnectionFactory {
         @Override
         public int getResponseCode() throws IOException {
             connect();
+            answer();
             return response.status;
         }
 
         @Override
         public InputStream getInputStream() throws IOException {
             connect();
+            answer();
             if (response.status == 404) {
                 throw new FileNotFoundException(url.toString());
             }
