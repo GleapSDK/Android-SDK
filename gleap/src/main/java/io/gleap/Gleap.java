@@ -672,7 +672,8 @@ public class Gleap implements iGleap {
      * fetched again in the new language — an already open widget keeps the previous
      * copy until it is reopened.
      *
-     * @param language ISO Country Code eg. "cz," "en", "de", "es", "nl"
+     * @param language ISO Country Code eg. "cz," "en", "de", "es", "nl"; null or empty uses the
+     *                 device language again
      */
     @Override
     public void setLanguage(String language) {
@@ -681,7 +682,7 @@ public class Gleap implements iGleap {
             String previousLanguage = config.getLanguage();
             config.setLanguage(language);
 
-            boolean languageChanged = language != null && !language.equalsIgnoreCase(previousLanguage);
+            boolean languageChanged = !config.getLanguage().equalsIgnoreCase(previousLanguage);
 
             // The widget config is loaded once during initialize() and carries every
             // piece of copy already translated by the server (reply times,

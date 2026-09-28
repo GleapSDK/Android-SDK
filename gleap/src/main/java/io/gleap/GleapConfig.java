@@ -83,7 +83,11 @@ class GleapConfig {
     private LinkedList<GleapWebViewMessage> gleapWebViewMessages = new LinkedList<>();
 
     private GleapConfig() {
-        this.language = Locale.getDefault().toLanguageTag().toLowerCase();
+        this.language = deviceLanguage();
+    }
+
+    private static String deviceLanguage() {
+        return Locale.getDefault().toLanguageTag().toLowerCase();
     }
 
     public static GleapConfig getInstance() {
@@ -153,8 +157,12 @@ class GleapConfig {
         return language;
     }
 
+    /**
+     * @param language a language code; null or empty means the device language again (the
+     *                 widget url, the config and the session request always need one)
+     */
     public void setLanguage(String language) {
-        this.language = language;
+        this.language = language != null && !language.trim().isEmpty() ? language : deviceLanguage();
     }
 
     public List<GleapDetector> getGestureDetectors() {
