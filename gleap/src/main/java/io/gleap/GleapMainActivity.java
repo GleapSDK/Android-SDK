@@ -989,7 +989,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                             GleapLog.w("Invalid feedback data from the widget", e);
                         }
                         
-                        new HttpHelper(GleapMainActivity.this, getApplicationContext()).execute(gleapBug);
+                        HttpHelper.send(GleapMainActivity.this, getApplicationContext());
                     } catch (Exception ex) {
                     }
                 }

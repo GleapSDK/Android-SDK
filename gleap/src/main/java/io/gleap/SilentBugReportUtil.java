@@ -47,7 +47,7 @@ class SilentBugReportUtil {
                     model.setScreenshot(bitmap);
 
                     try {
-                        new HttpHelper(IGNORE_RESPONSE, context).execute(model);
+                        HttpHelper.send(IGNORE_RESPONSE, context);
                     } catch (Exception e) {
                     }
                 }

@@ -66,6 +66,15 @@ class SdkTestEnvironment {
         });
         controller = new GleapSessionController(store);
         GleapSessionController.setInstanceForTesting(controller);
+        // Tickets are sent right away, on the test thread.
+        HttpHelper.setSenderForTesting(new HttpHelper.Sender() {
+            @Override
+            public void send(OnHttpResponseListener listener, android.content.Context context) {
+                HttpHelper task = new HttpHelper(listener, context);
+                task.onPreExecute();
+                task.onPostExecute(task.doInBackground(GleapBug.getInstance()));
+            }
+        });
     }
 
     /**
@@ -92,6 +101,7 @@ class SdkTestEnvironment {
         GleapHttp.setConnectionFactoryForTesting(null);
         GleapRetry.setSleeperForTesting(null);
         GleapEventService.setWebSocketFactoryForTesting(null);
+        HttpHelper.setSenderForTesting(null);
         GleapSessionController.setInstanceForTesting(null);
         GleapCallbacks.resetForTesting();
         GleapConfig.resetForTesting();
