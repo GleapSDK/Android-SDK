@@ -17,7 +17,8 @@ import java.util.Queue;
 /**
  * Answers the widget's permission requests (microphone and camera, e.g. for voice messages):
  * asks the user for the matching Android permissions one after another, then grants the
- * WebView what the user allowed.
+ * WebView what the user allowed. Nothing else is granted: the page and every frame in it can
+ * ask, and the widget needs no other resource (protected media ids, MIDI devices, ...).
  */
 final class GleapWebPermissions {
     static final int REQUEST_RECORD_AUDIO = 101;
@@ -49,29 +50,32 @@ final class GleapWebPermissions {
         permissionRequest = request;
         grantedWebkitPermissions.clear();
 
+        // Queue everything first: answering starts once the whole request is known.
         for (String permission : request.getResources()) {
             switch (permission) {
-                case "android.webkit.resource.AUDIO_CAPTURE": {
-                    ask(Manifest.permission.RECORD_AUDIO, permission, REQUEST_RECORD_AUDIO);
+                case PermissionRequest.RESOURCE_AUDIO_CAPTURE: {
+                    queue.offer(new Item(Manifest.permission.RECORD_AUDIO, permission, REQUEST_RECORD_AUDIO));
                     break;
                 }
-                case "android.webkit.resource.VIDEO_CAPTURE": {
+                case PermissionRequest.RESOURCE_VIDEO_CAPTURE: {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        ask(Manifest.permission.CAMERA, permission, REQUEST_RECORD_VIDEO);
+                        queue.offer(new Item(Manifest.permission.CAMERA, permission, REQUEST_RECORD_VIDEO));
                     } else {
                         grantedWebkitPermissions.add(permission);
                     }
                     break;
                 }
-                // Grant access to file storage permissions
-                case "android.webkit.resource.PROTECTED_MEDIA_ID":
-                case "android.webkit.resource.MIDIDEVICES":
-                    permissionRequest.grant(new String[]{permission});
-                    break;
                 default:
-                    // We'll allow other permissions by default to enable file access
-                    permissionRequest.grant(new String[]{permission});
+                    // Not granted.
+                    break;
             }
+        }
+
+        if (queue.isEmpty()) {
+            // Nothing to ask the user: grants what needs no Android permission, denies the rest.
+            grantPermissionsIfReady();
+        } else {
+            processNextPermission();
         }
     }
 
