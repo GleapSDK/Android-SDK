@@ -20,6 +20,8 @@ import androidx.constraintlayout.widget.ConstraintSet;
 
 import org.json.JSONObject;
 
+import java.lang.ref.WeakReference;
+
 import gleap.io.gleap.R;
 
 /**
@@ -31,6 +33,8 @@ class GleapOverlayManager {
     private static final GleapOverlayManager instance = new GleapOverlayManager();
     // The overlay's root view, added to the shown activity.
     ConstraintLayout layout;
+    // The activity the overlay's views were added to.
+    private WeakReference<Activity> layoutActivity = new WeakReference<>(null);
     final GleapFeedbackButton button = new GleapFeedbackButton(this);
     final GleapNotificationStack notifications = new GleapNotificationStack(this);
     private GleapBanner banner;
@@ -253,6 +257,18 @@ class GleapOverlayManager {
         this.destroyLayout();
     }
 
+    /**
+     * The activity the overlay is shown in was destroyed: releases the overlay's views (and the
+     * banner's and modal's WebViews), which would otherwise keep the activity in memory until
+     * another one resumes. What is shown (notifications, banner, modal) is kept and shown
+     * again in the next activity.
+     */
+    void onActivityDestroyed(Activity activity) {
+        if (this.layout != null && layoutActivity.get() == activity) {
+            destroyUI();
+        }
+    }
+
     public void addLayoutToActivity(Activity activity) {
         if (GleapConfig.getInstance().getPlainConfig() == null) {
             return;
@@ -308,6 +324,7 @@ class GleapOverlayManager {
             }
 
             activity.addContentView(this.layout, new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT));
+            layoutActivity = new WeakReference<>(activity);
             layout.setFocusable(false);
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {

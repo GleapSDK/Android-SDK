@@ -110,6 +110,7 @@ class GleapActivityManager {
 
                 @Override
                 public void onActivityDestroyed(@NonNull Activity activity) {
+                    GleapOverlayManager.getInstance().onActivityDestroyed(activity);
                 }
             });
 

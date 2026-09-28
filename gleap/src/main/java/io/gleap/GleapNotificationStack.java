@@ -345,6 +345,16 @@ class GleapNotificationStack {
     }
 
     void destroyNotificationLayout() {
+        // The cards' views belong to the activity they were built for: the next activity builds
+        // its own (the messages stay).
+        for (GleapChatMessage message : this.messages) {
+            try {
+                message.clearComponent();
+            } catch (Exception exp) {
+                GleapLog.w("Could not clear a notification", exp);
+            }
+        }
+
         if (this.closeButtonContainer != null) {
             this.closeButtonContainer.removeAllViews();
             this.closeButtonContainer = null;
