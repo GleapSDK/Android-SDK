@@ -87,6 +87,22 @@ public class GleapRemoteConfigTest {
     }
 
     @Test
+    public void aReplayIntervalBelowOneSecondIsIgnored() throws Exception {
+        GleapBug.resetForTesting();
+        for (int interval : new int[]{0, -5}) {
+            GleapConfig config = apply(new JSONObject()
+                    .put("enableReplays", true)
+                    .put("replaysInterval", interval)
+                    .put("buttonX", 12));
+
+            assertEquals(5, config.getInterval());
+            assertEquals(5000, GleapBug.getInstance().getReplay().getInterval());
+            // The rest of the config is still applied.
+            assertEquals(12, config.getButtonX());
+        }
+    }
+
+    @Test
     public void networkLogRulesFeedTheSanitizerTogetherWithTheLocalOnes() throws Exception {
         apply(new JSONObject()
                 .put("networkLogBlacklist", new JSONArray().put("internal.example.com"))

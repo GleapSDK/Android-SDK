@@ -145,8 +145,15 @@ final class GleapRemoteConfig {
             }
 
             if (flowConfigs.has("replaysInterval")) {
-                target.interval = flowConfigs.getInt("replaysInterval");
-                GleapBug.getInstance().setReplay(new Replay(60 / target.interval, 1000 * target.interval));
+                // Seconds between two replay frames; the replay covers the last minute. An
+                // interval below one second is ignored (0 divided by zero and crashed the app).
+                int interval = flowConfigs.getInt("replaysInterval");
+                if (interval >= 1) {
+                    target.interval = interval;
+                    GleapBug.getInstance().setReplay(new Replay(Math.max(1, 60 / interval), 1000 * interval));
+                } else {
+                    GleapLog.w("Ignored the replay interval " + interval);
+                }
             }
 
             if (flowConfigs.has("buttonX")) {
