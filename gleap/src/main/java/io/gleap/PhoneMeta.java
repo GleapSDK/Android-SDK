@@ -231,7 +231,8 @@ class PhoneMeta {
         long runtimeFree = runtime.freeMemory();
         long runtimeUsed = runtimeTotal - runtimeFree;
         try {
-            double result = Double.parseDouble(String.format("%02d", runtimeUsed / (1024 * 1024)));
+            // Locale.ROOT: in e.g. Arabic or Persian the digits are not ASCII and parsing failed.
+            double result = Double.parseDouble(String.format(Locale.ROOT, "%02d", runtimeUsed / (1024 * 1024)));
             return result;
         } catch (Exception ex) {
 
@@ -249,7 +250,7 @@ class PhoneMeta {
         // Fetching the data from the ActivityManager
         actManager.getMemoryInfo(memInfo);
         try {
-            double result = Double.parseDouble(String.format("%02d", memInfo.totalMem / (1024 * 1024)));
+            double result = Double.parseDouble(String.format(Locale.ROOT, "%02d", memInfo.totalMem / (1024 * 1024)));
             return result;
         } catch (Exception ex) {
 
