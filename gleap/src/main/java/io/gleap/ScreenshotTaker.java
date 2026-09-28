@@ -99,13 +99,13 @@ class ScreenshotTaker {
             }
         } catch (Exception ex) {
             GleapLog.w("Could not open the widget", ex);
-        }
-
-        if (!opened) {
-            // The widget did not open: resume the activation methods, which takeScreenshot paused,
-            // and show the feedback button again.
-            GleapDetectorUtil.resumeAllDetectors();
-            GleapOverlayManager.getInstance().setVisible();
+        } finally {
+            if (!opened) {
+                // The widget did not open: resume the activation methods, which takeScreenshot
+                // paused, and show the feedback button again.
+                GleapDetectorUtil.resumeAllDetectors();
+                GleapOverlayManager.getInstance().setVisible();
+            }
         }
     }
 }
