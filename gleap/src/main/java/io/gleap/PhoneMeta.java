@@ -7,6 +7,7 @@ import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
@@ -130,7 +131,8 @@ class PhoneMeta {
             obj.put("devicePixelRatio", getDensityName(dm.density));
         }catch (Exception ex){}
 
-        if (BuildConfig.BUILD_TYPE.equals("debug")) {
+        // The app's build, not the SDK's (the SDK's own BuildConfig is always a release build).
+        if (isDebuggableApp()) {
             obj.put("buildMode", "DEBUG");
         } else {
             obj.put("buildMode", "RELEASE");
@@ -192,6 +194,14 @@ class PhoneMeta {
      *
      * @return status of the network
      */
+    private boolean isDebuggableApp() {
+        try {
+            return (context.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     private String getNetworkStatus() {
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_NETWORK_STATE)
                 == PackageManager.PERMISSION_GRANTED) {
