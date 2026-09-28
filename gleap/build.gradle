@@ -4,11 +4,11 @@ apply from: 'maven-push.gradle'
 android {
     namespace 'gleap.io.gleap'
 
-    compileSdkVersion 33
+    compileSdkVersion 35
 
     defaultConfig {
         minSdkVersion 21
-        targetSdkVersion 33
+        targetSdkVersion 35
         // The SDK version reported in env data and requests, from VERSION_NAME in gradle.properties.
         buildConfigField "String", "VERSION_NAME", "\"${VERSION_NAME}\""
     }
