@@ -266,7 +266,7 @@ class GleapOverlayManager {
             return;
         }
 
-        if (activity.getClass().getSimpleName().contains("Gleap")) {
+        if (ActivityUtil.isGleapActivity(activity)) {
             return;
         }
 

@@ -118,7 +118,8 @@ class GleapActivityManager {
 
     private void checkPage(Activity activity) {
         try {
-            if (!currentPage.equals(activity.getClass().getSimpleName()) && !activity.getClass().getSimpleName().contains("Gleap")) {
+            boolean gleapActivity = ActivityUtil.isGleapActivity(activity);
+            if (!currentPage.equals(activity.getClass().getSimpleName()) && !gleapActivity) {
                 GleapOverlayManager.getInstance().setVisible();
                 currentPage = activity.getClass().getSimpleName();
                 JSONObject object = new JSONObject();
@@ -128,7 +129,7 @@ class GleapActivityManager {
                     currentPage = activity.getClass().getSimpleName();
                 } catch (JSONException e) {
                 }
-            } else if(!activity.getClass().getSimpleName().contains("Gleap")){
+            } else if(!gleapActivity){
                 GleapOverlayManager.getInstance().setVisible();
             } else {
                 GleapOverlayManager.getInstance().setInvisible();

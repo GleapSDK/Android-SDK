@@ -86,8 +86,7 @@ class GleapFeedbackButton {
             return;
         }
 
-        String screenName = activity.getClass().getSimpleName();
-        if (screenName.equals("GleapMainActivity")) {
+        if (ActivityUtil.isGleapActivity(activity)) {
             return;
         }
 

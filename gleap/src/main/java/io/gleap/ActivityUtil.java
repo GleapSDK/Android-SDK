@@ -8,6 +8,14 @@ import java.util.Map;
 import io.gleap.callbacks.GetActivityCallback;
 
 class ActivityUtil {
+    /**
+     * Whether the activity is the SDK's own (the widget). Only the class counts: an app's
+     * activity with "Gleap" in its name is the app's.
+     */
+    static boolean isGleapActivity(Activity activity) {
+        return activity instanceof GleapMainActivity;
+    }
+
     public static Activity getCurrentActivity() {
         GetActivityCallback activityCallback =  GleapCallbacks.getInstance().getGetActivityCallback();
         if(activityCallback != null) {

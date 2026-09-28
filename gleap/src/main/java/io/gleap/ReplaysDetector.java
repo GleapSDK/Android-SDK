@@ -51,7 +51,7 @@ class ReplaysDetector extends GleapDetector {
 
                     if (activity != null) {
                         String screenName = activity.getClass().getSimpleName();
-                        if (!screenName.equals("GleapMainActivity")) {
+                        if (!ActivityUtil.isGleapActivity(activity)) {
                             ScreenshotUtil.takeScreenshot(new ScreenshotUtil.GetImageCallback() {
                                 @Override
                                 public void getImage(Bitmap bitmap) {
