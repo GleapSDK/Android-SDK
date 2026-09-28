@@ -1,14 +1,10 @@
 package io.gleap;
 
-import android.Manifest;
 import android.app.Activity;
-import android.content.ActivityNotFoundException;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.net.Uri;
 import android.net.http.SslError;
@@ -17,19 +13,15 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Base64;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
-import android.webkit.JavascriptInterface;
 import android.webkit.PermissionRequest;
 import android.webkit.SslErrorHandler;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
-import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -43,23 +35,21 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
+import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-import androidx.core.graphics.Insets;
 
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.lang.ref.WeakReference;
-import java.util.List;
-
-import io.gleap.callbacks.GleapAgentToolResultCallback;
 
 import gleap.io.gleap.R;
 
+/**
+ * Shows the widget: the Gleap messenger web app in a WebView on a translucent activity above
+ * the app. The widget talks to the SDK through {@link GleapWidgetBridge}; the SDK answers with
+ * {@link #sendMessage(String)}.
+ */
 public class GleapMainActivity extends AppCompatActivity implements OnHttpResponseListener {
     public static boolean isActive = false;
     public static WeakReference<Activity> callerActivity;
@@ -70,77 +60,30 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
     public static final int REQUEST_SELECT_FILE = 100;
     private Runnable exitAfterFifteenSeconds;
     private Handler handler;
-    private PermissionRequest permissionRequest;
-    private static final int PERMISSIONS_REQUEST_RECORD_AUDIO = 101;
-    private static final int PERMISSIONS_REQUEST_RECORD_VIDEO = 102;
-    private ValueCallback<Uri[]> fileChooserCallback;
-    
-    private java.util.Queue<PermissionQueueItem> permissionQueue = new java.util.LinkedList<>();
-    private boolean isProcessingPermission = false;
-    private java.util.List<String> grantedWebkitPermissions = new java.util.ArrayList<>();
     private boolean isSurvey = false;
     private boolean isImeVisible = false;
     private int lockedScrollY = 0;
 
-    private static class PermissionQueueItem {
-        String origin;
-        String androidPermission;
-        String webkitPermission;
-        int requestCode;
-        
-        PermissionQueueItem(String origin, String androidPermission, String webkitPermission, int requestCode) {
-            this.origin = origin;
-            this.androidPermission = androidPermission;
-            this.webkitPermission = webkitPermission;
-            this.requestCode = requestCode;
-        }
-    }
+    private final GleapWebPermissions webPermissions = new GleapWebPermissions(this);
+    private final GleapFileChooser fileChooser = new GleapFileChooser();
 
-    // Register the ActivityResultLauncher at the class level
+    // Register the ActivityResultLaunchers at the class level
     private final ActivityResultLauncher<Intent> imagePickerLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
-            result -> {
-                if (fileChooserCallback == null) return;
-
-                if (result.getResultCode() == RESULT_OK && result.getData() != null) {
-                    Uri selectedImage = result.getData().getData();
-                    if (selectedImage != null) {
-                        fileChooserCallback.onReceiveValue(new Uri[]{selectedImage});
-                    } else {
-                        fileChooserCallback.onReceiveValue(null); // No file selected
-                    }
-                } else {
-                    fileChooserCallback.onReceiveValue(null); // Handle cancellation or errors
-                }
-                fileChooserCallback = null; // Reset callback after use
-            }
-    );
+            result -> fileChooser.onImagePicked(result));
 
     private ActivityResultLauncher<Intent> openFileLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             new ActivityResultCallback<ActivityResult>() {
                 @Override
                 public void onActivityResult(ActivityResult activityResult) {
-                    if (activityResult.getResultCode() == Activity.RESULT_OK) {
-                        // There are no request codes
-                        Intent intent = activityResult.getData();
-                        ValueCallback<Uri[]> pendingUpload = GleapConfig.getInstance().getFileUploadCallback();
-                        if (pendingUpload == null || intent == null) {
-                            return;
-                        }
-
-                        Uri[] result = null;
-                        String dataString = intent.getDataString();
-
-                        if (dataString != null) {
-                            result = new Uri[]{Uri.parse(dataString)};
-                        }
-
-                        pendingUpload.onReceiveValue(result);
-                        GleapConfig.getInstance().setFileUploadCallback(null);
-                    }
+                    fileChooser.onFilePicked(activityResult);
                 }
             });
+
+    static void setUrlToOpenAfterClose(String url) {
+        urlToOpenAfterClose = url;
+    }
 
     @Override
     public void onBackPressed() {
@@ -189,45 +132,8 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         isActive = true;
 
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                onBackPressedCallback = new OnBackPressedCallback(true) {
-                    @Override
-                    public void handleOnBackPressed() {
-                        GleapDetectorUtil.resumeAllDetectors();
-                        closeMainGleapActivity();
-                    }
-                };
-
-                getOnBackPressedDispatcher().addCallback(this, onBackPressedCallback);
-            }
-
-            this.requestWindowFeature(Window.FEATURE_NO_TITLE);
-            try {
-                if (Build.VERSION.SDK_INT >= 36) {
-                    // Android 16+: ADJUST_NOTHING so the system doesn't resize/pan the
-                    // translucent activity when the keyboard opens – we handle IME insets
-                    // ourselves via the WindowInsetsListener below.
-                    getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
-                } else {
-                    getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
-                }
-                if (getSupportActionBar() != null) {
-                    getSupportActionBar().hide();
-                }
-            } catch (Exception ex) {
-            }
-
-            if (Build.VERSION.SDK_INT >= 36) {
-                // Prevent Android 16's DecorView auto-scroll (ViewRootImpl.scrollToRectOrFocus)
-                // which pans the translucent activity upward when the keyboard opens,
-                // exposing the host app underneath.
-                final View decorView = getWindow().getDecorView();
-                decorView.setOnScrollChangeListener((v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
-                    if (scrollY != 0) {
-                        v.scrollTo(scrollX, 0);
-                    }
-                });
-            }
+            setUpBackNavigation();
+            setUpWindow();
 
             super.onCreate(savedInstanceState);
             GleapOverlayManager.getInstance().clearMessages();
@@ -236,44 +142,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
             if (getPackageManager().hasSystemFeature("android.software.webview")) {
                 webView = findViewById(R.id.gleap_webview);
-
-                final FrameLayout webViewContainer = findViewById(R.id.webview_container);
-
-                ViewCompat.setOnApplyWindowInsetsListener(webViewContainer,
-                    (view, insets) -> {
-                    Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-                    Insets ime  = insets.getInsets(WindowInsetsCompat.Type.ime());
-
-                    int topInset    = bars.top;
-                    int bottomInset;
-
-                    if (Build.VERSION.SDK_INT >= 36) {
-                        bottomInset = Math.max(bars.bottom, ime.bottom);
-                    } else {
-                        bottomInset = Math.max(bars.bottom, ime.bottom);
-                    }
-
-                    view.setPadding(view.getPaddingLeft(), topInset, view.getPaddingRight(), bottomInset);
-
-                    if (Build.VERSION.SDK_INT >= 36) {
-                        boolean nowImeVisible = ime.bottom > 0;
-                        if (nowImeVisible && !isImeVisible) {
-                            isImeVisible = true;
-                            try {
-                                lockedScrollY = webView.getScrollY();
-                                webView.post(() -> webView.scrollTo(webView.getScrollX(), lockedScrollY));
-                            } catch (Exception ignore) {}
-                        } else if (!nowImeVisible && isImeVisible) {
-                            isImeVisible = false;
-                        }
-                    }
-
-                    return insets;   // don't consume
-                });
-
-                int backgroundColor = Color.parseColor(GleapConfig.getInstance().getBackgroundColor());
-
-                View progressHeaderView = findViewById(R.id.gleap_progressBarHeader);
+                setUpInsets((FrameLayout) findViewById(R.id.webview_container));
 
                 exitAfterFifteenSeconds = new Runnable() {
                     @Override
@@ -285,36 +154,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 };
 
                 isSurvey = getIntent().getBooleanExtra("IS_SURVEY", false);
-                FrameLayout loaderView = findViewById(R.id.loader);
-
-                // When the Activity is recreated (e.g. config change, process
-                // death) hide the spinner but keep the loader background so
-                // the translucent window doesn't expose the host app.
-                if (savedInstanceState != null) {
-                    findViewById(R.id.loading_indicator).setVisibility(View.GONE);
-                }
-
-                if (isSurvey) {
-                    progressHeaderView.setVisibility(View.GONE);
-                    if (savedInstanceState == null) {
-                        loaderView.setVisibility(View.VISIBLE);
-                        loaderView.setBackgroundColor(Color.parseColor("#66000000"));
-                    }
-                } else {
-                    // Widget loader: mirror the messenger's home background so
-                    // the reveal is seamless (see GleapLoadingBackgroundView).
-                    // No spinner — the background itself is the loading
-                    // indicator, matching the web/iOS SDKs. Also added on
-                    // recreation: it stays behind the webview as the backdrop.
-                    progressHeaderView.setVisibility(View.GONE);
-                    findViewById(R.id.loading_indicator).setVisibility(View.GONE);
-                    loaderView.setVisibility(View.VISIBLE);
-                    loaderView.setBackgroundColor(backgroundColor);
-                    loaderView.addView(new GleapLoadingBackgroundView(this), 0,
-                            new FrameLayout.LayoutParams(
-                                    FrameLayout.LayoutParams.MATCH_PARENT,
-                                    FrameLayout.LayoutParams.MATCH_PARENT));
-                }
+                setUpLoader(savedInstanceState);
 
                 this.handler = new Handler(Looper.getMainLooper());
                 this.handler.postDelayed(exitAfterFifteenSeconds, 15000);
@@ -335,6 +175,154 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
             }
         } catch (Exception ex) {
         }
+    }
+
+    private void setUpBackNavigation() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            onBackPressedCallback = new OnBackPressedCallback(true) {
+                @Override
+                public void handleOnBackPressed() {
+                    GleapDetectorUtil.resumeAllDetectors();
+                    closeMainGleapActivity();
+                }
+            };
+
+            getOnBackPressedDispatcher().addCallback(this, onBackPressedCallback);
+        }
+    }
+
+    private void setUpWindow() {
+        this.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        try {
+            if (Build.VERSION.SDK_INT >= 36) {
+                // Android 16+: ADJUST_NOTHING so the system doesn't resize/pan the
+                // translucent activity when the keyboard opens – we handle IME insets
+                // ourselves via the WindowInsetsListener below.
+                getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
+            } else {
+                getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+            }
+            if (getSupportActionBar() != null) {
+                getSupportActionBar().hide();
+            }
+        } catch (Exception ex) {
+        }
+
+        if (Build.VERSION.SDK_INT >= 36) {
+            // Prevent Android 16's DecorView auto-scroll (ViewRootImpl.scrollToRectOrFocus)
+            // which pans the translucent activity upward when the keyboard opens,
+            // exposing the host app underneath.
+            final View decorView = getWindow().getDecorView();
+            decorView.setOnScrollChangeListener((v, scrollX, scrollY, oldScrollX, oldScrollY) -> {
+                if (scrollY != 0) {
+                    v.scrollTo(scrollX, 0);
+                }
+            });
+        }
+    }
+
+    /**
+     * Pads the WebView container by the system bars and the keyboard; on Android 16+ also keeps
+     * the page from scrolling when the keyboard opens.
+     */
+    private void setUpInsets(FrameLayout webViewContainer) {
+        ViewCompat.setOnApplyWindowInsetsListener(webViewContainer,
+                (view, insets) -> {
+                    Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+                    Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
+
+                    int topInset = bars.top;
+                    int bottomInset = Math.max(bars.bottom, ime.bottom);
+
+                    view.setPadding(view.getPaddingLeft(), topInset, view.getPaddingRight(), bottomInset);
+
+                    if (Build.VERSION.SDK_INT >= 36) {
+                        boolean nowImeVisible = ime.bottom > 0;
+                        if (nowImeVisible && !isImeVisible) {
+                            isImeVisible = true;
+                            try {
+                                lockedScrollY = webView.getScrollY();
+                                webView.post(() -> webView.scrollTo(webView.getScrollX(), lockedScrollY));
+                            } catch (Exception ignore) {
+                            }
+                        } else if (!nowImeVisible && isImeVisible) {
+                            isImeVisible = false;
+                        }
+                    }
+
+                    return insets;   // don't consume
+                });
+    }
+
+    private void setUpLoader(Bundle savedInstanceState) {
+        int backgroundColor = Color.parseColor(GleapConfig.getInstance().getBackgroundColor());
+        View progressHeaderView = findViewById(R.id.gleap_progressBarHeader);
+        FrameLayout loaderView = findViewById(R.id.loader);
+
+        // When the Activity is recreated (e.g. config change, process
+        // death) hide the spinner but keep the loader background so
+        // the translucent window doesn't expose the host app.
+        if (savedInstanceState != null) {
+            findViewById(R.id.loading_indicator).setVisibility(View.GONE);
+        }
+
+        if (isSurvey) {
+            progressHeaderView.setVisibility(View.GONE);
+            if (savedInstanceState == null) {
+                loaderView.setVisibility(View.VISIBLE);
+                loaderView.setBackgroundColor(Color.parseColor("#66000000"));
+            }
+        } else {
+            // Widget loader: mirror the messenger's home background so
+            // the reveal is seamless (see GleapLoadingBackgroundView).
+            // No spinner — the background itself is the loading
+            // indicator, matching the web/iOS SDKs. Also added on
+            // recreation: it stays behind the webview as the backdrop.
+            progressHeaderView.setVisibility(View.GONE);
+            findViewById(R.id.loading_indicator).setVisibility(View.GONE);
+            loaderView.setVisibility(View.VISIBLE);
+            loaderView.setBackgroundColor(backgroundColor);
+            loaderView.addView(new GleapLoadingBackgroundView(this), 0,
+                    new FrameLayout.LayoutParams(
+                            FrameLayout.LayoutParams.MATCH_PARENT,
+                            FrameLayout.LayoutParams.MATCH_PARENT));
+        }
+    }
+
+    /**
+     * The widget answered its first ping: fade it in over the loader.
+     */
+    void revealWidget() {
+        // Hide only the spinner and header — keep the
+        // loader FrameLayout visible as an opaque backdrop
+        // so the translucent window doesn't expose the host app.
+        // Cross-fade the webview in over the loading
+        // background (which shows the same colors/image),
+        // so the hand-off reads as continuous — the
+        // messenger's own home entrance animations then
+        // play inside the webview.
+        //
+        // The reveal waits 500ms after the ping (same as
+        // the iOS SDK): the web app pings BEFORE its
+        // first paint, so an immediate fade briefly
+        // shows an unpainted webview and the content
+        // pops in mid-fade — a visible jump.
+        findViewById(R.id.loading_indicator).setVisibility(View.GONE);
+        webView.setAlpha(0f);
+        GleapMainThread.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (webView == null) {
+                    return;
+                }
+                webView.setVisibility(View.VISIBLE);
+                // withLayer(): a hardware-rendered WebView
+                // ignores view alpha unless it draws into
+                // a layer — without it the "fade" pops in
+                // as a single-frame swap.
+                webView.animate().alpha(1f).setDuration(300).withLayer().start();
+            }
+        }, 500);
     }
 
     @Override
@@ -397,7 +385,8 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 callerActivity.clear();
             }
 
-        } catch (Error | Exception ignore) {}
+        } catch (Error | Exception ignore) {
+        }
 
         super.onDestroy();
     }
@@ -414,7 +403,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         settings.setDefaultTextEncodingName("utf-8");
         webView.setWebViewClient(new GleapWebViewClient());
         webView.setBackgroundColor(Color.TRANSPARENT);
-        webView.addJavascriptInterface(new GleapJSBridge(this), "GleapJSBridge");
+        webView.addJavascriptInterface(new GleapWidgetBridge(this), "GleapJSBridge");
         try {
             webView.setOverScrollMode(View.OVER_SCROLL_NEVER);
             webView.setVerticalScrollBarEnabled(false);
@@ -429,76 +418,17 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     }
                 });
             }
-        } catch (Exception ignore) {}
+        } catch (Exception ignore) {
+        }
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
             public void onPermissionRequest(final PermissionRequest request) {
-                permissionRequest = request;
-                grantedWebkitPermissions.clear();
-
-                for (String permission : request.getResources()) {
-                    switch (permission) {
-                        case "android.webkit.resource.AUDIO_CAPTURE": {
-                            askForPermission(request.getOrigin().toString(), Manifest.permission.RECORD_AUDIO, permission, PERMISSIONS_REQUEST_RECORD_AUDIO);
-                            break;
-                        }
-                        case "android.webkit.resource.VIDEO_CAPTURE": {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                                askForPermission(request.getOrigin().toString(), Manifest.permission.CAMERA, permission, PERMISSIONS_REQUEST_RECORD_VIDEO);
-                            } else {
-                                grantedWebkitPermissions.add(permission);
-                            }
-                            break;
-                        }
-                        // Grant access to file storage permissions
-                        case "android.webkit.resource.PROTECTED_MEDIA_ID":
-                        case "android.webkit.resource.MIDIDEVICES":
-                            permissionRequest.grant(new String[]{permission});
-                            break;
-                        default:
-                            // We'll allow other permissions by default to enable file access
-                            permissionRequest.grant(new String[]{permission});
-                    }
-                }
+                webPermissions.onPermissionRequest(request);
             }
 
             @Override
             public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
-                // Save the callback for use after file selection
-                fileChooserCallback = filePathCallback;
-
-                // Check for Android 13+ (API 33)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-                    intent.setType("*/*");
-                    intent.addCategory(Intent.CATEGORY_OPENABLE);
-                    intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, false); // Single selection
-                    try {
-                        imagePickerLauncher.launch(intent);
-                        return true;
-                    } catch (ActivityNotFoundException e) {
-                        fileChooserCallback = null; // Reset callback on failure
-                        return false;
-                    }
-                } else {
-                    // Fallback for older Android versions
-                    try {
-                        ValueCallback<Uri[]> pendingUpload = GleapConfig.getInstance().getFileUploadCallback();
-
-                        if (pendingUpload != null) {
-                            pendingUpload.onReceiveValue(null);
-                        }
-
-                        GleapConfig.getInstance().setFileUploadCallback(filePathCallback);
-                        Intent i = new Intent(Intent.ACTION_GET_CONTENT);
-                        i.addCategory(Intent.CATEGORY_OPENABLE);
-                        i.setType("*/*"); // set MIME type to allow all files
-                        openFileLauncher.launch(i);
-                        return true;
-                    } catch (Exception ex) {
-                        return false;
-                    }
-                }
+                return fileChooser.show(filePathCallback, imagePickerLauncher, openFileLauncher);
             }
         });
         webView.loadUrl(url);
@@ -508,109 +438,27 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
     }
 
     public void askForPermission(String origin, String androidPermission, String webkitPermission, int requestCode) {
-        permissionQueue.offer(new PermissionQueueItem(origin, androidPermission, webkitPermission, requestCode));
-        processNextPermission();
-    }
-    
-    private void processNextPermission() {
-        if (isProcessingPermission || permissionQueue.isEmpty()) {
-            return;
-        }
-        
-        PermissionQueueItem item = permissionQueue.poll();
-        if (item == null) {
-            return;
-        }
-        
-        if (ContextCompat.checkSelfPermission(getApplicationContext(), item.androidPermission)
-                != PackageManager.PERMISSION_GRANTED) {
-            isProcessingPermission = true;
-            ActivityCompat.requestPermissions(GleapMainActivity.this,
-                    new String[]{item.androidPermission},
-                    item.requestCode);
-        } else {
-            grantedWebkitPermissions.add(item.webkitPermission);
-            processNextPermission();
-            
-            // If queue is now empty and we're not processing, grant immediately
-            if (permissionQueue.isEmpty() && !isProcessingPermission) {
-                grantPermissionsIfReady();
-            }
-        }
+        webPermissions.ask(androidPermission, webkitPermission, requestCode);
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        
-        isProcessingPermission = false;
-        
-        if (permissions.length > 0) {
-            
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                String webkitPermission = getWebkitPermissionForAndroidPermission(permissions[0]);
-                if (webkitPermission != null) {
-                    grantedWebkitPermissions.add(webkitPermission);
-                }
-            }
-        }
-        
-        processNextPermission();
-        
-        if (permissionQueue.isEmpty() && !isProcessingPermission) {
-            grantPermissionsIfReady();
-        }
-    }
-    
-    private void grantPermissionsIfReady() {
-        if (permissionRequest != null) {
-            if (!grantedWebkitPermissions.isEmpty()) {
-                permissionRequest.grant(grantedWebkitPermissions.toArray(new String[0]));
-            } else {
-                permissionRequest.deny();
-            }
-            permissionRequest = null;
-            grantedWebkitPermissions.clear();
-        }
-    }
-    
-    private String getWebkitPermissionForAndroidPermission(String androidPermission) {
-        switch (androidPermission) {
-            case Manifest.permission.RECORD_AUDIO:
-                return "android.webkit.resource.AUDIO_CAPTURE";
-            case Manifest.permission.CAMERA:
-                return "android.webkit.resource.VIDEO_CAPTURE";
-            default:
-                return null;
-        }
+        webPermissions.onRequestPermissionsResult(permissions, grantResults);
     }
 
     @Override
     public void onTaskComplete(JSONObject response) {
         try {
-            if (response.has("status") && response.getInt("status") == 201) {
-                try {
-                    JSONObject message = new JSONObject();
-                    String shareToken = getShareToken(response);
-                    if (!shareToken.equals("")) {
-                        message.put("shareToken", shareToken);
-
-                    }
-
-                    sendMessage(generateGleapMessage("feedback-sent", message));
+            boolean sent = response.has("status") && response.getInt("status") == 201;
+            try {
+                sendMessage(GleapWidgetMessages.feedbackResult(response));
+                if (sent) {
                     GleapDetectorUtil.resumeAllDetectors();
                     GleapBug.getInstance().setScreenshot(null);
-                } catch (Exception ex) {
                 }
-            } else {
-                try {
-                    JSONObject message = new JSONObject();
-                    message.put("data", "Something went wrong, please try again.");
-                    message.put("name", "feedback-sending-failed");
-                    sendMessage(message.toString());
-                } catch (Exception ex) {
-                }
+            } catch (Exception ex) {
             }
         } catch (Exception ignore) {
         }
@@ -674,467 +522,14 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         }
     }
 
-    private class GleapJSBridge {
-        private final WeakReference<AppCompatActivity> mContextRef;
-
-        public GleapJSBridge(AppCompatActivity c) {
-            mContextRef = new WeakReference<>(c);
-        }
-
-        @JavascriptInterface
-        public void gleapCallback(String object) {
-            if (this.mContextRef.get() == null) {
-                return;
-            }
-
-            this.mContextRef.get().runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        JSONObject gleapCallback = new JSONObject(object);
-                        String command = gleapCallback.getString("name");
-
-                        switch (command) {
-                            case "ping":
-                                sendConfigUpdate();
-                                sendSessionUpdate();
-                                sendPrefillData();
-                                sendScreenshotUpdate();
-                                sendPendingActions();
-
-                                GleapMainThread.postDelayed(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        JSONObject data = new JSONObject();
-                                        try {
-                                            data.put("isWidgetOpen", true);
-                                        } catch (JSONException e) {
-                                            GleapLog.w("Could not build the widget status", e);
-                                        }
-                                        try {
-                                            sendMessage(generateGleapMessage("widget-status-update", data));
-                                        } catch (JSONException e) {
-                                            GleapLog.w("Could not send the widget status", e);
-                                        }
-                                    }
-                                }, 100);
-                                // Hide only the spinner and header — keep the
-                                // loader FrameLayout visible as an opaque backdrop
-                                // so the translucent window doesn't expose the host app.
-                                // Cross-fade the webview in over the loading
-                                // background (which shows the same colors/image),
-                                // so the hand-off reads as continuous — the
-                                // messenger's own home entrance animations then
-                                // play inside the webview.
-                                //
-                                // The reveal waits 500ms after the ping (same as
-                                // the iOS SDK): the web app pings BEFORE its
-                                // first paint, so an immediate fade briefly
-                                // shows an unpainted webview and the content
-                                // pops in mid-fade — a visible jump.
-                                findViewById(R.id.loading_indicator).setVisibility(View.GONE);
-                                webView.setAlpha(0f);
-                                GleapMainThread.postDelayed(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        if (webView == null) {
-                                            return;
-                                        }
-                                        webView.setVisibility(View.VISIBLE);
-                                        // withLayer(): a hardware-rendered WebView
-                                        // ignores view alpha unless it draws into
-                                        // a layer — without it the "fade" pops in
-                                        // as a single-frame swap.
-                                        webView.animate().alpha(1f).setDuration(300).withLayer().start();
-                                    }
-                                }, 500);
-
-                                break;
-                            case "cleanup-drawings":
-                                GleapBug.getInstance().setScreenshot(null);
-                                break;
-                            case "tool-execution":
-                                try {
-                                    if (GleapCallbacks.getInstance().getAiToolExecutedCallback() != null) {
-                                        GleapCallbacks.getInstance().getAiToolExecutedCallback().aiToolExecuted(gleapCallback.getJSONObject("data"));
-                                    }
-                                } catch (Exception exp) {}
-                                break;
-                            case "frontend-tool-execute":
-                                try {
-                                    GleapAgentToolManager.getInstance().executeTool(gleapCallback.getJSONObject("data"), new GleapAgentToolResultCallback() {
-                                        @Override
-                                        public void onResult(Object resultData) {
-                                            runOnUiThread(new Runnable() {
-                                                @Override
-                                                public void run() {
-                                                    try {
-                                                        sendMessage(generateGleapMessage("frontend-tool-result", (JSONObject) resultData));
-                                                    } catch (Error | Exception ignore) {
-                                                    }
-                                                }
-                                            });
-                                        }
-                                    });
-                                } catch (Exception exp) {}
-                                break;
-                            case "collect-ticket-data":
-                                collectTicketData();
-                                break;
-                            case "close-widget":
-                                closeGleap();
-                                break;
-                            case "screenshot-updated":
-                                updateScreenshot(gleapCallback);
-                                break;
-                            case "run-custom-action":
-                                customActionCalled(gleapCallback);
-                                break;
-                            case "open-url":
-                                openExternalURL(gleapCallback);
-                                break;
-                            case "notify-event":
-                                notifyEvent(gleapCallback);
-                                break;
-                            case "send-feedback":
-                                sendFeedback(gleapCallback);
-                                break;
-                        }
-                    } catch (Exception err) {
-                    }
-                }
-            });
-
-        }
-
-        private void collectTicketData() {
-            try {
-                final GleapBug gleapBug = GleapBug.getInstance();
-
-                final JSONObject data = new JSONObject();
-                data.put("formData", gleapBug.getTicketAttributes());
-                data.put("customData", gleapBug.getCustomData());
-                data.put("customEventLog", gleapBug.getCustomEventLog());
-
-                PhoneMeta phoneMeta = gleapBug.getPhoneMeta();
-                if (phoneMeta != null) {
-                    data.put("metaData", phoneMeta.getJSONObj());
-                }
-
-                try {
-                    data.put("tags", new JSONArray(gleapBug.getTags()));
-                } catch (Exception ex) {
-                }
-
-                final boolean withConsoleLogs = GleapConfig.getInstance().isEnableConsoleLogs();
-
-                // Reading logcat and preparing the network logs takes a moment: not on the main thread.
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        JSONArray networkLogs = new JSONArray();
-                        JSONArray consoleLog = null;
-                        try {
-                            networkLogs = gleapBug.getNetworklogs();
-                            if (withConsoleLogs) {
-                                consoleLog = gleapBug.getLogs();
-                            }
-                        } catch (Error | Exception ignore) {
-                        }
-
-                        final JSONArray finalNetworkLogs = networkLogs;
-                        final JSONArray finalConsoleLog = consoleLog;
-                        AppCompatActivity activity = mContextRef.get();
-                        if (activity == null) {
-                            return;
-                        }
-                        activity.runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                try {
-                                    data.put("networkLogs", finalNetworkLogs);
-                                    if (finalConsoleLog != null) {
-                                        data.put("consoleLog", finalConsoleLog);
-                                    }
-                                    sendMessage(generateGleapMessage("collect-ticket-data", data));
-                                } catch (Error | Exception ignore) {
-                                }
-                            }
-                        });
-                    }
-                }, "gleap-collect-ticket-data").start();
-            } catch (Error | Exception ignore) {
-            }
-        }
-
-        private void customActionCalled(JSONObject object) {
-            try {
-                String data = object.getString("data");
-                if (GleapCallbacks.getInstance().getCustomActions() != null) {
-
-                    String shareToken = null;
-                    if (object.has("shareToken")) {
-                        shareToken = object.getString("shareToken");
-                    }
-
-                    GleapCallbacks.getInstance().getCustomActions().invoke(data, shareToken);
-                }
-            } catch (JSONException e) {
-                GleapLog.w("Invalid custom action message", e);
-            }
-        }
-
-        private void openExternalURL(JSONObject object) {
-            try {
-                String url = object.getString("data");
-                if (url != null && url.length() > 0) {
-                    if (Gleap.internalCloseWidgetOnExternalLinkOpen) {
-                        GleapMainActivity.urlToOpenAfterClose = url;
-                        closeGleap();
-                    } else {
-                        Gleap.getInstance().handleLink(url);
-                    }
-                }
-            } catch (Exception e) {
-            }
-        }
-
-        private void notifyEvent(JSONObject object) {
-            try {
-                JSONObject data = object.getJSONObject("data");
-                String eventType = data.getString("type");
-                JSONObject eventData = data.getJSONObject("data");
-
-                if (eventType.equals("flow-started")) {
-                    if (GleapCallbacks.getInstance().getFeedbackFlowStartedCallback() != null) {
-                        GleapCallbacks.getInstance().getFeedbackFlowStartedCallback().invoke(eventData.toString());
-                    }
-                }
-            } catch (Exception ex) {
-            }
-        }
-
-        private void sendPendingActions() {
-            List<GleapAction> queue = GleapActionQueueHandler.getInstance().getActionQueue();
-            for (GleapAction action :
-                    queue) {
-                try {
-                    sendMessage(generateGleapMessage(action.getCommand(), action.getData()));
-                } catch (JSONException e) {
-                    GleapLog.w("Could not send a pending widget action", e);
-                }
-            }
-
-            List<GleapWebViewMessage> messages = GleapConfig.getInstance().getGleapWebViewMessages();
-            for (GleapWebViewMessage message :
-                    messages) {
-                sendMessage(message.getMessage());
-            }
-            GleapActionQueueHandler.getInstance().clearActionMessageQueue();
-            GleapConfig.getInstance().clearGleapWebViewMessages();
-        }
-
-        private void updateScreenshot(JSONObject object) {
-            if (object.has("data")) {
-                String base64String = null;
-                try {
-                    base64String = object.getString("data");
-
-                    if (base64String != null) {
-                        String base64Image = base64String.split(",")[1];
-                        byte[] decodedString = Base64.decode(base64Image, Base64.DEFAULT);
-                        Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
-                        GleapBug.getInstance().setScreenshot(decodedByte);
-                    }
-                } catch (Exception e) {
-                    GleapLog.w("Could not read the edited screenshot", e);
-                }
-            }
-        }
-
-        public void sendFeedback(JSONObject jsonObject) {
-            if (this.mContextRef.get() == null) {
-                return;
-            }
-
-            this.mContextRef.get().runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        JSONObject data = jsonObject.getJSONObject("data");
-                        GleapBug gleapBug = GleapBug.getInstance();
-                        try {
-                            JSONObject action = data.getJSONObject("action");
-                            if (action.has("feedbackType")) {
-                                gleapBug.setType(action.getString("feedbackType"));
-                            }
-
-                            if (action.has("excludeData")) {
-                                GleapConfig.getInstance().setStripModel(action.getJSONObject("excludeData"));
-                            }
-
-                            if (data.has("outboundId")) {
-                                gleapBug.setOutboundId(data.getString("outboundId"));
-                            }
-
-                            if (data.has("spamToken")) {
-                                gleapBug.setSpamToken(data.getString("spamToken"));
-                            }
-
-                            if (data.has("formData")) {
-                                JSONObject formData = data.getJSONObject("formData");
-                                gleapBug.setData(formData);
-                            }
-                        } catch (JSONException e) {
-                            GleapLog.w("Invalid feedback data from the widget", e);
-                        }
-                        
-                        HttpHelper.send(GleapMainActivity.this, getApplicationContext());
-                    } catch (Exception ex) {
-                    }
-                }
-            });
-        }
-
-        private void sendConfigUpdate() {
-            try {
-                JSONObject jsonObject = GleapConfig.getInstance().getPlainConfig();
-                JSONObject data = new JSONObject();
-                data.put("config", jsonObject.getJSONObject("flowConfig"));
-                data.put("actions", jsonObject.getJSONObject("projectActions"));
-                data.put("overrideLanguage", GleapConfig.getInstance().getLanguage());
-                data.put("isApp", true);
-
-                sendMessage(generateGleapMessage("config-update", data));
-            } catch (Exception err) {
-            }
-        }
-
-        private void sendPrefillData() {
-            try {
-                JSONObject data = PrefillHelper.getInstancen().getPreFillData();
-
-                if (data != null) {
-                    String message = generateGleapMessage("prefill-form-data", data);
-                    sendMessage(message);
-                }
-            } catch (Exception err) {
-                GleapLog.w("Could not send the prefill data", err);
-            }
-        }
-
-        private void sendSessionUpdate() {
-            try {
-                GleapSession gleapSession = GleapSessionController.getInstance().getUserSession();
-                GleapSessionProperties gleapSessionProperties = GleapSessionController.getInstance().getGleapUserSession();
-                JSONObject sessionData = new JSONObject();
-                sessionData.put("gleapId", gleapSession.getId());
-                sessionData.put("gleapHash", gleapSession.getHash());
-                if (gleapSessionProperties != null) {
-                    if (gleapSessionProperties.getUserId() != null) {
-                        sessionData.put("userId", gleapSessionProperties.getUserId());
-                    }
-
-                    if (gleapSessionProperties.getName() != null) {
-                        sessionData.put("name", gleapSessionProperties.getName());
-                    }
-
-                    if (gleapSessionProperties.getEmail() != null) {
-                        sessionData.put("email", gleapSessionProperties.getEmail());
-                    }
-
-                    sessionData.put("value", gleapSessionProperties.getValue());
-
-                    sessionData.put("sla", gleapSessionProperties.getSla());
-
-                    if (gleapSessionProperties.getPhone() != null) {
-                        sessionData.put("phone", gleapSessionProperties.getPhone());
-                    }
-
-                    if (gleapSessionProperties.getCompanyName() != null) {
-                        sessionData.put("companyName", gleapSessionProperties.getCompanyName());
-                    }
-
-                    if (gleapSessionProperties.getAvatar() != null) {
-                        sessionData.put("avatar", gleapSessionProperties.getAvatar());
-                    }
-
-                    if (gleapSessionProperties.getPlan() != null) {
-                        sessionData.put("plan", gleapSessionProperties.getPlan());
-                    }
-
-                    if (gleapSessionProperties.getCompanyId() != null) {
-                        sessionData.put("companyId", gleapSessionProperties.getCompanyId());
-                    }
-                }
-
-                JSONObject data = new JSONObject();
-                data.put("sessionData", sessionData);
-                data.put("apiUrl", GleapConfig.getInstance().getApiUrl());
-                String realtimeHost = GleapConfig.getInstance().getRealtimeHost();
-                if (realtimeHost != null) {
-                    data.put("realtimeHost", realtimeHost);
-                }
-                data.put("sdkKey", GleapConfig.getInstance().getSdkKey());
-
-                sendMessage(generateGleapMessage("session-update", data));
-            } catch (Exception exception) {
-            }
-        }
-
-        private void sendScreenshotUpdate() {
-            try {
-                JSONObject message = new JSONObject();
-                String image = ScreenshotUtil.bitmapToBase64(GleapBug.getInstance().getScreenshot());
-                byte[] decodedString = Base64.decode(image, Base64.DEFAULT);
-                Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
-                GleapBug.getInstance().setScreenshot(decodedByte);
-
-                message.put("name", "screenshot-update");
-                message.put("data", "data:image/png;base64," + image);
-                sendMessage(message.toString());
-            } catch (Exception err) {
-
-            }
-        }
-
-        private void closeGleap() {
-            closeMainGleapActivity();
-        }
-    }
-
     /**
      * Send message to JS
      *
-     * @param message
+     * @param message the message, a JSON object in the widget's message format
      */
     public void sendMessage(String message) {
         if (webView != null) {
             webView.evaluateJavascript("sendMessage(" + message + ");", null);
         }
-    }
-
-    private String generateGleapMessage(String name, JSONObject data) throws JSONException {
-        JSONObject message = new JSONObject();
-        message.put("name", name);
-        message.put("data", data);
-
-        return message.toString();
-    }
-
-    private String getShareToken(JSONObject httpResponse) {
-        try {
-
-            if (httpResponse.has("response")) {
-                JSONObject response = httpResponse.getJSONObject("response");
-                if (response.has("shareToken")) {
-                    return response.getString("shareToken");
-                }
-            }
-        } catch (Exception ignore) {
-        }
-
-
-        return "";
     }
 }
