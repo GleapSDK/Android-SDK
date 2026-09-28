@@ -21,6 +21,7 @@
 
 ### Fixed
 
+- After a ticket was sent from the widget, `isOpened()` returned `false` while the widget was still on screen, so `Gleap.close()` did nothing. The widget now stays marked open until it actually closes.
 - The props to ignore and the blacklist for network logs (dashboard, `setNetworkLogPropsToIgnore`, `setNetworkLogsBlacklist`) were never applied on Android. They now are, when a ticket is sent: headers with that name are removed, as are keys in JSON bodies at any depth (`user.password` also works as a path), form fields and url query parameters. Names match case-insensitively. In JSON bodies cut at the 150 KB limit, the values of those keys are masked instead. The authorization, proxy-authorization, cookie and set-cookie headers are always masked, and requests to gleap.io and gleap.ai are never sent.
 - Once 25 requests were logged, every new request was dropped and the oldest ones were kept. The network log now keeps the newest 30.
 - Starting a conversation emptied the network logs and the `Gleap.log` messages, so a later bug report had none. Both are now kept; `Gleap.log` keeps the newest 500 messages.

@@ -553,7 +553,10 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
             try {
                 sendMessage(GleapWidgetMessages.feedbackResult(response));
                 if (sent) {
-                    GleapDetectorUtil.resumeAllDetectors();
+                    // The widget stays open (it shows the thank-you screen), so it
+                    // stays marked open: the detectors resume when the activity
+                    // actually closes. Resuming them here made isOpened() false
+                    // and Gleap.close() a no-op while the widget was on screen.
                     GleapBug.getInstance().setScreenshot(null);
                 }
             } catch (Exception ex) {
