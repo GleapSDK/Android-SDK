@@ -3,6 +3,7 @@ package io.gleap;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -11,37 +12,90 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * The events (trackEvent, page views, session start) waiting for the next ping. Thread-safe: the
- * app adds events on any thread while a ping reads them in the background.
+ * The events (trackEvent, page views, session start) waiting for the next ping, at most
+ * {@link #MAX_EVENTS}. Thread-safe: the app adds events on any thread while a ping reads them in
+ * the background.
  */
 final class GleapEventQueue {
     static final int MAX_EVENTS = 500;
 
-    private List<JSONObject> events = new ArrayList<>();
+    /**
+     * The oldest queued events for one ping.
+     */
+    static final class Batch {
+        final List<JSONObject> events;
+        // More events were queued than the batch takes.
+        final boolean hasMore;
+
+        Batch(List<JSONObject> events, boolean hasMore) {
+            this.events = events;
+            this.hasMore = hasMore;
+        }
+
+        boolean isEmpty() {
+            return events.isEmpty();
+        }
+
+        JSONArray toJSONArray() {
+            JSONArray result = new JSONArray();
+            for (JSONObject event : events) {
+                result.put(event);
+            }
+            return result;
+        }
+    }
+
+    private static final class Entry {
+        final JSONObject event;
+        final boolean sessionStart;
+
+        Entry(JSONObject event, boolean sessionStart) {
+            this.event = event;
+            this.sessionStart = sessionStart;
+        }
+    }
+
+    private final List<Entry> entries = new ArrayList<>();
 
     /**
-     * Adds an event; at {@link #MAX_EVENTS} the oldest one is dropped first.
+     * Adds an event; when the queue is full, the oldest event (other than a session start) is
+     * dropped first.
      */
     synchronized void add(JSONObject event) {
-        if (events.size() == MAX_EVENTS) {
-            events = new ArrayList<>(events.subList(1, events.size()));
+        while (entries.size() >= MAX_EVENTS) {
+            dropOldest();
         }
-        events.add(event);
+        entries.add(new Entry(event, false));
     }
 
     /**
-     * Adds a session start event, without the limit.
+     * Adds an event of a session start. It is kept when the queue is full: the oldest other event
+     * makes room instead.
      */
-    synchronized void addUncapped(JSONObject event) {
-        events.add(event);
+    synchronized void addSessionStart(JSONObject event) {
+        entries.add(new Entry(event, true));
+        while (entries.size() > MAX_EVENTS) {
+            dropOldest();
+        }
+    }
+
+    // The oldest event that is not a session start, or the oldest one when all are.
+    private void dropOldest() {
+        for (Iterator<Entry> it = entries.iterator(); it.hasNext(); ) {
+            if (!it.next().sessionStart) {
+                it.remove();
+                return;
+            }
+        }
+        entries.remove(0);
     }
 
     synchronized boolean isEmpty() {
-        return events.isEmpty();
+        return entries.isEmpty();
     }
 
     synchronized int size() {
-        return events.size();
+        return entries.size();
     }
 
     /**
@@ -49,18 +103,45 @@ final class GleapEventQueue {
      */
     synchronized JSONArray toJSONArray() {
         JSONArray result = new JSONArray();
-        for (JSONObject event : events) {
-            result.put(event);
+        for (Entry entry : entries) {
+            result.put(entry.event);
         }
         return result;
     }
 
     /**
-     * The queued events, oldest first, to send; remove them with {@link #removeSent(List)} once
-     * they went through.
+     * The queued events, oldest first.
      */
     synchronized List<JSONObject> snapshot() {
-        return new ArrayList<>(events);
+        List<JSONObject> result = new ArrayList<>(entries.size());
+        for (Entry entry : entries) {
+            result.add(entry.event);
+        }
+        return result;
+    }
+
+    /**
+     * The oldest events to send in one ping: at most {@code maxEvents}, and no more than
+     * {@code maxBytes} of JSON (a single larger event goes alone). Remove them with
+     * {@link #removeSent(List)} once they went through.
+     */
+    Batch nextBatch(int maxEvents, int maxBytes) {
+        List<JSONObject> queued = snapshot();
+        List<JSONObject> batch = new ArrayList<>();
+        // The brackets of the array, and a comma per event.
+        long bytes = 2;
+        for (JSONObject event : queued) {
+            if (batch.size() >= maxEvents) {
+                break;
+            }
+            long size = event.toString().getBytes(StandardCharsets.UTF_8).length + 1;
+            if (!batch.isEmpty() && bytes + size > maxBytes) {
+                break;
+            }
+            batch.add(event);
+            bytes += size;
+        }
+        return new Batch(batch, batch.size() < queued.size());
     }
 
     /**
@@ -69,14 +150,14 @@ final class GleapEventQueue {
     synchronized void removeSent(List<JSONObject> sent) {
         Set<JSONObject> delivered = Collections.newSetFromMap(new IdentityHashMap<JSONObject, Boolean>());
         delivered.addAll(sent);
-        for (Iterator<JSONObject> it = events.iterator(); it.hasNext(); ) {
-            if (delivered.contains(it.next())) {
+        for (Iterator<Entry> it = entries.iterator(); it.hasNext(); ) {
+            if (delivered.contains(it.next().event)) {
                 it.remove();
             }
         }
     }
 
     synchronized void clear() {
-        events = new ArrayList<>();
+        entries.clear();
     }
 }

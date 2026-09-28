@@ -20,6 +20,7 @@ public class GleapEventQueueTest {
     public void setUp() {
         sdk = new SdkTestEnvironment();
         sdk.storeSession("id-1", "hash-1");
+        sdk.controller.setSessionLoaded(true);
     }
 
     @After

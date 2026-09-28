@@ -27,6 +27,7 @@ class FakeGleapServer implements GleapHttp.ConnectionFactory {
         final int status;
         final String body;
         final IOException error;
+        final Map<String, String> headers = new LinkedHashMap<>();
 
         Response(int status, String body, IOException error) {
             this.status = status;
@@ -45,6 +46,16 @@ class FakeGleapServer implements GleapHttp.ConnectionFactory {
      */
     FakeGleapServer respond(String pathPrefix, int status, String body) {
         queue(pathPrefix).add(new Response(status, body, null));
+        return this;
+    }
+
+    /**
+     * {@link #respond(String, int, String)} with a response header (e.g. Retry-After).
+     */
+    FakeGleapServer respondWithHeader(String pathPrefix, int status, String body, String name, String value) {
+        Response response = new Response(status, body, null);
+        response.headers.put(name, value);
+        queue(pathPrefix).add(response);
         return this;
     }
 
@@ -222,6 +233,19 @@ class FakeGleapServer implements GleapHttp.ConnectionFactory {
                 throw new IOException("Server returned HTTP response code: " + response.status);
             }
             return new ByteArrayInputStream(response.body.getBytes(StandardCharsets.UTF_8));
+        }
+
+        @Override
+        public String getHeaderField(String name) {
+            if (response.error != null || name == null) {
+                return null;
+            }
+            for (Map.Entry<String, String> header : response.headers.entrySet()) {
+                if (header.getKey().equalsIgnoreCase(name)) {
+                    return header.getValue();
+                }
+            }
+            return null;
         }
 
         @Override

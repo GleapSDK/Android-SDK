@@ -244,9 +244,10 @@ public class GleapApiRequestsTest {
         sdk.storeSession("id-1", "hash-1");
         sdk.server.respond("/sessions/ping", 200, "");
 
-        int status = GleapEventService.postEvents(new JSONArray().put(new JSONObject().put("name", "signup")));
+        GleapEventService.PingResponse response = GleapEventService.postEvents(sdk.controller.getUserSession(),
+                new JSONArray().put(new JSONObject().put("name", "signup")));
 
-        assertEquals(200, status);
+        assertEquals(200, response.status);
         FakeGleapServer.Request request = sdk.server.last("/sessions/ping");
         assertEquals("https://api.eu.gleap.ai/sessions/ping", request.getURL().toString());
         assertEquals(SdkTestEnvironment.SDK_KEY, request.headers.get("api-token"));
@@ -271,7 +272,7 @@ public class GleapApiRequestsTest {
 
         new ConfigLoader(NO_LISTENER).doInBackground();
         new GleapBaseSessionService().doInBackground();
-        GleapEventService.postEvents(new JSONArray());
+        GleapEventService.postEvents(sdk.controller.getUserSession(), new JSONArray());
         new HttpHelper(NO_LISTENER, null).doInBackground(GleapBug.getInstance());
 
         List<String> paths = new ArrayList<>();
@@ -286,11 +287,23 @@ public class GleapApiRequestsTest {
                 "/config/sdk-key/", "/sessions", "/sessions/ping", "/uploads/sdk", "/bugs/v2")));
     }
 
-    @Test(expected = java.io.IOException.class)
-    public void aFailedPingKeepsTheEvents() throws Exception {
+    @Test
+    public void aFailedPingReportsItsStatusAndRetryAfter() throws Exception {
         sdk.storeSession("id-1", "hash-1");
-        sdk.server.respond("/sessions/ping", 503, "{\"status\":\"overloaded\"}");
+        sdk.server.respondWithHeader("/sessions/ping", 503, "{\"status\":\"overloaded\"}", "Retry-After", "2");
 
-        GleapEventService.postEvents(new JSONArray());
+        GleapEventService.PingResponse response = GleapEventService.postEvents(sdk.controller.getUserSession(), new JSONArray());
+
+        assertEquals(503, response.status);
+        assertEquals("2", response.retryAfter);
+        assertFalse(response.isDelivered());
+    }
+
+    @Test(expected = java.io.IOException.class)
+    public void aPingWithoutAConnectionThrows() throws Exception {
+        sdk.storeSession("id-1", "hash-1");
+        sdk.server.fail("/sessions/ping", new java.net.ConnectException("offline"));
+
+        GleapEventService.postEvents(sdk.controller.getUserSession(), new JSONArray());
     }
 }

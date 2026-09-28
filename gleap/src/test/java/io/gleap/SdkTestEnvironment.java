@@ -25,6 +25,14 @@ class SdkTestEnvironment {
     final InMemoryKeyValueStore store = new InMemoryKeyValueStore();
     Activity currentActivity = new Activity();
     GleapSessionController controller;
+    // The ping loop: its ticks wait here, its clock and jitter are set by the tests.
+    final ManualPingScheduler pingScheduler = new ManualPingScheduler();
+    final FakePingClock pingClock = new FakePingClock();
+    // 0.5 is no jitter: the backoff delays are exactly 3, 6, 12... s.
+    double pingRandom = 0.5;
+    // Pings run right away on the test thread, unless held: then they wait here.
+    boolean holdPings;
+    final List<Runnable> heldPings = new ArrayList<>();
 
     SdkTestEnvironment() {
         GleapConfig.resetForTesting();
@@ -67,6 +75,24 @@ class SdkTestEnvironment {
             @Override
             public Activity getActivity() {
                 return currentActivity;
+            }
+        });
+        GleapEventService.setPingSchedulerForTesting(pingScheduler);
+        GleapEventService.setPingClockForTesting(pingClock);
+        GleapEventService.setPingRandomForTesting(new GleapEventService.PingRandom() {
+            @Override
+            public double next() {
+                return pingRandom;
+            }
+        });
+        GleapEventService.setPingExecutorForTesting(new java.util.concurrent.Executor() {
+            @Override
+            public void execute(Runnable ping) {
+                if (holdPings) {
+                    heldPings.add(ping);
+                } else {
+                    ping.run();
+                }
             }
         });
         controller = new GleapSessionController(store);
@@ -116,8 +142,72 @@ class SdkTestEnvironment {
         }
     }
 
+    /**
+     * Lets the ping loop's pending delay pass and runs its tick (a ping, when one is due).
+     */
+    void runNextPingTick() {
+        if (pingScheduler.pending == null) {
+            throw new AssertionError("The ping loop has no tick scheduled");
+        }
+        pingClock.advance(pingScheduler.pendingDelay);
+        pingScheduler.runPending();
+    }
+
+    /**
+     * Runs the ping loop's main-thread ticks (without a WebSocket; see GleapEventService.start).
+     */
+    static final class ManualPingScheduler implements GleapEventService.PingScheduler {
+        Runnable pending;
+        long pendingDelay = -1;
+
+        @Override
+        public void schedule(Runnable tick, long delayMs) {
+            pending = tick;
+            pendingDelay = delayMs;
+        }
+
+        @Override
+        public void cancel() {
+            pending = null;
+            pendingDelay = -1;
+        }
+
+        void runPending() {
+            Runnable tick = pending;
+            pending = null;
+            pendingDelay = -1;
+            if (tick != null) {
+                tick.run();
+            }
+        }
+    }
+
+    static final class FakePingClock implements GleapEventService.PingClock {
+        long elapsed = 1000000;
+        long wall = 1760000000000L;
+
+        void advance(long millis) {
+            elapsed += millis;
+            wall += millis;
+        }
+
+        @Override
+        public long elapsedRealtime() {
+            return elapsed;
+        }
+
+        @Override
+        public long currentTimeMillis() {
+            return wall;
+        }
+    }
+
     void tearDown() {
         GleapMainThread.setTestExecutor(null);
+        GleapEventService.setPingSchedulerForTesting(null);
+        GleapEventService.setPingClockForTesting(null);
+        GleapEventService.setPingRandomForTesting(null);
+        GleapEventService.setPingExecutorForTesting(null);
         GleapHttp.setConnectionFactoryForTesting(null);
         GleapRetry.setSleeperForTesting(null);
         GleapEventService.setWebSocketFactoryForTesting(null);
