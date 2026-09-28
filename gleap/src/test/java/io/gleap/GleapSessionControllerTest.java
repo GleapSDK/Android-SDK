@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import io.gleap.callbacks.GetActivityCallback;
+import io.gleap.callbacks.InitializationDoneCallback;
 import io.gleap.callbacks.RegisterPushMessageGroupCallback;
 import io.gleap.callbacks.UnRegisterPushMessageGroupCallback;
 
@@ -107,6 +108,24 @@ public class GleapSessionControllerTest {
         assertEquals(Arrays.asList("register gleapuser-hash-1", "unregister gleapuser-hash-1",
                 "register gleapuser-hash-2"), pushEvents);
         assertEquals("hash-2", store.getString("session_hash", ""));
+    }
+
+    @Test
+    public void withoutAnActivityOnScreenThePushGroupStillFollowsTheSession() throws Exception {
+        currentActivity = null;
+        GleapCallbacks.getInstance().setInitializationDoneCallback(new InitializationDoneCallback() {
+            @Override
+            public void invoke() {
+                pushEvents.add("initializationDone");
+            }
+        });
+
+        controller.processSessionActionResult(session("id-1", "hash-1"), false, true);
+        controller.processSessionActionResult(session("id-2", "hash-2"), false, false);
+        controller.clearUserSession();
+
+        assertEquals(Arrays.asList("register gleapuser-hash-1", "initializationDone",
+                "unregister gleapuser-hash-1", "register gleapuser-hash-2", "unregister gleapuser-hash-2"), pushEvents);
     }
 
     @Test

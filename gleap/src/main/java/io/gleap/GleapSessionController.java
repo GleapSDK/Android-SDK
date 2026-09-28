@@ -296,7 +296,8 @@ public class GleapSessionController {
 
         this.lastRegisteredUserHash = userHash;
 
-        GleapMainThread.postWithActivity(new Runnable() {
+        // On the main thread, also without an activity on screen (e.g. an app start from a push).
+        GleapMainThread.post(new Runnable() {
             @Override
             public void run() throws RuntimeException {
                 if (GleapCallbacks.getInstance().getRegisterPushMessageGroupCallback() != null && userHash != null && !userHash.isEmpty()) {
@@ -312,7 +313,7 @@ public class GleapSessionController {
         // Unregister old user.
         if (GleapCallbacks.getInstance().getUnRegisterPushMessageGroupCallback() != null && userHash != null && !userHash.isEmpty()) {
             try {
-                GleapMainThread.postWithActivity(new Runnable() {
+                GleapMainThread.post(new Runnable() {
                     @Override
                     public void run() throws RuntimeException {
                         GleapCallbacks.getInstance().getUnRegisterPushMessageGroupCallback().invoke("gleapuser-" + userHash);
