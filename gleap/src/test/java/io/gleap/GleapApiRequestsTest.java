@@ -6,12 +6,16 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import android.content.Context;
+import android.content.ContextWrapper;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -207,6 +211,32 @@ public class GleapApiRequestsTest {
         }
         assertEquals("https://files.example.com/screenshot.png",
                 sdk.server.last("/bugs/v2").bodyJson().getString("screenshotUrl"));
+    }
+
+    @Test
+    public void aTicketLeavesNoScreenshotFilesBehind() throws Exception {
+        final File cacheDir = java.nio.file.Files.createTempDirectory("gleap-cache").toFile();
+        Context context = new ContextWrapper(null) {
+            @Override
+            public File getCacheDir() {
+                return cacheDir;
+            }
+        };
+        sdk.storeSession("id-1", "hash-1");
+        sdk.server.respond("/uploads/sdk", 200, "{\"fileUrl\":\"https://files.example.com/screenshot.png\"}");
+        sdk.server.respond("/uploads/sdksteps", 200, "{\"fileUrls\":[\"https://files.example.com/frame.png\"]}");
+        sdk.server.respond("/uploads/attachments", 200, "{\"fileUrls\":[]}");
+        sdk.server.respond("/bugs/v2", 201, "{}");
+        GleapBug.getInstance().setScreenshot(SdkTestEnvironment.screenshot());
+        GleapBug.getInstance().getReplay().addScreenshot(SdkTestEnvironment.screenshot(), "CheckoutActivity");
+
+        JSONObject result = new HttpHelper(NO_LISTENER, context).doInBackground(GleapBug.getInstance());
+
+        assertEquals(201, result.getInt("status"));
+        assertTrue(sdk.server.last("/uploads/sdk").bodyText().contains(".png"));
+        assertTrue(sdk.server.last("/uploads/sdksteps").bodyText().contains(".png"));
+        assertEquals(0, cacheDir.listFiles().length);
+        cacheDir.delete();
     }
 
     @Test

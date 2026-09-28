@@ -39,10 +39,15 @@ class FeedbackUploader implements FeedbackPayloadBuilder.Uploads {
         GleapConfig config = GleapConfig.getInstance();
         FormDataHttpsHelper multipart = new FormDataHttpsHelper(config.getApiUrl() + UPLOAD_IMAGE_BACKEND_URL_POSTFIX, config.getSdkKey());
         File file = bitmapToFile(image);
-        if (file != null) {
-            multipart.addFilePart(file);
+        String response;
+        try {
+            if (file != null) {
+                multipart.addFilePart(file);
+            }
+            response = multipart.finishAndUpload();
+        } finally {
+            delete(file);
         }
-        String response = multipart.finishAndUpload();
         if (isJSONValid(response)) {
             return new JSONObject(response);
         } else {
@@ -99,16 +104,24 @@ class FeedbackUploader implements FeedbackPayloadBuilder.Uploads {
     private JSONObject uploadImages(Bitmap[] images) throws IOException, JSONException {
         GleapConfig config = GleapConfig.getInstance();
         FormDataHttpsHelper multipart = new FormDataHttpsHelper(config.getApiUrl() + UPLOAD_IMAGE_MULTI_BACKEND_URL_POSTFIX, config.getSdkKey());
-        for (Bitmap bitmap : images) {
-            File file = bitmapToFile(bitmap);
-            if (file != null) {
-                multipart.addFilePart(file);
-            }
-        }
+        List<File> files = new LinkedList<>();
         try {
-            String response = multipart.finishAndUpload();
-            return new JSONObject(response);
-        } catch (Exception ex) {
+            for (Bitmap bitmap : images) {
+                File file = bitmapToFile(bitmap);
+                if (file != null) {
+                    files.add(file);
+                    multipart.addFilePart(file);
+                }
+            }
+            try {
+                String response = multipart.finishAndUpload();
+                return new JSONObject(response);
+            } catch (Exception ex) {
+            }
+        } finally {
+            for (File file : files) {
+                delete(file);
+            }
         }
 
         return null;
@@ -143,20 +156,28 @@ class FeedbackUploader implements FeedbackPayloadBuilder.Uploads {
         return result;
     }
 
+    // The PNGs are only needed for the upload: screenshots of the app must not stay on disk.
+    private static void delete(File file) {
+        if (file != null && file.exists() && !file.delete()) {
+            GleapLog.w("Could not delete " + file.getName());
+        }
+    }
+
     /**
-     * Writes the bitmap to a PNG file in the app's cache directory.
+     * Writes the bitmap to a PNG file in the app's cache directory; delete it after the upload.
      */
     private File bitmapToFile(Bitmap bitmap) {
         if (bitmap != null) {
+            File outputFile = null;
             try {
                 File outputDir = context.getCacheDir();
-                File outputFile = File.createTempFile("file", ".png", outputDir);
-                OutputStream os = new FileOutputStream(outputFile);
-
-                os.write(getBytes(bitmap));
-                os.close();
+                outputFile = File.createTempFile("file", ".png", outputDir);
+                try (OutputStream os = new FileOutputStream(outputFile)) {
+                    os.write(getBytes(bitmap));
+                }
                 return outputFile;
             } catch (Exception e) {
+                delete(outputFile);
             }
         }
         return null;
