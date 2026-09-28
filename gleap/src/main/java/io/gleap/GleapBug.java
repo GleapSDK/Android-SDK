@@ -10,8 +10,14 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 import static io.gleap.DateUtil.dateToString;
 
@@ -58,7 +64,8 @@ class GleapBug {
 
     }
 
-    public static GleapBug getInstance() {
+    // Synchronized: network requests are recorded from OkHttp threads.
+    public static synchronized GleapBug getInstance() {
         if (instance == null) {
             instance = new GleapBug();
         }
@@ -198,19 +205,58 @@ class GleapBug {
     }
 
 
+    /**
+     * The network logs to send: the SDK's own entries and the attached ones, oldest first, with the
+     * blacklist and the props to ignore applied. Reading does not clear them, so a later ticket
+     * still gets them.
+     */
     public JSONArray getNetworklogs() {
-        JSONArray requestArry = new JSONArray();
         try {
+            List<JSONObject> entries = new ArrayList<>();
             for (Networklog networklog : networkBuffer.getNetworklogs()) {
-                JSONObject item = networklog.toJSON();
-                if(item != null) {
-                    requestArry.put(item);
+                entries.add(networklog.toRawJSON());
+            }
+            JSONArray attached = networkBuffer.getAttachedNetworkLogs();
+            for (int i = 0; i < attached.length(); i++) {
+                Object entry = attached.opt(i);
+                if (entry instanceof JSONObject) {
+                    entries.add((JSONObject) entry);
                 }
             }
-        } catch (Exception err) {
+            sortByDate(entries);
+
+            JSONArray merged = new JSONArray();
+            for (JSONObject entry : entries) {
+                merged.put(entry);
+            }
+            return GleapNetworkLogSanitizer.fromConfig().sanitize(merged);
+        } catch (Throwable err) {
+            return new JSONArray();
         }
-        networkBuffer.clear();
-        return requestArry;
+    }
+
+    // Stable sort by the ISO date; entries without a readable date keep their place at the end.
+    static void sortByDate(List<JSONObject> entries) {
+        final Map<JSONObject, Long> times = new IdentityHashMap<>();
+        for (JSONObject entry : entries) {
+            long time = Long.MAX_VALUE;
+            Object date = entry.opt("date");
+            if (date instanceof String) {
+                try {
+                    time = DateUtil.stringToDate((String) date).getTime();
+                } catch (Exception ignore) {
+                }
+            }
+            times.put(entry, time);
+        }
+        Collections.sort(entries, new Comparator<JSONObject>() {
+            @Override
+            public int compare(JSONObject a, JSONObject b) {
+                long timeA = times.get(a);
+                long timeB = times.get(b);
+                return timeA < timeB ? -1 : (timeA == timeB ? 0 : 1);
+            }
+        });
     }
 
     public void setData(JSONObject data) {

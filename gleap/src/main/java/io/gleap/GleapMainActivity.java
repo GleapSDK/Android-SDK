@@ -867,33 +867,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                                 } catch (Exception exp) {}
                                 break;
                             case "collect-ticket-data":
-                                try {
-                                    GleapBug gleapBug = GleapBug.getInstance();
-
-                                    JSONObject data = new JSONObject();
-                                    data.put("formData", gleapBug.getTicketAttributes());
-                                    data.put("customData", gleapBug.getCustomData());
-                                    data.put("networkLogs", gleapBug.getNetworklogs());
-                                    data.put("customEventLog", gleapBug.getCustomEventLog());
-
-                                    PhoneMeta phoneMeta = gleapBug.getPhoneMeta();
-                                    if (phoneMeta != null) {
-                                        data.put("metaData", phoneMeta.getJSONObj());
-                                    }
-
-                                    if (GleapConfig.getInstance().isEnableConsoleLogs()) {
-                                        data.put("consoleLog", gleapBug.getLogs());
-                                    }
-
-                                    try {
-                                        data.put("tags", new JSONArray(gleapBug.getTags()));
-                                    } catch (Exception ex) {
-                                    }
-
-                                    sendMessage(generateGleapMessage("collect-ticket-data", data));
-                                } catch (Error | Exception ignore) {
-
-                                }
+                                collectTicketData();
                                 break;
                             case "close-widget":
                                 closeGleap();
@@ -919,6 +893,66 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 }
             });
 
+        }
+
+        private void collectTicketData() {
+            try {
+                final GleapBug gleapBug = GleapBug.getInstance();
+
+                final JSONObject data = new JSONObject();
+                data.put("formData", gleapBug.getTicketAttributes());
+                data.put("customData", gleapBug.getCustomData());
+                data.put("customEventLog", gleapBug.getCustomEventLog());
+
+                PhoneMeta phoneMeta = gleapBug.getPhoneMeta();
+                if (phoneMeta != null) {
+                    data.put("metaData", phoneMeta.getJSONObj());
+                }
+
+                try {
+                    data.put("tags", new JSONArray(gleapBug.getTags()));
+                } catch (Exception ex) {
+                }
+
+                final boolean withConsoleLogs = GleapConfig.getInstance().isEnableConsoleLogs();
+
+                // Reading logcat and preparing the network logs takes a moment: not on the main thread.
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        JSONArray networkLogs = new JSONArray();
+                        JSONArray consoleLog = null;
+                        try {
+                            networkLogs = gleapBug.getNetworklogs();
+                            if (withConsoleLogs) {
+                                consoleLog = gleapBug.getLogs();
+                            }
+                        } catch (Error | Exception ignore) {
+                        }
+
+                        final JSONArray finalNetworkLogs = networkLogs;
+                        final JSONArray finalConsoleLog = consoleLog;
+                        AppCompatActivity activity = mContextRef.get();
+                        if (activity == null) {
+                            return;
+                        }
+                        activity.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                try {
+                                    data.put("networkLogs", finalNetworkLogs);
+                                    if (finalConsoleLog != null) {
+                                        data.put("consoleLog", finalConsoleLog);
+                                    }
+                                    sendMessage(generateGleapMessage("collect-ticket-data", data));
+                                } catch (Error | Exception ignore) {
+                                }
+                            }
+                        });
+                    }
+                }, "gleap-collect-ticket-data").start();
+            } catch (Error | Exception ignore) {
+            }
         }
 
         private void customActionCalled(JSONObject object) {
