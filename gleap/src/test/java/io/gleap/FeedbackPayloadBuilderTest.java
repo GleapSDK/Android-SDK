@@ -179,13 +179,39 @@ public class FeedbackPayloadBuilderTest {
     }
 
     @Test
-    public void theCrashExclusionOnlyCoversTheScreenshot() throws Exception {
-        JSONObject body = build(report(null, true, new JSONObject(),
-                new JSONObject().put("screenshot", true).put("consoleLog", true).put("networkLogs", true)));
+    public void aSilentCrashReportLeavesOutEverythingItExcludes() throws Exception {
+        JSONObject body = build(report(null, true, new JSONObject(), new JSONObject()
+                .put("consoleLog", true).put("networkLogs", true).put("customData", true)
+                .put("metaData", true).put("customEventLog", true).put("attachments", true)));
 
-        assertFalse(body.has("screenshotUrl"));
+        assertFalse(body.has("consoleLog"));
+        assertFalse(body.has("networkLogs"));
+        assertFalse(body.has("customData"));
+        assertFalse(body.has("metaData"));
+        assertFalse(body.has("customEventLog"));
+        assertFalse(body.has("attachments"));
+        assertEquals(0, uploads.attachments);
+        assertTrue(body.has("screenshotUrl"));
+        assertTrue(body.has("formData"));
+    }
+
+    @Test
+    public void theCrashReportDecidesWhenBothExcludeTheSameData() throws Exception {
+        JSONObject body = build(report(null, true, new JSONObject().put("consoleLog", true),
+                new JSONObject().put("consoleLog", false)));
+
         assertTrue(body.has("consoleLog"));
-        assertTrue(body.has("networkLogs"));
+    }
+
+    @Test
+    public void anExcludedReplayIsNeitherUploadedNorSentUnderEitherName() throws Exception {
+        for (String key : new String[]{"replay", "replays"}) {
+            JSONObject body = build(report(null, true, new JSONObject(), new JSONObject().put(key, true)));
+
+            assertFalse(key, body.has("replay"));
+            assertTrue(key, body.has("screenshotUrl"));
+        }
+        assertEquals(0, uploads.replays);
     }
 
     @Test(expected = JSONException.class)

@@ -56,18 +56,11 @@ final class FeedbackPayloadBuilder {
      */
     static JSONObject build(FeedbackSubmission report, boolean consoleLogsEnabled, Uploads uploads, ReportData data)
             throws JSONException, IOException {
-        JSONObject exclude = report.excludeData;
-        JSONObject crashExclude = report.crashExcludeData;
+        JSONObject exclude = exclusions(report.excludeData, report.crashExcludeData);
 
-        // The screenshot (and the replay with it) is left out when the widget action or a
-        // silent crash report says so; the crash report decides when both do.
-        boolean stripImages = false;
-        if (exclude.has("screenshot")) {
-            stripImages = exclude.getBoolean("screenshot");
-        }
-        if (crashExclude.has("screenshot")) {
-            stripImages = crashExclude.getBoolean("screenshot");
-        }
+        // An excluded screenshot leaves out the replay too.
+        boolean stripImages = isExcluded(exclude, "screenshot");
+        boolean stripReplay = stripImages || isExcluded(exclude, "replay");
 
         JSONObject body = new JSONObject();
 
@@ -85,12 +78,14 @@ final class FeedbackPayloadBuilder {
                 JSONObject screenshotUpload = uploads.uploadScreenshot(report.screenshot);
                 body.put("screenshotUrl", screenshotUpload.get("fileUrl"));
             }
+        }
+        if (!stripReplay) {
             body.put("replay", uploads.uploadReplay());
         }
 
         body.put("type", report.type);
 
-        if (exclude.has("attachments") && !exclude.getBoolean("attachments") || !exclude.has("attachments")) {
+        if (!isExcluded(exclude, "attachments")) {
             body.put("attachments", uploads.uploadAttachments());
         }
 
@@ -124,5 +119,28 @@ final class FeedbackPayloadBuilder {
         }
 
         return body;
+    }
+
+    /**
+     * The data to leave out: the widget action's excludeData and the silent crash report's; the
+     * crash report decides when both name a key. The wrappers document the replay as
+     * "replays"; the body calls it "replay".
+     */
+    private static JSONObject exclusions(JSONObject exclude, JSONObject crashExclude) throws JSONException {
+        JSONObject merged = new JSONObject();
+        for (JSONObject source : new JSONObject[]{exclude, crashExclude}) {
+            if (source == null) {
+                continue;
+            }
+            for (Iterator<String> it = source.keys(); it.hasNext(); ) {
+                String key = it.next();
+                merged.put("replays".equals(key) ? "replay" : key, source.getBoolean(key));
+            }
+        }
+        return merged;
+    }
+
+    private static boolean isExcluded(JSONObject exclude, String key) throws JSONException {
+        return exclude.has(key) && exclude.getBoolean(key);
     }
 }
