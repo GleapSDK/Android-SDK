@@ -1,13 +1,7 @@
 package io.gleap;
 
-import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.Application;
-import android.content.Intent;
 import android.net.Uri;
-import android.os.Handler;
-import android.os.Looper;
-import android.util.Log;
 
 import androidx.annotation.Nullable;
 
@@ -16,14 +10,11 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.net.ssl.HttpsURLConnection;
 
-import gleap.io.gleap.R;
 import io.gleap.callbacks.AiToolExecutedCallback;
 import io.gleap.callbacks.GleapAgentToolHandler;
 import io.gleap.callbacks.ConfigLoadedCallback;
@@ -46,52 +37,13 @@ import io.gleap.callbacks.WidgetOpenedCallback;
 import io.gleap.callbacks.ErrorCallback;
 
 public class Gleap implements iGleap {
-    private static Gleap instance;
-    private static ScreenshotTaker screenshotTaker;
-    private static Application application;
+    // Created with the class: getInstance() is called from several threads.
+    private static final Gleap instance = new Gleap();
     public static JSONArray blacklist = new JSONArray();
     public static JSONArray propsToIgnore = new JSONArray();
     public static boolean internalCloseWidgetOnExternalLinkOpen = false;
-    private static boolean isInitialized = false;
-    private static OpenPushAction openPushAction;
-    private static final AtomicBoolean sessionRecoveryInProgress = new AtomicBoolean(false);
 
     private Gleap() {
-    }
-
-    /**
-     * Init Gleap with the given properties
-     */
-    private static void initGleap(String sdkKey, GleapActivationMethod[] activationMethods, Application application) {
-        try {
-            // prepare Gleap
-            Gleap.application = application;
-            screenshotTaker = new ScreenshotTaker();
-            // init config and load from the server
-            GleapConfig.getInstance().setSdkKey(sdkKey);
-
-            // init Gleap bug
-            GleapBug.getInstance().setPhoneMeta(new PhoneMeta(application.getApplicationContext()));
-
-            Gleap.getInstance().enableReplays(GleapConfig.getInstance().isEnableReplays());
-
-            // start activation methods
-            List<GleapDetector> detectorList = GleapDetectorUtil.initDetectors(application, activationMethods);
-
-            if (GleapConfig.getInstance().isEnableReplays()) {
-                ReplaysDetector replaysDetector = new ReplaysDetector(application);
-                replaysDetector.initialize();
-                detectorList.add(replaysDetector);
-            }
-
-            // Start services
-            GleapActivityManager.getInstance().start(application);
-
-            GleapConfig.getInstance().setGestureDetectors(detectorList);
-            GleapDetectorUtil.resumeAllDetectors();
-        } catch (Exception ignore) {
-            handleErrorStatic(ignore, "initGleap");
-        }
     }
 
     /**
@@ -100,9 +52,6 @@ public class Gleap implements iGleap {
      * @return instance of Gleap
      */
     public static Gleap getInstance() {
-        if (instance == null) {
-            instance = new Gleap();
-        }
         return instance;
     }
 
@@ -113,115 +62,16 @@ public class Gleap implements iGleap {
      * @param application used to have context and access to take screenshot
      */
     public static void initialize(String sdkKey, Application application) {
-
-        if (sdkKey == null || sdkKey.trim().isEmpty()) {
-            handleErrorStatic(new IllegalArgumentException("Gleap SDK key is missing or empty."), "initialize");
-            return;
-        }
-
-        if (isInitialized) {
-            return;
-        }
-
-        try {
-            Gleap.application = application;
-            GleapConfig.getInstance().setSdkKey(sdkKey.trim());
-            GleapThemeHelper.getInstance().start(application);
-            if (!isInitialized) {
-                isInitialized = true;
-                GleapSessionController.initialize(application);
-                new GleapListener();
-                GleapConnectivityManager.getInstance().register(application.getApplicationContext());
-            } else {
-                if (GleapConfig.getInstance().getConfigLoadedCallback() != null && GleapConfig.getInstance().getPlainConfig() != null) {
-                    GleapConfig.getInstance().getConfigLoadedCallback().configLoaded(GleapConfig.getInstance().getPlainConfig());
-                }
-            }
-        } catch (Error | Exception error) {
-            handleErrorStatic(error, "initialize");
-        }
+        GleapInitializer.initialize(sdkKey, application);
     }
 
     public void processOpenPushActions() {
-        try {
-            Handler mainHandler = new Handler(Looper.getMainLooper());
-            Runnable gleapRunnable = new Runnable() {
-                @Override
-                public void run() throws RuntimeException {
-                    try {
-                        // Check if activity is null.
-                        if (ActivityUtil.getCurrentActivity() == null) {
-                            return;
-                        }
-
-                        // Check if config got loaded.
-                        if (GleapConfig.getInstance().getPlainConfig() == null) {
-                            return;
-                        }
-
-                        // Check if we have a session.
-                        if (GleapSessionController.getInstance() == null
-                                || !GleapSessionController.getInstance().isSessionLoaded()) {
-                            return;
-                        }
-
-                        if (instance == null) {
-                            return;
-                        }
-
-                        if (GleapDetectorUtil.isIsRunning()) {
-                            return;
-                        }
-
-                        try {
-                            if (instance.openPushAction != null) {
-                                switch (instance.openPushAction.getType()) {
-                                    case "news":
-                                        instance.openNewsArticle(instance.openPushAction.getId(), true);
-                                        break;
-                                    case "checklist":
-                                        instance.openChecklist(instance.openPushAction.getId(), true);
-                                        break;
-                                    case "conversation":
-                                        instance.openConversation(instance.openPushAction.getId());
-                                        break;
-                                }
-
-                                instance.openPushAction = null;
-                            }
-                        } catch (Error | Exception ignore) {
-                            handleError(ignore, "processOpenPushActions - inner");
-                        }
-                    } catch (Error | Exception ignore) {
-                        handleError(ignore, "processOpenPushActions - outer");
-                    }
-                }
-            };
-            mainHandler.postDelayed(gleapRunnable, 1500);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "processOpenPushActions");
-        }
+        GleapPushActions.processOpenPushActions();
     }
 
     @Override
     public void handlePushNotification(JSONObject notificationData) {
-        try {
-            String type = "";
-            String id = "";
-            if (notificationData.has("type")) {
-                type = notificationData.getString("type");
-            }
-            if (notificationData.has("id")) {
-                id = notificationData.getString("id");
-            }
-
-            if (!type.isEmpty()) {
-                this.openPushAction = new OpenPushAction(type, id);
-                this.processOpenPushActions();
-            }
-        } catch (Exception ex) {
-            handleError(ex, "handlePushNotification");
-        }
+        GleapPushActions.handlePushNotification(notificationData);
     }
 
     @Override
@@ -231,98 +81,23 @@ public class Gleap implements iGleap {
 
     @Override
     public void openConversations(boolean hideBackButton) {
-        try {
-            ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Handler mainHandler = new Handler(Looper.getMainLooper());
-                    Runnable gleapRunnable = new Runnable() {
-                        @Override
-                        public void run() throws RuntimeException {
-                            try {
-                                if (!GleapDetectorUtil.isIsRunning() && isGleapReady() && instance != null) {
-                                    try {
-                                        if (screenshotTaker != null) {
-                                            JSONObject message = new JSONObject();
-                                            message.put("hideBackButton", hideBackButton);
-                                            GleapActionQueueHandler.getInstance()
-                                                    .addActionMessage(new GleapAction("open-conversations", message));
-                                            screenshotTaker.takeScreenshot();
-                                        }
-                                    } catch (Exception e) {
-                                        handleError(e, "openConversations - inner");
-                                    }
-                                } else if (!GleapDetectorUtil.isIsRunning() && instance != null) {
-                                    recoverSessionAndRetry(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            openConversations(hideBackButton);
-                                        }
-                                    });
-                                }
-                            } catch (Error | Exception ignore) {
-                                handleError(ignore, "openConversations - middle");
-                            }
-                        }
-                    };
-                    mainHandler.post(gleapRunnable);
-                }
-            });
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "openConversations - outer");
-        }
+        GleapWidgetLauncher.openWithAction("open-conversations",
+                () -> new JSONObject().put("hideBackButton", hideBackButton),
+                () -> openConversations(hideBackButton),
+                "openConversations - inner", "openConversations - middle", "openConversations - outer");
     }
 
     @Override
     public void openConversation(String shareToken) {
-        try {
-            ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Handler mainHandler = new Handler(Looper.getMainLooper());
-                    Runnable gleapRunnable = new Runnable() {
-                        @Override
-                        public void run() throws RuntimeException {
-                            try {
-                                if (!GleapDetectorUtil.isIsRunning() && isGleapReady() && instance != null) {
-                                    try {
-                                        if (screenshotTaker != null) {
-                                            JSONObject message = new JSONObject();
-                                            message.put("hideBackButton", false);
-                                            message.put("shareToken", shareToken);
-                                            GleapActionQueueHandler.getInstance()
-                                                    .addActionMessage(new GleapAction("open-conversation", message));
-                                            screenshotTaker.takeScreenshot();
-                                        }
-                                    } catch (Exception e) {
-                                        handleError(e, "run");
-                                    }
-                                } else if (!GleapDetectorUtil.isIsRunning() && instance != null) {
-                                    recoverSessionAndRetry(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            openConversation(shareToken);
-                                        }
-                                    });
-                                }
-                            } catch (Error | Exception ignore) {
-                                handleError(ignore, "run");
-                            }
-                        }
-                    };
-                    mainHandler.post(gleapRunnable);
-                }
-            });
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "run");
-        }
+        GleapWidgetLauncher.openWithAction("open-conversation",
+                () -> new JSONObject().put("hideBackButton", false).put("shareToken", shareToken),
+                () -> openConversation(shareToken));
     }
 
     /**
      * Manually shows the feedback menu or default feedback flow. This is used, when
      * you use the activation method "NONE".
      *
-     * @throws GleapNotInitialisedException thrown when Gleap is not initialised
      * @author Gleap
      */
     @Override
@@ -342,132 +117,7 @@ public class Gleap implements iGleap {
     }
 
     protected void open(SurveyType type) {
-        try {
-            ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Handler mainHandler = new Handler(Looper.getMainLooper());
-                    Runnable gleapRunnable = new Runnable() {
-                        @Override
-                        public void run() throws RuntimeException {
-                            try {
-                                if (!GleapDetectorUtil.isIsRunning() && isGleapReady() && instance != null) {
-                                    try {
-                                        if (screenshotTaker != null) {
-                                            screenshotTaker.takeScreenshot(type);
-                                        }
-                                    } catch (Exception e) {
-                                        handleError(e, "run");
-                                    }
-                                } else if (type == SurveyType.NONE && !GleapDetectorUtil.isIsRunning() && instance != null) {
-                                    recoverSessionAndRetry(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            open(type);
-                                        }
-                                    });
-                                }
-                            } catch (Error | Exception ignore) {
-                                handleError(ignore, "run");
-                            }
-                        }
-                    };
-                    mainHandler.post(gleapRunnable);
-                }
-            });
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "run");
-        }
-    }
-
-    /**
-     * Whether the session and the remote config have actually been loaded — after an
-     * offline app launch the session start is marked as done without ever succeeding,
-     * so the widget could not load and opening it would silently do nothing.
-     */
-    private static boolean isGleapReady() {
-        return GleapSessionController.getInstance() != null
-                && GleapSessionController.getInstance().isSessionLoaded()
-                && GleapSessionController.getInstance().getUserSession() != null
-                && GleapConfig.getInstance().getPlainConfig() != null;
-    }
-
-    /**
-     * Attempts to restart the Gleap session (and config load) when the widget is opened
-     * explicitly but Gleap never finished loading (e.g. the app was launched offline).
-     * On success the widget opens as requested; on failure the user gets the same offline
-     * alert the widget shows when it fails to load mid-session.
-     */
-    private void recoverSessionAndRetry(final Runnable retryOpen) {
-        if (!sessionRecoveryInProgress.compareAndSet(false, true)) {
-            return;
-        }
-
-        try {
-            new GleapBaseSessionService(new GleapBaseSessionService.SessionLoadedCallback() {
-                @Override
-                public void invoke(boolean success) {
-                    try {
-                        if (!success) {
-                            sessionRecoveryInProgress.set(false);
-                            showOfflineAlert();
-                            return;
-                        }
-
-                        if (GleapConfig.getInstance().getPlainConfig() != null) {
-                            sessionRecoveryInProgress.set(false);
-                            retryOpen.run();
-                            return;
-                        }
-
-                        // The config never loaded either — fetch it before opening the widget.
-                        new ConfigLoader(new OnHttpResponseListener() {
-                            @Override
-                            public void onTaskComplete(JSONObject response) throws GleapAlreadyInitialisedException {
-                                sessionRecoveryInProgress.set(false);
-                                if (GleapConfig.getInstance().getPlainConfig() != null) {
-                                    GleapDetectorUtil.clearAllDetectors();
-                                    new GleapListener(false).onTaskComplete(response);
-                                    retryOpen.run();
-                                } else {
-                                    showOfflineAlert();
-                                }
-                            }
-                        }).execute(GleapBug.getInstance());
-                    } catch (Error | Exception exception) {
-                        sessionRecoveryInProgress.set(false);
-                        handleError(exception, "recoverSessionAndRetry - callback");
-                    }
-                }
-            }).execute();
-        } catch (Error | Exception exception) {
-            sessionRecoveryInProgress.set(false);
-            handleError(exception, "recoverSessionAndRetry");
-        }
-    }
-
-    private static void showOfflineAlert() {
-        try {
-            final Activity activity = ActivityUtil.getCurrentActivity();
-            if (activity == null) {
-                return;
-            }
-            activity.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        AlertDialog alertDialog = new AlertDialog.Builder(activity)
-                                .setPositiveButton(activity.getString(R.string.gleap_alert_no_internet_accept), null)
-                                .create();
-                        alertDialog.setTitle(activity.getString(R.string.gleap_alert_no_internet_title));
-                        alertDialog.setMessage(activity.getString(R.string.gleap_alert_no_internet_subtitle));
-                        alertDialog.show();
-                    } catch (Error | Exception ignore) {
-                    }
-                }
-            });
-        } catch (Error | Exception ignore) {
-        }
+        GleapWidgetLauncher.openWithScreenshot(type, () -> open(type));
     }
 
     @Override
@@ -477,46 +127,9 @@ public class Gleap implements iGleap {
 
     @Override
     public void openChecklists(boolean showBackButton) {
-        try {
-            ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Handler mainHandler = new Handler(Looper.getMainLooper());
-                    Runnable gleapRunnable = new Runnable() {
-                        @Override
-                        public void run() throws RuntimeException {
-                            try {
-                                if (!GleapDetectorUtil.isIsRunning() && isGleapReady() && instance != null) {
-                                    try {
-                                        if (screenshotTaker != null) {
-                                            JSONObject message = new JSONObject();
-                                            message.put("hideBackButton", !showBackButton);
-                                            GleapActionQueueHandler.getInstance()
-                                                    .addActionMessage(new GleapAction("open-checklists", message));
-                                            screenshotTaker.takeScreenshot();
-                                        }
-                                    } catch (Exception e) {
-                                        handleError(e, "run");
-                                    }
-                                } else if (!GleapDetectorUtil.isIsRunning() && instance != null) {
-                                    recoverSessionAndRetry(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            openChecklists(showBackButton);
-                                        }
-                                    });
-                                }
-                            } catch (Error | Exception ignore) {
-                                handleError(ignore, "run");
-                            }
-                        }
-                    };
-                    mainHandler.post(gleapRunnable);
-                }
-            });
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "run");
-        }
+        GleapWidgetLauncher.openWithAction("open-checklists",
+                () -> new JSONObject().put("hideBackButton", !showBackButton),
+                () -> openChecklists(showBackButton));
     }
 
     @Override
@@ -526,47 +139,9 @@ public class Gleap implements iGleap {
 
     @Override
     public void openChecklist(String checklistId, boolean showBackButton) {
-        try {
-            ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Handler mainHandler = new Handler(Looper.getMainLooper());
-                    Runnable gleapRunnable = new Runnable() {
-                        @Override
-                        public void run() throws RuntimeException {
-                            try {
-                                if (!GleapDetectorUtil.isIsRunning() && isGleapReady() && instance != null) {
-                                    try {
-                                        if (screenshotTaker != null) {
-                                            JSONObject message = new JSONObject();
-                                            message.put("hideBackButton", !showBackButton);
-                                            message.put("id", checklistId);
-                                            GleapActionQueueHandler.getInstance()
-                                                    .addActionMessage(new GleapAction("open-checklist", message));
-                                            screenshotTaker.takeScreenshot();
-                                        }
-                                    } catch (Exception e) {
-                                        handleError(e, "run");
-                                    }
-                                } else if (!GleapDetectorUtil.isIsRunning() && instance != null) {
-                                    recoverSessionAndRetry(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            openChecklist(checklistId, showBackButton);
-                                        }
-                                    });
-                                }
-                            } catch (Error | Exception ignore) {
-                                handleError(ignore, "run");
-                            }
-                        }
-                    };
-                    mainHandler.post(gleapRunnable);
-                }
-            });
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "run");
-        }
+        GleapWidgetLauncher.openWithAction("open-checklist",
+                () -> new JSONObject().put("hideBackButton", !showBackButton).put("id", checklistId),
+                () -> openChecklist(checklistId, showBackButton));
     }
 
     @Override
@@ -576,53 +151,14 @@ public class Gleap implements iGleap {
 
     @Override
     public void startChecklist(String outboundId, boolean showBackButton) {
-        try {
-            ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Handler mainHandler = new Handler(Looper.getMainLooper());
-                    Runnable gleapRunnable = new Runnable() {
-                        @Override
-                        public void run() throws RuntimeException {
-                            try {
-                                if (!GleapDetectorUtil.isIsRunning() && isGleapReady() && instance != null) {
-                                    try {
-                                        if (screenshotTaker != null) {
-                                            JSONObject message = new JSONObject();
-                                            message.put("hideBackButton", !showBackButton);
-                                            message.put("outboundId", outboundId);
-                                            GleapActionQueueHandler.getInstance()
-                                                    .addActionMessage(new GleapAction("start-checklist", message));
-                                            screenshotTaker.takeScreenshot();
-                                        }
-                                    } catch (Exception e) {
-                                        handleError(e, "run");
-                                    }
-                                } else if (!GleapDetectorUtil.isIsRunning() && instance != null) {
-                                    recoverSessionAndRetry(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            startChecklist(outboundId, showBackButton);
-                                        }
-                                    });
-                                }
-                            } catch (Error | Exception ignore) {
-                                handleError(ignore, "run");
-                            }
-                        }
-                    };
-                    mainHandler.post(gleapRunnable);
-                }
-            });
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "run");
-        }
+        GleapWidgetLauncher.openWithAction("start-checklist",
+                () -> new JSONObject().put("hideBackButton", !showBackButton).put("outboundId", outboundId),
+                () -> startChecklist(outboundId, showBackButton));
     }
 
     /**
      * Manually shows the news section
      *
-     * @throws GleapNotInitialisedException thrown when Gleap is not initialised
      * @author Gleap
      */
     @Override
@@ -634,50 +170,12 @@ public class Gleap implements iGleap {
      * Manually shows the news section
      *
      * @param showBackButton show back button
-     * @throws GleapNotInitialisedException thrown when Gleap is not initialised
      * @author Gleap
      */
     public void openNews(boolean showBackButton) {
-        try {
-            ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Handler mainHandler = new Handler(Looper.getMainLooper());
-                    Runnable gleapRunnable = new Runnable() {
-                        @Override
-                        public void run() throws RuntimeException {
-                            try {
-                                if (!GleapDetectorUtil.isIsRunning() && isGleapReady() && instance != null) {
-                                    try {
-                                        if (screenshotTaker != null) {
-                                            JSONObject message = new JSONObject();
-                                            message.put("hideBackButton", !showBackButton);
-                                            GleapActionQueueHandler.getInstance()
-                                                    .addActionMessage(new GleapAction("open-news", message));
-                                            screenshotTaker.takeScreenshot();
-                                        }
-                                    } catch (Exception e) {
-                                        handleError(e, "run");
-                                    }
-                                } else if (!GleapDetectorUtil.isIsRunning() && instance != null) {
-                                    recoverSessionAndRetry(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            openNews(showBackButton);
-                                        }
-                                    });
-                                }
-                            } catch (Error | Exception ignore) {
-                                handleError(ignore, "run");
-                            }
-                        }
-                    };
-                    mainHandler.post(gleapRunnable);
-                }
-            });
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "run");
-        }
+        GleapWidgetLauncher.openWithAction("open-news",
+                () -> new JSONObject().put("hideBackButton", !showBackButton),
+                () -> openNews(showBackButton));
     }
 
     @Override
@@ -697,47 +195,9 @@ public class Gleap implements iGleap {
 
     @Override
     public void startBot(String botId, boolean showBackButton) {
-        try {
-            ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Handler mainHandler = new Handler(Looper.getMainLooper());
-                    Runnable gleapRunnable = new Runnable() {
-                        @Override
-                        public void run() throws RuntimeException {
-                            try {
-                                if (!GleapDetectorUtil.isIsRunning() && isGleapReady() && instance != null) {
-                                    try {
-                                        if (screenshotTaker != null) {
-                                            JSONObject message = new JSONObject();
-                                            message.put("hideBackButton", !showBackButton);
-                                            message.put("botId", botId);
-                                            GleapActionQueueHandler.getInstance()
-                                                    .addActionMessage(new GleapAction("start-bot", message));
-                                            screenshotTaker.takeScreenshot();
-                                        }
-                                    } catch (Exception e) {
-                                        handleError(e, "run");
-                                    }
-                                } else if (!GleapDetectorUtil.isIsRunning() && instance != null) {
-                                    recoverSessionAndRetry(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            startBot(botId, showBackButton);
-                                        }
-                                    });
-                                }
-                            } catch (Error | Exception ignore) {
-                                handleError(ignore, "run");
-                            }
-                        }
-                    };
-                    mainHandler.post(gleapRunnable);
-                }
-            });
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "run");
-        }
+        GleapWidgetLauncher.openWithAction("start-bot",
+                () -> new JSONObject().put("hideBackButton", !showBackButton).put("botId", botId),
+                () -> startBot(botId, showBackButton));
     }
 
     public void openNewsArticle(String articleId) {
@@ -745,47 +205,9 @@ public class Gleap implements iGleap {
     }
 
     public void openNewsArticle(String articleId, boolean showBackButton) {
-        try {
-            ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Handler mainHandler = new Handler(Looper.getMainLooper());
-                    Runnable gleapRunnable = new Runnable() {
-                        @Override
-                        public void run() throws RuntimeException {
-                            try {
-                                if (!GleapDetectorUtil.isIsRunning() && isGleapReady() && instance != null) {
-                                    try {
-                                        if (screenshotTaker != null) {
-                                            JSONObject message = new JSONObject();
-                                            message.put("hideBackButton", !showBackButton);
-                                            message.put("id", articleId);
-                                            GleapActionQueueHandler.getInstance()
-                                                    .addActionMessage(new GleapAction("open-news-article", message));
-                                            screenshotTaker.takeScreenshot();
-                                        }
-                                    } catch (Exception e) {
-                                        handleError(e, "run");
-                                    }
-                                } else if (!GleapDetectorUtil.isIsRunning() && instance != null) {
-                                    recoverSessionAndRetry(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            openNewsArticle(articleId, showBackButton);
-                                        }
-                                    });
-                                }
-                            } catch (Error | Exception ignore) {
-                                handleError(ignore, "run");
-                            }
-                        }
-                    };
-                    mainHandler.post(gleapRunnable);
-                }
-            });
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "run");
-        }
+        GleapWidgetLauncher.openWithAction("open-news-article",
+                () -> new JSONObject().put("hideBackButton", !showBackButton).put("id", articleId),
+                () -> openNewsArticle(articleId, showBackButton));
     }
 
     /**
@@ -793,20 +215,12 @@ public class Gleap implements iGleap {
      */
     @Override
     public void startClassicForm(String formId) {
-        try {
-            startFeedbackFlow(formId, true);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "startClassicForm");
-        }
+        GleapErrors.guard("startClassicForm", () -> startFeedbackFlow(formId, true));
     }
 
     @Override
     public void startClassicForm(String formId, Boolean showBackButton) {
-        try {
-            startFeedbackFlow(formId, showBackButton);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "startClassicForm");
-        }
+        GleapErrors.guard("startClassicForm", () -> startFeedbackFlow(formId, showBackButton));
     }
 
     /**
@@ -815,53 +229,22 @@ public class Gleap implements iGleap {
      */
     @Override
     public void startFeedbackFlow(String feedbackFlow) {
-        try {
-            startFeedbackFlow(feedbackFlow, true);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "startFeedbackFlow");
-        }
+        GleapErrors.guard("startFeedbackFlow", () -> startFeedbackFlow(feedbackFlow, true));
     }
 
     @Override
     public void startFeedbackFlow(String feedbackFlow, Boolean showBackButton) {
-        try {
-            ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Handler mainHandler = new Handler(Looper.getMainLooper());
-                    Runnable gleapRunnable = new Runnable() {
-                        @Override
-                        public void run() throws RuntimeException {
-                            if (!GleapDetectorUtil.isIsRunning() && isGleapReady()
-                                    && Gleap.getInstance() != null) {
-                                try {
-                                    JSONObject data = new JSONObject();
-                                    if (!feedbackFlow.equals("")) {
-                                        data.put("flow", feedbackFlow);
-                                    }
-                                    data.put("hideBackButton", !showBackButton);
-                                    GleapActionQueueHandler.getInstance()
-                                            .addActionMessage(new GleapAction("start-feedbackflow", data));
-                                    screenshotTaker.takeScreenshot();
-                                } catch (Exception e) {
-                                    handleError(e, "run");
-                                }
-                            } else if (!GleapDetectorUtil.isIsRunning() && Gleap.getInstance() != null) {
-                                recoverSessionAndRetry(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        startFeedbackFlow(feedbackFlow, showBackButton);
-                                    }
-                                });
-                            }
-                        }
-                    };
-                    mainHandler.post(gleapRunnable);
-                }
-            });
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "run");
-        }
+        GleapWidgetLauncher.openWithActionUnchecked("start-feedbackflow",
+                () -> {
+                    JSONObject data = new JSONObject();
+                    if (!feedbackFlow.equals("")) {
+                        data.put("flow", feedbackFlow);
+                    }
+                    data.put("hideBackButton", !showBackButton);
+                    return data;
+                },
+                () -> startFeedbackFlow(feedbackFlow, showBackButton),
+                "run");
     }
 
     // survey, survey_full
@@ -905,42 +288,10 @@ public class Gleap implements iGleap {
 
     @Override
     public void openHelpCenter(Boolean showBackButton) {
-        try {
-            ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Handler mainHandler = new Handler(Looper.getMainLooper());
-                    Runnable gleapRunnable = new Runnable() {
-                        @Override
-                        public void run() throws RuntimeException {
-                            if (!GleapDetectorUtil.isIsRunning() && isGleapReady()
-                                    && Gleap.getInstance() != null) {
-                                try {
-
-                                    JSONObject data = new JSONObject();
-                                    data.put("hideBackButton", !showBackButton);
-                                    GleapActionQueueHandler.getInstance()
-                                            .addActionMessage(new GleapAction("open-helpcenter", data));
-                                    screenshotTaker.takeScreenshot();
-                                } catch (Exception e) {
-                                    handleError(e, "run");
-                                }
-                            } else if (!GleapDetectorUtil.isIsRunning() && Gleap.getInstance() != null) {
-                                recoverSessionAndRetry(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        openHelpCenter(showBackButton);
-                                    }
-                                });
-                            }
-                        }
-                    };
-                    mainHandler.post(gleapRunnable);
-                }
-            });
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "run");
-        }
+        GleapWidgetLauncher.openWithActionUnchecked("open-helpcenter",
+                () -> new JSONObject().put("hideBackButton", !showBackButton),
+                () -> openHelpCenter(showBackButton),
+                "run");
     }
 
     @Override
@@ -950,43 +301,10 @@ public class Gleap implements iGleap {
 
     @Override
     public void askAI(String question, Boolean showBackButton) {
-        try {
-            ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Handler mainHandler = new Handler(Looper.getMainLooper());
-                    Runnable gleapRunnable = new Runnable() {
-                        @Override
-                        public void run() throws RuntimeException {
-                            if (!GleapDetectorUtil.isIsRunning() && isGleapReady()
-                                    && Gleap.getInstance() != null) {
-                                try {
-
-                                    JSONObject data = new JSONObject();
-                                    data.put("hideBackButton", !showBackButton);
-                                    data.put("question", question);
-                                    GleapActionQueueHandler.getInstance()
-                                            .addActionMessage(new GleapAction("ask-ai", data));
-                                    screenshotTaker.takeScreenshot();
-                                } catch (Exception e) {
-                                    handleError(e, "run");
-                                }
-                            } else if (!GleapDetectorUtil.isIsRunning() && Gleap.getInstance() != null) {
-                                recoverSessionAndRetry(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        askAI(question, showBackButton);
-                                    }
-                                });
-                            }
-                        }
-                    };
-                    mainHandler.post(gleapRunnable);
-                }
-            });
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "run");
-        }
+        GleapWidgetLauncher.openWithActionUnchecked("ask-ai",
+                () -> new JSONObject().put("hideBackButton", !showBackButton).put("question", question),
+                () -> askAI(question, showBackButton),
+                "run");
     }
 
     @Override
@@ -996,43 +314,10 @@ public class Gleap implements iGleap {
 
     @Override
     public void openHelpCenterArticle(String articleId, Boolean showBackButton) {
-        try {
-            ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Handler mainHandler = new Handler(Looper.getMainLooper());
-                    Runnable gleapRunnable = new Runnable() {
-                        @Override
-                        public void run() throws RuntimeException {
-                            if (!GleapDetectorUtil.isIsRunning() && isGleapReady()
-                                    && Gleap.getInstance() != null) {
-                                try {
-
-                                    JSONObject data = new JSONObject();
-                                    data.put("hideBackButton", !showBackButton);
-                                    data.put("articleId", articleId);
-                                    GleapActionQueueHandler.getInstance()
-                                            .addActionMessage(new GleapAction("open-help-article", data));
-                                    screenshotTaker.takeScreenshot();
-                                } catch (Exception e) {
-                                    handleError(e, "run");
-                                }
-                            } else if (!GleapDetectorUtil.isIsRunning() && Gleap.getInstance() != null) {
-                                recoverSessionAndRetry(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        openHelpCenterArticle(articleId, showBackButton);
-                                    }
-                                });
-                            }
-                        }
-                    };
-                    mainHandler.post(gleapRunnable);
-                }
-            });
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "run");
-        }
+        GleapWidgetLauncher.openWithActionUnchecked("open-help-article",
+                () -> new JSONObject().put("hideBackButton", !showBackButton).put("articleId", articleId),
+                () -> openHelpCenterArticle(articleId, showBackButton),
+                "run");
     }
 
     /**
@@ -1106,48 +391,15 @@ public class Gleap implements iGleap {
 
     @Override
     public void openHelpCenterCollection(String collectionId) {
-        openHelpCenterArticle(collectionId, false);
+        openHelpCenterCollection(collectionId, false);
     }
 
     @Override
     public void openHelpCenterCollection(String collectionId, Boolean showBackButton) {
-        try {
-            ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Handler mainHandler = new Handler(Looper.getMainLooper());
-                    Runnable gleapRunnable = new Runnable() {
-                        @Override
-                        public void run() throws RuntimeException {
-                            if (!GleapDetectorUtil.isIsRunning() && isGleapReady()
-                                    && Gleap.getInstance() != null) {
-                                try {
-
-                                    JSONObject data = new JSONObject();
-                                    data.put("hideBackButton", !showBackButton);
-                                    data.put("collectionId", collectionId);
-                                    GleapActionQueueHandler.getInstance()
-                                            .addActionMessage(new GleapAction("open-help-collection", data));
-                                    screenshotTaker.takeScreenshot();
-                                } catch (Exception e) {
-                                    handleError(e, "run");
-                                }
-                            } else if (!GleapDetectorUtil.isIsRunning() && Gleap.getInstance() != null) {
-                                recoverSessionAndRetry(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        openHelpCenterCollection(collectionId, showBackButton);
-                                    }
-                                });
-                            }
-                        }
-                    };
-                    mainHandler.post(gleapRunnable);
-                }
-            });
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "run");
-        }
+        GleapWidgetLauncher.openWithActionUnchecked("open-help-collection",
+                () -> new JSONObject().put("hideBackButton", !showBackButton).put("collectionId", collectionId),
+                () -> openHelpCenterCollection(collectionId, showBackButton),
+                "run");
     }
 
     @Override
@@ -1157,61 +409,20 @@ public class Gleap implements iGleap {
 
     @Override
     public void searchHelpCenter(String term, Boolean showBackButton) {
-        try {
-            ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Handler mainHandler = new Handler(Looper.getMainLooper());
-                    Runnable gleapRunnable = new Runnable() {
-                        @Override
-                        public void run() throws RuntimeException {
-                            if (!GleapDetectorUtil.isIsRunning() && isGleapReady()
-                                    && Gleap.getInstance() != null) {
-                                try {
-
-                                    JSONObject data = new JSONObject();
-                                    data.put("hideBackButton", !showBackButton);
-                                    data.put("term", term);
-                                    GleapActionQueueHandler.getInstance()
-                                            .addActionMessage(new GleapAction("open-helpcenter-search", data));
-                                    screenshotTaker.takeScreenshot();
-                                } catch (Exception e) {
-                                    handleError(e, "run");
-                                }
-                            } else if (!GleapDetectorUtil.isIsRunning() && Gleap.getInstance() != null) {
-                                recoverSessionAndRetry(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        searchHelpCenter(term, showBackButton);
-                                    }
-                                });
-                            }
-                        }
-                    };
-                    mainHandler.post(gleapRunnable);
-                }
-            });
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "run");
-        }
+        GleapWidgetLauncher.openWithActionUnchecked("open-helpcenter-search",
+                () -> new JSONObject().put("hideBackButton", !showBackButton).put("term", term),
+                () -> searchHelpCenter(term, showBackButton),
+                "run");
     }
 
     @Override
     public void sendSilentCrashReport(String description, SEVERITY severity) {
-        try {
-            SilentBugReportUtil.createSilentBugReport(application, description, severity);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "sendSilentCrashReport");
-        }
+        GleapErrors.guard("sendSilentCrashReport", () -> SilentBugReportUtil.createSilentBugReport(GleapInitializer.getApplication(), description, severity));
     }
 
     @Override
     public void sendSilentCrashReport(String description, SEVERITY severity, JSONObject excludeData) {
-        try {
-            SilentBugReportUtil.createSilentBugReport(application, description, severity, excludeData);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "sendSilentCrashReport");
-        }
+        GleapErrors.guard("sendSilentCrashReport", () -> SilentBugReportUtil.createSilentBugReport(GleapInitializer.getApplication(), description, severity, excludeData));
     }
 
     /**
@@ -1342,18 +553,16 @@ public class Gleap implements iGleap {
                 Runnable gleapRunnable = new Runnable() {
                     @Override
                     public void run() {
-                        GleapInvisibleActivityManger.getInstance().destroyBanner(true);
-                        GleapInvisibleActivityManger.getInstance().destroyModal(true, true);
-                        GleapInvisibleActivityManger.getInstance().clearMessages();
+                        GleapOverlayManager.getInstance().destroyBanner(true);
+                        GleapOverlayManager.getInstance().destroyModal(true, true);
+                        GleapOverlayManager.getInstance().clearMessages();
                     }
                 };
 
-                Activity currentActivity = ActivityUtil.getCurrentActivity();
-                if (currentActivity != null) {
-                    currentActivity.runOnUiThread(gleapRunnable);
+                if (ActivityUtil.getCurrentActivity() != null) {
+                    GleapMainThread.runOnUiThread(gleapRunnable);
                 } else {
-                    Handler mainHandler = new Handler(Looper.getMainLooper());
-                    mainHandler.post(gleapRunnable);
+                    GleapMainThread.post(gleapRunnable);
                 }
             } catch (Exception ignore) {
                 handleError(ignore, "clearIdentity - inner");
@@ -1361,7 +570,7 @@ public class Gleap implements iGleap {
 
             GleapEventService.getInstance().stop();
             GleapBaseSessionService sessionLoader = new GleapBaseSessionService();
-            sessionLoader.execute();
+            sessionLoader.executeOnExecutor(GleapExecutor.SERIAL);
         } catch (Error | Exception ignore) {
             handleError(ignore, "run");
         }
@@ -1383,7 +592,7 @@ public class Gleap implements iGleap {
         try {
             GleapRegion gleapRegion = GleapRegion.fromString(region);
             if (gleapRegion == null) {
-                Log.w("Gleap", "Unknown region '" + region + "'. Supported regions: eu, us. Keeping the current hosts.");
+                GleapLog.w("Unknown region '" + region + "'. Supported regions: eu, us. Keeping the current hosts.");
                 return;
             }
 
@@ -1403,20 +612,12 @@ public class Gleap implements iGleap {
      */
     @Override
     public void setApiUrl(String apiUrl) {
-        try {
-            GleapConfig.getInstance().setApiUrl(apiUrl);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "setApiUrl");
-        }
+        GleapErrors.guard("setApiUrl", () -> GleapConfig.getInstance().setApiUrl(apiUrl));
     }
 
     @Override
     public void setWSApiUrl(String wsApiUrl) {
-        try {
-            GleapConfig.getInstance().setWsApiUrl(wsApiUrl);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "setWSApiUrl");
-        }
+        GleapErrors.guard("setWSApiUrl", () -> GleapConfig.getInstance().setWsApiUrl(wsApiUrl));
     }
 
     /**
@@ -1427,11 +628,7 @@ public class Gleap implements iGleap {
      */
     @Override
     public void setFrameUrl(String frameUrl) {
-        try {
-            GleapConfig.getInstance().setiFrameUrl(frameUrl);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "setFrameUrl");
-        }
+        GleapErrors.guard("setFrameUrl", () -> GleapConfig.getInstance().setiFrameUrl(frameUrl));
     }
 
     /**
@@ -1442,11 +639,7 @@ public class Gleap implements iGleap {
      */
     @Override
     public void setRealtimeHost(String realtimeHost) {
-        try {
-            GleapConfig.getInstance().setRealtimeHost(realtimeHost);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "setRealtimeHost");
-        }
+        GleapErrors.guard("setRealtimeHost", () -> GleapConfig.getInstance().setRealtimeHost(realtimeHost));
     }
 
     /**
@@ -1457,11 +650,7 @@ public class Gleap implements iGleap {
      */
     @Override
     public void setBannerUrl(String bannerUrl) {
-        try {
-            GleapConfig.getInstance().setBannerUrl(bannerUrl);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "setBannerUrl");
-        }
+        GleapErrors.guard("setBannerUrl", () -> GleapConfig.getInstance().setBannerUrl(bannerUrl));
     }
 
     /**
@@ -1472,11 +661,7 @@ public class Gleap implements iGleap {
      */
     @Override
     public void setModalUrl(String modalUrl) {
-        try {
-            GleapConfig.getInstance().setModalUrl(modalUrl);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "setModalUrl");
-        }
+        GleapErrors.guard("setModalUrl", () -> GleapConfig.getInstance().setModalUrl(modalUrl));
     }
 
     /**
@@ -1489,7 +674,8 @@ public class Gleap implements iGleap {
      * fetched again in the new language — an already open widget keeps the previous
      * copy until it is reopened.
      *
-     * @param language ISO Country Code eg. "cz," "en", "de", "es", "nl"
+     * @param language ISO Country Code eg. "cz," "en", "de", "es", "nl"; null or empty uses the
+     *                 device language again
      */
     @Override
     public void setLanguage(String language) {
@@ -1498,7 +684,7 @@ public class Gleap implements iGleap {
             String previousLanguage = config.getLanguage();
             config.setLanguage(language);
 
-            boolean languageChanged = language != null && !language.equalsIgnoreCase(previousLanguage);
+            boolean languageChanged = !config.getLanguage().equalsIgnoreCase(previousLanguage);
 
             // The widget config is loaded once during initialize() and carries every
             // piece of copy already translated by the server (reply times,
@@ -1514,7 +700,7 @@ public class Gleap implements iGleap {
                         // Nothing to do: ConfigLoader has already applied the config, and
                         // the widget requests it on open.
                     }
-                }, true).execute(GleapBug.getInstance());
+                }, true).executeOnExecutor(GleapExecutor.SERIAL, GleapBug.getInstance());
             }
         } catch (Error | Exception ignore) {
             handleError(ignore, "setLanguage");
@@ -1523,43 +709,23 @@ public class Gleap implements iGleap {
 
     @Override
     public void setAiToolExecutedCallback(AiToolExecutedCallback aiToolExecutedCallback) {
-        try {
-            GleapConfig.getInstance().setAiToolExecutedCallback(aiToolExecutedCallback);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "setAiToolExecutedCallback");
-        }
+        GleapErrors.guard("setAiToolExecutedCallback", () -> GleapCallbacks.getInstance().setAiToolExecutedCallback(aiToolExecutedCallback));
     }
 
     @Override
     public void setWidgetOpenedCallback(WidgetOpenedCallback widgetOpenedCallback) {
-        try {
-            GleapConfig.getInstance().setWidgetOpenedCallback(widgetOpenedCallback);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "setWidgetOpenedCallback");
-        }
+        GleapErrors.guard("setWidgetOpenedCallback", () -> GleapCallbacks.getInstance().setWidgetOpenedCallback(widgetOpenedCallback));
     }
 
     @Override
     public void setWidgetClosedCallback(WidgetClosedCallback widgetClosedCallback) {
-        try {
-            GleapConfig.getInstance().setWidgetClosedCallback(widgetClosedCallback);
-
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "setWidgetClosedCallback");
-        }
-
+        GleapErrors.guard("setWidgetClosedCallback", () -> GleapCallbacks.getInstance().setWidgetClosedCallback(widgetClosedCallback));
     }
 
     @Override
     public void setNotificationUnreadCountUpdatedCallback(
             NotificationUnreadCountUpdatedCallback notificationUnreadCountUpdatedCallback) {
-        try {
-            GleapConfig.getInstance().setNotificationUnreadCountUpdatedCallback(notificationUnreadCountUpdatedCallback);
-
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "setNotificationUnreadCountUpdatedCallback");
-        }
-
+        GleapErrors.guard("setNotificationUnreadCountUpdatedCallback", () -> GleapCallbacks.getInstance().setNotificationUnreadCountUpdatedCallback(notificationUnreadCountUpdatedCallback));
     }
 
     /**
@@ -1571,20 +737,12 @@ public class Gleap implements iGleap {
      */
     @Override
     public void setCustomData(String key, String value) {
-        try {
-            GleapBug.getInstance().setCustomData(key, value);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "setCustomData");
-        }
+        GleapErrors.guard("setCustomData", () -> GleapBug.getInstance().setCustomData(key, value));
     }
 
     @Override
     public void registerAgentTool(String name, GleapAgentToolHandler handler) {
-        try {
-            GleapAgentToolManager.getInstance().registerAgentTool(name, handler);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "registerAgentTool");
-        }
+        GleapErrors.guard("registerAgentTool", () -> GleapAgentToolManager.getInstance().registerAgentTool(name, handler));
     }
 
     /**
@@ -1596,11 +754,7 @@ public class Gleap implements iGleap {
      */
     @Override
     public void setTicketAttribute(String key, Object value) {
-        try {
-            GleapBug.getInstance().setTicketAttribute(key, value);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "setTicketAttribute");
-        }
+        GleapErrors.guard("setTicketAttribute", () -> GleapBug.getInstance().setTicketAttribute(key, value));
     }
 
     /**
@@ -1612,11 +766,7 @@ public class Gleap implements iGleap {
      */
     @Override
     public void setTicketAttribute(String key, int value) {
-        try {
-            GleapBug.getInstance().setTicketAttribute(key, value);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "setTicketAttribute");
-        }
+        GleapErrors.guard("setTicketAttribute", () -> GleapBug.getInstance().setTicketAttribute(key, value));
     }
 
     /**
@@ -1628,11 +778,7 @@ public class Gleap implements iGleap {
      */
     @Override
     public void setTicketAttribute(String key, double value) {
-        try {
-            GleapBug.getInstance().setTicketAttribute(key, value);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "setTicketAttribute");
-        }
+        GleapErrors.guard("setTicketAttribute", () -> GleapBug.getInstance().setTicketAttribute(key, value));
     }
 
     /**
@@ -1644,11 +790,7 @@ public class Gleap implements iGleap {
      */
     @Override
     public void setTicketAttribute(String key, long value) {
-        try {
-            GleapBug.getInstance().setTicketAttribute(key, value);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "setTicketAttribute");
-        }
+        GleapErrors.guard("setTicketAttribute", () -> GleapBug.getInstance().setTicketAttribute(key, value));
     }
 
     /**
@@ -1660,11 +802,7 @@ public class Gleap implements iGleap {
      */
     @Override
     public void setTicketAttribute(String key, boolean value) {
-        try {
-            GleapBug.getInstance().setTicketAttribute(key, value);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "setTicketAttribute");
-        }
+        GleapErrors.guard("setTicketAttribute", () -> GleapBug.getInstance().setTicketAttribute(key, value));
     }
 
     /**
@@ -1675,11 +813,7 @@ public class Gleap implements iGleap {
      */
     @Override
     public void unsetTicketAttribute(String key) {
-        try {
-            GleapBug.getInstance().unsetTicketAttribute(key);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "unsetTicketAttribute");
-        }
+        GleapErrors.guard("unsetTicketAttribute", () -> GleapBug.getInstance().unsetTicketAttribute(key));
     }
 
     /**
@@ -1689,27 +823,18 @@ public class Gleap implements iGleap {
      */
     @Override
     public void clearTicketAttributes() {
-        try {
-            GleapBug.getInstance().clearTicketAttributes();
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "clearTicketAttributes");
-        }
+        GleapErrors.guard("clearTicketAttributes", () -> GleapBug.getInstance().clearTicketAttributes());
     }
 
     /**
-     * Attach Data to the request. The Data will be merged into the body sent with
-     * the bugreport.
-     * !!Existing keys can be overriten
+     * Attaches custom data, which can be viewed in the Gleap dashboard. New data is merged
+     * with the existing custom data; keys that already exist are overwritten.
      *
      * @param data Data, which is added
      */
     @Override
     public void attachCustomData(JSONObject data) {
-        try {
-            GleapBug.getInstance().setCustomData(data);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "attachCustomData");
-        }
+        GleapErrors.guard("attachCustomData", () -> GleapBug.getInstance().attachCustomData(data));
     }
 
     /**
@@ -1720,11 +845,7 @@ public class Gleap implements iGleap {
      */
     @Override
     public void removeCustomDataForKey(String key) {
-        try {
-            GleapBug.getInstance().removeUserAttribute(key);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "removeCustomDataForKey");
-        }
+        GleapErrors.guard("removeCustomDataForKey", () -> GleapBug.getInstance().removeCustomData(key));
     }
 
     /**
@@ -1732,41 +853,29 @@ public class Gleap implements iGleap {
      */
     @Override
     public void clearCustomData() {
-        try {
-            GleapBug.getInstance().clearCustomData();
-
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "clearCustomData");
-        }
+        GleapErrors.guard("clearCustomData", () -> GleapBug.getInstance().clearCustomData());
     }
 
     /**
-     * This is called, when the Gleap flow is started
+     * Called right before a ticket (from the widget or a silent crash report) is sent, with its
+     * form data as JSON text.
      *
-     * @param feedbackWillBeSentCallback is called when BB is opened
+     * @param feedbackWillBeSentCallback called before the ticket is sent
      */
     @Override
     public void setFeedbackWillBeSentCallback(FeedbackWillBeSentCallback feedbackWillBeSentCallback) {
-        try {
-            GleapConfig.getInstance().setFeedbackWillBeSentCallback(feedbackWillBeSentCallback);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "setFeedbackWillBeSentCallback");
-        }
-
+        GleapErrors.guard("setFeedbackWillBeSentCallback", () -> GleapCallbacks.getInstance().setFeedbackWillBeSentCallback(feedbackWillBeSentCallback));
     }
 
     /**
-     * This method is triggered, when feedback is sent
+     * Called once a ticket (from the widget or a silent crash report) was created, with its form
+     * data.
      *
-     * @param feedbackSentCallback this callback is called when the flow is called
+     * @param feedbackSentCallback called when the ticket was sent
      */
     @Override
     public void setFeedbackSentCallback(FeedbackSentCallback feedbackSentCallback) {
-        try {
-            GleapConfig.getInstance().setFeedbackSentCallback(feedbackSentCallback);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "setFeedbackSentCallback");
-        }
+        GleapErrors.guard("setFeedbackSentCallback", () -> GleapCallbacks.getInstance().setFeedbackSentCallback(feedbackSentCallback));
     }
 
     /**
@@ -1776,36 +885,29 @@ public class Gleap implements iGleap {
      */
     @Override
     public void setOutboundSentCallback(OutboundSentCallback outboundSentCallback) {
-        try {
-            GleapConfig.getInstance().setOutboundSentCallback(outboundSentCallback);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "setOutboundSentCallback");
-        }
-    }
-
-    @Override
-    public void setFeedbackSendingFailedCallback(FeedbackSendingFailedCallback feedbackSendingFailedCallback) {
-        try {
-            GleapConfig.getInstance().setFeedbackSendingFailedCallback(feedbackSendingFailedCallback);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "setFeedbackSendingFailedCallback");
-        }
+        GleapErrors.guard("setOutboundSentCallback", () -> GleapCallbacks.getInstance().setOutboundSentCallback(outboundSentCallback));
     }
 
     /**
-     * Customize the way, the Bitmap is generated. If this is overritten,
-     * only the custom way is used
+     * Called when a ticket (from the widget or a silent crash report) could not be sent, with a
+     * short description of the failure.
      *
-     * @param getBitmapCallback get the Bitmap
+     * @param feedbackSendingFailedCallback called when sending failed
+     */
+    @Override
+    public void setFeedbackSendingFailedCallback(FeedbackSendingFailedCallback feedbackSendingFailedCallback) {
+        GleapErrors.guard("setFeedbackSendingFailedCallback", () -> GleapCallbacks.getInstance().setFeedbackSendingFailedCallback(feedbackSendingFailedCallback));
+    }
+
+    /**
+     * Provides the screenshot for tickets instead of the SDK taking one. When the callback
+     * returns null, the SDK takes the screenshot itself.
+     *
+     * @param getBitmapCallback returns the screenshot
      */
     @Override
     public void setBitmapCallback(GetBitmapCallback getBitmapCallback) {
-        try {
-            GleapConfig.getInstance().setGetBitmapCallback(getBitmapCallback);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "setBitmapCallback");
-        }
-
+        GleapErrors.guard("setBitmapCallback", () -> GleapCallbacks.getInstance().setGetBitmapCallback(getBitmapCallback));
     }
 
     /**
@@ -1815,11 +917,7 @@ public class Gleap implements iGleap {
      */
     @Override
     public void setConfigLoadedCallback(ConfigLoadedCallback configLoadedCallback) {
-        try {
-            GleapConfig.getInstance().setConfigLoadedCallback(configLoadedCallback);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "setConfigLoadedCallback");
-        }
+        GleapErrors.guard("setConfigLoadedCallback", () -> GleapCallbacks.getInstance().setConfigLoadedCallback(configLoadedCallback));
     }
 
     /**
@@ -1829,29 +927,17 @@ public class Gleap implements iGleap {
      */
     @Override
     public void setInitializedCallback(InitializedCallback initializedCallback) {
-        try {
-            GleapConfig.getInstance().setInitializedCallback(initializedCallback);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "setInitializedCallback");
-        }
+        GleapErrors.guard("setInitializedCallback", () -> GleapCallbacks.getInstance().setInitializedCallback(initializedCallback));
     }
 
     @Override
     public void setFeedbackFlowStartedCallback(FeedbackFlowStartedCallback feedbackFlowStartedCallback) {
-        try {
-            GleapConfig.getInstance().setFeedbackFlowStartedCallback(feedbackFlowStartedCallback);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "setFeedbackFlowStartedCallback");
-        }
+        GleapErrors.guard("setFeedbackFlowStartedCallback", () -> GleapCallbacks.getInstance().setFeedbackFlowStartedCallback(feedbackFlowStartedCallback));
     }
 
     @Override
     public void setInitializationDoneCallback(InitializationDoneCallback initializationDoneCallback) {
-        try {
-            GleapConfig.getInstance().setInitializationDoneCallback(initializationDoneCallback);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "setInitializationDoneCallback");
-        }
+        GleapErrors.guard("setInitializationDoneCallback", () -> GleapCallbacks.getInstance().setInitializationDoneCallback(initializationDoneCallback));
     }
 
     /**
@@ -1867,11 +953,7 @@ public class Gleap implements iGleap {
      */
     @Override
     public void attachNetworkLogs(Networklog[] networklogs) {
-        try {
-            GleapBug.getInstance().getNetworkBuffer().attachNetworkLogs(networklogs);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "attachNetworkLogs");
-        }
+        GleapErrors.guard("attachNetworkLogs", () -> GleapBug.getInstance().getNetworkBuffer().attachNetworkLogs(networklogs));
     }
 
     /**
@@ -1892,11 +974,7 @@ public class Gleap implements iGleap {
      */
     @Override
     public void attachNetworkLogs(JSONArray networkLogs) {
-        try {
-            GleapBug.getInstance().getNetworkBuffer().attachNetworkLogs(networkLogs);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "attachNetworkLogs");
-        }
+        GleapErrors.guard("attachNetworkLogs", () -> GleapBug.getInstance().getNetworkBuffer().attachNetworkLogs(networkLogs));
     }
 
     /**
@@ -1912,11 +990,7 @@ public class Gleap implements iGleap {
      */
     @Override
     public void attachConsoleLogs(JSONArray consoleLogs) {
-        try {
-            LogReader.getInstance().attachLogs(consoleLogs);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "attachConsoleLogs");
-        }
+        GleapErrors.guard("attachConsoleLogs", () -> LogReader.getInstance().attachLogs(consoleLogs));
     }
 
     /**
@@ -1936,11 +1010,7 @@ public class Gleap implements iGleap {
     @Override
     public void logNetwork(String urlConnection, RequestType requestType, int status,
                            int duration, JSONObject request, JSONObject response) {
-        try {
-            GleapHttpInterceptor.log(urlConnection, requestType, status, duration, request, response);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "logNetwork");
-        }
+        GleapErrors.guard("logNetwork", () -> GleapHttpInterceptor.log(urlConnection, requestType, status, duration, request, response));
     }
 
     /**
@@ -1953,11 +1023,7 @@ public class Gleap implements iGleap {
      */
     @Override
     public void logNetwork(HttpsURLConnection urlConnection, JSONObject request, JSONObject response) {
-        try {
-            GleapHttpInterceptor.log(urlConnection, request, response);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "logNetwork");
-        }
+        GleapErrors.guard("logNetwork", () -> GleapHttpInterceptor.log(urlConnection, request, response));
     }
 
     /**
@@ -1970,11 +1036,7 @@ public class Gleap implements iGleap {
      */
     @Override
     public void logNetwork(HttpsURLConnection urlConnection, String request, String response) {
-        try {
-            GleapHttpInterceptor.log(urlConnection, request, response);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "logNetwork");
-        }
+        GleapErrors.guard("logNetwork", () -> GleapHttpInterceptor.log(urlConnection, request, response));
     }
 
     /**
@@ -1985,114 +1047,21 @@ public class Gleap implements iGleap {
      */
     @Override
     public void registerCustomAction(CustomActionCallback customAction) {
-        try {
-            GleapConfig.getInstance().registerCustomAction(customAction);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "registerCustomAction");
-        }
+        GleapErrors.guard("registerCustomAction", () -> GleapCallbacks.getInstance().registerCustomAction(customAction));
     }
 
     @Override
     public void registerCustomLinkHandler(CustomLinkHandlerCallback customLinkHandler) {
-        try {
-            GleapConfig.getInstance().registerCustomLinkHandler(customLinkHandler);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "registerCustomLinkHandler");
-        }
+        GleapErrors.guard("registerCustomLinkHandler", () -> GleapCallbacks.getInstance().registerCustomLinkHandler(customLinkHandler));
     }
 
     @Override
     public void handleLink(String url) {
-        if (url == null || (url != null && url.length() == 0)) {
-            return;
-        }
-
-        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                // Smartlink, handle internally.
-                if (url.contains("gleap:")) {
-                    if (GleapDetectorUtil.isIsRunning()) {
-                        // Try again later.
-                        Gleap.getInstance().handleLink(url);
-                    } else {
-                        Gleap.getInstance().handleGleapLink(url);
-                    }
-                    return;
-                }
-
-                // Use custom link handler.
-                if (GleapConfig.getInstance().getCustomLinkHandler() != null) {
-                    GleapConfig.getInstance().getCustomLinkHandler().invoke(url);
-                    return;
-                }
-
-                // If URL doesn't start with http or https, mailto or tel, close the widget.
-                if (!url.startsWith("http") && !url.startsWith("https") && !url.startsWith("mailto")
-                        && !url.startsWith("tel")) {
-                    Gleap.getInstance().close();
-                }
-
-                // Open externally.
-                Gleap.getInstance().openUrlExternally(url);
-            }
-        }, 250);
+        GleapLinkHandler.handleLink(url);
     }
 
     public void handleGleapLink(String href) {
-        try {
-            String[] urlParts = href.split("/");
-            String type = urlParts[2];
-
-            switch (type) {
-                case "article":
-                    String articleId = urlParts[3];
-                    this.openHelpCenterArticle(articleId, true);
-                    break;
-                case "collection":
-                    String collectionId = urlParts[3];
-                    this.openHelpCenterCollection(collectionId, true);
-                    break;
-                case "survey":
-                    String surveyId = urlParts[3];
-                    this.showSurvey(surveyId);
-                    break;
-                case "bot":
-                    String botId = urlParts[3];
-                    this.startBot(botId, true);
-                    break;
-                case "news":
-                    String newsId = urlParts[3];
-                    this.openNewsArticle(newsId, true);
-                    break;
-                case "flow":
-                    String flowId = urlParts[3];
-                    this.startFeedbackFlow(flowId, true);
-                    break;
-                case "checklist":
-                    String checklistId = urlParts[3];
-                    this.startChecklist(checklistId, true);
-                    break;
-                case "tour":
-                    System.out.println("Product tours are not supported on mobile.");
-                    break;
-                default:
-                    System.out.println("Invalid type provided in href: " + href);
-                    break;
-            }
-        } catch (Exception e) {
-            handleError(e, "handleGleapLink");
-        }
-    }
-
-    private void openUrlExternally(String url) {
-        try {
-            Activity local = ActivityUtil.getCurrentActivity();
-            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-            local.startActivity(browserIntent);
-        } catch (Exception e) {
-            handleError(e, "openUrlExternally");
-        }
+        GleapLinkHandler.handleGleapLink(href);
     }
 
     /**
@@ -2102,13 +1071,12 @@ public class Gleap implements iGleap {
      */
     @Override
     public void setApplicationType(APPLICATIONTYPE applicationType) {
-        try {
-            GleapBug.getInstance().setApplicationtype(applicationType);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "setApplicationType");
-        }
+        GleapErrors.guard("setApplicationType", () -> GleapBug.getInstance().setApplicationType(applicationType));
     }
 
+    /**
+     * Does nothing. Use {@link #setNotificationUnreadCountUpdatedCallback(NotificationUnreadCountUpdatedCallback)}.
+     */
     public void setNotificationUnreadCountUpdatedCallback() {
     }
 
@@ -2125,46 +1093,14 @@ public class Gleap implements iGleap {
         }
 
         GleapListener(boolean startLoading) {
-            if (!startLoading) {
-                return;
-            }
-
-            try {
-                new ConfigLoader(this).execute(GleapBug.getInstance());
-
-                GleapBaseSessionService sessionLoader = new GleapBaseSessionService();
-                sessionLoader.execute();
-            } catch (Error | Exception ignore) {
-                handleErrorStatic(ignore, "GleapListener constructor");
+            if (startLoading) {
+                GleapInitializer.startLoading(this);
             }
         }
 
         @Override
         public void onTaskComplete(JSONObject httpResponse) {
-            try {
-                GleapConfig config = GleapConfig.getInstance();
-
-                List<GleapActivationMethod> activationMethods = new LinkedList<>();
-                if (config.isActivationMethodShake()) {
-                    activationMethods.add(GleapActivationMethod.SHAKE);
-                }
-
-                if (config.isActivationMethodScreenshotGesture()) {
-                    activationMethods.add(GleapActivationMethod.SCREENSHOT);
-                }
-
-                if (config.isActivationMethodFeedbackButton()) {
-                    activationMethods.add(GleapActivationMethod.FAB);
-                }
-
-                if (instance == null) {
-                    instance = new Gleap();
-                }
-                initGleap(GleapConfig.getInstance().getSdkKey(),
-                        activationMethods.toArray(new GleapActivationMethod[0]), application);
-            } catch (Error | Exception ignore) {
-                handleErrorStatic(ignore, "GleapListener onTaskComplete");
-            }
+            GleapInitializer.onConfigLoaded();
         }
     }
 
@@ -2176,11 +1112,7 @@ public class Gleap implements iGleap {
      */
     @Override
     public void trackEvent(String name) {
-        try {
-            GleapBug.getInstance().logEvent(name);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "trackEvent");
-        }
+        GleapErrors.guard("trackEvent", () -> GleapBug.getInstance().logEvent(name));
     }
 
     /**
@@ -2192,11 +1124,7 @@ public class Gleap implements iGleap {
      */
     @Override
     public void trackEvent(String name, JSONObject data) {
-        try {
-            GleapBug.getInstance().logEvent(name, data);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "trackEvent");
-        }
+        GleapErrors.guard("trackEvent", () -> GleapBug.getInstance().logEvent(name, data));
     }
 
     /**
@@ -2207,11 +1135,7 @@ public class Gleap implements iGleap {
      */
     @Override
     public void addAttachment(File attachment) {
-        try {
-            GleapFileHelper.getInstance().addAttachment(attachment);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "addAttachment");
-        }
+        GleapErrors.guard("addAttachment", () -> GleapFileHelper.getInstance().addAttachment(attachment));
     }
 
     /**
@@ -2221,18 +1145,15 @@ public class Gleap implements iGleap {
      */
     @Override
     public void removeAllAttachments() {
-        try {
-            GleapFileHelper.getInstance().clearAttachments();
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "removeAllAttachments");
-        }
+        GleapErrors.guard("removeAllAttachments", () -> GleapFileHelper.getInstance().clearAttachments());
     }
 
     @Override
     public void setActivationMethods(GleapActivationMethod[] activationMethods) {
         try {
+            Application application = GleapInitializer.getApplication();
             if (application != null) {
-                GleapConfig.getInstance().setPriorizedGestureDetectors(Arrays.asList(activationMethods));
+                GleapConfig.getInstance().setPrioritizedActivationMethods(Arrays.asList(activationMethods));
                 GleapDetectorUtil.clearAllDetectors();
                 List<GleapDetector> detectorList = GleapDetectorUtil.initDetectors(application, activationMethods);
                 GleapConfig.getInstance().setGestureDetectors(detectorList);
@@ -2251,22 +1172,18 @@ public class Gleap implements iGleap {
      */
     @Override
     public void preFillForm(JSONObject data) {
-        try {
-            PrefillHelper.getInstancen().setPrefillData(data);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "preFillForm");
-        }
+        GleapErrors.guard("preFillForm", () -> PrefillHelper.getInstancen().setPrefillData(data));
     }
 
     /**
-     * Disables the console logging. This must be called BEFORE initializing the
-     * SDK.
+     * Whether the widget is open (or opening).
      *
+     * @return true while the widget is shown
      * @author Gleap
      */
     @Override
     public boolean isOpened() {
-        return GleapDetectorUtil.isIsRunning();
+        return GleapDetectorUtil.isWidgetOpen();
     }
 
     /**
@@ -2277,11 +1194,11 @@ public class Gleap implements iGleap {
     @Override
     public void close() {
         try {
-            ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
+            GleapMainThread.runWithActivity(new Runnable() {
                 @Override
                 public void run() {
-                    if (application != null && GleapConfig.getInstance().getCallCloseCallback() != null && isOpened()) {
-                        GleapConfig.getInstance().getCallCloseCallback().invoke();
+                    if (GleapInitializer.getApplication() != null && GleapCallbacks.getInstance().getCallCloseCallback() != null && isOpened()) {
+                        GleapCallbacks.getInstance().getCallCloseCallback().invoke();
                     }
                 }
             });
@@ -2298,11 +1215,7 @@ public class Gleap implements iGleap {
      */
     @Override
     public void log(String msg) {
-        try {
-            LogReader.getInstance().log(msg, GleapLogLevel.INFO);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "log");
-        }
+        GleapErrors.guard("log", () -> LogReader.getInstance().log(msg, GleapLogLevel.INFO));
     }
 
     /**
@@ -2313,11 +1226,7 @@ public class Gleap implements iGleap {
      */
     @Override
     public void log(String msg, GleapLogLevel gleapLogLevel) {
-        try {
-            LogReader.getInstance().log(msg, gleapLogLevel);
-        } catch (Error | Exception ignored) {
-            handleError(ignored, "log");
-        }
+        GleapErrors.guard("log", () -> LogReader.getInstance().log(msg, gleapLogLevel));
     }
 
     /**
@@ -2328,11 +1237,7 @@ public class Gleap implements iGleap {
      */
     @Override
     public void disableConsoleLog() {
-        try {
-            GleapConfig.getInstance().setEnableConsoleLogsFromCode(false);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "disableConsoleLog");
-        }
+        GleapErrors.guard("disableConsoleLog", () -> GleapConfig.getInstance().setEnableConsoleLogsFromCode(false));
     }
 
     @Override
@@ -2340,7 +1245,7 @@ public class Gleap implements iGleap {
         try {
             GleapConfig.getInstance().setHideFeedbackButton(!show);
             GleapConfig.getInstance().setFeedbackButtonManuallySet(true);
-            GleapInvisibleActivityManger.getInstance().setShowFab(show);
+            GleapOverlayManager.getInstance().setShowFab(show);
         } catch (Exception ignore) {
             handleError(ignore, "showFeedbackButton");
         }
@@ -2395,29 +1300,12 @@ public class Gleap implements iGleap {
     }
 
     /**
-     * Enable Replay function for BB
-     * Use with care, check performance on phone
-     */
-    private void enableReplays(boolean enable) {
-        try {
-            GleapConfig.getInstance().setEnableReplays(enable);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "setTags");
-        }
-    }
-
-    /**
      * Pass the current activity manually (Internal usage!)
      *
      * @param getActivityCallback get the current activity
      */
     public void setGetActivityCallback(GetActivityCallback getActivityCallback) {
-        try {
-            GleapConfig.getInstance().setGetActivityCallback(getActivityCallback);
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "setGetActivityCallback");
-        }
-
+        GleapErrors.guard("setGetActivityCallback", () -> GleapCallbacks.getInstance().setGetActivityCallback(getActivityCallback));
     }
 
     @Override
@@ -2432,41 +1320,10 @@ public class Gleap implements iGleap {
 
     @Override
     public void openFeatureRequests(boolean showBackButton) {
-        try {
-            ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Handler mainHandler = new Handler(Looper.getMainLooper());
-                    Runnable gleapRunnable = new Runnable() {
-                        @Override
-                        public void run() throws RuntimeException {
-                            if (!GleapDetectorUtil.isIsRunning() && isGleapReady()
-                                    && Gleap.getInstance() != null) {
-                                try {
-                                    JSONObject data = new JSONObject();
-                                    data.put("hideBackButton", !showBackButton);
-                                    GleapActionQueueHandler.getInstance()
-                                            .addActionMessage(new GleapAction("open-feature-requests", data));
-                                    screenshotTaker.takeScreenshot();
-                                } catch (Exception e) {
-                                    handleError(e, "run");
-                                }
-                            } else if (!GleapDetectorUtil.isIsRunning() && Gleap.getInstance() != null) {
-                                recoverSessionAndRetry(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        openFeatureRequests(showBackButton);
-                                    }
-                                });
-                            }
-                        }
-                    };
-                    mainHandler.post(gleapRunnable);
-                }
-            });
-        } catch (Exception exp) {
-            handleError(exp, "openFeatureRequests");
-        }
+        GleapWidgetLauncher.openWithActionUnchecked("open-feature-requests",
+                () -> new JSONObject().put("hideBackButton", !showBackButton),
+                () -> openFeatureRequests(showBackButton),
+                "openFeatureRequests");
     }
 
     @Override
@@ -2474,8 +1331,8 @@ public class Gleap implements iGleap {
         GleapSessionProperties gleapUser = null;
         try {
             gleapUser = GleapSessionController.getInstance().getGleapUserSession();
-        } catch (Error | Exception ignore) {
-            handleError(ignore, "getIdentity");
+        } catch (Error | Exception error) {
+            handleError(error, "getIdentity");
         }
         return gleapUser;
     }
@@ -2495,12 +1352,12 @@ public class Gleap implements iGleap {
 
     @Override
     public void setRegisterPushMessageGroupCallback(RegisterPushMessageGroupCallback callback) {
-        GleapConfig.getInstance().setRegisterPushMessageGroupCallback(callback);
+        GleapCallbacks.getInstance().setRegisterPushMessageGroupCallback(callback);
     }
 
     @Override
     public void setUnRegisterPushMessageGroupCallback(UnRegisterPushMessageGroupCallback callback) {
-        GleapConfig.getInstance().setUnRegisterPushMessageGroupCallback(callback);
+        GleapCallbacks.getInstance().setUnRegisterPushMessageGroupCallback(callback);
     }
 
     public void finishImageUpload(Uri[] uris) {
@@ -2516,15 +1373,7 @@ public class Gleap implements iGleap {
      * @param context Context information about where the error occurred
      */
     public void handleError(Throwable error, String context) {
-        try {
-            ErrorCallback errorCallback = GleapConfig.getInstance().getErrorCallback();
-            if (errorCallback != null) {
-                errorCallback.onError(error, context);
-            }
-        } catch (Exception ignore) {
-            // If the error callback itself throws an exception, we ignore it to prevent
-            // infinite loops
-        }
+        GleapErrors.report(error, context);
     }
 
     /**
@@ -2535,17 +1384,6 @@ public class Gleap implements iGleap {
      * @param error   The error or exception that occurred
      * @param context Context information about where the error occurred
      */
-    private static void handleErrorStatic(Throwable error, String context) {
-        try {
-            ErrorCallback errorCallback = GleapConfig.getInstance().getErrorCallback();
-            if (errorCallback != null) {
-                errorCallback.onError(error, context);
-            }
-        } catch (Exception ignore) {
-            // If the error callback itself throws an exception, we ignore it to prevent
-            // infinite loops
-        }
-    }
 
     /**
      * Shows a modal to the user.
@@ -2556,11 +1394,11 @@ public class Gleap implements iGleap {
     @Override
     public void showModal(JSONObject data) {
         try {
-            ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
+            GleapMainThread.runWithActivity(new Runnable() {
                 @Override
                 public void run() {
                     try {
-                        GleapInvisibleActivityManger.getInstance().showModal(data, null);
+                        GleapOverlayManager.getInstance().showModal(data, null);
                     } catch (Exception exp) {
                         handleError(exp, "showModal - inner");
                     }
@@ -2573,11 +1411,7 @@ public class Gleap implements iGleap {
 
     @Override
     public void setErrorCallback(ErrorCallback errorCallback) {
-        try {
-            GleapConfig.getInstance().setErrorCallback(errorCallback);
-        } catch (Error | Exception error) {
-            handleError(error, "setErrorCallback");
-        }
+        GleapErrors.guard("setErrorCallback", () -> GleapCallbacks.getInstance().setErrorCallback(errorCallback));
     }
 
 }

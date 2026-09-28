@@ -3,6 +3,7 @@ package io.gleap;
 import org.json.JSONObject;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -13,10 +14,17 @@ import okio.ByteString;
 import gleap.io.gleap.BuildConfig;
 
 public class GleapWebSocketListener extends WebSocketListener {
+    // After a failure the connection is tried again after 5 s, then 10, 20, 40 and at most 60 s
+    // apart; a successful connect starts over at 5 s.
+    private static final long FIRST_RECONNECT_DELAY_MS = 5000;
+    private static final long MAX_RECONNECT_DELAY_MS = 60000;
+
     private OkHttpClient client;
     private WebSocket webSocket;
     private String currentUrl;
-    private boolean isDestroyed = false;
+    // Written on the main thread, read on OkHttp's threads.
+    private volatile boolean isDestroyed = false;
+    private final AtomicInteger failedAttempts = new AtomicInteger();
 
     public boolean connect() {
         client = new OkHttpClient.Builder()
@@ -62,6 +70,8 @@ public class GleapWebSocketListener extends WebSocketListener {
             return;
         }
 
+        failedAttempts.set(0);
+
         // Start event sending.
         GleapEventService.getInstance().start();
     }
@@ -99,16 +109,25 @@ public class GleapWebSocketListener extends WebSocketListener {
     }
 
     private void reconnect() {
-        if (client != null) {
-            try {
-                Thread.sleep(5000); // Sleep for 5 seconds
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
-            if (currentUrl != null) {
-                internallyConnect(currentUrl);
-            }
+        final String url = currentUrl;
+        if (client == null || url == null) {
+            return;
         }
+
+        // The wait is a delayed message on the main thread instead of a sleep on OkHttp's
+        // thread; the connect itself is asynchronous.
+        GleapMainThread.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (!isDestroyed) {
+                    internallyConnect(url);
+                }
+            }
+        }, reconnectDelay(failedAttempts.incrementAndGet()));
+    }
+
+    static long reconnectDelay(int failedAttempts) {
+        long delay = FIRST_RECONNECT_DELAY_MS << Math.max(0, Math.min(failedAttempts - 1, 4));
+        return Math.min(delay, MAX_RECONNECT_DELAY_MS);
     }
 }

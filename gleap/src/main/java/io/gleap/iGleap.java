@@ -33,12 +33,12 @@ interface iGleap {
 
     /**
      * Open news or conversations by passing the notification
-     * @param notificationData push notitification
+     * @param notificationData the data of the push notification
      */
     void handlePushNotification(JSONObject notificationData);
 
     /**
-     * Open a conversation with the given sharetoken
+     * Open a conversation with the given share token
      * @param shareToken token for the conversation
      */
     void openConversation(String shareToken) throws GleapNotInitialisedException;
@@ -60,7 +60,6 @@ interface iGleap {
     /**
      * Manually shows the feedback menu or default feedback flow. This is used, when you use the activation method "NONE".
      *
-     * @throws GleapNotInitialisedException thrown when Gleap is not initialised
      * @author Gleap
      */
     void open() throws GleapNotInitialisedException;
@@ -75,7 +74,6 @@ interface iGleap {
     /**
      * Manually shows the news section
      *
-     * @throws GleapNotInitialisedException thrown when Gleap is not initialised
      * @author Gleap
      */
     void openNews() throws GleapNotInitialisedException;
@@ -83,7 +81,6 @@ interface iGleap {
     /**
      * Manually shows the news section
      *
-     * @throws GleapNotInitialisedException thrown when Gleap is not initialised
      * @author Gleap
      */
     void openNews(boolean showBackButton) throws GleapNotInitialisedException;
@@ -91,7 +88,6 @@ interface iGleap {
     /**
      * Show the checklists overview
      *
-     * @throws GleapNotInitialisedException thrown when Gleap is not initialised
      * @author Gleap
      */
     void openChecklists() throws GleapNotInitialisedException;
@@ -99,7 +95,6 @@ interface iGleap {
     /**
      * Show the checklists overview
      *
-     * @throws GleapNotInitialisedException thrown when Gleap is not initialised
      * @author Gleap
      */
     void openChecklists(boolean showBackButton) throws GleapNotInitialisedException;
@@ -107,7 +102,6 @@ interface iGleap {
     /**
      * Open the checklist with checklistId.
      *
-     * @throws GleapNotInitialisedException thrown when Gleap is not initialised
      * @author Gleap
      */
     void openChecklist(String checklistId) throws GleapNotInitialisedException;
@@ -115,7 +109,6 @@ interface iGleap {
     /**
      * Open the checklist with checklistId.
      *
-     * @throws GleapNotInitialisedException thrown when Gleap is not initialised
      * @author Gleap
      */
     void openChecklist(String checklistId, boolean showBackButton) throws GleapNotInitialisedException;
@@ -123,7 +116,6 @@ interface iGleap {
     /**
      * Start the checklist with outboundId.
      *
-     * @throws GleapNotInitialisedException thrown when Gleap is not initialised
      * @author Gleap
      */
     void startChecklist(String outboundId) throws GleapNotInitialisedException;
@@ -131,7 +123,6 @@ interface iGleap {
     /**
      * Start the checklist with outboundId.
      *
-     * @throws GleapNotInitialisedException thrown when Gleap is not initialised
      * @author Gleap
      */
     void startChecklist(String outboundId, boolean showBackButton) throws GleapNotInitialisedException;
@@ -141,7 +132,6 @@ interface iGleap {
      *
      * @param feedbackFlow declares what you want to start. For example start directly a bugreport or a user rating.
      *                     use e.g. bugreporting, featurerequests, rating, contact
-     * @throws GleapNotInitialisedException thrown when Gleap is not initialised
      */
     void startFeedbackFlow(String feedbackFlow);
 
@@ -550,16 +540,18 @@ interface iGleap {
     void setNotificationUnreadCountUpdatedCallback(NotificationUnreadCountUpdatedCallback notificationUnreadCountUpdatedCallback);
 
     /**
-     * This is called, when the Gleap flow is started
+     * Called right before a ticket (from the widget or a silent crash report) is sent, with its
+     * form data as JSON text.
      *
-     * @param feedbackWillBeSentCallback is called when BB is opened
+     * @param feedbackWillBeSentCallback called before the ticket is sent
      */
     void setFeedbackWillBeSentCallback(FeedbackWillBeSentCallback feedbackWillBeSentCallback);
 
     /**
-     * This method is triggered, when a form got submitted
+     * Called once a ticket (from the widget or a silent crash report) was created, with its form
+     * data.
      *
-     * @param feedbackSentCallback this callback is called when the flow is called
+     * @param feedbackSentCallback called when the ticket was sent
      */
     void setFeedbackSentCallback(FeedbackSentCallback feedbackSentCallback);
 
@@ -571,15 +563,16 @@ interface iGleap {
     void setOutboundSentCallback(OutboundSentCallback outboundSentCallback);
 
     /**
-     * This is called if the sending has failed
+     * Called when a ticket (from the widget or a silent crash report) could not be sent, with a
+     * short description of the failure.
      *
-     * @param feedbackSendingFailedCallback
+     * @param feedbackSendingFailedCallback called when sending failed
      */
     void setFeedbackSendingFailedCallback(FeedbackSendingFailedCallback feedbackSendingFailedCallback);
 
     /**
-     * Customize the way, the Bitmap is generated. If this is overritten,
-     * only the custom way is used
+     * Provides the screenshot for tickets instead of the SDK taking one. When the callback
+     * returns null, the SDK takes the screenshot itself.
      *
      * @param getBitmapCallback get the Bitmap
      */

@@ -1,8 +1,6 @@
 package io.gleap;
 
-import android.app.Application;
 import android.graphics.Bitmap;
-import android.util.Log;
 
 import androidx.annotation.Nullable;
 
@@ -26,16 +24,10 @@ import static io.gleap.DateUtil.dateToString;
  */
 class GleapBug {
     private static GleapBug instance;
-    private Application application;
     private NetworkBuffer networkBuffer = new NetworkBuffer();
-    private boolean isSilent = false;
     //bug specific data
-    private APPLICATIONTYPE applicationtype = APPLICATIONTYPE.NATIVE;
+    private APPLICATIONTYPE applicationType = APPLICATIONTYPE.NATIVE;
     private String type = "";
-    private final Date startUpDate = new Date();
-    private boolean isDisabled = false;
-    private String severity = "MEDIUM";
-    private String silentBugreportEmail;
     private Bitmap screenshot;
     private Replay replay;
     private JSONObject ticketAttributes;
@@ -45,12 +37,12 @@ class GleapBug {
     private String outboundId;
     private String[] tags;
 
-    private JSONObject outboundAction;
-
     private @Nullable
     PhoneMeta phoneMeta;
 
 
+    // The events a ticket carries (trackEvent), the newest MAX_CUSTOM_EVENTS like in the JS SDK.
+    static final int MAX_CUSTOM_EVENTS = 500;
     private final JSONArray customEventLog = new JSONArray();
 
     private GleapBug() {
@@ -70,6 +62,11 @@ class GleapBug {
             instance = new GleapBug();
         }
         return instance;
+    }
+
+    // Tests only.
+    static synchronized void resetForTesting() {
+        instance = new GleapBug();
     }
 
     public String getType() {
@@ -109,8 +106,20 @@ class GleapBug {
         return ticketAttributes;
     }
 
-    public void setCustomData(JSONObject customData) {
-        this.customData = customData;
+    /**
+     * Merges the keys of {@code customData} into the custom data (attachCustomData), like the
+     * iOS and JS SDKs: existing keys are overwritten, the others stay. The app's object is
+     * copied, so changing it later does not change the custom data.
+     */
+    public void attachCustomData(JSONObject customData) throws Exception {
+        if (customData == null) {
+            return;
+        }
+        JSONObject copy = (JSONObject) GleapNetworkLogSanitizer.deepCopy(customData);
+        for (Iterator<String> keys = copy.keys(); keys.hasNext(); ) {
+            String key = keys.next();
+            this.customData.put(key, copy.get(key));
+        }
     }
 
     public void setTicketAttribute(String key, Object value) throws JSONException {
@@ -150,7 +159,7 @@ class GleapBug {
         }
     }
 
-    public void removeUserAttribute(String key) {
+    public void removeCustomData(String key) {
         if(key != null) {
             try {
                 this.customData.remove(key);
@@ -162,28 +171,12 @@ class GleapBug {
         this.customData = new JSONObject();
     }
 
-    public String getSeverity() {
-        return severity;
+    public APPLICATIONTYPE getApplicationType() {
+        return applicationType;
     }
 
-    public void setSeverity(String severity) {
-        this.severity = severity;
-    }
-
-    public boolean isDisabled() {
-        return isDisabled;
-    }
-
-    public void setDisabled(boolean disabled) {
-        isDisabled = disabled;
-    }
-
-    public APPLICATIONTYPE getApplicationtype() {
-        return applicationtype;
-    }
-
-    public void setApplicationtype(APPLICATIONTYPE applicationtype) {
-        this.applicationtype = applicationtype;
+    public void setApplicationType(APPLICATIONTYPE applicationType) {
+        this.applicationType = applicationType;
     }
 
     public Replay getReplay() {
@@ -194,10 +187,6 @@ class GleapBug {
         this.replay = replay;
     }
 
-    public Date getStartUpDate() {
-        return startUpDate;
-    }
-    
     public void addRequest(Networklog networklog) {
         try {
             networkBuffer.addNetworkLog(networklog);
@@ -292,29 +281,13 @@ class GleapBug {
         return this.data;
     }
 
-    public String getSilentBugreportEmail() {
-        return silentBugreportEmail;
-    }
-
-    public void setSilentBugreportEmail(String silentBugreportEmail) {
-        this.silentBugreportEmail = silentBugreportEmail;
-    }
-
-    public Application getApplication() {
-        return application;
-    }
-
-    public void setApplication(Application application) {
-        this.application = application;
-    }
-
     public void logEvent(String name, JSONObject data) {
         JSONObject event = new JSONObject();
         try {
             event.put("name", name);
             event.put("data", data);
             event.put("date", dateToString(new Date()));
-            customEventLog.put(event);
+            addToCustomEventLog(event);
             GleapEventService.getInstance().addEvent(event);
         } catch (Exception ex) {
         }
@@ -325,22 +298,32 @@ class GleapBug {
         try {
             event.put("name", name);
             event.put("date", dateToString(new Date()));
-            customEventLog.put(event);
+            addToCustomEventLog(event);
             GleapEventService.getInstance().addEvent(event);
         } catch (Exception ex) {
         }
     }
 
+    private void addToCustomEventLog(JSONObject event) {
+        synchronized (customEventLog) {
+            if (customEventLog.length() >= MAX_CUSTOM_EVENTS) {
+                customEventLog.remove(0);
+            }
+            customEventLog.put(event);
+        }
+    }
+
+    /**
+     * @return a copy of the event log, oldest first (events are logged from any thread)
+     */
     public JSONArray getCustomEventLog() {
-        return customEventLog;
-    }
-
-    public boolean isSilent() {
-        return isSilent;
-    }
-
-    public void setSilent(boolean silent) {
-        isSilent = silent;
+        synchronized (customEventLog) {
+            JSONArray copy = new JSONArray();
+            for (int i = 0; i < customEventLog.length(); i++) {
+                copy.put(customEventLog.opt(i));
+            }
+            return copy;
+        }
     }
 
     public String getSpamToken() {
@@ -369,13 +352,5 @@ class GleapBug {
 
     public void setTags(String[] tags) {
         this.tags = tags;
-    }
-
-    public JSONObject getOutboundAction() {
-        return outboundAction;
-    }
-
-    public void setOutboundAction(JSONObject outboundAction) {
-        this.outboundAction = outboundAction;
     }
 }

@@ -1,6 +1,5 @@
 package io.gleap;
 
-import android.content.Context;
 import android.graphics.Rect;
 import android.os.IBinder;
 import android.view.View;
@@ -42,9 +41,5 @@ class ViewMeta {
 
     public IBinder getWindowToken() {
         return layoutParams.token;
-    }
-
-    public Context context() {
-        return view.getContext();
     }
 }

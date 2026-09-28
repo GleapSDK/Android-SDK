@@ -8,10 +8,26 @@ import java.util.Map;
 import io.gleap.callbacks.GetActivityCallback;
 
 class ActivityUtil {
+    /**
+     * Whether the activity is the SDK's own (the widget). Only the class counts: an app's
+     * activity with "Gleap" in its name is the app's.
+     */
+    static boolean isGleapActivity(Activity activity) {
+        return activity instanceof GleapMainActivity;
+    }
+
+    /**
+     * The activity on screen: the app's GetActivityCallback, else the tracked resumed activity,
+     * else (not tracked yet) the resumed activity found through hidden framework fields.
+     */
     public static Activity getCurrentActivity() {
-        GetActivityCallback activityCallback =  GleapConfig.getInstance().getGetActivityCallback();
+        GetActivityCallback activityCallback =  GleapCallbacks.getInstance().getGetActivityCallback();
         if(activityCallback != null) {
             return activityCallback.getActivity();
+        }
+        Activity tracked = GleapActivityTracker.resumedActivity();
+        if (tracked != null) {
+            return tracked;
         }
         try {
             Class activityThreadClass = Class.forName("android.app.ActivityThread");

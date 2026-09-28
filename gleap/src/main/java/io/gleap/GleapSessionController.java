@@ -1,29 +1,36 @@
 package io.gleap;
 
-import android.app.Activity;
 import android.app.Application;
-import android.os.Handler;
-import android.os.Looper;
 
 import org.json.JSONObject;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 public class GleapSessionController {
-    private static GleapSessionController instance;
+    // Read from the request threads.
+    private static volatile GleapSessionController instance;
     private GleapSessionProperties gleapSessionProperties;
-    private GleapSession gleapSession;
+    private volatile GleapSession gleapSession;
     private GleapSessionProperties pendingIdentificationAction;
     private GleapSessionProperties pendingUpdateAction;
-    private boolean isSessionLoaded = false;
+    private volatile boolean isSessionLoaded = false;
     private String lastRegisteredUserHash;
-    private Application application;
+    // Where the session and the identified user are kept between app starts.
+    private final KeyValueStore store;
+    // Counts the logouts (clearUserSession). A request started before a logout neither applies
+    // its result nor acts on its failure: it must not bring the cleared session or user back.
+    private final AtomicInteger identityGeneration = new AtomicInteger();
 
     private GleapSessionController(Application application) {
-        this.application = application;
+        this(GleapPreferencesHelper.getInstance(application));
+    }
+
+    GleapSessionController(KeyValueStore store) {
+        this.store = store;
 
         // Load existing session.
-        GleapPreferencesHelper prefs = GleapPreferencesHelper.getInstance(application);
-        String id = prefs.getString("session_id", "");
-        String hash = prefs.getString("session_hash", "");
+        String id = store.getString("session_id", "");
+        String hash = store.getString("session_hash", "");
         if (!id.equals("") && !hash.equals("")) {
             gleapSession = new GleapSession(id, hash);
         }
@@ -33,10 +40,17 @@ public class GleapSessionController {
     }
 
     public static GleapSessionController initialize(Application application) {
-        if (instance == null) {
-            instance = new GleapSessionController(application);
+        synchronized (GleapSessionController.class) {
+            if (instance == null) {
+                instance = new GleapSessionController(application);
+            }
+            return instance;
         }
-        return instance;
+    }
+
+    // Tests only.
+    static void setInstanceForTesting(GleapSessionController controller) {
+        instance = controller;
     }
 
     public void executePendingUpdates() {
@@ -49,7 +63,7 @@ public class GleapSessionController {
             return;
         }
 
-        new GleapIdentifyService().execute();
+        new GleapIdentifyService().executeOnExecutor(GleapExecutor.SERIAL);
     }
 
     private void tryExecuteContactUpdate() {
@@ -57,7 +71,7 @@ public class GleapSessionController {
             return;
         }
 
-        new GleapUpdateSessionService().execute();
+        new GleapUpdateSessionService().executeOnExecutor(GleapExecutor.SERIAL);
     }
 
     public GleapSessionProperties getPendingUpdateAction() {
@@ -69,27 +83,74 @@ public class GleapSessionController {
     }
 
     public GleapSessionProperties getPendingIdentificationAction() {
-        return pendingIdentificationAction;
+        synchronized (this) {
+            return pendingIdentificationAction;
+        }
     }
 
     public void setPendingIdentificationAction(GleapSessionProperties pendingIdentificationAction) {
-        this.pendingIdentificationAction = pendingIdentificationAction;
+        synchronized (this) {
+            this.pendingIdentificationAction = pendingIdentificationAction;
+        }
     }
 
     public static GleapSessionController getInstance() {
         return instance;
     }
 
-    public void clearUserSession() {
-        GleapPreferencesHelper.getInstance(application).clear();
+    /**
+     * Taken when a session request starts; see {@link #isCurrentGeneration(int)}.
+     */
+    int currentGeneration() {
+        return identityGeneration.get();
+    }
 
-        if (gleapSession != null) {
-            unregisterPushMessageGroup(gleapSession.getHash());
+    /**
+     * @return false when the session was cleared (logout) since {@code generation} was taken
+     */
+    boolean isCurrentGeneration(int generation) {
+        return identityGeneration.get() == generation;
+    }
+
+    public void clearUserSession() {
+        synchronized (this) {
+            identityGeneration.incrementAndGet();
+            store.clear();
+
+            if (gleapSession != null) {
+                unregisterPushMessageGroup(gleapSession.getHash());
+            }
+            pendingIdentificationAction = null;
+            pendingUpdateAction = null;
+            gleapSessionProperties = null;
+            gleapSession = null;
+            isSessionLoaded = false;
         }
-        pendingUpdateAction = null;
-        gleapSessionProperties = null;
-        gleapSession = null;
-        isSessionLoaded = false;
+    }
+
+    /**
+     * The API rejected an identify that started in {@code generation}: starts over without the
+     * stored session and user, unless the app logged out meanwhile.
+     */
+    void clearRejectedIdentity(int generation) {
+        synchronized (this) {
+            if (isCurrentGeneration(generation)) {
+                clearUserSession();
+                setSessionLoaded(true);
+            }
+        }
+    }
+
+    /**
+     * An identify that started in {@code generation} did not get through: it stays pending,
+     * unless the app logged out or asked for another identify meanwhile.
+     */
+    void keepIdentifyPending(GleapSessionProperties identify, int generation) {
+        synchronized (this) {
+            if (isCurrentGeneration(generation) && pendingIdentificationAction == null) {
+                pendingIdentificationAction = identify;
+            }
+        }
     }
 
     public void mergeUserSession(String id, String hash) {
@@ -99,9 +160,8 @@ public class GleapSessionController {
             gleapSession.setHash(hash);
             gleapSession.setId(id);
         }
-        GleapPreferencesHelper prefs = GleapPreferencesHelper.getInstance(application);
-        prefs.putString("session_hash", hash);
-        prefs.putString("session_id", id);
+        store.putString("session_hash", hash);
+        store.putString("session_id", id);
     }
 
     public GleapSession getUserSession() {
@@ -116,50 +176,48 @@ public class GleapSessionController {
         }
 
         // Locally save.
-        GleapPreferencesHelper prefs = GleapPreferencesHelper.getInstance(application);
-        prefs.putString("userId", gleapUser.getUserId());
-        prefs.putString("name", gleapUser.getName());
-        prefs.putString("email", gleapUser.getEmail());
+        store.putString("userId", gleapUser.getUserId());
+        store.putString("name", gleapUser.getName());
+        store.putString("email", gleapUser.getEmail());
         if (gleapUser.getPhone() != null) {
-            prefs.putString("phone", gleapUser.getPhone());
+            store.putString("phone", gleapUser.getPhone());
         }
         if (gleapUser.getPlan() != null) {
-            prefs.putString("plan", gleapUser.getPlan());
+            store.putString("plan", gleapUser.getPlan());
         }
         if (gleapUser.getCompanyId() != null) {
-            prefs.putString("companyId", gleapUser.getCompanyId());
+            store.putString("companyId", gleapUser.getCompanyId());
         }
         if (gleapUser.getCompanyName() != null) {
-            prefs.putString("companyName", gleapUser.getCompanyName());
+            store.putString("companyName", gleapUser.getCompanyName());
         }
         if (gleapUser.getAvatar() != null) {
-            prefs.putString("avatar", gleapUser.getAvatar());
+            store.putString("avatar", gleapUser.getAvatar());
         }
-        prefs.putFloat("value", (float) gleapUser.getValue());
-        prefs.putFloat("sla", (float) gleapUser.getSla());
+        store.putFloat("value", (float) gleapUser.getValue());
+        store.putFloat("sla", (float) gleapUser.getSla());
         if (gleapUser.getHash() != null && !gleapUser.getHash().equals("")) {
-            prefs.putString("hash", gleapUser.getHash());
+            store.putString("hash", gleapUser.getHash());
         }
         if (gleapUser.getCustomData() != null) {
-            prefs.putString("customData", gleapUser.getCustomData().toString());
+            store.putString("customData", gleapUser.getCustomData().toString());
         }
     }
 
     public GleapSessionProperties getStoredGleapUser() {
         GleapSessionProperties gleapUser = new GleapSessionProperties();
         try {
-            GleapPreferencesHelper prefs = GleapPreferencesHelper.getInstance(application);
-            String userId = prefs.getString("userId", "");
-            String userName = prefs.getString("name", "");
-            String email = prefs.getString("email", "");
-            String phone = prefs.getString("phone", "");
-            String plan = prefs.getString("plan", "");
-            String companyId = prefs.getString("companyId", "");
-            String companyName = prefs.getString("companyName", "");
-            String avatar = prefs.getString("avatar", "");
-            String hash = prefs.getString("hash", "");
-            double value = prefs.getFloat("value", 0);
-            double sla = prefs.getFloat("sla", 0);
+            String userId = store.getString("userId", "");
+            String userName = store.getString("name", "");
+            String email = store.getString("email", "");
+            String phone = store.getString("phone", "");
+            String plan = store.getString("plan", "");
+            String companyId = store.getString("companyId", "");
+            String companyName = store.getString("companyName", "");
+            String avatar = store.getString("avatar", "");
+            String hash = store.getString("hash", "");
+            double value = store.getFloat("value", 0);
+            double sla = store.getFloat("sla", 0);
 
             if (!userId.isEmpty()) {
                 gleapUser.setUserId(userId);
@@ -194,7 +252,7 @@ public class GleapSessionController {
 
             JSONObject customData = new JSONObject();
             try {
-                String customDataString = prefs.getString("customData", "");
+                String customDataString = store.getString("customData", "");
                 customData = new JSONObject(customDataString);
             } catch (Exception ex) {
             }
@@ -205,21 +263,24 @@ public class GleapSessionController {
     }
 
     public void processSessionActionResult(JSONObject result, boolean restartEventServices, boolean sendInitDelegate) {
+        processSessionActionResult(result, restartEventServices, sendInitDelegate, currentGeneration());
+    }
+
+    /**
+     * Applies the answer of a session request that started in {@code generation}; an answer
+     * to a request from before a logout is dropped.
+     */
+    void processSessionActionResult(JSONObject result, boolean restartEventServices, boolean sendInitDelegate,
+                                    int generation) {
         if (result == null) {
             return;
         }
 
         try {
-            String id = null;
-            String hash = null;
-
-            if (result.has("gleapId")) {
-                id = result.getString("gleapId");
-            }
-
-            if (result.has("gleapHash")) {
-                hash = result.getString("gleapHash");
-            }
+            // An answer without a session (no or empty id and hash, e.g. from an error page)
+            // never replaces the stored one.
+            String id = sessionValue(result, "gleapId");
+            String hash = sessionValue(result, "gleapHash");
 
             // Notify the session controller.
             if (id != null && hash != null) {
@@ -235,18 +296,25 @@ public class GleapSessionController {
                 // topic. Without the lastRegisteredUserHash reset the subsequent
                 // registerPushMessageGroup(hash) below would no-op when the previous
                 // value happens to be cached here.
-                String previousHash = (gleapSession != null) ? gleapSession.getHash() : null;
-                if (previousHash != null && !previousHash.equalsIgnoreCase(hash)) {
-                    unregisterPushMessageGroup(previousHash);
+                synchronized (this) {
+                    if (!isCurrentGeneration(generation)) {
+                        GleapLog.i("Dropped a session answer from before the logout");
+                        return;
+                    }
+
+                    String previousHash = (gleapSession != null) ? gleapSession.getHash() : null;
+                    if (previousHash != null && !previousHash.equalsIgnoreCase(hash)) {
+                        unregisterPushMessageGroup(previousHash);
+                    }
+
+                    mergeUserSession(id, hash);
+                    setSessionLoaded(true);
+                    gleapSession = getUserSession();
+
+                    // Update current session in session controller.
+                    GleapSessionProperties gleapSessionProperties = GleapSessionProperties.fromJSONObject(result);
+                    setGleapUserSession(gleapSessionProperties);
                 }
-
-                mergeUserSession(id, hash);
-                setSessionLoaded(true);
-                gleapSession = getUserSession();
-
-                // Update current session in session controller.
-                GleapSessionProperties gleapSessionProperties = GleapSessionProperties.fromJSONObject(result);
-                setGleapUserSession(gleapSessionProperties);
 
                 // Check if there are any other actions to complete.
                 executePendingUpdates();
@@ -257,17 +325,23 @@ public class GleapSessionController {
                 if (restartEventServices) {
                     // Restart event service.
                     GleapEventService.getInstance().stop(false);
+                    GleapEventService.getInstance().sessionStarted();
                     GleapEventService.getInstance().startWebSocketListener();
                 }
 
                 // Process push actions.
                 Gleap.getInstance().processOpenPushActions();
 
-                if (sendInitDelegate && GleapConfig.getInstance().getInitializationDoneCallback() != null) {
-                    GleapConfig.getInstance().getInitializationDoneCallback().invoke();
+                if (sendInitDelegate && GleapCallbacks.getInstance().getInitializationDoneCallback() != null) {
+                    GleapCallbacks.getInstance().getInitializationDoneCallback().invoke();
                 }
             }
         } catch (Exception exp) {}
+    }
+
+    private static String sessionValue(JSONObject result, String key) {
+        Object value = result.opt(key);
+        return value instanceof String && !((String) value).isEmpty() ? (String) value : null;
     }
 
     public GleapSessionProperties getGleapUserSession() {
@@ -290,19 +364,13 @@ public class GleapSessionController {
 
         this.lastRegisteredUserHash = userHash;
 
-        ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
+        // On the main thread, also without an activity on screen (e.g. an app start from a push).
+        GleapMainThread.post(new Runnable() {
             @Override
-            public void run() {
-                Handler mainHandler = new Handler(Looper.getMainLooper());
-                Runnable gleapRunnable = new Runnable() {
-                    @Override
-                    public void run() throws RuntimeException {
-                        if (GleapConfig.getInstance().getRegisterPushMessageGroupCallback() != null && userHash != null && !userHash.isEmpty()) {
-                            GleapConfig.getInstance().getRegisterPushMessageGroupCallback().invoke("gleapuser-" + userHash);
-                        }
-                    }
-                };
-                mainHandler.post(gleapRunnable);
+            public void run() throws RuntimeException {
+                if (GleapCallbacks.getInstance().getRegisterPushMessageGroupCallback() != null && userHash != null && !userHash.isEmpty()) {
+                    GleapCallbacks.getInstance().getRegisterPushMessageGroupCallback().invoke("gleapuser-" + userHash);
+                }
             }
         });
     }
@@ -311,19 +379,12 @@ public class GleapSessionController {
         this.lastRegisteredUserHash = null;
 
         // Unregister old user.
-        if (GleapConfig.getInstance().getUnRegisterPushMessageGroupCallback() != null && userHash != null && !userHash.isEmpty()) {
+        if (GleapCallbacks.getInstance().getUnRegisterPushMessageGroupCallback() != null && userHash != null && !userHash.isEmpty()) {
             try {
-                ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
+                GleapMainThread.post(new Runnable() {
                     @Override
-                    public void run() {
-                        Handler mainHandler = new Handler(Looper.getMainLooper());
-                        Runnable gleapRunnable = new Runnable() {
-                            @Override
-                            public void run() throws RuntimeException {
-                                GleapConfig.getInstance().getUnRegisterPushMessageGroupCallback().invoke("gleapuser-" + userHash);
-                            }
-                        };
-                        mainHandler.post(gleapRunnable);
+                    public void run() throws RuntimeException {
+                        GleapCallbacks.getInstance().getUnRegisterPushMessageGroupCallback().invoke("gleapuser-" + userHash);
                     }
                 });
             } catch (Exception ignore) {

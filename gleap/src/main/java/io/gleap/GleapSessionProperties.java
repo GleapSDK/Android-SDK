@@ -272,64 +272,64 @@ public class GleapSessionProperties {
 
     @Override
     public boolean equals(@Nullable Object obj) {
-        GleapSessionProperties otherUserPropterties = (GleapSessionProperties) obj;
+        GleapSessionProperties other = (GleapSessionProperties) obj;
 
-        if (otherUserPropterties == null) {
+        if (other == null) {
             return false;
         }
 
-        if (this.userId == null || !this.userId.equals(otherUserPropterties.userId)) {
+        if (this.userId == null || !this.userId.equals(other.userId)) {
             return false;
         }
 
-        if (this.getName() != null && otherUserPropterties.getName() != null && !this.getName().equals(otherUserPropterties.getName())) {
+        if (this.getName() != null && other.getName() != null && !this.getName().equals(other.getName())) {
             return false;
         }
 
-        if (this.getEmail() != null && otherUserPropterties.getEmail() != null && !this.getEmail().equals(otherUserPropterties.getEmail())) {
+        if (this.getEmail() != null && other.getEmail() != null && !this.getEmail().equals(other.getEmail())) {
             return false;
         }
 
-        if (this.getPhone() != null && otherUserPropterties.getPhone() != null) {
-            if (!this.getPhone().equals(otherUserPropterties.getPhone())) {
+        if (this.getPhone() != null && other.getPhone() != null) {
+            if (!this.getPhone().equals(other.getPhone())) {
                 return false;
             }
         }
 
-        if (this.getPlan() != null && otherUserPropterties.getPlan() != null) {
-            if (!this.getPlan().equals(otherUserPropterties.getPlan())) {
+        if (this.getPlan() != null && other.getPlan() != null) {
+            if (!this.getPlan().equals(other.getPlan())) {
                 return false;
             }
         }
 
-        if (this.getCompanyName() != null && otherUserPropterties.getCompanyName() != null) {
-            if (!this.getCompanyName().equals(otherUserPropterties.getCompanyName())) {
+        if (this.getCompanyName() != null && other.getCompanyName() != null) {
+            if (!this.getCompanyName().equals(other.getCompanyName())) {
                 return false;
             }
         }
 
-        if (this.getAvatar() != null && otherUserPropterties.getAvatar() != null) {
-            if (!this.getAvatar().equals(otherUserPropterties.getAvatar())) {
+        if (this.getAvatar() != null && other.getAvatar() != null) {
+            if (!this.getAvatar().equals(other.getAvatar())) {
                 return false;
             }
         }
 
-        if (this.getCompanyId() != null && otherUserPropterties.getCompanyId() != null) {
-            if (!this.getCompanyId().equals(otherUserPropterties.getCompanyId())) {
+        if (this.getCompanyId() != null && other.getCompanyId() != null) {
+            if (!this.getCompanyId().equals(other.getCompanyId())) {
                 return false;
             }
         }
 
-        if (this.getValue() != otherUserPropterties.getValue()) {
+        if (this.getValue() != other.getValue()) {
             return false;
         }
 
-        if (this.getSla() != otherUserPropterties.getSla()) {
+        if (this.getSla() != other.getSla()) {
             return false;
         }
 
         JSONObject customData = this.getCustomData();
-        JSONObject otherUserData = otherUserPropterties.getCustomData();
+        JSONObject otherUserData = other.getCustomData();
 
         if (customData != null && otherUserData != null) {
             Iterator<String> keys = otherUserData.keys();

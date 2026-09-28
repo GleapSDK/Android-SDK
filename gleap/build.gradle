@@ -1,45 +1,22 @@
 apply plugin: 'com.android.library'
 apply from: 'maven-push.gradle'
 
-def localProperties = new Properties()
-def localPropertiesFile = rootProject.getBuildFile()
-if (localPropertiesFile.exists()) {
-    localPropertiesFile.withReader('UTF-8') { reader ->
-        localProperties.load(reader)
-    }
-}
-
-buildscript {
-    repositories {
-        google()
-        mavenCentral() // NEW
-    }
-    dependencies {
-        apply plugin: 'maven-publish'
-        apply plugin: 'signing'
-    }
-}
-
 android {
     namespace 'gleap.io.gleap'
 
-    compileSdkVersion 33
+    compileSdkVersion 35
 
     defaultConfig {
         minSdkVersion 21
-        targetSdkVersion 33
-        buildConfigField "String", "VERSION_NAME", "\"18.2.0\""
-
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        targetSdkVersion 35
+        // The SDK version reported in env data and requests, from VERSION_NAME in gradle.properties.
+        buildConfigField "String", "VERSION_NAME", "\"${VERSION_NAME}\""
     }
 
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-        }
-        debug {
-            manifestPlaceholders.cleartextTrafficPermitted = "true"
         }
     }
 
@@ -50,6 +27,12 @@ android {
 
     lint {
         abortOnError false
+    }
+
+    testOptions {
+        // Local unit tests run against android.jar stubs: Android calls on code paths under test
+        // (e.g. android.util.Log) return default values instead of throwing.
+        unitTests.returnDefaultValues = true
     }
 
     // Expose the release variant for publishing

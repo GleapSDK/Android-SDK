@@ -4,7 +4,6 @@ import java.net.URLEncoder;
 
 class GleapURLGenerator {
     public static String generateURL() {
-        GleapBug bug = GleapBug.getInstance();
         GleapConfig config = GleapConfig.getInstance();
         String postfixUrl = "";
         try {
@@ -19,12 +18,6 @@ class GleapURLGenerator {
                     postfixUrl += "&gleapId=" + gleapSession.getId();
                     postfixUrl += "&gleapHash=" + gleapSession.getHash();
                 }
-            }
-
-            String feedBackFlow = GleapConfig.getInstance().getFeedbackFlow();
-            if (!feedBackFlow.equals("")) {
-                postfixUrl += "&startFlow=" + feedBackFlow;
-                GleapConfig.getInstance().setFeedbackFlow("");
             }
         } catch (Exception ex) {
         }

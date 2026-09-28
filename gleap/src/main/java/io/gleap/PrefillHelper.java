@@ -3,13 +3,11 @@ package io.gleap;
 import org.json.JSONObject;
 
 public class PrefillHelper {
-    private static PrefillHelper instancen;
-    private JSONObject jsonObject;
+    // Created with the class: getInstancen() is called from several threads.
+    private static final PrefillHelper instancen = new PrefillHelper();
+    private volatile JSONObject jsonObject;
 
     public static PrefillHelper getInstancen() {
-        if(instancen == null) {
-            instancen = new PrefillHelper();
-        }
         return instancen;
     }
 

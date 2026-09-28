@@ -6,8 +6,6 @@ import android.content.ComponentCallbacks;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -39,7 +37,8 @@ class GleapThemeHelper {
     static final String DEFAULT_LIGHT_BACKGROUND = "#ffffff";
     static final String DEFAULT_DARK_BACKGROUND = "#18181b";
 
-    private static GleapThemeHelper instance;
+    // Created with the class: getInstance() is called from several threads.
+    private static final GleapThemeHelper instance = new GleapThemeHelper();
 
     // Runtime override (Gleap.setColorScheme). null = use the dashboard setting.
     private volatile String colorScheme = null;
@@ -57,10 +56,7 @@ class GleapThemeHelper {
     private GleapThemeHelper() {
     }
 
-    static synchronized GleapThemeHelper getInstance() {
-        if (instance == null) {
-            instance = new GleapThemeHelper();
-        }
+    static GleapThemeHelper getInstance() {
         return instance;
     }
 
@@ -95,7 +91,7 @@ class GleapThemeHelper {
                     // The application configuration doesn't carry an
                     // AppCompat night mode override — prefer the activity,
                     // once it received the new configuration too.
-                    new Handler(Looper.getMainLooper()).post(new Runnable() {
+                    GleapMainThread.post(new Runnable() {
                         @Override
                         public void run() {
                             checkNightMode(null);
@@ -217,11 +213,11 @@ class GleapThemeHelper {
             }
             appliedBackgroundColor = backgroundColor;
 
-            new Handler(Looper.getMainLooper()).post(new Runnable() {
+            GleapMainThread.post(new Runnable() {
                 @Override
                 public void run() {
                     try {
-                        GleapInvisibleActivityManger.getInstance().refreshColorScheme();
+                        GleapOverlayManager.getInstance().refreshColorScheme();
                         GleapMainActivity.refreshColorScheme();
                     } catch (Error | Exception ignore) {
                     }

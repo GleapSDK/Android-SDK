@@ -6,15 +6,13 @@ import java.util.LinkedList;
 import java.util.List;
 
 class GleapActionQueueHandler {
-    private static GleapActionQueueHandler instance;
+    // Created with the class: getInstance() is called from several threads.
+    private static final GleapActionQueueHandler instance = new GleapActionQueueHandler();
     private List<GleapAction> messagesQueue = new LinkedList();
     private GleapActionQueueHandler() {
     }
 
     public static GleapActionQueueHandler getInstance() {
-        if(instance == null) {
-            instance = new GleapActionQueueHandler();
-        }
         return instance;
     }
 

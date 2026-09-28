@@ -5,8 +5,6 @@ import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.NetworkRequest;
-import android.os.Handler;
-import android.os.Looper;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -98,8 +96,7 @@ class GleapConnectivityManager {
             return;
         }
 
-        Handler mainHandler = new Handler(Looper.getMainLooper());
-        mainHandler.post(new Runnable() {
+        GleapMainThread.post(new Runnable() {
             @Override
             public void run() {
                 try {
@@ -114,11 +111,13 @@ class GleapConnectivityManager {
                         new Gleap.GleapListener();
                     } else if (needsSession) {
                         // Config loaded but no session — just create a session.
-                        new GleapBaseSessionService().execute();
+                        new GleapBaseSessionService().executeOnExecutor(GleapExecutor.SERIAL);
                     } else {
                         // Both loaded — connection was temporarily lost.
+                        // An identify that could not get through runs again.
+                        GleapSessionController.getInstance().executePendingUpdates();
                         // Refresh the launcher UI and reconnect WebSocket.
-                        GleapInvisibleActivityManger.getInstance().addLayoutToActivity(null);
+                        GleapOverlayManager.getInstance().addLayoutToActivity(null);
                         GleapEventService.getInstance().startWebSocketListener();
                     }
                 } catch (Exception ignore) {
@@ -126,7 +125,7 @@ class GleapConnectivityManager {
 
                 // Reset the reconnecting flag after cooldown so subsequent
                 // connectivity changes can trigger another attempt.
-                mainHandler.postDelayed(new Runnable() {
+                GleapMainThread.postDelayed(new Runnable() {
                     @Override
                     public void run() {
                         isReconnecting.set(false);

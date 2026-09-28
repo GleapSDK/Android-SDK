@@ -155,7 +155,7 @@ class GleapChatMessage {
             public void onClick(View v) {
                 // A collapsed stack expands on the first tap instead of
                 // activating the card — same as the web widget on touch devices.
-                if (GleapInvisibleActivityManger.getInstance().maybeExpandStackOnTap()) {
+                if (GleapOverlayManager.getInstance().maybeExpandStackOnTap()) {
                     return;
                 }
 
@@ -177,7 +177,7 @@ class GleapChatMessage {
                 } catch (Exception ex) {
                 }
 
-                GleapInvisibleActivityManger.getInstance().clearMessages();
+                GleapOverlayManager.getInstance().clearMessages();
             }
         };
     }
