@@ -12,7 +12,7 @@ import java.io.OutputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
-import javax.net.ssl.HttpsURLConnection;
+import java.net.HttpURLConnection;
 
 public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
     private static final String URL_POSTFIX = "/sessions/identify";
@@ -101,7 +101,7 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
 
     private void performIdentifyRequest(GleapSession gleapSession, JSONObject jsonObject) throws Exception {
         URL url = new URL(GleapConfig.getInstance().getApiUrl() + URL_POSTFIX);
-        HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("POST");
         conn.setRequestProperty("Api-Token", GleapConfig.getInstance().getSdkKey());
         conn.setRequestProperty("Accept", "application/json");
