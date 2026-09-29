@@ -82,7 +82,7 @@ public class GleapWidgetMessagesTest {
             assertEquals("#ffffff", GleapConfig.getInstance().getPlainConfig()
                     .getJSONObject("flowConfig").getString("backgroundColor"));
         } finally {
-            Gleap.getInstance().setColorScheme("default");
+            GleapThemeHelper.resetForTesting();
         }
 
         assertEquals("#ffffff", GleapWidgetMessages.configUpdate().getJSONObject("config").getString("backgroundColor"));

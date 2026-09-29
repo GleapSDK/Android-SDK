@@ -1258,20 +1258,20 @@ public class Gleap implements iGleap {
     }
 
     /**
-     * Sets the widget color scheme. Overrides the color scheme set in the dashboard. Only takes
-     * effect when "Adapt to dark / light mode" is enabled in the dashboard; while it is disabled
-     * the widget always keeps the dashboard colors.
+     * Sets the widget color scheme. Overrides the color scheme set in the dashboard, which
+     * applies until this is called. Only takes effect when "Adapt to dark / light mode" is
+     * enabled in the dashboard; while it is disabled the widget always keeps the dashboard colors.
      * <ul>
      *     <li>"auto": follows the app's dark / light mode and switches live when it changes.</li>
      *     <li>"light" / "dark": forces a scheme, e.g. from your app's own theme setting.</li>
-     *     <li>"default" (or null): removes the override, the dashboard setting applies again.</li>
      * </ul>
+     * Any other value is treated as "auto".
      * Dark mode uses the dark colors set in the dashboard (header colors, UI color, background)
      * and also the dark logo, header image and composer glow set there. Without dark colors the
      * widget keeps its normal colors. Can be called before or after
      * {@link #initialize(String, Application)}.
      *
-     * @param colorScheme "default", "auto", "light" or "dark"
+     * @param colorScheme "auto", "light" or "dark"
      * @author Gleap
      */
     @Override
@@ -1284,7 +1284,7 @@ public class Gleap implements iGleap {
      * color scheme set in the dashboard, see {@link #setColorScheme(String)}. Only takes effect
      * when "Adapt to dark / light mode" is enabled in the dashboard.
      *
-     * @param colorScheme          "default", "auto", "light" or "dark"
+     * @param colorScheme          "auto", "light" or "dark"
      * @param lightBackgroundColor background (#rrggbb) in light mode, null for the dashboard background
      * @param darkBackgroundColor  background (#rrggbb) in dark mode, null for the dashboard's dark background
      * @author Gleap

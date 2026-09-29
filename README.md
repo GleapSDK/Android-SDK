@@ -98,6 +98,6 @@ Gleap.getInstance().setColorScheme("auto");
 Gleap.getInstance().setColorScheme("dark", null, "#121212");
 ```
 
-`auto` follows the app's night mode (including `AppCompatDelegate.setDefaultNightMode`) and switches live, `light` / `dark` force a scheme and `default` removes the override so the dashboard setting applies again. Dark mode uses the dark colors set in the dashboard (header colors, UI color and background) and also the dark logo, header image and composer glow set there; without dark colors the widget keeps its normal colors. The optional background colors passed to `setColorScheme` override the dashboard's background in light / dark mode. Can be called before or after `Gleap.initialize`.
+Until `setColorScheme` is called, the dashboard's color scheme applies. `auto` follows the app's night mode (including `AppCompatDelegate.setDefaultNightMode`) and switches live, `light` / `dark` force a scheme; any other value is treated as `auto`. Dark mode uses the dark colors set in the dashboard (header colors, UI color and background) and also the dark logo, header image and composer glow set there; without dark colors the widget keeps its normal colors. The optional background colors passed to `setColorScheme` override the dashboard's background in light / dark mode. Can be called before or after `Gleap.initialize`.
 
 `setColorScheme` only takes effect when "Adapt to dark / light mode" is enabled in the dashboard. While it is disabled, the widget always keeps the dashboard colors, whatever scheme the app sets.

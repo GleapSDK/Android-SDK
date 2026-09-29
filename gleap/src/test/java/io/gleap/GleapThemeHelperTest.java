@@ -57,7 +57,7 @@ public class GleapThemeHelperTest {
     public void defaultSchemeKeepsTheDashboardColors() throws Exception {
         JSONObject flowConfig = disabled(flowConfigWithDarkPalette());
         assertSame(flowConfig, GleapThemeHelper.applyToFlowConfig(flowConfig, null, null, null, true));
-        assertSame(flowConfig, GleapThemeHelper.applyToFlowConfig(flowConfig, "default", null, "#121212", true));
+        assertSame(flowConfig, GleapThemeHelper.applyToFlowConfig(flowConfig, "dark", null, "#121212", true));
         assertEquals("#101010", resolve(disabled(flowConfig("#101010")), "unknown", false));
         assertEquals("#ffffff", resolve(disabled(flowConfig(null)), null, true));
     }
@@ -240,7 +240,6 @@ public class GleapThemeHelperTest {
         flowConfig.put("colorScheme", "auto");
 
         assertEquals("#0a0a0a", resolve(flowConfig, null, true));
-        assertEquals("#0a0a0a", resolve(flowConfig, "default", true));
         assertEquals("#ffffff", resolve(flowConfig, null, false));
     }
 
@@ -249,6 +248,34 @@ public class GleapThemeHelperTest {
         JSONObject flowConfig = flowConfigWithDarkPalette();
         assertEquals("#0a0a0a", resolve(flowConfig, "auto", true));
         assertEquals("#ffffff", resolve(flowConfig, "auto", false));
+    }
+
+    @Test
+    public void anyOtherRuntimeSchemeIsAuto() throws Exception {
+        // Any runtime value but "light" / "dark" ("default" included) follows the night mode, whatever the dashboard says.
+        JSONObject flowConfig = flowConfigWithDarkPalette();
+        for (String dashboardScheme : new String[]{"light", "dark"}) {
+            flowConfig.put("colorScheme", dashboardScheme);
+            for (String runtimeScheme : new String[]{"default", "unknown", ""}) {
+                assertEquals("#0a0a0a", resolve(flowConfig, runtimeScheme, true));
+                assertEquals("#ffffff", resolve(flowConfig, runtimeScheme, false));
+            }
+        }
+
+        // Through the public API, with the dashboard's "dark" and the app in light mode.
+        GleapConfig.resetForTesting();
+        try {
+            GleapConfig.getInstance().initConfig(new JSONObject().put("flowConfig", flowConfig));
+            assertEquals("#0a0a0a", GleapConfig.getInstance().getBackgroundColor());
+            for (String runtimeScheme : new String[]{"default", "unknown", null}) {
+                Gleap.getInstance().setColorScheme("dark");
+                Gleap.getInstance().setColorScheme(runtimeScheme);
+                assertEquals("#ffffff", GleapConfig.getInstance().getBackgroundColor());
+            }
+        } finally {
+            GleapThemeHelper.resetForTesting();
+            GleapConfig.resetForTesting();
+        }
     }
 
     // Light logo, header image and composer glow.
@@ -335,7 +362,7 @@ public class GleapThemeHelperTest {
         JSONObject flowConfig = flowConfigWithDarkPalette();
         putLightAssets(flowConfig);
         putDarkAssets(flowConfig);
-        // Dashboard "light": without a runtime scheme (or with "default") it is light too.
+        // Dashboard "light": without a runtime scheme it is light too.
         flowConfig.put("colorScheme", "light");
 
         assertSame(flowConfig, GleapThemeHelper.applyToFlowConfig(flowConfig, "light", null, null, true));
@@ -343,7 +370,7 @@ public class GleapThemeHelperTest {
         assertSame(flowConfig, GleapThemeHelper.applyToFlowConfig(flowConfig, null, null, null, true));
         assertTrue(GleapThemeHelper.resolveDarkAssets(flowConfig, "light", null, true).isEmpty());
         assertTrue(GleapThemeHelper.resolveDarkAssets(flowConfig, "auto", null, false).isEmpty());
-        assertTrue(GleapThemeHelper.resolveDarkAssets(flowConfig, "default", null, true).isEmpty());
+        assertTrue(GleapThemeHelper.resolveDarkAssets(flowConfig, null, null, true).isEmpty());
 
         // A runtime light background still leaves them as they are.
         JSONObject themed = GleapThemeHelper.applyToFlowConfig(flowConfig, "light", "#eeeeee", null, true);
@@ -384,10 +411,10 @@ public class GleapThemeHelperTest {
             Gleap.getInstance().setColorScheme("dark");
             assertEquals("#ffffff", GleapConfig.getInstance().getBackgroundColor());
 
-            Gleap.getInstance().setColorScheme("default");
+            Gleap.getInstance().setColorScheme("auto");
             assertEquals("#ffffff", GleapConfig.getInstance().getBackgroundColor());
         } finally {
-            Gleap.getInstance().setColorScheme("default");
+            GleapThemeHelper.resetForTesting();
             GleapConfig.resetForTesting();
         }
     }
@@ -433,7 +460,7 @@ public class GleapThemeHelperTest {
             assertEquals("#111111", config.getHeaderColor3());
             assertEquals("https://example.com/bg.png", config.getBgImage());
         } finally {
-            Gleap.getInstance().setColorScheme("default");
+            GleapThemeHelper.resetForTesting();
             GleapConfig.resetForTesting();
         }
     }
@@ -463,7 +490,7 @@ public class GleapThemeHelperTest {
             assertEquals("#485bff", config.getThemedFlowConfig().getString("color"));
             assertEquals("https://example.com/bg.png", config.getBgImage());
         } finally {
-            Gleap.getInstance().setColorScheme("default");
+            GleapThemeHelper.resetForTesting();
             GleapConfig.resetForTesting();
         }
     }
@@ -493,7 +520,7 @@ public class GleapThemeHelperTest {
             assertSame(cached, config.getThemedFlowConfig());
             assertEquals(original, cached.toString());
         } finally {
-            Gleap.getInstance().setColorScheme("default");
+            GleapThemeHelper.resetForTesting();
             GleapConfig.resetForTesting();
         }
     }

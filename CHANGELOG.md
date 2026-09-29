@@ -4,11 +4,11 @@
 
 ### Added
 
-- Color scheme: `Gleap.getInstance().setColorScheme("auto")` matches the widget to the app's dark / light mode. `auto` follows the night mode of the current activity (so `AppCompatDelegate.setDefaultNightMode` is respected) and switches live, `light` / `dark` force a scheme, `default` (or null) removes the override so the dashboard setting applies again.
+- Color scheme: `Gleap.getInstance().setColorScheme("auto")` matches the widget to the app's dark / light mode. `auto` follows the night mode of the current activity (so `AppCompatDelegate.setDefaultNightMode` is respected) and switches live, `light` / `dark` force a scheme; any other value is treated as `auto`.
 - Dark mode uses the dark colors set in the dashboard (header colors, UI color and background: `darkHeaderColor`, `darkHeaderColor2`, `darkHeaderColor3`, `darkColor`, `darkBackgroundColor`), which replace the regular ones. Without dark colors the widget keeps its normal colors.
 - Dark mode also uses the dark logo, header image and composer glow set in the dashboard (`darkLogo`, `darkBgImage`, `darkAurora`); an empty dark logo or header image means none in dark mode. Configs saved before these fields existed keep the regular ones.
 - `setColorScheme(colorScheme, lightBackgroundColor, darkBackgroundColor)` optionally overrides the background (`#rrggbb`) used in light / dark mode, taking precedence over the dashboard's colors.
-- The dashboard's color scheme setting (`colorScheme` in the widget config) applies the same way; `setColorScheme` overrides it.
+- The dashboard's color scheme setting (`colorScheme` in the widget config) applies the same way until `setColorScheme` is called, which overrides it.
 - `setColorScheme` only takes effect when "Adapt to dark / light mode" is enabled in the dashboard. While it is disabled (`colorScheme` missing or `default`), the widget is never themed and keeps the dashboard colors, whatever scheme the app sets.
 - The scheme applies to the widget, its loading screen, the in-app notifications and modals. Callable before or after `Gleap.initialize`.
 - Built-in OkHttp network logs: add `new GleapOkHttpInterceptor()` to your `OkHttpClient` (`addInterceptor`, or `addNetworkInterceptor` to also see the headers OkHttp adds). It logs method, url, headers, status, duration and text bodies (JSON, XML, text and forms, up to 150 KB each) of the newest 30 requests, including failed ones with their error. The response body is copied while your app reads it, so requests and responses are never changed or delayed; binary and streaming bodies (event streams, NDJSON, gRPC) are left out.

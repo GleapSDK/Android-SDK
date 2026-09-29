@@ -37,7 +37,7 @@ import java.util.Map;
  * (flowConfig.colorScheme "auto", "light" or "dark"). Missing, unknown or
  * "default" means disabled: the widget keeps the dashboard colors, whatever
  * {@link Gleap#setColorScheme(String, String, String)} says. When enabled, the
- * runtime scheme overrides the dashboard's. "auto" follows the app's night
+ * runtime scheme (once set) overrides the dashboard's. "auto" follows the app's night
  * mode — read from the current activity, so AppCompatDelegate.setDefaultNightMode
  * is respected — and switches live.
  */
@@ -91,18 +91,25 @@ class GleapThemeHelper {
     }
 
     /**
-     * Sets the runtime color scheme. "default" or null removes the override, so
-     * the dashboard setting applies again. Invalid background colors are ignored.
-     * Has no effect while dark / light mode is disabled in the dashboard.
+     * Sets the runtime color scheme: "light" or "dark", anything else is "auto".
+     * Invalid background colors are ignored. Has no effect while dark / light
+     * mode is disabled in the dashboard.
      */
     void setColorScheme(String colorScheme, String lightBackgroundColor, String darkBackgroundColor) {
-        this.colorScheme = isScheme(colorScheme) ? colorScheme.toLowerCase(Locale.ROOT) : null;
+        this.colorScheme = runtimeColorScheme(colorScheme);
         this.lightBackgroundColor = normalizeHexColor(lightBackgroundColor);
         this.darkBackgroundColor = normalizeHexColor(darkBackgroundColor);
 
         // The night mode may have changed while nothing was listening yet.
         this.nightMode = null;
         notifyIfChanged();
+    }
+
+    // Tests only: no runtime override, as before any setColorScheme call.
+    static void resetForTesting() {
+        instance.colorScheme = null;
+        instance.lightBackgroundColor = null;
+        instance.darkBackgroundColor = null;
     }
 
     /**
@@ -297,6 +304,15 @@ class GleapThemeHelper {
     }
 
     /**
+     * A runtime scheme (Gleap.setColorScheme): "light" or "dark", anything else
+     * (null, unknown or the former "default") is "auto".
+     */
+    static String runtimeColorScheme(String colorScheme) {
+        String scheme = colorScheme != null ? colorScheme.toLowerCase(Locale.ROOT) : "";
+        return scheme.equals(COLOR_SCHEME_LIGHT) || scheme.equals(COLOR_SCHEME_DARK) ? scheme : COLOR_SCHEME_AUTO;
+    }
+
+    /**
      * The dashboard's flowConfig.colorScheme: "auto", "light" or "dark" when dark /
      * light mode is enabled there, else "default" (missing, unknown or "default").
      */
@@ -335,8 +351,8 @@ class GleapThemeHelper {
      * The scheme the widget renders with: "default" (the dashboard colors,
      * nothing themed), "light" or "dark". "default" whenever dark / light mode
      * is disabled in the dashboard, even with a runtime scheme. Otherwise the
-     * runtime scheme (auto, light or dark) wins over the dashboard's; "auto"
-     * resolves via nightMode. Dark needs a dark palette — without dark colors
+     * runtime scheme (null = none set; see {@link #runtimeColorScheme}) wins
+     * over the dashboard's; "auto" resolves via nightMode. Dark needs a dark palette — without dark colors
      * it counts as "default".
      */
     static String activeColorScheme(JSONObject flowConfig, String runtimeColorScheme, String runtimeDarkBackgroundColor, boolean nightMode) {
@@ -344,8 +360,8 @@ class GleapThemeHelper {
         if (scheme.equals(COLOR_SCHEME_DEFAULT)) {
             return COLOR_SCHEME_DEFAULT;
         }
-        if (isScheme(runtimeColorScheme)) {
-            scheme = runtimeColorScheme.toLowerCase(Locale.ROOT);
+        if (runtimeColorScheme != null) {
+            scheme = runtimeColorScheme(runtimeColorScheme);
         }
 
         boolean dark = scheme.equals(COLOR_SCHEME_AUTO) ? nightMode : scheme.equals(COLOR_SCHEME_DARK);
