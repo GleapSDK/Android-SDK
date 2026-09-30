@@ -328,8 +328,9 @@ class GleapEventService {
     /**
      * Sends the oldest queued events (at most {@link #MAX_EVENTS_PER_PING} and about
      * {@link #MAX_PING_BYTES} of JSON) in one ping. Any 2xx answer delivered them: exactly those
-     * are removed, events tracked while the ping was in flight wait for the next one. Otherwise
-     * they stay queued and the pings back off.
+     * are removed, events tracked while the ping was in flight wait for the next one. After a
+     * network error, 408, 429 or a 5xx they stay queued, any other error answer drops them;
+     * either way the pings back off.
      *
      * @return the delay until the next ping
      */
@@ -358,6 +359,12 @@ class GleapEventService {
             backoff.onSuccess();
             // The rest of a full queue goes right away, otherwise every 3 s.
             return batch.hasMore ? 0 : Math.max(0, PING_INTERVAL_MS - (now - startedAt));
+        }
+
+        // The server refused these events for good (e.g. 400, 401, 413): drop them, so they do
+        // not hold back the rest of the queue. The next ping still backs off.
+        if (response != null && !GleapPingBackoff.isRetryableStatus(response.status)) {
+            eventQueue.removeSent(batch.events);
         }
 
         long retryAfterMs = response != null

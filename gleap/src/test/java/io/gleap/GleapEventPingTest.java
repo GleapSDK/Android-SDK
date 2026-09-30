@@ -181,6 +181,23 @@ public class GleapEventPingTest {
     }
 
     @Test
+    public void aRefusedPingDropsItsEventsAndStillBacksOff() throws Exception {
+        for (int status : new int[]{400, 401, 413}) {
+            sdk.server.clear(PING).respond(PING, status, "{}");
+            track("event-" + status);
+
+            assertEquals("HTTP " + status, 3000, service.sendQueuedEvents());
+
+            assertTrue("HTTP " + status, service.getEventQueue().isEmpty());
+            service.getBackoff().onSuccess();
+        }
+        sdk.server.clear(PING).respond(PING, 408, "{}");
+        track("kept");
+        service.sendQueuedEvents();
+        assertEquals(Arrays.asList("kept"), queuedNames());
+    }
+
+    @Test
     public void every2xxAnswerDeliversTheEvents() throws Exception {
         for (int status : new int[]{201, 202, 204, 299}) {
             sdk.server.clear(PING).respond(PING, status, status == 204 ? "" : "{}");

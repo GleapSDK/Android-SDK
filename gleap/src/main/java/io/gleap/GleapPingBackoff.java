@@ -66,6 +66,14 @@ final class GleapPingBackoff {
     }
 
     /**
+     * Whether a failed ping is worth sending again: 408, 429 or a 5xx. Other error answers mean
+     * the server will not take these events.
+     */
+    static boolean isRetryableStatus(int status) {
+        return status == 408 || status == 429 || status >= 500;
+    }
+
+    /**
      * The backoff after {@code failures} failed pings in a row: 3 s doubled per failure up to
      * 60 s, times a random factor between 0.8 and 1.2, never more than 60 s.
      */
