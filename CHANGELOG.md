@@ -1,6 +1,6 @@
 # Changelog
 
-## 18.2.0
+## 19.0.0
 
 ### Added
 
@@ -54,6 +54,11 @@
 - The SDK wrote a `descriptionEditText` key into a SharedPreferences file named `prefs`, which may be the app's own. It no longer touches that file.
 - Security: links from the widget, banners and modals with the schemes `intent:`, `file:`, `content:`, `javascript:` and `data:` are no longer opened, neither through the widget's `open-url` nor as navigations. http(s), `mailto:`, `tel:`, `gleap:` smart links and app deep links open as before.
 - Security: the widget's WebView is only granted the microphone and the camera, once the app holds the Android permission. Other WebView permission requests (protected media ids, MIDI devices, ...) are denied.
+- The WebSocket only reconnected after a connection failure: when the server closed it cleanly (e.g. during a deploy), the SDK stayed disconnected until the next session start or network change. It now reconnects with the same backoff (5 s up to 60 s, now ±20 % so devices do not reconnect in step), but not after the SDK closed it itself (`clearIdentity`, a new session).
+- A ticket answered with a 2xx other than 201 (e.g. 200), or a file upload answered with a 2xx other than 200, counted as failed: the app's `FeedbackSendingFailedCallback` ran instead of `FeedbackSentCallback` and the widget showed an error. Any 2xx now counts as sent.
+- OkHttp network logs: request bodies over 150 KB were logged as `[body not captured]`. Like response bodies, they now keep the first 150 KB with the `… [truncated, N bytes]` marker, and ignored keys in the cut JSON are masked. One-shot bodies and bodies without a length are still not written. A cut body whose masked values made it longer than 150 KB also no longer gets a second, wrong byte count.
+- `openConversations(showBackButton)` hid the back button when asked to show it. It now matches iOS and the other `open…(showBackButton)` methods; `openConversations()` still shows it.
+- `setConfigLoadedCallback` / `setInitializedCallback` set after the config was loaded were never called, as the config is loaded (and the callbacks fire) once per process. Like on iOS, a callback set later is now called once with the loaded config, posted to the main thread, and calling `Gleap.initialize` again with the same SDK key (e.g. after a React Native reload) calls the set callbacks again. Nothing is called before the config was loaded.
 
 ### Notes
 
