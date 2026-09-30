@@ -382,6 +382,31 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         });
     }
 
+    /**
+     * Pushes the session to the open widget (session-update), e.g. a refreshed file session.
+     * No-op when no widget is open.
+     */
+    static void refreshSession() {
+        final GleapMainActivity activity = openInstance != null ? openInstance.get() : null;
+        if (activity == null || activity.isFinishing()) {
+            return;
+        }
+
+        activity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    // Before the first ping the widget isn't listening yet —
+                    // the ping sends the session anyway.
+                    if (activity.widgetPinged) {
+                        GleapWidgetBridge.sendSessionUpdate(activity);
+                    }
+                } catch (Error | Exception ignore) {
+                }
+            }
+        });
+    }
+
     private void applyLoaderBackground() {
         if (isSurvey) {
             return;

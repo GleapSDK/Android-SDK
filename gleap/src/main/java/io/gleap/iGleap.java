@@ -44,6 +44,18 @@ interface iGleap {
     void openConversation(String shareToken) throws GleapNotInitialisedException;
 
     /**
+     * Opens the conversation of a protected file from an emailed file link (authenticated
+     * conversation files). The email links to your app's URL with a {@code gleapFile} query
+     * parameter; pass that URL here when your app handles it (e.g. as an App Link), and identify
+     * the user with their user hash as usual. Once the SDK has a file session, it opens the
+     * file's conversation if the identified user may see it; otherwise nothing happens.
+     *
+     * @param url the link that was opened, e.g. {@code https://app.example.com/?gleapFile=<file id>}
+     * @return true when the link has a valid {@code gleapFile} parameter (24 hex characters)
+     */
+    boolean openProtectedFileFromUrl(String url);
+
+    /**
      * Open the conversations tab
      */
     void openConversations() throws GleapNotInitialisedException;

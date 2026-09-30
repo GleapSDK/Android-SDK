@@ -46,10 +46,14 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
 
             // Reset the pending contact identification action.
             controller.setPendingIdentificationAction(null);
+            final boolean forced = controller.takeForcedIdentify();
 
-            // Verify if we need to run the identify call - check if already same data.
+            // Verify if we need to run the identify call - check if already same data. Sent
+            // anyway to get or refresh the file session of authenticated conversation files
+            // (checked against the session as it is now, e.g. after the session start).
             GleapSessionProperties oldProps = controller.getGleapUserSession();
-            if (oldProps != null && oldProps.equals(pendingAction)) {
+            if (!forced && !controller.needsFileAccessIdentify(pendingAction)
+                    && oldProps != null && oldProps.equals(pendingAction)) {
                 // Old equals new, nothing to do.
                 return 200;
             }
@@ -82,7 +86,7 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                 controller.clearRejectedIdentity(generation);
             } else if (!answered) {
                 // Could not get through: keep the session and try again later.
-                controller.keepIdentifyPending(pendingAction, generation);
+                controller.keepIdentifyPending(pendingAction, generation, forced);
             }
         } catch (Exception ignored) {}
 
@@ -100,7 +104,7 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
         int status = conn.getResponseCode();
         if (status >= 200 && status < 300) {
             JSONObject result = GleapHttp.readLastJsonLine(conn.getInputStream());
-            GleapSessionController.getInstance().processSessionActionResult(result, true, false, generation);
+            GleapSessionController.getInstance().processSessionActionResult(result, true, false, generation, true);
             return true;
         }
 

@@ -101,3 +101,25 @@ Gleap.getInstance().setColorScheme("dark", null, "#121212");
 Until `setColorScheme` is called, the dashboard's color scheme applies. `auto` follows the app's night mode (including `AppCompatDelegate.setDefaultNightMode`) and switches live, `light` / `dark` force a scheme; any other value is treated as `auto`. Dark mode uses the dark colors set in the dashboard (header colors, UI color and background) and also the dark logo, header image and composer glow set there; without dark colors the widget keeps its normal colors. The optional background colors passed to `setColorScheme` override the dashboard's background in light / dark mode. Can be called before or after `Gleap.initialize`.
 
 `setColorScheme` only takes effect when "Adapt to dark / light mode" is enabled in the dashboard. While it is disabled, the widget always keeps the dashboard colors, whatever scheme the app sets.
+
+## Authenticated conversation files
+
+When "Authenticated conversation files" is enabled for your project, conversation files can only be opened by the identified user. Identify the user with their user hash (identity verification) as usual:
+
+```
+GleapSessionProperties props = new GleapSessionProperties("user-id", "Name", "email@example.com", "USER_HASH");
+Gleap.getInstance().identifyUser("user-id", props);
+```
+
+The SDK then receives a short-lived file session (15 minutes), which it keeps in memory only (never on disk), passes to the widget and refreshes before it expires. `clearIdentity` revokes it.
+
+Emails about protected files link to your app's URL with a `gleapFile` query parameter. If your app handles that URL (e.g. as an App Link), pass it to Gleap; after the user is identified, the SDK opens the file's conversation if the user may see it:
+
+```
+Uri link = getIntent().getData();
+if (link != null) {
+    Gleap.getInstance().openProtectedFileFromUrl(link.toString());
+}
+```
+
+`openProtectedFileFromUrl` returns `false` when the URL has no valid `gleapFile` parameter. Keep the parameter through your app's login flow.

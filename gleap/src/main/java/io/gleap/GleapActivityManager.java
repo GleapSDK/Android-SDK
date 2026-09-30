@@ -73,6 +73,9 @@ class GleapActivityManager {
                     // Check if Gleap is still active. If so, bring Gleap to front.
                     bringGleapToFront(activity);
 
+                    // The file session's refresh timer does not run while the device sleeps.
+                    GleapFileAccess.refreshIfExpiring();
+
                     // Process open push notification action.
                     GleapMainThread.postDelayed(new Runnable() {
                         @Override

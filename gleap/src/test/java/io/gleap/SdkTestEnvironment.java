@@ -49,6 +49,9 @@ class SdkTestEnvironment {
             }
         });
         GleapHttp.setConnectionFactoryForTesting(server);
+        // File session revokes and file lookups run right away, on the test thread.
+        GleapFileAccess.resetForTesting();
+        GleapFileAccess.setExecutorForTesting(Runnable::run);
         GleapRetry.setSleeperForTesting(new GleapRetry.Sleeper() {
             @Override
             public void sleep(long millis) {
@@ -209,6 +212,8 @@ class SdkTestEnvironment {
         GleapEventService.setPingRandomForTesting(null);
         GleapEventService.setPingExecutorForTesting(null);
         GleapHttp.setConnectionFactoryForTesting(null);
+        GleapFileAccess.setExecutorForTesting(null);
+        GleapFileAccess.resetForTesting();
         GleapRetry.setSleeperForTesting(null);
         GleapEventService.setWebSocketFactoryForTesting(null);
         HttpHelper.setSenderForTesting(null);

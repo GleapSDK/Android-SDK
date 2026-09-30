@@ -15,6 +15,11 @@ public class GleapSessionController {
     private GleapSessionProperties pendingUpdateAction;
     private volatile boolean isSessionLoaded = false;
     private String lastRegisteredUserHash;
+    // The last identify of the app (in memory only): identifies again with it to get or refresh
+    // the file session of authenticated conversation files (see GleapFileAccess).
+    private GleapSessionProperties lastIdentify;
+    // The next identify is sent even if the user data did not change (a file session refresh).
+    private boolean forceNextIdentify;
     // Where the session and the identified user are kept between app starts.
     private final KeyValueStore store;
     // Counts the logouts (clearUserSession). A request started before a logout neither applies
@@ -91,6 +96,69 @@ public class GleapSessionController {
     public void setPendingIdentificationAction(GleapSessionProperties pendingIdentificationAction) {
         synchronized (this) {
             this.pendingIdentificationAction = pendingIdentificationAction;
+            if (pendingIdentificationAction != null) {
+                lastIdentify = pendingIdentificationAction;
+            }
+        }
+    }
+
+    /**
+     * Taken by the identify service with the pending identify: true when it must be sent even
+     * if the user data did not change.
+     */
+    boolean takeForcedIdentify() {
+        synchronized (this) {
+            boolean forced = forceNextIdentify;
+            forceNextIdentify = false;
+            return forced;
+        }
+    }
+
+    /**
+     * @return true when the last identify has a user hash, i.e. can get a file session
+     */
+    boolean hasIdentifyHash() {
+        synchronized (this) {
+            return lastIdentify != null && lastIdentify.getHash() != null && !lastIdentify.getHash().isEmpty();
+        }
+    }
+
+    /**
+     * An identify with a user hash must be sent, even with unchanged user data, while the
+     * project requires a file session and the current session has no valid one.
+     */
+    boolean needsFileAccessIdentify(GleapSessionProperties identify) {
+        GleapSession session = gleapSession;
+        return identify != null && identify.getHash() != null && !identify.getHash().isEmpty()
+                && session != null && session.isAuthenticatedFilesRequired()
+                && session.validFileAccessToken(0) == null;
+    }
+
+    /**
+     * Queues the last identify (with a user hash) to be sent again, which gets a new file
+     * session. An identify the app queued meanwhile is sent instead.
+     *
+     * @return false when there is no identify with a user hash
+     */
+    boolean requestFileAccessIdentify() {
+        synchronized (this) {
+            if (lastIdentify == null || lastIdentify.getHash() == null || lastIdentify.getHash().isEmpty()) {
+                return false;
+            }
+            if (pendingIdentificationAction == null) {
+                pendingIdentificationAction = lastIdentify;
+            }
+            forceNextIdentify = true;
+            return true;
+        }
+    }
+
+    /**
+     * Refreshes the file session now: {@link #requestFileAccessIdentify()} and sends it.
+     */
+    void refreshFileAccess() {
+        if (requestFileAccessIdentify()) {
+            executePendingUpdates();
         }
     }
 
@@ -115,12 +183,17 @@ public class GleapSessionController {
     public void clearUserSession() {
         synchronized (this) {
             identityGeneration.incrementAndGet();
+            // Revoke the file session before the session that holds it is dropped.
+            GleapFileAccess.onLogout(gleapSession != null ? gleapSession.getFileAccessToken() : null);
             store.clear();
 
             if (gleapSession != null) {
                 unregisterPushMessageGroup(gleapSession.getHash());
+                gleapSession.setFileAccess(null, null);
             }
             pendingIdentificationAction = null;
+            lastIdentify = null;
+            forceNextIdentify = false;
             pendingUpdateAction = null;
             gleapSessionProperties = null;
             gleapSession = null;
@@ -146,9 +219,18 @@ public class GleapSessionController {
      * unless the app logged out or asked for another identify meanwhile.
      */
     void keepIdentifyPending(GleapSessionProperties identify, int generation) {
+        keepIdentifyPending(identify, generation, false);
+    }
+
+    /**
+     * {@link #keepIdentifyPending(GleapSessionProperties, int)}; a forced identify (file
+     * session refresh) stays forced.
+     */
+    void keepIdentifyPending(GleapSessionProperties identify, int generation, boolean forced) {
         synchronized (this) {
             if (isCurrentGeneration(generation) && pendingIdentificationAction == null) {
                 pendingIdentificationAction = identify;
+                forceNextIdentify = forceNextIdentify || forced;
             }
         }
     }
@@ -272,6 +354,15 @@ public class GleapSessionController {
      */
     void processSessionActionResult(JSONObject result, boolean restartEventServices, boolean sendInitDelegate,
                                     int generation) {
+        processSessionActionResult(result, restartEventServices, sendInitDelegate, generation, false);
+    }
+
+    /**
+     * {@link #processSessionActionResult(JSONObject, boolean, boolean, int)}; {@code fromIdentify}
+     * for the answer to an identify.
+     */
+    void processSessionActionResult(JSONObject result, boolean restartEventServices, boolean sendInitDelegate,
+                                    int generation, boolean fromIdentify) {
         if (result == null) {
             return;
         }
@@ -296,6 +387,8 @@ public class GleapSessionController {
                 // topic. Without the lastRegisteredUserHash reset the subsequent
                 // registerPushMessageGroup(hash) below would no-op when the previous
                 // value happens to be cached here.
+                GleapSession session;
+                boolean fileAccessChanged;
                 synchronized (this) {
                     if (!isCurrentGeneration(generation)) {
                         GleapLog.i("Dropped a session answer from before the logout");
@@ -307,6 +400,12 @@ public class GleapSessionController {
                         unregisterPushMessageGroup(previousHash);
                     }
 
+                    // The file session before this answer.
+                    String previousId = gleapSession != null ? gleapSession.getId() : null;
+                    String previousUserId = this.gleapSessionProperties != null ? this.gleapSessionProperties.getUserId() : null;
+                    String previousToken = gleapSession != null ? gleapSession.getFileAccessToken() : null;
+                    String previousExpiresAt = gleapSession != null ? gleapSession.getFileAccessExpiresAt() : null;
+
                     mergeUserSession(id, hash);
                     setSessionLoaded(true);
                     gleapSession = getUserSession();
@@ -314,6 +413,28 @@ public class GleapSessionController {
                     // Update current session in session controller.
                     GleapSessionProperties gleapSessionProperties = GleapSessionProperties.fromJSONObject(result);
                     setGleapUserSession(gleapSessionProperties);
+
+                    // Only a verified identify answers with a file session. Other answers (session
+                    // start, contact updates) keep the one we have, but never across an identity
+                    // change and never an expired one.
+                    String token = sessionValue(result, "fileAccessToken");
+                    String expiresAt = token != null ? sessionValue(result, "fileAccessExpiresAt") : null;
+                    if (token == null && id.equals(previousId)
+                            && sameValue(gleapSessionProperties.getUserId(), previousUserId)
+                            && GleapFileAccess.isValid(previousToken, previousExpiresAt, 0)) {
+                        token = previousToken;
+                        expiresAt = previousExpiresAt;
+                    }
+                    gleapSession.setFileAccess(token, expiresAt);
+                    gleapSession.setAuthenticatedFilesRequired(result.optBoolean("authenticatedFilesRequired", false));
+                    fileAccessChanged = !sameValue(token, previousToken);
+                    session = gleapSession;
+                }
+
+                GleapFileAccess.onSessionAnswer(this, session, fromIdentify);
+                if (fileAccessChanged) {
+                    // An open widget gets the new file session right away.
+                    GleapMainActivity.refreshSession();
                 }
 
                 // Check if there are any other actions to complete.
@@ -342,6 +463,10 @@ public class GleapSessionController {
     private static String sessionValue(JSONObject result, String key) {
         Object value = result.opt(key);
         return value instanceof String && !((String) value).isEmpty() ? (String) value : null;
+    }
+
+    private static boolean sameValue(String a, String b) {
+        return a == null ? b == null : a.equals(b);
     }
 
     public GleapSessionProperties getGleapUserSession() {

@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Authenticated conversation files (opt-in per project): a verified `identifyUser` (with the user hash) now gets a short-lived file session, which is kept in memory only, passed to the widget so it can show protected files, refreshed 5 minutes before it expires (and when the app comes back to the foreground) and revoked by `clearIdentity`. An identify with unchanged data is still sent while the file session is missing or expired.
+- `Gleap.getInstance().openProtectedFileFromUrl(url)` opens the conversation of a protected file from an emailed link (`?gleapFile=<file id>`) once the user is identified; returns `false` for a URL without a valid file id.
+
 ## 19.0.0
 
 ### Added
