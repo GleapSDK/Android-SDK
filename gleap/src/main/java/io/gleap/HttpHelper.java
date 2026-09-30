@@ -1,7 +1,6 @@
 package io.gleap;
 
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.os.AsyncTask;
 
 import org.json.JSONArray;
@@ -10,256 +9,191 @@ import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
 
-import javax.net.ssl.HttpsURLConnection;
+import io.gleap.callbacks.FeedbackSendingFailedCallback;
+import io.gleap.callbacks.FeedbackWillBeSentCallback;
 
 /**
- * Sends the report to the gleap dashboard.
+ * Sends a ticket to Gleap (POST /bugs/v2): the report data is copied when the task is created
+ * (see {@link FeedbackSubmission}), the files are uploaded and the ticket is posted in the
+ * background, the app's callbacks and the listener run on the main thread.
  */
 class HttpHelper extends AsyncTask<GleapBug, Void, JSONObject> {
-    private static final String UPLOAD_IMAGE_BACKEND_URL_POSTFIX = "/uploads/sdk";
-    private static final String UPLOAD_IMAGE_MULTI_BACKEND_URL_POSTFIX = "/uploads/sdksteps";
-    private static final String UPLOAD_FILES_MULTI_BACKEND_URL_POSTFIX = "/uploads/attachments";
     private static final String REPORT_BUG_URL_POSTFIX = "/bugs/v2";
+
+    interface Sender {
+        void send(OnHttpResponseListener listener, Context context, FeedbackSubmission submission);
+    }
+
+    private static final Sender ASYNC = new Sender() {
+        @Override
+        public void send(OnHttpResponseListener listener, Context context, FeedbackSubmission submission) {
+            new HttpHelper(listener, context, submission).executeOnExecutor(GleapExecutor.SERIAL, GleapBug.getInstance());
+        }
+    };
+
+    private static volatile Sender sender = ASYNC;
+
+    private static final FeedbackPayloadBuilder.ReportData DEVICE_DATA = new FeedbackPayloadBuilder.ReportData() {
+        @Override
+        public JSONArray networkLogs() {
+            return GleapBug.getInstance().getNetworklogs();
+        }
+
+        @Override
+        public JSONObject metaData() throws JSONException {
+            PhoneMeta phoneMeta = GleapBug.getInstance().getPhoneMeta();
+            return phoneMeta != null ? phoneMeta.getJSONObj() : null;
+        }
+
+        @Override
+        public JSONArray consoleLogs() {
+            return GleapBug.getInstance().getLogs();
+        }
+    };
+
     private final Context context;
-    private static JSONObject sentCallbackData;
-    private static JSONObject dataToSend;
-
-    GleapConfig bbConfig = GleapConfig.getInstance();
-
     private final OnHttpResponseListener listener;
+    private final FeedbackSubmission submission;
+    // What the sent callbacks receive: the outbound id and the form data.
+    private final JSONObject sentData;
 
     public HttpHelper(OnHttpResponseListener listener, Context context) {
+        this(listener, context, FeedbackSubmission.takeWidgetTicket());
+    }
+
+    HttpHelper(OnHttpResponseListener listener, Context context, FeedbackSubmission submission) {
         this.listener = listener;
         this.context = context;
+        this.submission = submission;
+
+        JSONObject data = new JSONObject();
+        try {
+            data.put("outboundId", submission.outboundId);
+            data.put("formData", submission.formData);
+        } catch (JSONException ignore) {
+        }
+        this.sentData = data;
+    }
+
+    /**
+     * Sends the ticket the widget submitted; the listener gets the result on the main thread.
+     */
+    static void send(OnHttpResponseListener listener, Context context) {
+        send(listener, context, FeedbackSubmission.takeWidgetTicket());
+    }
+
+    static void send(OnHttpResponseListener listener, Context context, FeedbackSubmission submission) {
+        sender.send(listener, context, submission);
+    }
+
+    // Tests only; null restores the background task.
+    static void setSenderForTesting(Sender testSender) {
+        sender = testSender != null ? testSender : ASYNC;
+    }
+
+    /**
+     * The report was created: the API answers POST /bugs/v2 with 201, and any other 2xx counts as
+     * well. The same check decides the sent / failed callbacks and the widget's confirmation.
+     */
+    static boolean isSent(JSONObject result) {
+        return result != null && GleapHttp.isSuccess(result.optInt("status", 0));
+    }
+
+    @Override
+    protected void onPreExecute() {
+        try {
+            FeedbackWillBeSentCallback willBeSent = GleapCallbacks.getInstance().getFeedbackWillBeSentCallback();
+            if (willBeSent != null) {
+                willBeSent.invoke(submission.formData != null ? submission.formData.toString() : "");
+            }
+        } catch (Exception ignore) {
+        }
     }
 
     @Override
     protected JSONObject doInBackground(GleapBug... gleapBugs) {
-        GleapBug gleapBug = gleapBugs[0];
-
         JSONObject result = new JSONObject();
         try {
-            result = postFeedback(gleapBug);
+            result = postFeedback();
         } catch (Exception e) {
         }
-
-        GleapConfig.getInstance().setAction(null);
 
         return result;
     }
 
     @Override
     protected void onPostExecute(JSONObject result) {
-        // Default form submission callback.
-        if (GleapConfig.getInstance().getFeedbackSentCallback() != null) {
-            if (dataToSend != null && dataToSend.has("formData")) {
-                try {
-                    GleapConfig.getInstance().getFeedbackSentCallback().invoke(dataToSend.getJSONObject("formData"));
-                } catch (JSONException e) {
-                    GleapConfig.getInstance().getFeedbackSentCallback().invoke(null);
-                }
-            } else {
-                GleapConfig.getInstance().getFeedbackSentCallback().invoke(null);
-            }
+        if (isSent(result)) {
+            notifySent();
+        } else {
+            notifySendingFailed(result);
         }
 
-        // Send outbound sent.
-        try {
-            if (GleapConfig.getInstance().getOutboundSentCallback() != null) {
-                if (dataToSend != null) {
-                    GleapConfig.getInstance().getOutboundSentCallback().invoke(dataToSend);
-                } else {
-                    GleapConfig.getInstance().getOutboundSentCallback().invoke(null);
-                }
-            }
-        } catch (Exception exp) {}
-
-        // Track outbound submission.
-        if (dataToSend != null && dataToSend.has("outboundId")) {
-            try {
-                String outboundId = dataToSend.getString("outboundId");
-
-                Gleap.getInstance().trackEvent("outbound-" + outboundId + "-submitted", dataToSend.getJSONObject("formData"));
-            } catch (JSONException e) {}
-        }
-
-        sentCallbackData = null;
-
-        GleapBug.getInstance().setSilent(false);
-        GleapConfig.getInstance().setCrashStripModel(new JSONObject());
         try {
             listener.onTaskComplete(result);
         } catch (GleapAlreadyInitialisedException e) {
         }
     }
 
-
-    private JSONObject uploadImage(Bitmap image) throws IOException, JSONException {
-        FormDataHttpsHelper multipart = new FormDataHttpsHelper(bbConfig.getApiUrl() + UPLOAD_IMAGE_BACKEND_URL_POSTFIX, bbConfig.getSdkKey());
-        File file = bitmapToFile(image);
-        if (file != null) {
-            multipart.addFilePart(file);
-        }
-        String response = multipart.finishAndUpload();
-        if (isJSONValid(response)) {
-            return new JSONObject(response);
-        } else {
-            return new JSONObject();
+    private static void notifySendingFailed(JSONObject result) {
+        try {
+            FeedbackSendingFailedCallback failed = GleapCallbacks.getInstance().getFeedbackSendingFailedCallback();
+            if (failed != null) {
+                int status = result != null ? result.optInt("status", 0) : 0;
+                failed.invoke(status > 0
+                        ? "The feedback could not be sent (HTTP " + status + ")."
+                        : "The feedback could not be sent.");
+            }
+        } catch (Exception ignore) {
         }
     }
 
-
-    private JSONObject uploadFiles(File[] files) throws IOException, JSONException {
-        FormDataHttpsHelper multipart = new FormDataHttpsHelper(bbConfig.getApiUrl() + UPLOAD_FILES_MULTI_BACKEND_URL_POSTFIX, bbConfig.getSdkKey());
-        for (File file : files) {
-            try {
-                if (file != null && file.length() > 0) {
-                    multipart.addFilePart(file);
+    private void notifySent() {
+        // Default form submission callback.
+        if (GleapCallbacks.getInstance().getFeedbackSentCallback() != null) {
+            if (sentData.has("formData")) {
+                try {
+                    GleapCallbacks.getInstance().getFeedbackSentCallback().invoke(sentData.getJSONObject("formData"));
+                } catch (JSONException e) {
+                    GleapCallbacks.getInstance().getFeedbackSentCallback().invoke(null);
                 }
-            } catch (Exception exception) {
+            } else {
+                GleapCallbacks.getInstance().getFeedbackSentCallback().invoke(null);
             }
         }
-        String response = multipart.finishAndUpload();
 
-        return new JSONObject(response);
+        // Send outbound sent.
+        try {
+            if (GleapCallbacks.getInstance().getOutboundSentCallback() != null) {
+                GleapCallbacks.getInstance().getOutboundSentCallback().invoke(sentData);
+            }
+        } catch (Exception exp) {
+        }
+
+        // Track outbound submission.
+        if (sentData.has("outboundId")) {
+            try {
+                String outboundId = sentData.getString("outboundId");
+
+                Gleap.getInstance().trackEvent("outbound-" + outboundId + "-submitted", sentData.getJSONObject("formData"));
+            } catch (JSONException e) {
+            }
+        }
     }
 
-    private JSONObject uploadImages(Bitmap[] images) throws IOException, JSONException {
-        FormDataHttpsHelper multipart = new FormDataHttpsHelper(bbConfig.getApiUrl() + UPLOAD_IMAGE_MULTI_BACKEND_URL_POSTFIX, bbConfig.getSdkKey());
-        for (Bitmap bitmap : images) {
-            File file = bitmapToFile(bitmap);
-            if (file != null) {
-                multipart.addFilePart(file);
-            }
-        }
-        try {
-            String response = multipart.finishAndUpload();
-            return new JSONObject(response);
-        } catch (Exception ex) {
-        }
+    private JSONObject postFeedback() throws JSONException, IOException {
+        HttpURLConnection conn = GleapHttp.openReportPost(REPORT_BUG_URL_POSTFIX,
+                GleapSessionController.getInstance().getUserSession(), GleapHttp.UPLOAD_READ_TIMEOUT_MS);
 
-        return null;
-    }
-
-    private JSONObject postFeedback(GleapBug gleapBug) throws JSONException, IOException {
-        JSONObject config = GleapConfig.getInstance().getStripModel();
-        JSONObject stripConfig = GleapConfig.getInstance().getCrashStripModel();
-        boolean stripImages = false;
-
-        if (config.has("screenshot")) {
-            stripImages = config.getBoolean("screenshot");
-        }
-        if (stripConfig.has("screenshot")) {
-            stripImages = stripConfig.getBoolean("screenshot");
-        }
-
-        URL url = new URL(bbConfig.getApiUrl() + REPORT_BUG_URL_POSTFIX);
-        HttpURLConnection conn;
-        if (bbConfig.getApiUrl().contains("https")) {
-            conn = (HttpsURLConnection) url.openConnection();
-        } else {
-            conn = (HttpURLConnection) url.openConnection();
-        }
-
-        conn.setRequestProperty("api-token", bbConfig.getSdkKey());
-        conn.setDoOutput(true);
-        conn.setRequestProperty("Accept", "application/json");
-        conn.setRequestProperty("Content-Type", "application/json");
-        conn.setRequestMethod("POST");
-        GleapSession gleapSession = GleapSessionController.getInstance().getUserSession();
-
-        if (gleapSession != null) {
-            conn.setRequestProperty("gleap-id", gleapSession.getId());
-            conn.setRequestProperty("gleap-hash", gleapSession.getHash());
-        }
-        JSONObject body = new JSONObject();
-
-        String outboundId = null;
-        try {
-            outboundId = gleapBug.getOutboundId();
-
-            if (outboundId == null || outboundId.equalsIgnoreCase("")) {
-                outboundId = "bugreporting";
-            }
-        } catch (Exception exp) {}
-
-        body.put("outbound", outboundId);
-
-        body.put("spamToken", gleapBug.getSpamToken());
-
-        if (!stripImages) {
-            JSONObject responseUploadImage = uploadImage(gleapBug.getScreenshot());
-            body.put("screenshotUrl", responseUploadImage.get("fileUrl"));
-            body.put("replay", generateFrames());
-        }
-
-        body.put("type", gleapBug.getType());
-
-        if (config.has("attachments") && !config.getBoolean("attachments") || !config.has("attachments")) {
-            body.put("attachments", generateAttachments());
-        }
-
-        JSONObject formData = gleapBug.getData();
-
-        //prepare data for sent
-        JSONObject callBackData = new JSONObject();
-        callBackData.put("type", gleapBug.getType());
-        callBackData.put("formdata", formData);
-
-        sentCallbackData = callBackData;
-
-        // Prepare internal data to send ref.
-        JSONObject dataToSendObj = new JSONObject();
-        dataToSendObj.put("outboundId", gleapBug.getOutboundId());
-        dataToSendObj.put("outbound", gleapBug.getOutboundAction());
-        dataToSendObj.put("formData", formData);
-
-        dataToSend = dataToSendObj;
-
-        body.put("formData", formData);
-        body.put("networkLogs", gleapBug.getNetworklogs());
-        body.put("customEventLog", gleapBug.getCustomEventLog());
-        body.put("isSilent", gleapBug.isSilent() ? "true" : "false");
-
-        PhoneMeta phoneMeta = gleapBug.getPhoneMeta();
-        if (phoneMeta != null) {
-            body.put("metaData", phoneMeta.getJSONObj());
-        }
-
-        body.put("customData", gleapBug.getCustomData());
-        body.put("priority", gleapBug.getSeverity());
-
-        try {
-            body.put("tags", new JSONArray(gleapBug.getTags()));
-        } catch (Exception ex) {
-        }
-
-        if (GleapConfig.getInstance().isEnableConsoleLogs()) {
-            body.put("consoleLog", gleapBug.getLogs());
-        }
-
-        for (Iterator<String> it = config.keys(); it.hasNext(); ) {
-            String key = it.next();
-            if (config.getBoolean(key)) {
-                body.remove(key);
-            }
-        }
+        JSONObject body = FeedbackPayloadBuilder.build(submission, GleapConfig.getInstance().isEnableConsoleLogs(),
+                new FeedbackUploader(context), DEVICE_DATA);
 
         try (OutputStream os = conn.getOutputStream()) {
             byte[] input = body.toString().getBytes(StandardCharsets.UTF_8);
@@ -312,140 +246,5 @@ class HttpHelper extends AsyncTask<GleapBug, Void, JSONObject> {
         }
 
         return result;
-    }
-
-    /**
-     * Convert the Bitmap to a File in the cache
-     *
-     * @param bitmap image which is uploaded
-     * @return return the file
-     */
-    private File bitmapToFile(Bitmap bitmap) {
-        if (bitmap != null) {
-            try {
-                File outputDir = context.getCacheDir();
-                File outputFile = File.createTempFile("file", ".png", outputDir);
-                OutputStream
-                        os
-                        = new FileOutputStream(outputFile);
-
-                os.write(getBytes(bitmap));
-                os.close();
-                return outputFile;
-            } catch (Exception e) {
-            }
-        }
-        return null;
-    }
-
-    private byte[] getBytes(Bitmap input) {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        input.compress(Bitmap.CompressFormat.PNG, 90, baos);
-        return baos.toByteArray();
-    }
-
-    private JSONObject generateFrames() throws IOException, JSONException {
-        JSONObject replay = new JSONObject();
-        replay.put("interval", GleapBug.getInstance().getReplay().getInterval());
-        JSONArray frames = generateReplayImageUrls();
-        replay.put("frames", frames);
-        return replay;
-    }
-
-    private JSONArray generateAttachments() {
-        JSONArray result = new JSONArray();
-        try {
-            JSONObject obj = uploadFiles(GleapFileHelper.getInstance().getAttachments());
-            JSONArray fileUrls = (JSONArray) obj.get("fileUrls");
-            for (int i = 0; i < fileUrls.length(); i++) {
-                File currentFile = GleapFileHelper.getInstance().getAttachments()[i];
-                JSONObject entry = new JSONObject();
-                entry.put("url", fileUrls.get(i));
-                entry.put("name", currentFile.getName());
-                InputStream is = new BufferedInputStream(new FileInputStream(currentFile));
-                entry.put("type", URLConnection.guessContentTypeFromStream(is));
-                result.put(entry);
-            }
-        } catch (Exception ex) {
-        }
-
-        return result;
-    }
-
-    private JSONArray generateReplayImageUrls() throws IOException, JSONException {
-        JSONArray result = new JSONArray();
-        ScreenshotReplay[] replays = GleapBug.getInstance().getReplay().getScreenshots();
-        List<Bitmap> bitmapList = new LinkedList<>();
-
-        for (ScreenshotReplay replay : replays) {
-            if (replay != null) {
-                bitmapList.add(replay.getScreenshot());
-            }
-        }
-
-        JSONObject obj = uploadImages(bitmapList.toArray(new Bitmap[bitmapList.size()]));
-        if (obj != null) {
-            JSONArray fileUrls = (JSONArray) obj.get("fileUrls");
-            for (int i = 0; i < fileUrls.length(); i++) {
-                JSONObject entry = new JSONObject();
-                entry.put("url", fileUrls.get(i));
-                entry.put("screenname", replays[i].getScreenName());
-                entry.put("date", DateUtil.dateToString(replays[i].getDate()));
-                entry.put("interactions", generateInteractions(replays[i]));
-                result.put(entry);
-            }
-        }
-
-        GleapBug.getInstance().getReplay().reset();
-        return result;
-    }
-
-    public JSONArray generateInteractions(ScreenshotReplay replay) throws JSONException {
-        JSONArray result = new JSONArray();
-        for (Interaction interaction : replay.getInteractions()) {
-            JSONObject obj = new JSONObject();
-            obj.put("x", interaction.getX());
-            obj.put("y", interaction.getY());
-            obj.put("date", DateUtil.dateToString(interaction.getOffset()));
-            obj.put("type", interaction.getInteractiontype());
-            result.put(obj);
-        }
-        return result;
-    }
-
-    private static JSONObject concatJSONS(JSONObject json, JSONObject obj) {
-        JSONObject result = new JSONObject();
-
-        try {
-            Iterator<String> iteratorJson = json.keys();
-            while (iteratorJson.hasNext()) {
-                String key = iteratorJson.next();
-                result.put(key, json.get(key));
-            }
-            Iterator<String> iteratorObj = obj.keys();
-            while (iteratorObj.hasNext()) {
-                String key = iteratorObj.next();
-                result.put(key, obj.get(key));
-            }
-        } catch (Exception err) {
-            err.printStackTrace();
-        }
-
-        return result;
-    }
-
-    private boolean isJSONValid(String test) {
-        try {
-            new JSONObject(test);
-        } catch (Exception ex) {
-            // edited, to include @Arthur's comment
-            // e.g. in case JSONArray is valid as well...
-            try {
-                new JSONArray(test);
-            } catch (Exception ex1) {
-                return false;
-            }
-        }
-        return true;
     }
 }

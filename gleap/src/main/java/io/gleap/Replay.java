@@ -22,16 +22,20 @@ class Replay {
         this.interval = interval;
     }
 
+    /**
+     * Adds the newest frame; when the replay is full the oldest one is dropped. The frames stay
+     * in the order they were taken, which is the order the dashboard plays them in.
+     */
     public void addScreenshot(Bitmap bitmap, String screenName) {
         try {
-            if (screenshots.size() == numberOfScreenshots) {
-                screenshots.get(0).getScreenshot().recycle();
+            if (screenshots.size() >= numberOfScreenshots) {
+                screenshots.getFirst().getScreenshot().recycle();
                 screenshots.removeFirst();
             }
 
-            screenshots.push(new ScreenshotReplay(bitmap, screenName, new Date()));
-        }catch (Exception ex) {
-      ex.printStackTrace();
+            screenshots.addLast(new ScreenshotReplay(bitmap, screenName, new Date()));
+        } catch (Exception ex) {
+            GleapLog.w("Could not add a replay frame", ex);
         }
     }
 

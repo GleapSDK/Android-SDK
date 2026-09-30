@@ -3,12 +3,10 @@ package io.gleap;
 import static io.gleap.GleapHelper.convertDpToPixel;
 
 import android.app.Activity;
-import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.Insets;
 import android.graphics.Outline;
-import android.net.Uri;
 import android.net.http.SslError;
 import android.os.Build;
 import android.util.DisplayMetrics;
@@ -16,12 +14,8 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewOutlineProvider;
-import android.webkit.ConsoleMessage;
 import android.webkit.JavascriptInterface;
-import android.webkit.JsPromptResult;
-import android.webkit.JsResult;
 import android.webkit.SslErrorHandler;
-import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -55,6 +49,7 @@ class GleapModal {
     private LinearLayout backdrop;
     private CardView cardView;
     private FrameLayout clipper; // container that controls visible height
+    private boolean modalLoaded = false;
 
     private static final int MAX_LANDSCAPE_WIDTH_DP = 400;
     private int maxAllowedHeightPx; // recalculated after every rotation
@@ -111,7 +106,7 @@ class GleapModal {
             }
             
             if (canCloseModal) {
-                GleapInvisibleActivityManger.getInstance().destroyModal(true, false);
+                GleapOverlayManager.getInstance().destroyModal(true, false);
             }
         });
 
@@ -134,7 +129,7 @@ class GleapModal {
         s.setDefaultTextEncodingName("utf-8");
 
         webView.addJavascriptInterface(new GleapModalJSBridge(), "GleapModalJSBridge");
-        webView.setWebChromeClient(new GleapModalWebChromeClient());
+        webView.setWebChromeClient(new GleapQuietChromeClient());
         webView.setWebViewClient(new GleapModalWebViewClient());
         webView.loadUrl(modalUrl);
 
@@ -250,9 +245,9 @@ class GleapModal {
             try {
                 JSONObject cb = new JSONObject(raw);
                 switch (cb.getString("name")) {
-                    case "modal-loaded":       sendModalData(); break;
-                    case "modal-data-set":     GleapInvisibleActivityManger.animateViewInOut(getComponent(), true); break;
-                    case "modal-close":        GleapInvisibleActivityManger.getInstance().destroyModal(true, false); break;
+                    case "modal-loaded":       modalLoaded = true; sendModalData(); break;
+                    case "modal-data-set":     GleapOverlayManager.animateViewInOut(getComponent(), true); break;
+                    case "modal-close":        GleapOverlayManager.getInstance().destroyModal(true, false); break;
                     case "start-conversation": startConversation(cb); break;
                     case "show-form":          showForm(cb); break;
                     case "open-url":           openUrl(cb.optString("data")); break;
@@ -264,7 +259,7 @@ class GleapModal {
                     case "modal-height":       updateMinHeight(cb.getJSONObject("data").getInt("height")); break;
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                GleapLog.w("Could not handle the modal message", e);
             }
         }
 
@@ -275,23 +270,6 @@ class GleapModal {
             lp.height = newHeight;
             clipper.setLayoutParams(lp);
             clipper.invalidateOutline();
-        }
-
-        private void sendModalData() {
-            try { 
-                // Get config values with fallbacks
-                String primaryColor = GleapConfig.getInstance().getColor() != null ? GleapConfig.getInstance().getColor() : "#485BFF";
-                String backgroundColor = GleapConfig.getInstance().getBackgroundColor() != null ? GleapConfig.getInstance().getBackgroundColor() : "#FFFFFF";
-                
-                // Create a copy of modalData to avoid modifying the original
-                JSONObject dataToSend = new JSONObject(modalData.toString());
-
-                // Add the color fields at the root level
-                dataToSend.put("primaryColor", primaryColor);
-                dataToSend.put("backgroundColor", backgroundColor);
-                
-                sendMessage(generateGleapMessage("modal-data", dataToSend)); 
-            } catch (Exception ignored) {}
         }
 
         // ---- helper methods ------------------------------------------
@@ -305,13 +283,13 @@ class GleapModal {
         }
 
         private void openUrl(String url) {
-            if (url != null && !url.isEmpty()) Gleap.getInstance().handleLink(url);
+            if (url != null && !url.isEmpty() && GleapExternalLinks.mayOpen(url)) Gleap.getInstance().handleLink(url);
         }
 
         private void startCustomAction(JSONObject cb) throws JSONException {
-            if (GleapConfig.getInstance().getCustomActions() == null) return;
+            if (GleapCallbacks.getInstance().getCustomActions() == null) return;
             String action = cb.optJSONObject("data") == null ? "" : cb.getJSONObject("data").optString("action", "");
-            GleapConfig.getInstance().getCustomActions().invoke(action, null);
+            GleapCallbacks.getInstance().getCustomActions().invoke(action, null);
         }
 
         private void showSurvey(JSONObject cb) throws JSONException {
@@ -327,6 +305,33 @@ class GleapModal {
     // ------------------------------------------------------------------
     // WebView helpers
     // ------------------------------------------------------------------
+    private void sendModalData() {
+        try { 
+            // Get config values with fallbacks
+            String primaryColor = GleapConfig.getInstance().getColor() != null ? GleapConfig.getInstance().getColor() : "#485BFF";
+            String backgroundColor = GleapConfig.getInstance().getBackgroundColor() != null ? GleapConfig.getInstance().getBackgroundColor() : "#FFFFFF";
+            
+            // Create a copy of modalData to avoid modifying the original
+            JSONObject dataToSend = new JSONObject(modalData.toString());
+
+            // Add the color fields at the root level
+            dataToSend.put("primaryColor", primaryColor);
+            dataToSend.put("backgroundColor", backgroundColor);
+            
+            sendMessage(generateGleapMessage("modal-data", dataToSend)); 
+        } catch (Exception ignored) {}
+    }
+
+    /**
+     * Resends the modal data, e.g. with new colors after a color scheme change.
+     * Before the modal page loaded, modal-loaded sends it anyway.
+     */
+    void resendModalData() {
+        if (modalLoaded) {
+            sendModalData();
+        }
+    }
+
     void sendMessage(String message) {
         if (webView != null) {
             webView.evaluateJavascript("window.appMessage(" + message + ");", null);
@@ -342,16 +347,7 @@ class GleapModal {
     // ------------------------------------------------------------------
     private class GleapModalWebViewClient extends WebViewClient {
         @Override public boolean shouldOverrideUrlLoading(WebView view, String url) {
-            try {
-                if (!url.contains(modalUrl)) {
-                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                    if (intent.resolveActivity(parentActivity.getPackageManager()) != null) {
-                        parentActivity.startActivity(intent);
-                    }
-                    return true;
-                }
-            } catch (Exception ignored) {}
-            return false;
+            return GleapExternalLinks.openOutside(parentActivity, url, modalUrl);
         }
 
         @Override public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
@@ -363,10 +359,4 @@ class GleapModal {
         }
     }
 
-    private static class GleapModalWebChromeClient extends WebChromeClient {
-        @Override public boolean onJsAlert(WebView v, String u, String m, JsResult r) { return true; }
-        @Override public boolean onJsConfirm(WebView v, String u, String m, JsResult r) { return true; }
-        @Override public boolean onJsPrompt(WebView v, String u, String m, String d, JsPromptResult r) { return true; }
-        @Override public boolean onConsoleMessage(ConsoleMessage m) { return true; }
-    }
 }

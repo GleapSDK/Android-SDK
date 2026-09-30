@@ -1,45 +1,24 @@
 apply plugin: 'com.android.library'
 apply from: 'maven-push.gradle'
 
-def localProperties = new Properties()
-def localPropertiesFile = rootProject.getBuildFile()
-if (localPropertiesFile.exists()) {
-    localPropertiesFile.withReader('UTF-8') { reader ->
-        localProperties.load(reader)
-    }
-}
-
-buildscript {
-    repositories {
-        google()
-        mavenCentral() // NEW
-    }
-    dependencies {
-        apply plugin: 'maven-publish'
-        apply plugin: 'signing'
-    }
-}
-
 android {
     namespace 'gleap.io.gleap'
 
-    compileSdkVersion 33
+    compileSdkVersion 35
 
     defaultConfig {
         minSdkVersion 21
-        targetSdkVersion 33
-        buildConfigField "String", "VERSION_NAME", "\"18.1.0\""
-
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        targetSdkVersion 35
+        // The SDK version reported in env data and requests, from VERSION_NAME in gradle.properties.
+        buildConfigField "String", "VERSION_NAME", "\"${VERSION_NAME}\""
+        // On-device end-to-end tests (src/androidTest) against a fake Gleap server on the device.
+        testInstrumentationRunner "io.gleap.E2ETestRunner"
     }
 
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-        }
-        debug {
-            manifestPlaceholders.cleartextTrafficPermitted = "true"
         }
     }
 
@@ -50,6 +29,13 @@ android {
 
     lint {
         abortOnError false
+    }
+
+    testOptions {
+        // Local unit tests run against android.jar stubs: Android calls on code paths under test
+        // (e.g. android.util.Log) return default values instead of throwing.
+        unitTests.returnDefaultValues = true
+        animationsDisabled = true
     }
 
     // Expose the release variant for publishing
@@ -67,7 +53,22 @@ dependencies {
     implementation 'com.google.android.material:material:1.3.0'
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
 
+    constraints {
+        // io.gleap.GleapOkHttpInterceptor is part of the SDK now. Apps that still depend on the old
+        // separate artifact get its empty 19.0.0 release instead of a duplicate class build error.
+        api('io.gleap:gleap-okhttp-interceptor:19.0.0') {
+            because 'GleapOkHttpInterceptor moved into the SDK'
+        }
+    }
+
     testImplementation 'junit:junit:4.13.2'
     // android.jar only ships org.json stubs for local unit tests.
     testImplementation 'org.json:json:20250107'
+
+    // On-device end-to-end tests: every SDK request goes to a fake Gleap server on the device.
+    androidTestImplementation 'androidx.test:runner:1.6.2'
+    androidTestImplementation 'androidx.test:core:1.6.1'
+    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+    androidTestImplementation 'androidx.webkit:webkit:1.8.0'
+    androidTestImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
 }

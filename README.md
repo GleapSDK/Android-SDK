@@ -28,7 +28,7 @@ dependencies {
 dependencies {
 ...
 
-implementation group: 'io.gleap', name: 'gleap-android-sdk', version: '18.1.0'
+implementation group: 'io.gleap', name: 'gleap-android-sdk', version: '19.0.0'
 }
 ```
 
@@ -88,3 +88,16 @@ Gleap.getInstance().setDisableEnvData(true);
 ```
 
 Both can be called at any time and apply to the next ticket. Each `setEnvDataPropsToIgnore` call replaces the previous list, an empty array resets it. `setDisableEnvData(false)` turns the collection back on.
+
+## Dark mode
+
+The widget uses the colors set in the Gleap dashboard. To match your app's dark / light mode, enable "Adapt to dark / light mode" in the dashboard and set a color scheme:
+
+```
+Gleap.getInstance().setColorScheme("auto");
+Gleap.getInstance().setColorScheme("dark", null, "#121212");
+```
+
+Until `setColorScheme` is called, the dashboard's color scheme applies. `auto` follows the app's night mode (including `AppCompatDelegate.setDefaultNightMode`) and switches live, `light` / `dark` force a scheme; any other value is treated as `auto`. Dark mode uses the dark colors set in the dashboard (header colors, UI color and background) and also the dark logo, header image and composer glow set there; without dark colors the widget keeps its normal colors. The optional background colors passed to `setColorScheme` override the dashboard's background in light / dark mode. Can be called before or after `Gleap.initialize`.
+
+`setColorScheme` only takes effect when "Adapt to dark / light mode" is enabled in the dashboard. While it is disabled, the widget always keeps the dashboard colors, whatever scheme the app sets.

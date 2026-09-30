@@ -6,8 +6,6 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -18,7 +16,8 @@ import org.json.JSONObject;
 import java.util.Date;
 
 class GleapActivityManager {
-    private static GleapActivityManager gleapActivityManager;
+    // Created with the class: getInstance() is called from several threads.
+    private static final GleapActivityManager gleapActivityManager = new GleapActivityManager();
     private Application application;
     private String currentPage = "";
     private boolean started = false;
@@ -26,9 +25,6 @@ class GleapActivityManager {
     private GleapActivityManager(){}
 
     public static GleapActivityManager getInstance() {
-        if(gleapActivityManager == null) {
-            gleapActivityManager = new GleapActivityManager();
-        }
         return gleapActivityManager;
     }
 
@@ -78,7 +74,7 @@ class GleapActivityManager {
                     bringGleapToFront(activity);
 
                     // Process open push notification action.
-                    new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+                    GleapMainThread.postDelayed(new Runnable() {
                         @Override
                         public void run() {
                             if (ActivityUtil.getCurrentActivity() == null) {
@@ -94,7 +90,7 @@ class GleapActivityManager {
                 public void onActivityResumed(@NonNull Activity activity) {
                     checkPage(activity);
 
-                    GleapInvisibleActivityManger.getInstance().addLayoutToActivity(activity);
+                    GleapOverlayManager.getInstance().addLayoutToActivity(activity);
                 }
 
                 @Override
@@ -104,7 +100,7 @@ class GleapActivityManager {
 
                 @Override
                 public void onActivityStopped(@NonNull Activity activity) {
-                    GleapInvisibleActivityManger.getInstance().setVisible();
+                    GleapOverlayManager.getInstance().setVisible();
                 }
 
                 @Override
@@ -114,22 +110,18 @@ class GleapActivityManager {
 
                 @Override
                 public void onActivityDestroyed(@NonNull Activity activity) {
+                    GleapOverlayManager.getInstance().onActivityDestroyed(activity);
                 }
             });
 
         }
     }
 
-    public void stop(){
-        if(this.application != null) {
-            this.application.registerActivityLifecycleCallbacks(null);
-        }
-    }
-
     private void checkPage(Activity activity) {
         try {
-            if (!currentPage.equals(activity.getClass().getSimpleName()) && !activity.getClass().getSimpleName().contains("Gleap")) {
-                GleapInvisibleActivityManger.getInstance().setVisible();
+            boolean gleapActivity = ActivityUtil.isGleapActivity(activity);
+            if (!currentPage.equals(activity.getClass().getSimpleName()) && !gleapActivity) {
+                GleapOverlayManager.getInstance().setVisible();
                 currentPage = activity.getClass().getSimpleName();
                 JSONObject object = new JSONObject();
                 try {
@@ -138,10 +130,10 @@ class GleapActivityManager {
                     currentPage = activity.getClass().getSimpleName();
                 } catch (JSONException e) {
                 }
-            } else if(!activity.getClass().getSimpleName().contains("Gleap")){
-                GleapInvisibleActivityManger.getInstance().setVisible();
+            } else if(!gleapActivity){
+                GleapOverlayManager.getInstance().setVisible();
             } else {
-                GleapInvisibleActivityManger.getInstance().setInvisible();
+                GleapOverlayManager.getInstance().setInvisible();
             }
         }catch (Exception ex){}
     }

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Merged into the self-instrumenting test APK of the gleap library only. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Cleartext only to the fake Gleap server on the device (127.0.0.1). -->
+    <application android:networkSecurityConfig="@xml/gleap_e2e_network_security_config">
+        <activity
+            android:name="io.gleap.E2EHostActivity"
+            android:exported="false"
+            android:theme="@android:style/Theme.Material.Light.NoActionBar" />
+    </application>
+
+</manifest>

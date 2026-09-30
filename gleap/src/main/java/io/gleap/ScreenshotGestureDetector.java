@@ -8,6 +8,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
+import android.os.Looper;
 import android.provider.MediaStore;
 
 import androidx.annotation.RequiresApi;
@@ -44,40 +45,24 @@ class ScreenshotGestureDetector extends GleapDetector {
         this.takeScreenshot();
     }
 
-    private static String storge_permissions =
+    private static final String STORAGE_PERMISSION =
             Manifest.permission.READ_EXTERNAL_STORAGE;
 
     @RequiresApi(api = Build.VERSION_CODES.TIRAMISU)
-    private static String storge_permissions_33 =
+    private static final String MEDIA_IMAGES_PERMISSION =
             Manifest.permission.READ_MEDIA_IMAGES;
 
     private static String permissions() {
         String p;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            p = storge_permissions_33;
+            p = MEDIA_IMAGES_PERMISSION;
         } else {
-            p = storge_permissions;
+            p = STORAGE_PERMISSION;
         }
         return p;
     }
 
-    private final ContentObserver contentObserver = new ContentObserver(new Handler()) {
-        @Override
-        public boolean deliverSelfNotifications() {
-            return super.deliverSelfNotifications();
-        }
-
-        @Override
-        public void onChange(boolean selfChange) {
-            super.onChange(selfChange);
-            try {
-                //  startBugReporting();
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                GleapDetectorUtil.resumeAllDetectors();
-            }
-        }
-
+    private final ContentObserver contentObserver = new ContentObserver(new Handler(Looper.getMainLooper())) {
         @Override
         public void onChange(boolean selfChange, Uri uri) {
             super.onChange(selfChange, uri);
@@ -104,8 +89,8 @@ class ScreenshotGestureDetector extends GleapDetector {
                                 }
                             }
                         }
-                    } catch (Exception ignore) {
-                        ignore.printStackTrace();
+                    } catch (Exception error) {
+                        GleapLog.w("Could not check the new image for a screenshot", error);
                     }
                 } else {
                     try {

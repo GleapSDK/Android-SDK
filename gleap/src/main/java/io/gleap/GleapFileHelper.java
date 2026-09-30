@@ -6,33 +6,31 @@ class GleapFileHelper {
     private static final int MAX_AMOUNT = 6;
     private static final int MAX_FILE_SIZE = 10 * 1024 * 1024;
     private File[] files = new File[MAX_AMOUNT];
-    private int curreIndex = 0;
-    private static GleapFileHelper instance;
+    private int currentIndex = 0;
+    // Created with the class: getInstance() is called from several threads.
+    private static final GleapFileHelper instance = new GleapFileHelper();
 
     public static GleapFileHelper getInstance() {
-        if(instance == null){
-            instance = new GleapFileHelper();
-        }
         return instance;
     }
 
     public void addAttachment(File file) {
         if(file != null) {
             if (file.length() <= MAX_FILE_SIZE) {
-                if (curreIndex < MAX_AMOUNT) {
-                    files[curreIndex] = file;
-                    curreIndex++;
+                if (currentIndex < MAX_AMOUNT) {
+                    files[currentIndex] = file;
+                    currentIndex++;
                 } else {
-                    System.err.println("Gleap: Already " + MAX_AMOUNT + " appended. This is the maximum amount.");
+                    GleapLog.w("Already " + MAX_AMOUNT + " attachments added. This is the maximum amount.");
                 }
             } else {
-                System.err.println("Gleap: File is too big. The maximum attachment size is " + (MAX_FILE_SIZE / (1024 * 1024)) + " MB.");
+                GleapLog.w("File is too big. The maximum attachment size is " + (MAX_FILE_SIZE / (1024 * 1024)) + " MB.");
             }
         }
     }
 
     public void clearAttachments() {
-        curreIndex = 0;
+        currentIndex = 0;
         files = new File[MAX_AMOUNT];
     }
 

@@ -1,5 +1,70 @@
 # Changelog
 
+## 19.0.0
+
+### Added
+
+- Color scheme: `Gleap.getInstance().setColorScheme("auto")` matches the widget to the app's dark / light mode. `auto` follows the night mode of the current activity (so `AppCompatDelegate.setDefaultNightMode` is respected) and switches live, `light` / `dark` force a scheme; any other value is treated as `auto`.
+- Dark mode uses the dark colors set in the dashboard (header colors, UI color and background: `darkHeaderColor`, `darkHeaderColor2`, `darkHeaderColor3`, `darkColor`, `darkBackgroundColor`), which replace the regular ones. Without dark colors the widget keeps its normal colors.
+- Dark mode also uses the dark logo, header image and composer glow set in the dashboard (`darkLogo`, `darkBgImage`, `darkAurora`); an empty dark logo or header image means none in dark mode. Configs saved before these fields existed keep the regular ones.
+- `setColorScheme(colorScheme, lightBackgroundColor, darkBackgroundColor)` optionally overrides the background (`#rrggbb`) used in light / dark mode, taking precedence over the dashboard's colors.
+- The dashboard's color scheme setting (`colorScheme` in the widget config) applies the same way until `setColorScheme` is called, which overrides it.
+- `setColorScheme` only takes effect when "Adapt to dark / light mode" is enabled in the dashboard. While it is disabled (`colorScheme` missing or `default`), the widget is never themed and keeps the dashboard colors, whatever scheme the app sets.
+- The scheme applies to the widget, its loading screen, the in-app notifications and modals. Callable before or after `Gleap.initialize`.
+- Built-in OkHttp network logs: add `new GleapOkHttpInterceptor()` to your `OkHttpClient` (`addInterceptor`, or `addNetworkInterceptor` to also see the headers OkHttp adds). It logs method, url, headers, status, duration and text bodies (JSON, XML, text and forms, up to 150 KB each) of the newest 30 requests, including failed ones with their error. The response body is copied while your app reads it, so requests and responses are never changed or delayed; binary and streaming bodies (event streams, NDJSON, gRPC) are left out.
+- `Gleap.getInstance().attachNetworkLogs(JSONArray)` and `attachConsoleLogs(JSONArray)` for the React Native, Flutter and Capacitor SDKs. Each call replaces the previously attached list; the entries are sent together with the SDK's own logs.
+- `RequestType.HEAD` and `RequestType.OPTIONS`.
+
+### Changed
+
+- `GleapMainActivity` now handles `uiMode` configuration changes itself: a dark mode switch re-themes the open widget instead of recreating the activity (which left the widget on its loading background).
+
+### Fixed
+
+- After a ticket was sent from the widget, `isOpened()` returned `false` while the widget was still on screen, so `Gleap.close()` did nothing. The widget now stays marked open until it actually closes.
+- The props to ignore and the blacklist for network logs (dashboard, `setNetworkLogPropsToIgnore`, `setNetworkLogsBlacklist`) were never applied on Android. They now are, when a ticket is sent: headers with that name are removed, as are keys in JSON bodies at any depth (`user.password` also works as a path), form fields and url query parameters. Names match case-insensitively. In JSON bodies cut at the 150 KB limit, the values of those keys are masked instead. The authorization, proxy-authorization, cookie and set-cookie headers are always masked, and requests to gleap.io and gleap.ai are never sent.
+- Once 25 requests were logged, every new request was dropped and the oldest ones were kept. The network log now keeps the newest 30.
+- Starting a conversation emptied the network logs and the `Gleap.log` messages, so a later bug report had none. Both are now kept; `Gleap.log` keeps the newest 500 messages.
+- `attachNetworkLogs(Networklog[])` added the logs again on every call instead of replacing them as documented.
+- Network log entries now carry the start time of the request and its method, and failed requests are marked as failed with their error.
+- Console logs: errors and warnings were often sent as info and cut in the wrong place, Android 5 and 6 sent no logcat output at all, and lines from December read in January got the wrong year. The newest 500 logcat lines are now read correctly, off the main thread, and long lines are shortened (1000 characters, 5000 for errors).
+- The SDK started a `logcat` process at launch that never exited.
+- A failed `identifyUser` (offline, a timeout, a rate limit or a server error) deleted the stored session and user, and the identify was lost. Both are now kept and the identify runs again with the next session load or when the network comes back; only an identify the API rejects (e.g. an invalid user hash) still clears the session.
+- `clearIdentity` did not cancel an `identifyUser` that was waiting for the session, so the logged-out user was identified again on the new session. Answers to requests still in flight during the logout could also bring the previous session back.
+- The widget could stay marked as open when its screenshot failed (PixelCopy error, low memory): every `open*` call was ignored, `isOpened()` stayed true, notifications, surveys, banners and modals were dropped and shake stayed off until the app restarted. The widget now opens without a screenshot, and tickets without a screenshot are sent.
+- Silent crash reports were only sent together with a screenshot, so they were lost without an activity on screen or when the screenshot failed. They are now sent right away when the screenshot is excluded (the default), otherwise with or without one.
+- `sendSilentCrashReport`'s `excludeData` only removed the screenshot: console logs, network logs, custom data, metadata, the event log and attachments were still sent. Every key is now applied, and `replays`, the key used by the dashboard and the React Native, Flutter and Capacitor SDKs, now also excludes the replay on Android.
+- A ticket's data leaked into later ones: a crash report sent after a survey answer was posted as another answer to that survey, widget tickets took over the priority of the last crash report, and an action's excluded data stayed excluded for all later tickets.
+- The widget could not be closed after its activity was recreated (font size, language or window size changed while it was open). It now loads again and closes normally.
+- When the session loaded without an activity on screen (e.g. the app was started from a push), the push group was never registered and the WebSocket and `InitializationDone` were skipped; unregistering after a logout was dropped the same way.
+- Events tracked while earlier events were being sent were lost, and every WebSocket reconnect sent `sessionStarted` again. `sessionStarted` is now sent once per session start or identify.
+- The event pings (`/sessions/ping`, which deliver `trackEvent`s, page views and the session start) could flood the API: without a session (e.g. after an identify the API rejected) the SDK kept pinging every 3 s, failed pings were retried every 3 s with all queued events, and session starts pushed the queue past its limit of 500 events so it grew without bound. Pings now only go out with a session, one at a time, with the SDK's 15 s connect and 30 s read timeouts, and carry the oldest 100 events or about 256 KB at most; the rest follows right after the ping is delivered. After a 408, a 429, a 5xx or a network error the events stay queued (any other error answer, e.g. 400 or 413, drops them, so they cannot hold back the queue) and the next ping waits 3 s, then 6, 12, 24, 48 and at most 60 s (±20 % jitter), or longer when the answer has a `Retry-After` (seconds or an HTTP date, up to 5 minutes). Any 2xx answer delivers the events and brings back the 3 s interval. The queue keeps at most 500 events; a session start is kept and the oldest other events make room.
+- `attachCustomData` replaced all custom data instead of merging into it as documented; later changes to the passed object also changed the tickets' data.
+- Links in the widget, banners and modals did nothing on Android 11+ unless the app declared matching `<queries>`.
+- The SDK overrode Material's `ThemeOverlay.MaterialComponents.Light.BottomSheetDialog` with an empty style, so bottom sheet dialogs in apps using Gleap lost their transparent background and slide animation.
+- Requests had no timeouts, so one connection that never answered held back every later request. They now give up after 15 s without a connection and 30 s without an answer (60 s for tickets and uploads). The SDK's requests also no longer wait in the app's `AsyncTask` queue, nor hold it up.
+- The config request is now retried on server errors, and WebSocket reconnects back off from 5 s to at most 60 s instead of retrying every 5 s on one of OkHttp's threads.
+- Crashes: a replay interval of 0 in the project settings crashed the app at start; saving the widget's state without a WebView, and `finishImageUpload` without a pending file picker, threw a `NullPointerException`.
+- Tickets from the widget named `GleapMainActivity` as the last screen; they now name the app screen the widget was opened over. `buildMode` was always `RELEASE`; it now follows the app (`DEBUG` for debuggable builds). Without an active network the device data failed to collect, and RAM values were sent as 0 on devices set to Arabic or Persian.
+- `setLanguage(null)` broke the widget; null or empty now means the device language.
+- Replays kept their oldest frames after the first minute and the dashboard played them backwards. They now keep the newest frames in the order they were taken.
+- Banners and modals stopped responding after their page tried to show a JavaScript dialog.
+- App activities with "Gleap" in their class name got no feedback button, banner or page views.
+- The screenshot and replay images of every ticket stayed in the app's cache directory; they are now deleted after the upload. Attachment files are closed after reading, the event log sent with tickets keeps the newest 500 events, and the overlay no longer keeps destroyed activities in memory.
+- The SDK wrote a `descriptionEditText` key into a SharedPreferences file named `prefs`, which may be the app's own. It no longer touches that file.
+- Security: links from the widget, banners and modals with the schemes `intent:`, `file:`, `content:`, `javascript:` and `data:` are no longer opened, neither through the widget's `open-url` nor as navigations. http(s), `mailto:`, `tel:`, `gleap:` smart links and app deep links open as before.
+- Security: the widget's WebView is only granted the microphone and the camera, once the app holds the Android permission. Other WebView permission requests (protected media ids, MIDI devices, ...) are denied.
+- The WebSocket only reconnected after a connection failure: when the server closed it cleanly (e.g. during a deploy), the SDK stayed disconnected until the next session start or network change. It now reconnects with the same backoff (5 s up to 60 s, now ±20 % so devices do not reconnect in step), but not after the SDK closed it itself (`clearIdentity`, a new session).
+- A ticket answered with a 2xx other than 201 (e.g. 200), or a file upload answered with a 2xx other than 200, counted as failed: the app's `FeedbackSendingFailedCallback` ran instead of `FeedbackSentCallback` and the widget showed an error. Any 2xx now counts as sent.
+- OkHttp network logs: request bodies over 150 KB were logged as `[body not captured]`. Like response bodies, they now keep the first 150 KB with the `… [truncated, N bytes]` marker, and ignored keys in the cut JSON are masked. One-shot bodies and bodies without a length are still not written. A cut body whose masked values made it longer than 150 KB also no longer gets a second, wrong byte count.
+- `openConversations(showBackButton)` hid the back button when asked to show it. It now matches iOS and the other `open…(showBackButton)` methods; `openConversations()` still shows it.
+- `setConfigLoadedCallback` / `setInitializedCallback` set after the config was loaded were never called, as the config is loaded (and the callbacks fire) once per process. Like on iOS, a callback set later is now called once with the loaded config, posted to the main thread, and calling `Gleap.initialize` again with the same SDK key (e.g. after a React Native reload) calls the set callbacks again. Nothing is called before the config was loaded.
+
+### Notes
+
+- If you use the separate `io.gleap:gleap-okhttp-interceptor` artifact, you can remove it: `io.gleap.GleapOkHttpInterceptor` is now part of the SDK under the same name, so `import io.gleap.GleapOkHttpInterceptor;` and `.addInterceptor(new GleapOkHttpInterceptor())` keep working. While it is still declared, Gradle upgrades it to its empty 19.0.0 release, so the build does not fail with a duplicate class error.
+- `attachNetworkLogs(null)` now needs a cast, e.g. `attachNetworkLogs((Networklog[]) null)`, because of the new `JSONArray` overload.
+
 ## 18.1.0
 
 ### Added

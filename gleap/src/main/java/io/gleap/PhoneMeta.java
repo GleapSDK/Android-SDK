@@ -2,10 +2,12 @@ package io.gleap;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
@@ -90,8 +92,11 @@ class PhoneMeta {
     }
 
     private JSONObject collectJSONObj() throws JSONException {
-        if (getCurrentActivity() != null) {
-            lastScreenName = getCurrentActivity().getClass().getSimpleName();
+        // The app's screen, not the widget on top of it: while the widget is open the screen it
+        // was opened from stays the last one.
+        Activity current = getCurrentActivity();
+        if (current != null && !ActivityUtil.isGleapActivity(current)) {
+            lastScreenName = current.getClass().getSimpleName();
         }
 
         JSONObject obj = new JSONObject();
@@ -126,26 +131,27 @@ class PhoneMeta {
             obj.put("devicePixelRatio", getDensityName(dm.density));
         }catch (Exception ex){}
 
-        if (BuildConfig.BUILD_TYPE.equals("debug")) {
+        // The app's build, not the SDK's (the SDK's own BuildConfig is always a release build).
+        if (isDebuggableApp()) {
             obj.put("buildMode", "DEBUG");
         } else {
             obj.put("buildMode", "RELEASE");
         }
 
         String applicationType = "Android";
-        if (GleapBug.getInstance().getApplicationtype() == APPLICATIONTYPE.FLUTTER) {
+        if (GleapBug.getInstance().getApplicationType() == APPLICATIONTYPE.FLUTTER) {
             applicationType = "Flutter/Android";
         }
 
-        if (GleapBug.getInstance().getApplicationtype() == APPLICATIONTYPE.REACTNATIVE) {
+        if (GleapBug.getInstance().getApplicationType() == APPLICATIONTYPE.REACTNATIVE) {
             applicationType = "ReactNative/Android";
         }
 
-        if(GleapBug.getInstance().getApplicationtype() == APPLICATIONTYPE.CORDOVA) {
+        if(GleapBug.getInstance().getApplicationType() == APPLICATIONTYPE.CORDOVA) {
             applicationType = "Cordova/Android";
         }
 
-        if(GleapBug.getInstance().getApplicationtype() == APPLICATIONTYPE.CAPACITOR) {
+        if(GleapBug.getInstance().getApplicationType() == APPLICATIONTYPE.CAPACITOR) {
             applicationType = "Capacitor/Android";
         }
 
@@ -188,15 +194,27 @@ class PhoneMeta {
      *
      * @return status of the network
      */
+    private boolean isDebuggableApp() {
+        try {
+            return (context.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     private String getNetworkStatus() {
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_NETWORK_STATE)
                 == PackageManager.PERMISSION_GRANTED) {
             ConnectivityManager cm =
                     (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+            if (cm == null) {
+                return "";
+            }
 
             //Only called when the permission is granted
             @SuppressLint("MissingPermission") NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-            return activeNetwork.getTypeName();
+            // No active network (offline, airplane mode): the data is still collected.
+            return activeNetwork != null ? activeNetwork.getTypeName() : "";
 
         } else {
             return "";
@@ -223,7 +241,8 @@ class PhoneMeta {
         long runtimeFree = runtime.freeMemory();
         long runtimeUsed = runtimeTotal - runtimeFree;
         try {
-            double result = Double.parseDouble(String.format("%02d", runtimeUsed / (1024 * 1024)));
+            // Locale.ROOT: in e.g. Arabic or Persian the digits are not ASCII and parsing failed.
+            double result = Double.parseDouble(String.format(Locale.ROOT, "%02d", runtimeUsed / (1024 * 1024)));
             return result;
         } catch (Exception ex) {
 
@@ -241,7 +260,7 @@ class PhoneMeta {
         // Fetching the data from the ActivityManager
         actManager.getMemoryInfo(memInfo);
         try {
-            double result = Double.parseDouble(String.format("%02d", memInfo.totalMem / (1024 * 1024)));
+            double result = Double.parseDouble(String.format(Locale.ROOT, "%02d", memInfo.totalMem / (1024 * 1024)));
             return result;
         } catch (Exception ex) {
 

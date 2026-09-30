@@ -1,5 +1,7 @@
 package io.gleap;
 
+import androidx.annotation.Nullable;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -31,12 +33,12 @@ interface iGleap {
 
     /**
      * Open news or conversations by passing the notification
-     * @param notificationData push notitification
+     * @param notificationData the data of the push notification
      */
     void handlePushNotification(JSONObject notificationData);
 
     /**
-     * Open a conversation with the given sharetoken
+     * Open a conversation with the given share token
      * @param shareToken token for the conversation
      */
     void openConversation(String shareToken) throws GleapNotInitialisedException;
@@ -48,6 +50,8 @@ interface iGleap {
 
     /**
      * Open the conversations tab
+     *
+     * @param showBackButton show the back button to the widget's home screen
      */
     void openConversations(boolean showBackButton) throws GleapNotInitialisedException;
 
@@ -58,7 +62,6 @@ interface iGleap {
     /**
      * Manually shows the feedback menu or default feedback flow. This is used, when you use the activation method "NONE".
      *
-     * @throws GleapNotInitialisedException thrown when Gleap is not initialised
      * @author Gleap
      */
     void open() throws GleapNotInitialisedException;
@@ -73,7 +76,6 @@ interface iGleap {
     /**
      * Manually shows the news section
      *
-     * @throws GleapNotInitialisedException thrown when Gleap is not initialised
      * @author Gleap
      */
     void openNews() throws GleapNotInitialisedException;
@@ -81,7 +83,6 @@ interface iGleap {
     /**
      * Manually shows the news section
      *
-     * @throws GleapNotInitialisedException thrown when Gleap is not initialised
      * @author Gleap
      */
     void openNews(boolean showBackButton) throws GleapNotInitialisedException;
@@ -89,7 +90,6 @@ interface iGleap {
     /**
      * Show the checklists overview
      *
-     * @throws GleapNotInitialisedException thrown when Gleap is not initialised
      * @author Gleap
      */
     void openChecklists() throws GleapNotInitialisedException;
@@ -97,7 +97,6 @@ interface iGleap {
     /**
      * Show the checklists overview
      *
-     * @throws GleapNotInitialisedException thrown when Gleap is not initialised
      * @author Gleap
      */
     void openChecklists(boolean showBackButton) throws GleapNotInitialisedException;
@@ -105,7 +104,6 @@ interface iGleap {
     /**
      * Open the checklist with checklistId.
      *
-     * @throws GleapNotInitialisedException thrown when Gleap is not initialised
      * @author Gleap
      */
     void openChecklist(String checklistId) throws GleapNotInitialisedException;
@@ -113,7 +111,6 @@ interface iGleap {
     /**
      * Open the checklist with checklistId.
      *
-     * @throws GleapNotInitialisedException thrown when Gleap is not initialised
      * @author Gleap
      */
     void openChecklist(String checklistId, boolean showBackButton) throws GleapNotInitialisedException;
@@ -121,7 +118,6 @@ interface iGleap {
     /**
      * Start the checklist with outboundId.
      *
-     * @throws GleapNotInitialisedException thrown when Gleap is not initialised
      * @author Gleap
      */
     void startChecklist(String outboundId) throws GleapNotInitialisedException;
@@ -129,7 +125,6 @@ interface iGleap {
     /**
      * Start the checklist with outboundId.
      *
-     * @throws GleapNotInitialisedException thrown when Gleap is not initialised
      * @author Gleap
      */
     void startChecklist(String outboundId, boolean showBackButton) throws GleapNotInitialisedException;
@@ -139,7 +134,6 @@ interface iGleap {
      *
      * @param feedbackFlow declares what you want to start. For example start directly a bugreport or a user rating.
      *                     use e.g. bugreporting, featurerequests, rating, contact
-     * @throws GleapNotInitialisedException thrown when Gleap is not initialised
      */
     void startFeedbackFlow(String feedbackFlow);
 
@@ -264,14 +258,23 @@ interface iGleap {
     void updateContact(GleapSessionProperties gleapSessionProperties);
 
     /**
-     * Sets the network log blacklist.
-     * @param blacklist
+     * Leaves requests whose url contains one of these strings out of the network logs, in addition
+     * to the blacklist configured in the dashboard. Requests to gleap.io and gleap.ai are always
+     * left out. Each call replaces the previous list, an empty array or null resets it.
+     *
+     * @param blacklist url parts to leave out
      */
     void setNetworkLogsBlacklist(String[] blacklist);
 
     /**
-     * Sets the network log props to ignore.
-     * @param propsToIgnore
+     * Removes these props from the network logs before they are sent, in addition to the ones
+     * configured in the dashboard: request and response headers with this name, keys in JSON
+     * bodies at any depth (a prop with dots such as {@code user.password} is also a path from the
+     * body root), form fields and url query parameters. Names match case-insensitively. The
+     * authorization, proxy-authorization, cookie and set-cookie headers are always masked.
+     * Each call replaces the previous list, an empty array or null resets it.
+     *
+     * @param propsToIgnore the prop names to remove
      */
     void setNetworkLogPropsToIgnore(String[] propsToIgnore);
 
@@ -539,16 +542,18 @@ interface iGleap {
     void setNotificationUnreadCountUpdatedCallback(NotificationUnreadCountUpdatedCallback notificationUnreadCountUpdatedCallback);
 
     /**
-     * This is called, when the Gleap flow is started
+     * Called right before a ticket (from the widget or a silent crash report) is sent, with its
+     * form data as JSON text.
      *
-     * @param feedbackWillBeSentCallback is called when BB is opened
+     * @param feedbackWillBeSentCallback called before the ticket is sent
      */
     void setFeedbackWillBeSentCallback(FeedbackWillBeSentCallback feedbackWillBeSentCallback);
 
     /**
-     * This method is triggered, when a form got submitted
+     * Called once a ticket (from the widget or a silent crash report) was created, with its form
+     * data.
      *
-     * @param feedbackSentCallback this callback is called when the flow is called
+     * @param feedbackSentCallback called when the ticket was sent
      */
     void setFeedbackSentCallback(FeedbackSentCallback feedbackSentCallback);
 
@@ -560,29 +565,36 @@ interface iGleap {
     void setOutboundSentCallback(OutboundSentCallback outboundSentCallback);
 
     /**
-     * This is called if the sending has failed
+     * Called when a ticket (from the widget or a silent crash report) could not be sent, with a
+     * short description of the failure.
      *
-     * @param feedbackSendingFailedCallback
+     * @param feedbackSendingFailedCallback called when sending failed
      */
     void setFeedbackSendingFailedCallback(FeedbackSendingFailedCallback feedbackSendingFailedCallback);
 
     /**
-     * Customize the way, the Bitmap is generated. If this is overritten,
-     * only the custom way is used
+     * Provides the screenshot for tickets instead of the SDK taking one. When the callback
+     * returns null, the SDK takes the screenshot itself.
      *
      * @param getBitmapCallback get the Bitmap
      */
     void setBitmapCallback(GetBitmapCallback getBitmapCallback);
 
     /**
-     * This is called, when the config is received from the server;
+     * This is called, when the config is received from the server. The config is loaded once per
+     * process: a callback set after it was loaded is called once with the loaded config, posted
+     * to the main thread. Calling {@link Gleap#initialize} again with the same SDK key hands the
+     * loaded config to the set callback again, like on iOS.
      *
      * @param configLoadedCallback callback which is called
      */
     void setConfigLoadedCallback(ConfigLoadedCallback configLoadedCallback);
 
     /**
-     * This is called, when Gleap got initialized;
+     * This is called, when Gleap got initialized (the config was received from the server). A
+     * callback set after that is called once, posted to the main thread. Calling
+     * {@link Gleap#initialize} again with the same SDK key calls the set callback again, like on
+     * iOS.
      *
      * @param initializedCallback callback which is called
      */
@@ -606,37 +618,67 @@ interface iGleap {
      */
 
     /**
-     * Replace the current network logs.
+     * Replaces the attached network logs (the ones passed with the previous attachNetworkLogs call).
+     * The requests recorded by the SDK itself ({@link GleapOkHttpInterceptor}, logNetwork) are kept.
+     * null or an empty array removes the attached network logs.
+     *
+     * @param networklogs the network logs to attach
      */
     void attachNetworkLogs(Networklog[] networklogs);
+
     /**
-     * Log network traffic by logging it manually.
+     * Replaces the attached network logs with entries in the Gleap network log format, e.g. the
+     * requests recorded by the React Native, Flutter or Capacitor SDK. Pass the full current list:
+     * each call replaces the previous one. The entries are kept as given and sent together with the
+     * requests recorded by the SDK itself; the blacklist and the props to ignore are applied when a
+     * ticket is sent. null or an empty array removes the attached network logs.
+     *
+     * @param networkLogs the network log entries
+     */
+    void attachNetworkLogs(JSONArray networkLogs);
+
+    /**
+     * Replaces the attached console logs with entries in the Gleap console log format
+     * ({@code date}, {@code priority} INFO / WARNING / ERROR, {@code log}), e.g. the console output
+     * recorded by the React Native, Flutter or Capacitor SDK. Pass the full current list: each call
+     * replaces the previous one. null or an empty array removes the attached console logs.
+     *
+     * @param consoleLogs the console log entries
+     */
+    void attachConsoleLogs(JSONArray consoleLogs);
+
+    /**
+     * Log network traffic by logging it manually. For OkHttp, add {@link GleapOkHttpInterceptor}
+     * to the client instead.
      *
      * @param urlConnection URL where the request is sent to
-     * @param requestType   GET, POST, PUT, DELETE
-     * @param status        status of the response (e.g. 200, 404)
-     * @param duration      duration of the request
-     * @param request       Add the data you want. e.g the body sent in the request
-     * @param response      Response of the call. You can add just the information you want and need.
+     * @param requestType   the request method
+     * @param status        status of the response (e.g. 200, 404), 0 when no response arrived
+     * @param duration      duration of the request in milliseconds
+     * @param request       request details, recommended: {@code headers} (object) and {@code payload} (string)
+     * @param response      response details, recommended: {@code headers} (object), {@code statusText} and
+     *                      {@code responseText} (string); {@code errorText} when the request failed
      */
     void logNetwork(String urlConnection, RequestType requestType, int status, int duration, JSONObject request, JSONObject response);
 
 
     /**
-     * Log network traffic by logging it manually.
+     * Log network traffic by logging it manually. Call it after the response arrived: the url,
+     * method, status and response headers are read from the connection.
      *
-     * @param urlConnection UrlHttpConnection
-     * @param request       Add the data you want. e.g the body sent in the request
-     * @param response      Response of the call. You can add just the information you want and need.
+     * @param urlConnection the connection of the request
+     * @param request       the request body, sent as its JSON text
+     * @param response      the response body, sent as its JSON text
      */
     void logNetwork(HttpsURLConnection urlConnection, JSONObject request, JSONObject response);
 
     /**
-     * Log network traffic by logging it manually.
+     * Log network traffic by logging it manually. Call it after the response arrived: the url,
+     * method, status and response headers are read from the connection.
      *
-     * @param urlConnection UrlHttpConnection
-     * @param request       Add the data you want. e.g the body sent in the request
-     * @param response      Response of the call. You can add just the information you want and need.
+     * @param urlConnection the connection of the request
+     * @param request       the request body
+     * @param response      the response body
      */
     void logNetwork(HttpsURLConnection urlConnection, String request, String response);
 
@@ -702,7 +744,8 @@ interface iGleap {
     void log(String msg, GleapLogLevel gleapLogLevel);
 
     /**
-     * Disables the console logging. This must be called BEFORE initializing the SDK.
+     * Stops sending the app's logcat output with tickets. Messages logged with {@link #log(String)}
+     * are still sent.
      * @author Gleap
      *
      */
@@ -715,6 +758,31 @@ interface iGleap {
      * Default is 0, 0.
      */
     void setNotificationContainerOffset(int x, int y);
+
+    /**
+     * Sets the widget color scheme. Overrides the color scheme set in the dashboard, which
+     * applies until this is called. Only takes effect when "Adapt to dark / light mode" is
+     * enabled in the dashboard; while it is disabled the widget always keeps the dashboard colors.
+     * "auto" follows the app's dark / light mode, "light" / "dark" force a scheme; any other
+     * value is treated as "auto". Dark mode uses the dark colors set in the dashboard and also
+     * the dark logo, header image and composer glow set there; without dark colors the widget
+     * keeps its normal colors. Can be called before or after initialize.
+     *
+     * @param colorScheme "auto", "light" or "dark"
+     */
+    void setColorScheme(String colorScheme);
+
+    /**
+     * Sets the widget color scheme and the background colors used for it. Only takes effect
+     * when "Adapt to dark / light mode" is enabled in the dashboard. Dark mode uses the
+     * dark colors set in the dashboard (header colors, UI color, background); without dark
+     * colors the widget keeps its normal colors.
+     *
+     * @param colorScheme          "auto", "light" or "dark"
+     * @param lightBackgroundColor background (#rrggbb) in light mode, null for the dashboard background
+     * @param darkBackgroundColor  background (#rrggbb) in dark mode, null for the dashboard's dark background
+     */
+    void setColorScheme(String colorScheme, @Nullable String lightBackgroundColor, @Nullable String darkBackgroundColor);
 
     void openFeatureRequests();
 

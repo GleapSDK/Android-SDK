@@ -1,8 +1,6 @@
 package io.gleap;
 
-import android.app.Application;
 import android.graphics.Bitmap;
-import android.util.Log;
 
 import androidx.annotation.Nullable;
 
@@ -10,8 +8,14 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 import static io.gleap.DateUtil.dateToString;
 
@@ -20,16 +24,10 @@ import static io.gleap.DateUtil.dateToString;
  */
 class GleapBug {
     private static GleapBug instance;
-    private Application application;
     private NetworkBuffer networkBuffer = new NetworkBuffer();
-    private boolean isSilent = false;
     //bug specific data
-    private APPLICATIONTYPE applicationtype = APPLICATIONTYPE.NATIVE;
+    private APPLICATIONTYPE applicationType = APPLICATIONTYPE.NATIVE;
     private String type = "";
-    private final Date startUpDate = new Date();
-    private boolean isDisabled = false;
-    private String severity = "MEDIUM";
-    private String silentBugreportEmail;
     private Bitmap screenshot;
     private Replay replay;
     private JSONObject ticketAttributes;
@@ -39,12 +37,12 @@ class GleapBug {
     private String outboundId;
     private String[] tags;
 
-    private JSONObject outboundAction;
-
     private @Nullable
     PhoneMeta phoneMeta;
 
 
+    // The events a ticket carries (trackEvent), the newest MAX_CUSTOM_EVENTS like in the JS SDK.
+    static final int MAX_CUSTOM_EVENTS = 500;
     private final JSONArray customEventLog = new JSONArray();
 
     private GleapBug() {
@@ -58,11 +56,17 @@ class GleapBug {
 
     }
 
-    public static GleapBug getInstance() {
+    // Synchronized: network requests are recorded from OkHttp threads.
+    public static synchronized GleapBug getInstance() {
         if (instance == null) {
             instance = new GleapBug();
         }
         return instance;
+    }
+
+    // Tests only.
+    static synchronized void resetForTesting() {
+        instance = new GleapBug();
     }
 
     public String getType() {
@@ -102,8 +106,20 @@ class GleapBug {
         return ticketAttributes;
     }
 
-    public void setCustomData(JSONObject customData) {
-        this.customData = customData;
+    /**
+     * Merges the keys of {@code customData} into the custom data (attachCustomData), like the
+     * iOS and JS SDKs: existing keys are overwritten, the others stay. The app's object is
+     * copied, so changing it later does not change the custom data.
+     */
+    public void attachCustomData(JSONObject customData) throws Exception {
+        if (customData == null) {
+            return;
+        }
+        JSONObject copy = (JSONObject) GleapNetworkLogSanitizer.deepCopy(customData);
+        for (Iterator<String> keys = copy.keys(); keys.hasNext(); ) {
+            String key = keys.next();
+            this.customData.put(key, copy.get(key));
+        }
     }
 
     public void setTicketAttribute(String key, Object value) throws JSONException {
@@ -143,7 +159,7 @@ class GleapBug {
         }
     }
 
-    public void removeUserAttribute(String key) {
+    public void removeCustomData(String key) {
         if(key != null) {
             try {
                 this.customData.remove(key);
@@ -155,28 +171,12 @@ class GleapBug {
         this.customData = new JSONObject();
     }
 
-    public String getSeverity() {
-        return severity;
+    public APPLICATIONTYPE getApplicationType() {
+        return applicationType;
     }
 
-    public void setSeverity(String severity) {
-        this.severity = severity;
-    }
-
-    public boolean isDisabled() {
-        return isDisabled;
-    }
-
-    public void setDisabled(boolean disabled) {
-        isDisabled = disabled;
-    }
-
-    public APPLICATIONTYPE getApplicationtype() {
-        return applicationtype;
-    }
-
-    public void setApplicationtype(APPLICATIONTYPE applicationtype) {
-        this.applicationtype = applicationtype;
+    public void setApplicationType(APPLICATIONTYPE applicationType) {
+        this.applicationType = applicationType;
     }
 
     public Replay getReplay() {
@@ -187,10 +187,6 @@ class GleapBug {
         this.replay = replay;
     }
 
-    public Date getStartUpDate() {
-        return startUpDate;
-    }
-    
     public void addRequest(Networklog networklog) {
         try {
             networkBuffer.addNetworkLog(networklog);
@@ -198,19 +194,58 @@ class GleapBug {
     }
 
 
+    /**
+     * The network logs to send: the SDK's own entries and the attached ones, oldest first, with the
+     * blacklist and the props to ignore applied. Reading does not clear them, so a later ticket
+     * still gets them.
+     */
     public JSONArray getNetworklogs() {
-        JSONArray requestArry = new JSONArray();
         try {
+            List<JSONObject> entries = new ArrayList<>();
             for (Networklog networklog : networkBuffer.getNetworklogs()) {
-                JSONObject item = networklog.toJSON();
-                if(item != null) {
-                    requestArry.put(item);
+                entries.add(networklog.toRawJSON());
+            }
+            JSONArray attached = networkBuffer.getAttachedNetworkLogs();
+            for (int i = 0; i < attached.length(); i++) {
+                Object entry = attached.opt(i);
+                if (entry instanceof JSONObject) {
+                    entries.add((JSONObject) entry);
                 }
             }
-        } catch (Exception err) {
+            sortByDate(entries);
+
+            JSONArray merged = new JSONArray();
+            for (JSONObject entry : entries) {
+                merged.put(entry);
+            }
+            return GleapNetworkLogSanitizer.fromConfig().sanitize(merged);
+        } catch (Throwable err) {
+            return new JSONArray();
         }
-        networkBuffer.clear();
-        return requestArry;
+    }
+
+    // Stable sort by the ISO date; entries without a readable date keep their place at the end.
+    static void sortByDate(List<JSONObject> entries) {
+        final Map<JSONObject, Long> times = new IdentityHashMap<>();
+        for (JSONObject entry : entries) {
+            long time = Long.MAX_VALUE;
+            Object date = entry.opt("date");
+            if (date instanceof String) {
+                try {
+                    time = DateUtil.stringToDate((String) date).getTime();
+                } catch (Exception ignore) {
+                }
+            }
+            times.put(entry, time);
+        }
+        Collections.sort(entries, new Comparator<JSONObject>() {
+            @Override
+            public int compare(JSONObject a, JSONObject b) {
+                long timeA = times.get(a);
+                long timeB = times.get(b);
+                return timeA < timeB ? -1 : (timeA == timeB ? 0 : 1);
+            }
+        });
     }
 
     public void setData(JSONObject data) {
@@ -246,29 +281,13 @@ class GleapBug {
         return this.data;
     }
 
-    public String getSilentBugreportEmail() {
-        return silentBugreportEmail;
-    }
-
-    public void setSilentBugreportEmail(String silentBugreportEmail) {
-        this.silentBugreportEmail = silentBugreportEmail;
-    }
-
-    public Application getApplication() {
-        return application;
-    }
-
-    public void setApplication(Application application) {
-        this.application = application;
-    }
-
     public void logEvent(String name, JSONObject data) {
         JSONObject event = new JSONObject();
         try {
             event.put("name", name);
             event.put("data", data);
             event.put("date", dateToString(new Date()));
-            customEventLog.put(event);
+            addToCustomEventLog(event);
             GleapEventService.getInstance().addEvent(event);
         } catch (Exception ex) {
         }
@@ -279,22 +298,32 @@ class GleapBug {
         try {
             event.put("name", name);
             event.put("date", dateToString(new Date()));
-            customEventLog.put(event);
+            addToCustomEventLog(event);
             GleapEventService.getInstance().addEvent(event);
         } catch (Exception ex) {
         }
     }
 
+    private void addToCustomEventLog(JSONObject event) {
+        synchronized (customEventLog) {
+            if (customEventLog.length() >= MAX_CUSTOM_EVENTS) {
+                customEventLog.remove(0);
+            }
+            customEventLog.put(event);
+        }
+    }
+
+    /**
+     * @return a copy of the event log, oldest first (events are logged from any thread)
+     */
     public JSONArray getCustomEventLog() {
-        return customEventLog;
-    }
-
-    public boolean isSilent() {
-        return isSilent;
-    }
-
-    public void setSilent(boolean silent) {
-        isSilent = silent;
+        synchronized (customEventLog) {
+            JSONArray copy = new JSONArray();
+            for (int i = 0; i < customEventLog.length(); i++) {
+                copy.put(customEventLog.opt(i));
+            }
+            return copy;
+        }
     }
 
     public String getSpamToken() {
@@ -323,13 +352,5 @@ class GleapBug {
 
     public void setTags(String[] tags) {
         this.tags = tags;
-    }
-
-    public JSONObject getOutboundAction() {
-        return outboundAction;
-    }
-
-    public void setOutboundAction(JSONObject outboundAction) {
-        this.outboundAction = outboundAction;
     }
 }

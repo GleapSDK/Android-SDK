@@ -3,12 +3,16 @@ package io.gleap;
 import android.content.Context;
 import android.graphics.Bitmap;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.concurrent.ExecutionException;
-
 class SilentBugReportUtil {
+    // Silent reports have no UI to update when the request finishes.
+    private static final OnHttpResponseListener IGNORE_RESPONSE = new OnHttpResponseListener() {
+        @Override
+        public void onTaskComplete(JSONObject response) {
+        }
+    };
+
     public static void createSilentBugReport(Context context, String description, Gleap.SEVERITY severity, String type, JSONObject excludeData) {
 
         if (excludeData == null || (excludeData != null && excludeData.length() == 0)) {
@@ -19,42 +23,30 @@ class SilentBugReportUtil {
             } catch (Exception ex) {
             }
         }
-        GleapConfig.getInstance().setCrashStripModel(excludeData);
+        final JSONObject exclude = excludeData;
+
+        // The screenshot is excluded by default: the report is sent right away. Otherwise it goes
+        // with the screenshot, or without one when none could be taken.
+        if (exclude.optBoolean("screenshot", false)) {
+            send(context, description, severity, type, null, exclude);
+            return;
+        }
+        ScreenshotUtil.takeScreenshot(new ScreenshotUtil.GetImageCallback() {
+            @Override
+            public void getImage(Bitmap bitmap) {
+                send(context, description, severity, type, bitmap, exclude);
+            }
+        });
+    }
+
+    private static void send(Context context, String description, Gleap.SEVERITY severity, String type,
+                             Bitmap screenshot, JSONObject excludeData) {
+        String priority = severity != null ? severity.name() : Gleap.SEVERITY.LOW.name();
         try {
-            GleapBug model = GleapBug.getInstance();
-            ScreenshotUtil.takeScreenshot(new ScreenshotUtil.GetImageCallback() {
-                @Override
-                public void getImage(Bitmap bitmap) {
-                    JSONObject obj = new JSONObject();
-                    try {
-                        obj.put("description", description);
-                    } catch (JSONException e) {
-                    }
-                    model.setType(type);
-                    model.setData(obj);
-                    if (severity != null) {
-                        model.setSeverity(severity.name());
-                    } else {
-                        model.setSeverity(Gleap.SEVERITY.LOW.name());
-                    }
-                    model.setSilent(true);
-
-
-                    if (bitmap != null) {
-                        model.setScreenshot(bitmap);
-
-
-                        try {
-                            new HttpHelper(new SilentBugReportHTTPListener(), context).execute(model);
-                        } catch (Exception e) {
-                        }
-                    }
-                }
-            });
-
-        } catch (GleapSessionNotInitialisedException gleapSessionNotInitialisedException) {
-            System.err.println("Gleap: Gleap Session not initialized.");
-        } catch (InterruptedException | ExecutionException e) {
+            HttpHelper.send(IGNORE_RESPONSE, context,
+                    FeedbackSubmission.silentReport(type, description, priority, screenshot, excludeData));
+        } catch (Exception e) {
+            GleapLog.w("Could not send the silent crash report", e);
         }
     }
 
@@ -64,7 +56,7 @@ class SilentBugReportUtil {
 
     public static void createSilentBugReport(Context context, String description, Gleap.SEVERITY severity, JSONObject excludeData) {
 
-        if (!GleapDetectorUtil.isIsRunning() && GleapSessionController.getInstance() != null &&
+        if (!GleapDetectorUtil.isWidgetOpen() && GleapSessionController.getInstance() != null &&
                 GleapSessionController.getInstance().isSessionLoaded() && Gleap.getInstance() != null) {
             
             createSilentBugReport(context, description, severity, "CRASH", excludeData);

@@ -1,29 +1,20 @@
 package io.gleap;
 
-import static android.graphics.Bitmap.Config.ARGB_8888;
-
 import android.graphics.Bitmap;
-import android.graphics.Rect;
-import android.os.Build;
-import android.os.Handler;
-import android.os.Looper;
-import android.view.PixelCopy;
 import android.view.View;
 import android.view.Window;
 
-import androidx.annotation.RequiresApi;
-
-import java.util.LinkedList;
-import java.util.List;
 import java.util.concurrent.Callable;
 
+/**
+ * Not used by the SDK anymore. Kept because it is part of the public API.
+ */
 public class PixelCopyTask implements Callable<String> {
-    private View view;
-    private Window window;
-    private int timer;
-    private final List<Bitmap> result = new LinkedList<>();
+    private final View view;
+    private final Window window;
+    private final int timer;
 
-    public PixelCopyTask(View view, Window window, int timer){
+    public PixelCopyTask(View view, Window window, int timer) {
         this.view = view;
         this.window = window;
         this.timer = timer;
@@ -33,32 +24,11 @@ public class PixelCopyTask implements Callable<String> {
     public String call() {
         return "";
     }
+
+    /**
+     * Receives a captured screenshot.
+     */
     protected interface ImageTaken {
         void invoke(Bitmap bitmap);
     }
-
-    @RequiresApi(api = Build.VERSION_CODES.O)
-    private void captureView(View view, Window window, ImageTaken imageTaken){
-
-        Bitmap bitmap = Bitmap.createBitmap(view.getWidth(), view.getHeight(), ARGB_8888);
-        int[] location = new int[2];
-        view.getLocationInWindow(location);
-        ActivityUtil.getCurrentActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                PixelCopy.request(window,
-                        new Rect(location[0], location[1], location[0] + view.getWidth(), location[1] + view.getHeight()),
-                        bitmap, new PixelCopy.OnPixelCopyFinishedListener() {
-                            @Override
-                            public void onPixelCopyFinished(int copyResult) {
-                                imageTaken.invoke(bitmap);
-                            }
-                        },
-                        new Handler(Looper.getMainLooper())
-                );
-            }
-        });
-    }
 }
-
-

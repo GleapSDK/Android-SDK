@@ -3,6 +3,7 @@ package io.gleap;
 import org.json.JSONObject;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -13,10 +14,18 @@ import okio.ByteString;
 import gleap.io.gleap.BuildConfig;
 
 public class GleapWebSocketListener extends WebSocketListener {
+    // After a failure or a close by the server the connection is tried again after 5 s, then 10,
+    // 20, 40 and at most 60 s apart, each ±20 % so devices do not reconnect in step; a successful
+    // connect starts over at 5 s.
+    private static final long FIRST_RECONNECT_DELAY_MS = 5000;
+    private static final long MAX_RECONNECT_DELAY_MS = 60000;
+
     private OkHttpClient client;
     private WebSocket webSocket;
     private String currentUrl;
-    private boolean isDestroyed = false;
+    // Written on the main thread, read on OkHttp's threads.
+    private volatile boolean isDestroyed = false;
+    private final AtomicInteger failedAttempts = new AtomicInteger();
 
     public boolean connect() {
         client = new OkHttpClient.Builder()
@@ -39,13 +48,27 @@ public class GleapWebSocketListener extends WebSocketListener {
 
     private void internallyConnect(String url) {
         currentUrl = url;
+        webSocket = openWebSocket(url);
+    }
 
+    // Tests replace the connection.
+    WebSocket openWebSocket(String url) {
         Request request = new Request.Builder()
                 .url(url)
                 .build();
-        webSocket = client.newWebSocket(request, this);
+        return client.newWebSocket(request, this);
     }
 
+    // Tests replace the wait.
+    void scheduleReconnect(Runnable reconnect, long delayMs) {
+        // A delayed message on the main thread instead of a sleep on OkHttp's thread; the
+        // connect itself is asynchronous.
+        GleapMainThread.postDelayed(reconnect, delayMs);
+    }
+
+    /**
+     * Closes the connection for good (logout, stop, a new session): no reconnect follows.
+     */
     public void destroy() {
         isDestroyed = true;
         if (webSocket != null) {
@@ -61,6 +84,8 @@ public class GleapWebSocketListener extends WebSocketListener {
         if (isDestroyed) {
             return;
         }
+
+        failedAttempts.set(0);
 
         // Start event sending.
         GleapEventService.getInstance().start();
@@ -88,7 +113,17 @@ public class GleapWebSocketListener extends WebSocketListener {
 
     @Override
     public void onClosing(WebSocket webSocket, int code, String reason) {
+        // The server closes: answer it, onClosed (or onFailure) follows.
         webSocket.close(1000, null);
+    }
+
+    @Override
+    public void onClosed(WebSocket webSocket, int code, String reason) {
+        // A clean close by the server (a deploy, an idle timeout): connect again, unless the SDK
+        // closed it itself (destroy).
+        if (!isDestroyed) {
+            reconnect();
+        }
     }
 
     @Override
@@ -99,16 +134,30 @@ public class GleapWebSocketListener extends WebSocketListener {
     }
 
     private void reconnect() {
-        if (client != null) {
-            try {
-                Thread.sleep(5000); // Sleep for 5 seconds
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
-            if (currentUrl != null) {
-                internallyConnect(currentUrl);
-            }
+        final String url = currentUrl;
+        if (url == null) {
+            return;
         }
+
+        scheduleReconnect(new Runnable() {
+            @Override
+            public void run() {
+                if (!isDestroyed) {
+                    internallyConnect(url);
+                }
+            }
+        }, reconnectDelay(failedAttempts.incrementAndGet(), Math.random()));
+    }
+
+    /**
+     * The wait before reconnect attempt {@code failedAttempts}: 5 s doubled per attempt up to
+     * 60 s, times a random factor between 0.8 and 1.2, never more than 60 s.
+     *
+     * @param random uniformly distributed in [0, 1)
+     */
+    static long reconnectDelay(int failedAttempts, double random) {
+        long base = Math.min(FIRST_RECONNECT_DELAY_MS << Math.max(0, Math.min(failedAttempts - 1, 4)), MAX_RECONNECT_DELAY_MS);
+        double factor = 1 - GleapPingBackoff.JITTER + 2 * GleapPingBackoff.JITTER * Math.min(Math.max(random, 0), 1);
+        return Math.min(Math.round(base * factor), MAX_RECONNECT_DELAY_MS);
     }
 }
