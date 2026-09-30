@@ -8,6 +8,9 @@ buildscript {
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:8.8.0'
+        // Publishing to Maven Central (gleap module). 0.34.0 is the newest release that supports
+        // Gradle 8.10 / AGP 8.8; 0.35.0 needs Gradle 8.13+, 0.36.0+ needs Gradle 9 and AGP 8.13.
+        classpath 'com.vanniktech:gradle-maven-publish-plugin:0.34.0'
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
     }

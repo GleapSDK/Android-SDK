@@ -123,3 +123,32 @@ if (link != null) {
 ```
 
 `openProtectedFileFromUrl` returns `false` when the URL has no valid `gleapFile` parameter. Keep the parameter through your app's login flow.
+
+## Releasing
+
+Releases are published to Maven Central (`io.gleap:gleap-android-sdk`) by GitHub Actions ([`.github/workflows/release.yml`](.github/workflows/release.yml)):
+
+1. Bump `VERSION_NAME` (and `VERSION_CODE`) in `gradle.properties` and add a `## X.Y.Z` section to `CHANGELOG.md`; merge to `master`.
+2. Tag the merged commit with the plain version (no `v`) and push the tag:
+   ```
+   git tag X.Y.Z && git push origin X.Y.Z
+   ```
+
+The workflow checks that the tag equals `VERSION_NAME` and is on `master`, runs the unit tests, publishes and releases the signed artifacts through the Central Portal (no manual step), waits until the POM is on repo1.maven.org and creates the GitHub release with the `CHANGELOG.md` section as notes. Running the workflow by hand with a `version` is a dry run: same checks, tests and signing, published only to the runner's local Maven repository.
+
+Repository secrets:
+
+| Secret | Value |
+|--------|-------|
+| `MAVEN_CENTRAL_USERNAME` | Central Portal user token username |
+| `MAVEN_CENTRAL_PASSWORD` | Central Portal user token password |
+| `SIGNING_KEY` | ASCII-armored private key (`gpg --armor --export-secret-keys <key id>`) |
+| `SIGNING_KEY_ID` | Short (8 character) key id |
+| `SIGNING_KEY_PASSWORD` | Passphrase of the key |
+
+Publishing from a Mac still works with `./gradlew :gleap:publishAndReleaseToMavenCentral --no-configuration-cache` (or `:gleap:publishToMavenLocal` to check the artifacts). It reads from `~/.gradle/gradle.properties`:
+
+- `mavenCentralUsername` / `mavenCentralPassword`: the Central Portal user token, i.e. the values of the former `NEXUS_USERNAME` / `NEXUS_PASSWORD`, which are no longer read.
+- `signing.keyId`, `signing.password`, `signing.secretKeyRingFile`: unchanged, used whenever no `signingInMemoryKey` is set.
+
+The empty `io.gleap:gleap-okhttp-interceptor` artifact is released from [GleapSDK/OKHttpInterceptor](https://github.com/GleapSDK/OKHttpInterceptor), not from this repository.
