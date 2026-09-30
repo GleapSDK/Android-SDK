@@ -50,6 +50,8 @@ interface iGleap {
 
     /**
      * Open the conversations tab
+     *
+     * @param showBackButton show the back button to the widget's home screen
      */
     void openConversations(boolean showBackButton) throws GleapNotInitialisedException;
 
@@ -579,14 +581,20 @@ interface iGleap {
     void setBitmapCallback(GetBitmapCallback getBitmapCallback);
 
     /**
-     * This is called, when the config is received from the server;
+     * This is called, when the config is received from the server. The config is loaded once per
+     * process: a callback set after it was loaded is called once with the loaded config, posted
+     * to the main thread. Calling {@link Gleap#initialize} again with the same SDK key hands the
+     * loaded config to the set callback again, like on iOS.
      *
      * @param configLoadedCallback callback which is called
      */
     void setConfigLoadedCallback(ConfigLoadedCallback configLoadedCallback);
 
     /**
-     * This is called, when Gleap got initialized;
+     * This is called, when Gleap got initialized (the config was received from the server). A
+     * callback set after that is called once, posted to the main thread. Calling
+     * {@link Gleap#initialize} again with the same SDK key calls the set callback again, like on
+     * iOS.
      *
      * @param initializedCallback callback which is called
      */

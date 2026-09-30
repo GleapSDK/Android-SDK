@@ -1,5 +1,7 @@
 package io.gleap;
 
+import org.json.JSONObject;
+
 import io.gleap.callbacks.AiToolExecutedCallback;
 import io.gleap.callbacks.ConfigLoadedCallback;
 import io.gleap.callbacks.CustomActionCallback;
@@ -28,8 +30,18 @@ class GleapCallbacks {
     // Created with the class: getInstance() is called from several threads.
     private static volatile GleapCallbacks instance = new GleapCallbacks();
 
-    private ConfigLoadedCallback configLoadedCallback;
-    private InitializedCallback initializedCallback;
+    private volatile ConfigLoadedCallback configLoadedCallback;
+    private volatile InitializedCallback initializedCallback;
+
+    // The config is loaded once per process, and configLoaded / initialized fire only then. What
+    // was delivered is kept here, so a callback registered later (or a second initialize) can be
+    // handed it too, like on iOS. Guarded by deliveryLock.
+    private final Object deliveryLock = new Object();
+    private JSONObject deliveredFlowConfig;
+    private boolean initializedDelivered;
+    // A replay was posted to the main thread and has not run yet: further requests join it.
+    private boolean configLoadedReplayPending;
+    private boolean initializedReplayPending;
     private InitializationDoneCallback initializationDoneCallback;
     private FeedbackSentCallback feedbackSentCallback;
     private OutboundSentCallback outboundSentCallback;
@@ -66,16 +78,123 @@ class GleapCallbacks {
         return configLoadedCallback;
     }
 
+    /**
+     * Stores the callback. When the config was already delivered, the new callback is handed it
+     * once, posted to the main thread.
+     */
     public void setConfigLoadedCallback(ConfigLoadedCallback configLoadedCallback) {
-        this.configLoadedCallback = configLoadedCallback;
+        boolean replay;
+        synchronized (deliveryLock) {
+            this.configLoadedCallback = configLoadedCallback;
+            replay = configLoadedCallback != null && deliveredFlowConfig != null;
+        }
+        if (replay) {
+            replayConfigLoaded();
+        }
     }
 
     public InitializedCallback getInitializedCallback() {
         return initializedCallback;
     }
 
+    /**
+     * Stores the callback. When initialized was already delivered, the new callback is called
+     * once, posted to the main thread.
+     */
     public void setInitializedCallback(InitializedCallback initializedCallback) {
-        this.initializedCallback = initializedCallback;
+        boolean replay;
+        synchronized (deliveryLock) {
+            this.initializedCallback = initializedCallback;
+            replay = initializedCallback != null && initializedDelivered;
+        }
+        if (replay) {
+            replayInitialized();
+        }
+    }
+
+    /**
+     * The config was loaded: remembers the flowConfig and hands it to the registered callback
+     * (on the calling thread, as the SDK always did).
+     */
+    void deliverConfigLoaded(JSONObject flowConfig) {
+        ConfigLoadedCallback callback;
+        synchronized (deliveryLock) {
+            deliveredFlowConfig = flowConfig;
+            callback = configLoadedCallback;
+        }
+        if (callback != null) {
+            callback.configLoaded(flowConfig);
+        }
+    }
+
+    /**
+     * The SDK is initialized: remembers it and calls the registered callback (on the calling
+     * thread, as the SDK always did).
+     */
+    void deliverInitialized() {
+        InitializedCallback callback;
+        synchronized (deliveryLock) {
+            initializedDelivered = true;
+            callback = initializedCallback;
+        }
+        if (callback != null) {
+            callback.initialized();
+        }
+    }
+
+    /**
+     * Initialize was called again: hands what was already delivered to the registered callbacks
+     * again (configLoaded, then initialized), like iOS. Nothing before the first load.
+     */
+    void replayDelivered() {
+        replayConfigLoaded();
+        replayInitialized();
+    }
+
+    private void replayConfigLoaded() {
+        synchronized (deliveryLock) {
+            if (deliveredFlowConfig == null || configLoadedReplayPending) {
+                return;
+            }
+            configLoadedReplayPending = true;
+        }
+        GleapMainThread.post(new Runnable() {
+            @Override
+            public void run() {
+                final ConfigLoadedCallback callback;
+                final JSONObject flowConfig;
+                synchronized (deliveryLock) {
+                    configLoadedReplayPending = false;
+                    callback = configLoadedCallback;
+                    flowConfig = deliveredFlowConfig;
+                }
+                if (callback != null) {
+                    GleapErrors.guard("configLoaded replay", () -> callback.configLoaded(flowConfig));
+                }
+            }
+        });
+    }
+
+    private void replayInitialized() {
+        synchronized (deliveryLock) {
+            if (!initializedDelivered || initializedReplayPending) {
+                return;
+            }
+            initializedReplayPending = true;
+        }
+        GleapMainThread.post(new Runnable() {
+            @Override
+            public void run() {
+                final InitializedCallback callback;
+                synchronized (deliveryLock) {
+                    initializedReplayPending = false;
+                    callback = initializedCallback;
+                }
+                if (callback != null) {
+                    GleapErrors.guard("initialized replay", callback::initialized);
+                }
+            }
+        });
     }
 
     public InitializationDoneCallback getInitializationDoneCallback() {

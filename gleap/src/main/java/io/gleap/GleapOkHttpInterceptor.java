@@ -20,11 +20,14 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 import okio.Buffer;
+import okio.BufferedSink;
 import okio.BufferedSource;
 import okio.ForwardingSource;
 import okio.GzipSource;
 import okio.Okio;
+import okio.Sink;
 import okio.Source;
+import okio.Timeout;
 
 /**
  * Records the requests of an OkHttp client in the Gleap network logs.
@@ -136,20 +139,64 @@ public final class GleapOkHttpInterceptor implements Interceptor {
             if (length == 0) {
                 return "";
             }
-            if (length < 0 || length > Networklog.BODY_CAP) {
+            if (length < 0) {
+                // Without a length it may be a stream that writing it here would use up.
                 return Networklog.BODY_NOT_CAPTURED;
             }
-            Buffer buffer = new Buffer();
-            body.writeTo(buffer);
-            long size = buffer.size();
-            byte[] bytes = buffer.readByteArray(Math.min(size, Networklog.BODY_CAP));
-            buffer.clear();
+            // The body can be written again: the first 150 KB are copied, a longer body is cut
+            // like a response body.
+            HeadSink head = new HeadSink();
+            try {
+                BufferedSink sink = Okio.buffer(head);
+                body.writeTo(sink);
+                sink.flush();
+            } catch (Throwable error) {
+                if (!head.full) {
+                    throw error;
+                }
+            }
+            byte[] bytes = head.captured.readByteArray();
             if (kind == KIND_UNKNOWN && !isProbablyUtf8(bytes, bytes.length)) {
                 return Networklog.BINARY_BODY_OMITTED;
             }
-            return decode(bytes, bytes.length, charsetOf(mediaType), size > Networklog.BODY_CAP, String.valueOf(size));
+            String total = length > Networklog.BODY_CAP ? String.valueOf(length) : "more than " + Networklog.BODY_CAP;
+            return decode(bytes, bytes.length, charsetOf(mediaType), head.full, total);
         } catch (Throwable error) {
             return Networklog.BODY_NOT_CAPTURED;
+        }
+    }
+
+    /**
+     * Keeps the first {@link Networklog#BODY_CAP} bytes of a request body. The next byte stops the
+     * write, so a large body is not written out in full just for the log.
+     */
+    private static final class HeadSink implements Sink {
+        final Buffer captured = new Buffer();
+        boolean full;
+
+        @Override
+        public void write(Buffer source, long byteCount) throws IOException {
+            long room = Networklog.BODY_CAP - captured.size();
+            if (byteCount > room) {
+                captured.write(source, room);
+                source.skip(byteCount - room);
+                full = true;
+                throw new IOException("Gleap: request body longer than the log keeps");
+            }
+            captured.write(source, byteCount);
+        }
+
+        @Override
+        public void flush() {
+        }
+
+        @Override
+        public Timeout timeout() {
+            return Timeout.NONE;
+        }
+
+        @Override
+        public void close() {
         }
     }
 

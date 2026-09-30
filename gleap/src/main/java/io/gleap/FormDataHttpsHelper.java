@@ -86,7 +86,7 @@ class FormDataHttpsHelper {
 
         // checks server's status code first
         int status = httpConn.getResponseCode();
-        if (status == HttpURLConnection.HTTP_OK) {
+        if (GleapHttp.isSuccess(status)) {
             InputStream responseStream = new
                     BufferedInputStream(httpConn.getInputStream());
 

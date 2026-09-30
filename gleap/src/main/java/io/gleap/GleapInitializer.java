@@ -17,6 +17,11 @@ final class GleapInitializer {
     private GleapInitializer() {
     }
 
+    // Tests only.
+    static void setInitializedForTesting(boolean value) {
+        initialized = value;
+    }
+
     static Application getApplication() {
         return application;
     }
@@ -28,6 +33,12 @@ final class GleapInitializer {
         }
 
         if (initialized) {
+            // Initialized again with the same key (e.g. after a React Native reload): the config
+            // is not loaded again, so the registered configLoaded / initialized callbacks get the
+            // one that was loaded, like on iOS.
+            if (sdkKey.trim().equals(GleapConfig.getInstance().getSdkKey())) {
+                GleapCallbacks.getInstance().replayDelivered();
+            }
             return;
         }
 

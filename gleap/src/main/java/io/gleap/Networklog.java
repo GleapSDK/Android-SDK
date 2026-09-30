@@ -172,19 +172,21 @@ public class Networklog {
 
     /**
      * Keeps the head of a body longer than {@link #BODY_CAP} and appends the truncation marker.
-     * Bodies that already end with the marker are returned unchanged.
+     * Bodies that already end with the marker keep it: unchanged, or with the head cut again when
+     * it grew after the cut (masked values can be longer than the originals).
      */
     static String capBody(String body) {
         if (body == null || body.length() <= BODY_CAP) {
             return body;
         }
-        int markerStart = body.lastIndexOf(TRUNCATED_PREFIX);
-        if (markerStart >= 0 && markerStart <= BODY_CAP && body.endsWith(" bytes]")) {
-            return body;
-        }
         int cut = BODY_CAP;
         if (Character.isHighSurrogate(body.charAt(cut - 1))) {
             cut--;
+        }
+        int markerStart = body.lastIndexOf(TRUNCATED_PREFIX);
+        // "\n… [truncated, more than 150000 bytes]" is the longest marker.
+        if (markerStart >= 0 && body.length() - markerStart <= 64 && body.endsWith(" bytes]")) {
+            return markerStart <= BODY_CAP ? body : body.substring(0, cut) + body.substring(markerStart);
         }
         return body.substring(0, cut) + TRUNCATED_PREFIX + utf8Length(body) + " bytes]";
     }

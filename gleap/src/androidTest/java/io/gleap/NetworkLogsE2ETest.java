@@ -97,9 +97,13 @@ public class NetworkLogsE2ETest extends E2ETestBase {
         assertTrue(big.getBoolean("success"));
         assertEquals("GET", big.getString("type"));
 
-        // A request body above the cap is not captured (it is not cut either).
+        // A request body above the cap is cut the same way.
         JSONObject uploadEntry = entry(logs, "/upload");
-        assertEquals(Networklog.BODY_NOT_CAPTURED, uploadEntry.getJSONObject("request").getString("payload"));
+        String payload = uploadEntry.getJSONObject("request").getString("payload");
+        String expectedPayloadMarker = TRUNCATED + bigPayload.length + " bytes]";
+        assertTrue("Ends with the marker: …" + tail(payload), payload.endsWith(expectedPayloadMarker));
+        assertEquals(new String(bigPayload, 0, Networklog.BODY_CAP, StandardCharsets.UTF_8),
+                payload.substring(0, payload.length() - expectedPayloadMarker.length()));
         assertEquals("POST", uploadEntry.getString("type"));
     }
 

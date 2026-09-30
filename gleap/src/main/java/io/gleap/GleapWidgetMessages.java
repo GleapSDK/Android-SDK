@@ -113,7 +113,7 @@ final class GleapWidgetMessages {
      * ticket was created, feedback-sending-failed otherwise.
      */
     static String feedbackResult(JSONObject response) throws JSONException {
-        if (response.has("status") && response.getInt("status") == 201) {
+        if (HttpHelper.isSent(response)) {
             JSONObject message = new JSONObject();
             String shareToken = shareToken(response);
             if (!shareToken.equals("")) {

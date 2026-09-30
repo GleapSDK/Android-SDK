@@ -99,11 +99,11 @@ class HttpHelper extends AsyncTask<GleapBug, Void, JSONObject> {
     }
 
     /**
-     * The report was created: the API answers POST /bugs/v2 with 201, the same check the widget
-     * uses to show the confirmation.
+     * The report was created: the API answers POST /bugs/v2 with 201, and any other 2xx counts as
+     * well. The same check decides the sent / failed callbacks and the widget's confirmation.
      */
     static boolean isSent(JSONObject result) {
-        return result != null && result.optInt("status", 0) == 201;
+        return result != null && GleapHttp.isSuccess(result.optInt("status", 0));
     }
 
     @Override

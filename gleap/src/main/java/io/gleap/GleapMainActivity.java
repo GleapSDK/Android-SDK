@@ -549,7 +549,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
     @Override
     public void onTaskComplete(JSONObject response) {
         try {
-            boolean sent = response.has("status") && response.getInt("status") == 201;
+            boolean sent = HttpHelper.isSent(response);
             try {
                 sendMessage(GleapWidgetMessages.feedbackResult(response));
                 if (sent) {

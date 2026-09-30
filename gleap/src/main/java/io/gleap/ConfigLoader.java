@@ -106,15 +106,10 @@ class ConfigLoader extends AsyncTask<GleapBug, Void, JSONObject> {
                             }
                         });
 
-                        if(GleapCallbacks.getInstance().getConfigLoadedCallback() != null) {
-                            if(result.has("flowConfig")) {
-                                GleapCallbacks.getInstance().getConfigLoadedCallback().configLoaded(result.getJSONObject("flowConfig"));
-                            }
-                        }
-
-                        if(GleapCallbacks.getInstance().getInitializedCallback() != null) {
-                            GleapCallbacks.getInstance().getInitializedCallback().initialized();
-                        }
+                        // Kept by GleapCallbacks, so callbacks registered later (and a second
+                        // initialize) get the loaded config too.
+                        GleapCallbacks.getInstance().deliverConfigLoaded(result.getJSONObject("flowConfig"));
+                        GleapCallbacks.getInstance().deliverInitialized();
                     } else {
                         GleapErrors.report(new Exception("Config could not be loaded. Incorrect API key."), "Gleap config loader");
                     }

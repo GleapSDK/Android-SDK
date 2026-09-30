@@ -95,6 +95,10 @@ public class GleapWidgetMessagesTest {
         assertEquals("feedback-sent", sent.getString("name"));
         assertEquals("share-1", sent.getJSONObject("data").getString("shareToken"));
 
+        // Any 2xx is a created ticket.
+        assertEquals("feedback-sent", new JSONObject(GleapWidgetMessages.feedbackResult(new JSONObject()
+                .put("status", 200))).getString("name"));
+
         JSONObject failed = new JSONObject(GleapWidgetMessages.feedbackResult(new JSONObject().put("status", 500)));
         assertEquals("feedback-sending-failed", failed.getString("name"));
     }

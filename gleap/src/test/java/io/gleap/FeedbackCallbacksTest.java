@@ -103,6 +103,20 @@ public class FeedbackCallbacksTest {
     }
 
     @Test
+    public void anyOther2xxCountsAsCreatedToo() throws Exception {
+        // The upload answered with 201, the ticket with 200.
+        sdk.server.clear("/uploads/sdk").respond("/uploads/sdk", 201, "{\"fileUrl\":\"https://files.example.com/s.png\"}");
+        sdk.server.respond("/bugs/v2", 200, "{\"shareToken\":\"share-1\"}");
+
+        send("broken");
+
+        assertEquals(
+                "[willBeSent {\"description\":\"broken\"}, sent broken, outboundSent survey-1, listener 200]",
+                events.toString());
+        assertTrue(hasEvent("outbound-survey-1-submitted"));
+    }
+
+    @Test
     public void anErrorStatusIsReportedAsFailedOnly() throws Exception {
         sdk.server.respond("/bugs/v2", 500, "");
 

@@ -76,14 +76,15 @@ public class Gleap implements iGleap {
 
     @Override
     public void openConversations() {
-        openConversations(false);
+        // The back button is shown, as it always was without an argument.
+        openConversations(true);
     }
 
     @Override
-    public void openConversations(boolean hideBackButton) {
+    public void openConversations(boolean showBackButton) {
         GleapWidgetLauncher.openWithAction("open-conversations",
-                () -> new JSONObject().put("hideBackButton", hideBackButton),
-                () -> openConversations(hideBackButton),
+                () -> new JSONObject().put("hideBackButton", !showBackButton),
+                () -> openConversations(showBackButton),
                 "openConversations - inner", "openConversations - middle", "openConversations - outer");
     }
 
@@ -911,7 +912,10 @@ public class Gleap implements iGleap {
     }
 
     /**
-     * This is called, when the config is received from the server;
+     * This is called, when the config is received from the server. The config is loaded once per
+     * process: a callback set after it was loaded is called once with the loaded config, posted
+     * to the main thread. Calling {@link Gleap#initialize} again with the same SDK key hands the
+     * loaded config to the set callback again, like on iOS.
      *
      * @param configLoadedCallback callback which is called
      */
@@ -921,7 +925,10 @@ public class Gleap implements iGleap {
     }
 
     /**
-     * This is called, when the config is received from the server;
+     * This is called, when Gleap got initialized (the config was received from the server). A
+     * callback set after that is called once, posted to the main thread. Calling
+     * {@link Gleap#initialize} again with the same SDK key calls the set callback again, like on
+     * iOS.
      *
      * @param initializedCallback callback which is called
      */

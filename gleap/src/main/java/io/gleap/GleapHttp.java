@@ -42,6 +42,13 @@ final class GleapHttp {
     private GleapHttp() {
     }
 
+    /**
+     * Any 2xx: the API created or accepted it (201, but also 200, 202, 204...).
+     */
+    static boolean isSuccess(int status) {
+        return status >= 200 && status < 300;
+    }
+
     static HttpURLConnection open(String url) throws IOException {
         return open(url, READ_TIMEOUT_MS);
     }
