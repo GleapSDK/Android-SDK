@@ -37,8 +37,8 @@ final class GleapWidgetMessages {
     }
 
     /**
-     * session-update: the session the widget authenticates with, the identified user and the
-     * API and realtime hosts of the region.
+     * session-update: the session the widget authenticates with (and its file session, when
+     * there is one), the identified user and the API and realtime hosts of the region.
      */
     static JSONObject sessionUpdate() throws JSONException {
         GleapSession gleapSession = GleapSessionController.getInstance().getUserSession();
@@ -46,6 +46,13 @@ final class GleapWidgetMessages {
         JSONObject sessionData = new JSONObject();
         sessionData.put("gleapId", gleapSession.getId());
         sessionData.put("gleapHash", gleapSession.getHash());
+        // The widget reads protected conversation files with the file session.
+        String fileAccessToken = gleapSession.getFileAccessToken();
+        String fileAccessExpiresAt = gleapSession.getFileAccessExpiresAt();
+        if (fileAccessToken != null) {
+            sessionData.put("fileAccessToken", fileAccessToken);
+            sessionData.put("fileAccessExpiresAt", fileAccessExpiresAt);
+        }
         if (user != null) {
             if (user.getUserId() != null) {
                 sessionData.put("userId", user.getUserId());

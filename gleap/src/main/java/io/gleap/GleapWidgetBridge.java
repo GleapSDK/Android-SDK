@@ -315,7 +315,7 @@ final class GleapWidgetBridge {
         }
     }
 
-    private static void sendSessionUpdate(GleapMainActivity activity) {
+    static void sendSessionUpdate(GleapMainActivity activity) {
         try {
             activity.sendMessage(GleapWidgetMessages.message("session-update", GleapWidgetMessages.sessionUpdate()));
         } catch (Exception exception) {
