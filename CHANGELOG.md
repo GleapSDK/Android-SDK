@@ -1,16 +1,11 @@
 # Changelog
 
-## Unreleased
+## 19.0.0
 
 ### Added
 
 - Authenticated conversation files (opt-in per project): a verified `identifyUser` (with the user hash) now gets a short-lived file session, which is kept in memory only, passed to the widget so it can show protected files, refreshed 5 minutes before it expires (and when the app comes back to the foreground) and revoked by `clearIdentity`. An identify with unchanged data is still sent while the file session is missing or expired.
 - `Gleap.getInstance().openProtectedFileFromUrl(url)` opens the conversation of a protected file from an emailed link (`?gleapFile=<file id>`) once the user is identified; returns `false` for a URL without a valid file id.
-
-## 19.0.0
-
-### Added
-
 - Color scheme: `Gleap.getInstance().setColorScheme("auto")` matches the widget to the app's dark / light mode. `auto` follows the night mode of the current activity (so `AppCompatDelegate.setDefaultNightMode` is respected) and switches live, `light` / `dark` force a scheme; any other value is treated as `auto`.
 - Dark mode uses the dark colors set in the dashboard (header colors, UI color and background: `darkHeaderColor`, `darkHeaderColor2`, `darkHeaderColor3`, `darkColor`, `darkBackgroundColor`), which replace the regular ones. Without dark colors the widget keeps its normal colors.
 - Dark mode also uses the dark logo, header image and composer glow set in the dashboard (`darkLogo`, `darkBgImage`, `darkAurora`); an empty dark logo or header image means none in dark mode. Configs saved before these fields existed keep the regular ones.

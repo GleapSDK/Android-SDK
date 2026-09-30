@@ -1,0 +1,132 @@
+name: Release
+
+# Pushing a tag X.Y.Z (equal to VERSION_NAME in gradle.properties) publishes io.gleap:gleap-android-sdk
+# to Maven Central, releases it without a manual Central Portal step, waits until it is downloadable
+# and creates the GitHub release with the matching CHANGELOG.md section.
+# Running it by hand (workflow_dispatch) is a dry run: same checks, tests and signing, published only
+# to the runner's local Maven repository.
+
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to dry-run (must equal VERSION_NAME); nothing is published
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  GROUP_PATH: io/gleap
+  ARTIFACT_ID: gleap-android-sdk
+
+jobs:
+  release:
+    name: Publish ${{ inputs.version || github.ref_name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    env:
+      VERSION: ${{ inputs.version || github.ref_name }}
+      DRY_RUN: ${{ github.event_name == 'workflow_dispatch' }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Check version
+        run: |
+          set -euo pipefail
+          version_name="$(sed -n 's/^VERSION_NAME=//p' gradle.properties | tr -d '[:space:]')"
+          if [ "$VERSION" != "$version_name" ]; then
+            echo "::error::Version $VERSION does not match VERSION_NAME=$version_name in gradle.properties"
+            exit 1
+          fi
+          if [ "$DRY_RUN" != "true" ] && ! git merge-base --is-ancestor "$GITHUB_SHA" origin/master; then
+            echo "::error::Tag $VERSION points to a commit that is not on master"
+            exit 1
+          fi
+          pom_url="https://repo1.maven.org/maven2/$GROUP_PATH/$ARTIFACT_ID/$VERSION/$ARTIFACT_ID-$VERSION.pom"
+          if curl -sfI -o /dev/null "$pom_url"; then
+            echo "::error::$ARTIFACT_ID $VERSION is already on Maven Central"
+            exit 1
+          fi
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 17
+
+      # v5 on purpose: v6 moved caching into a proprietary component with separate terms of use.
+      - uses: gradle/actions/setup-gradle@v5
+
+      - name: Unit tests
+        run: ./gradlew :gleap:testDebugUnitTest
+
+      - name: Publish and release to Maven Central
+        env:
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_KEY_ID }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ "$DRY_RUN" = "true" ]; then
+            ./gradlew :gleap:publishToMavenLocal --no-configuration-cache
+            ls -l "$HOME/.m2/repository/$GROUP_PATH/$ARTIFACT_ID/$VERSION"
+          else
+            ./gradlew :gleap:publishAndReleaseToMavenCentral --no-configuration-cache
+          fi
+
+      - name: Wait for Maven Central
+        if: env.DRY_RUN != 'true'
+        run: |
+          set -euo pipefail
+          pom_url="https://repo1.maven.org/maven2/$GROUP_PATH/$ARTIFACT_ID/$VERSION/$ARTIFACT_ID-$VERSION.pom"
+          # Central usually syncs within ~15 minutes; give it 30.
+          for attempt in $(seq 1 60); do
+            if curl -sfI -o /dev/null "$pom_url"; then
+              echo "$ARTIFACT_ID $VERSION is on Maven Central"
+              exit 0
+            fi
+            echo "Not on Maven Central yet (attempt $attempt/60), waiting 30 s"
+            sleep 30
+          done
+          echo "::error::$pom_url did not appear within 30 minutes. Check the deployment at https://central.sonatype.com/publishing/deployments"
+          exit 1
+
+      - name: Release notes
+        run: |
+          set -euo pipefail
+          awk -v heading="## $VERSION" '
+            $0 == heading { found = 1; next }
+            found && /^## / { exit }
+            found { print }
+          ' CHANGELOG.md | sed '/./,$!d' > release-notes.md
+          if [ ! -s release-notes.md ]; then
+            echo "::warning::No '## $VERSION' section in CHANGELOG.md"
+            echo "See [CHANGELOG.md](https://github.com/$GITHUB_REPOSITORY/blob/$VERSION/CHANGELOG.md)." > release-notes.md
+          fi
+          cat release-notes.md
+
+      - name: Create GitHub release
+        if: env.DRY_RUN != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if gh release view "$VERSION" > /dev/null 2>&1; then
+            echo "Release $VERSION already exists"
+            exit 0
+          fi
+          prerelease=""
+          case "$VERSION" in *-*) prerelease="--prerelease" ;; esac
+          gh release create "$VERSION" --verify-tag --title "$VERSION" --notes-file release-notes.md $prerelease

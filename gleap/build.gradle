@@ -1,5 +1,7 @@
+import com.vanniktech.maven.publish.AndroidSingleVariantLibrary
+
 apply plugin: 'com.android.library'
-apply from: 'maven-push.gradle'
+apply plugin: 'com.vanniktech.maven.publish'
 
 android {
     namespace 'gleap.io.gleap'
@@ -37,13 +39,17 @@ android {
         unitTests.returnDefaultValues = true
         animationsDisabled = true
     }
+}
 
-    // Expose the release variant for publishing
-    publishing {
-        singleVariant("release") {
-            withSourcesJar()
-        }
-    }
+// Published as io.gleap:gleap-android-sdk (GROUP, POM_ARTIFACT_ID, VERSION_NAME and the POM_* values
+// in gradle.properties). Releases run from GitHub Actions on a version tag, see README "Releasing".
+mavenPublishing {
+    // The release variant as aar with a sources jar and no javadoc jar, like every release so far.
+    configure(new AndroidSingleVariantLibrary("release", true, false))
+    // Upload to the Central Portal and release the deployment once it validates (no manual step).
+    publishToMavenCentral(true)
+    // In-memory key (signingInMemoryKey*) in CI; locally the signing.* keyring properties.
+    signAllPublications()
 }
 
 
