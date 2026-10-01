@@ -1054,6 +1054,13 @@ final class GleapCaptureCoordinator implements Application.ActivityLifecycleCall
             GleapDetectorUtil.resumeDetectorsAfterCapture();
         } catch (Throwable ignore) {
         }
+        // In-app messages that arrived during the capture (shown once the widget is closed).
+        GleapMainThread.post(new Runnable() {
+            @Override
+            public void run() {
+                GleapEventService.getInstance().processDeferredActions();
+            }
+        });
     }
 
     private void setState(State next) {

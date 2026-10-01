@@ -12,6 +12,8 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -30,12 +32,18 @@ class GleapEventService {
     static final int MAX_PING_BYTES = 256 * 1024;
     // A ping answer bigger than this is not read for capture requests.
     private static final int MAX_PING_ANSWER_BYTES = 64 * 1024;
+    // In-app messages that arrive while the customer captures the app wait (at most this many,
+    // this long) until the capture is over and the widget is closed.
+    private static final int MAX_DEFERRED_ACTIONS = 20;
+    private static final long DEFERRED_ACTIONS_TTL_MS = 10 * 60 * 1000;
 
     // Created with the class: getInstance() is called from several threads.
     private static volatile GleapEventService instance = new GleapEventService();
     private static GleapWebSocketListener webSocketListener;
     private boolean disableInAppNotifications = false;
     private final GleapEventQueue eventQueue = new GleapEventQueue();
+    // {received at (elapsed ms), actions}: in-app messages held back during a capture. Guarded by itself.
+    private final List<Object[]> deferredActions = new ArrayList<>();
     private final GleapPingBackoff backoff = new GleapPingBackoff();
     // A ping is waiting for the request thread or in flight: never more than one.
     private final AtomicBoolean pingInFlight = new AtomicBoolean();
@@ -219,6 +227,46 @@ class GleapEventService {
         if (webSocketListener != null) {
             webSocketListener.destroy();
             webSocketListener = null;
+        }
+    }
+
+    private void deferActions(JSONArray actions) {
+        synchronized (deferredActions) {
+            while (deferredActions.size() >= MAX_DEFERRED_ACTIONS) {
+                deferredActions.remove(0);
+            }
+            deferredActions.add(new Object[]{SystemClock.elapsedRealtime(), actions});
+        }
+    }
+
+    /**
+     * Shows the in-app messages held back during a capture, once no capture runs and the widget
+     * is closed (main thread). Messages older than 10 minutes are dropped.
+     */
+    void processDeferredActions() {
+        try {
+            if (GleapCaptureCoordinator.isSessionActive() || GleapCaptureCoordinator.isWidgetClosedForCapture()
+                    || Gleap.getInstance().isOpened()) {
+                // Later: when the capture ends or the widget closes.
+                return;
+            }
+            List<Object[]> ready;
+            synchronized (deferredActions) {
+                if (deferredActions.isEmpty()) {
+                    return;
+                }
+                ready = new ArrayList<>(deferredActions);
+                deferredActions.clear();
+            }
+            long now = SystemClock.elapsedRealtime();
+            for (Object[] entry : ready) {
+                if (now - (Long) entry[0] > DEFERRED_ACTIONS_TTL_MS) {
+                    continue;
+                }
+                processEventData(new JSONObject().put("a", entry[1]));
+            }
+        } catch (Exception error) {
+            GleapLog.w("Could not show the held back in-app messages", error);
         }
     }
 
@@ -588,8 +636,13 @@ class GleapEventService {
         }
 
         if (data.has("a") && data.get("a") instanceof JSONArray) {
-            // Like while the widget is open, nothing pops up while the customer captures the app.
-            if (Gleap.getInstance().isOpened() || GleapCaptureCoordinator.isSessionActive()) {
+            // Nothing pops up while the customer captures the app: the messages wait until the
+            // capture is over (the server marked them sent).
+            if (GleapCaptureCoordinator.isSessionActive() || GleapCaptureCoordinator.isWidgetClosedForCapture()) {
+                deferActions(data.getJSONArray("a"));
+                return;
+            }
+            if (Gleap.getInstance().isOpened()) {
                 return;
             }
 

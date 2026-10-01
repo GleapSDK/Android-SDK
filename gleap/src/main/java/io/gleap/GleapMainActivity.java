@@ -481,6 +481,15 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 GleapOverlayManager.getInstance().setShowFab(true);
                 GleapOverlayManager.getInstance().clearMessages();
                 isActive = false;
+                if (!closedForCapture) {
+                    // In-app messages held back during a capture show once the widget is closed.
+                    GleapMainThread.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            GleapEventService.getInstance().processDeferredActions();
+                        }
+                    });
+                }
             }
         } catch (Error | Exception ignore) {
         }
