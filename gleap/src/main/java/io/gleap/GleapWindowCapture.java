@@ -49,7 +49,7 @@ import io.gleap.callbacks.GetBitmapCallback;
  * <li>Windows with FLAG_SECURE, password fields and the views masked with
  * {@link Gleap#maskView} are painted black.</li>
  * <li>A wrapper SDK that renders its own content (Flutter's GetBitmapCallback) provides the
- * picture instead.</li>
+ * picture instead; the masks above are drawn over it all the same.</li>
  * </ul>
  * {@link #capture} must be called on the main thread; the frame is delivered on the given
  * handler's thread.
@@ -294,6 +294,15 @@ final class GleapWindowCapture {
             layer.bitmap = hostBitmap;
             layer.external = true;
             frame.layers.add(layer);
+            // The app's picture covers the activity: the SDK's masks still apply on top of it.
+            try {
+                Set<View> masked = GleapCapture.maskedViews();
+                for (View root : windowRoots(activity, decor, excludedRoots)) {
+                    addMasks(root, origin, frame, masked);
+                }
+            } catch (Throwable error) {
+                GleapLog.w("Could not mask the app's picture", error);
+            }
             frame.mainThreadMs = SystemClock.uptimeMillis() - startedAt;
             deliver(resultHandler, callback, frame);
             return;
@@ -344,15 +353,39 @@ final class GleapWindowCapture {
         frame.layers.add(windowLayer);
         copyWindow(activity, decor, root, windowLayer, pool, pending, resultHandler);
 
+        addMaskLayers(masks, location, origin, frame);
+    }
+
+    /**
+     * Black boxes over a window's masked views and password fields, or over the whole window when
+     * it has FLAG_SECURE; for a picture the SDK did not take itself (GetBitmapCallback), which is
+     * drawn over the whole activity.
+     */
+    private static void addMasks(View root, int[] origin, Frame frame, Set<View> masked) {
+        WindowManager.LayoutParams params = windowParams(root);
+        int[] location = new int[2];
+        root.getLocationOnScreen(location);
+        if (params != null && (params.flags & WindowManager.LayoutParams.FLAG_SECURE) != 0) {
+            frame.layers.add(new Layer(Layer.BLACK, scaled(location[0] - origin[0], location[1] - origin[1],
+                    root.getWidth(), root.getHeight(), frame.scale), 1f));
+            return;
+        }
+        List<SurfaceView> surfaces = new ArrayList<>();
+        List<View> masks = new ArrayList<>();
+        scan(root, masked, surfaces, masks);
+        addMaskLayers(masks, location, origin, frame);
+    }
+
+    // The visible part of each view, from window to frame coordinates, a little bigger.
+    private static void addMaskLayers(List<View> masks, int[] windowLocation, int[] origin, Frame frame) {
         Rect visible = new Rect();
         for (View view : masks) {
             try {
                 if (!view.getGlobalVisibleRect(visible)) {
                     continue;
                 }
-                // Window coordinates → the activity's.
-                RectF mask = scaled(visible.left + location[0] - origin[0], visible.top + location[1] - origin[1],
-                        visible.width(), visible.height(), scale);
+                RectF mask = scaled(visible.left + windowLocation[0] - origin[0], visible.top + windowLocation[1] - origin[1],
+                        visible.width(), visible.height(), frame.scale);
                 mask.inset(-MASK_PADDING_PX, -MASK_PADDING_PX);
                 frame.layers.add(new Layer(Layer.BLACK, mask, 1f));
             } catch (Throwable ignore) {
