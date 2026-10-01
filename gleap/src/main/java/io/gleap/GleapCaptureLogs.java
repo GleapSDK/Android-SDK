@@ -27,12 +27,15 @@ import java.util.zip.GZIPOutputStream;
 final class GleapCaptureLogs {
     static final long FLUSH_TIMEOUT_MS = 500;
     static final String KIND_LOGS = "logs";
+    // A request that fails on the server's side (or the network) is tried 3 times, 2 and then 8
+    // minutes apart; then it is reported failed, so the server closes it.
+    static final int MAX_ATTEMPTS = 3;
+    static final long[] RETRY_DELAYS_MS = {2 * 60 * 1000L, 8 * 60 * 1000L};
     private static final int MAX_REMEMBERED_REQUESTS = 200;
-    // How long the replay frames may take to be read on the main thread.
-    private static final long REPLAY_SNAPSHOT_TIMEOUT_MS = 1000;
 
     /**
-     * What a bundle may contain (the request's options.include): everything but the replay by default.
+     * What a bundle may contain (the request's options.include): everything but the replay by
+     * default. The replay is never sent with capture logs (its frames are not masked).
      */
     static final class Include {
         final boolean consoleLog;
@@ -83,12 +86,6 @@ final class GleapCaptureLogs {
         JSONObject metaData() throws JSONException;
 
         JSONArray customEventLog();
-
-        // Replays are enabled in the remote config.
-        boolean replaysEnabled();
-
-        // The uploaded replay frames, {"interval", "frames"}; null without frames.
-        JSONObject replay();
     }
 
     private static final Sources DEVICE = new Sources() {
@@ -129,16 +126,6 @@ final class GleapCaptureLogs {
         @Override
         public JSONArray customEventLog() {
             return GleapBug.getInstance().getCustomEventLog();
-        }
-
-        @Override
-        public boolean replaysEnabled() {
-            return GleapConfig.getInstance().isEnableReplays();
-        }
-
-        @Override
-        public JSONObject replay() {
-            return uploadReplaySnapshot();
         }
     };
 
@@ -194,48 +181,69 @@ final class GleapCaptureLogs {
                 return;
             }
             JSONObject options = request.optJSONObject("options");
-            final Include include = Include.from(options != null ? options.optJSONObject("include") : null);
-            GleapCaptureExecutor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    boolean finished = false;
-                    try {
-                        finished = handleLogsRequest(id, include);
-                    } catch (Throwable error) {
-                        GleapLog.w("Could not send the logs for a capture request", error);
-                    } finally {
-                        if (!finished) {
-                            // Not delivered: the server pushes it again on the next connect.
-                            forget(id);
-                        }
-                    }
-                }
-            });
+            attempt(id, Include.from(options != null ? options.optJSONObject("include") : null), 1);
         } catch (Throwable error) {
             GleapErrors.report(error, "onCaptureRequest");
         }
     }
 
     /**
+     * One attempt at a log request. The request stays started (a push or ping answer for it is
+     * ignored) while it is retried: the logs are never collected and sent again for every ping.
+     */
+    private void attempt(final String id, final Include include, final int number) {
+        GleapCaptureExecutor.execute(new Runnable() {
+            @Override
+            public void run() {
+                String retryReason;
+                try {
+                    retryReason = handleLogsRequest(id, include);
+                } catch (Throwable error) {
+                    GleapLog.w("Could not send the logs for a capture request", error);
+                    retryReason = error.getClass().getSimpleName();
+                }
+                if (retryReason == null) {
+                    return;
+                }
+                if (number >= MAX_ATTEMPTS) {
+                    // The server closes the request: no further pushes.
+                    try {
+                        GleapCaptureApi.event(id, "failed", "The logs could not be sent (" + retryReason + ").");
+                    } catch (Throwable ignore) {
+                    }
+                    return;
+                }
+                GleapMainThread.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        attempt(id, include, number + 1);
+                    }
+                }, RETRY_DELAYS_MS[number - 1]);
+            }
+        });
+    }
+
+    /**
      * Claims the request, collects the logs and sends them.
      *
-     * @return true when nothing is left to do for this request on this device
+     * @return null when nothing is left to do for this request on this device, else why it
+     * should be tried again (server trouble)
      */
-    boolean handleLogsRequest(String id, Include include) throws IOException, JSONException {
+    String handleLogsRequest(String id, Include include) throws IOException, JSONException {
         if (!GleapCapture.isRemoteLogCollectionEnabled()) {
             GleapCaptureApi.event(id, "unsupported", "Remote log collection is disabled in the app.");
-            return true;
+            return null;
         }
 
         GleapCaptureApi.Response claim = GleapCaptureApi.claim(id);
         if (!claim.ok()) {
-            // Gone (410) or refused for good: nothing to send. Server trouble: try again later.
-            return !isRetryable(claim.status);
+            // Gone (410) or refused for good: nothing to send.
+            return isRetryable(claim.status) ? "HTTP " + claim.status : null;
         }
 
         JSONObject bundle = collect(include, null, null);
         GleapCaptureApi.Response response = send(id, bundle);
-        return response.ok() || !isRetryable(response.status);
+        return !response.ok() && isRetryable(response.status) ? "HTTP " + response.status : null;
     }
 
     private static boolean isRetryable(int status) {
@@ -293,9 +301,8 @@ final class GleapCaptureLogs {
         if (include.customEventLog) {
             putIfPresent(bundle, "customEventLog", sources.customEventLog());
         }
-        if (include.replays && sources.replaysEnabled()) {
-            putIfPresent(bundle, "replay", sources.replay());
-        }
+        // No replay (include.replays): its frames are screenshots taken without the capture
+        // masks (password fields, masked views, secure windows).
 
         String captured = DateUtil.dateToString(capturedAt);
         bundle.put("capturedAt", captured);
@@ -353,7 +360,7 @@ final class GleapCaptureLogs {
      */
     static GleapCaptureApi.Response send(String id, JSONObject bundle) throws IOException {
         byte[] body = gzip(bundle.toString());
-        for (String key : new String[]{"replay", "consoleLog", "networkLogs", "customEventLog"}) {
+        for (String key : new String[]{"consoleLog", "networkLogs", "customEventLog"}) {
             if (body.length <= GleapCaptureApi.MAX_LOGS_BYTES) {
                 break;
             }
@@ -406,50 +413,6 @@ final class GleapCaptureLogs {
         }
     }
 
-    /**
-     * Uploads the replay frames recorded so far (/uploads/sdksteps) without clearing the replay.
-     */
-    static JSONObject uploadReplaySnapshot() {
-        try {
-            final ScreenshotReplay[][] frames = new ScreenshotReplay[1][];
-            final CountDownLatch read = new CountDownLatch(1);
-            // The replay is written on the main thread.
-            GleapMainThread.post(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        Replay replay = GleapBug.getInstance().getReplay();
-                        frames[0] = replay != null ? replay.getScreenshots() : null;
-                    } finally {
-                        read.countDown();
-                    }
-                }
-            });
-            if (!read.await(REPLAY_SNAPSHOT_TIMEOUT_MS, TimeUnit.MILLISECONDS) || frames[0] == null || frames[0].length == 0) {
-                return null;
-            }
-            Replay replay = GleapBug.getInstance().getReplay();
-            android.app.Application application = GleapInitializer.getApplication();
-            if (replay == null || application == null) {
-                return null;
-            }
-            JSONArray uploaded = new FeedbackUploader(application).uploadReplayFrames(frames[0]);
-            if (uploaded.length() == 0) {
-                return null;
-            }
-            JSONObject result = new JSONObject();
-            result.put("interval", replay.getInterval());
-            result.put("frames", uploaded);
-            return result;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return null;
-        } catch (Throwable error) {
-            GleapLog.w("Could not upload the replay for the capture logs", error);
-            return null;
-        }
-    }
-
     private synchronized boolean begin(String id) {
         if (started.contains(id)) {
             return false;
@@ -461,9 +424,5 @@ final class GleapCaptureLogs {
             oldest.remove();
         }
         return true;
-    }
-
-    private synchronized void forget(String id) {
-        started.remove(id);
     }
 }

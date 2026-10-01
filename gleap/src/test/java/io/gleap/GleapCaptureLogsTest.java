@@ -100,7 +100,6 @@ public class GleapCaptureLogsTest {
                 .put("metaData", false)
                 .put("customEventLog", false)
                 .put("replays", true);
-        sources.replaysEnabled = true;
 
         GleapCaptureLogs.getInstance().onCaptureRequest(logsRequest(include));
 
@@ -110,15 +109,15 @@ public class GleapCaptureLogsTest {
         assertFalse(bundle.has("metaData"));
         assertFalse(bundle.has("customEventLog"));
         assertTrue(bundle.has("networkLogs"));
-        assertEquals(5000, bundle.getJSONObject("replay").getInt("interval"));
+        // The replay's frames are not masked: never sent with capture logs, also when asked for.
+        assertFalse(bundle.has("replay"));
     }
 
     @Test
     public void theAppsSettingsApply() throws Exception {
-        // Console logs off in the remote config, env data disabled, replays off.
+        // Console logs off in the remote config, env data disabled.
         sources.consoleLogsEnabled = false;
         sources.metaData = null;
-        sources.replaysEnabled = false;
         JSONObject bundle = GleapCaptureLogs.buildBundle(
                 GleapCaptureLogs.Include.from(new JSONObject().put("replays", true)), sources, null, null,
                 new Date(), "device-1");
@@ -143,15 +142,44 @@ public class GleapCaptureLogsTest {
     }
 
     @Test
-    public void aRequestThatFailedOnTheServerSideIsTriedAgainWhenItComesBack() throws Exception {
+    public void aRequestThatFailsOnTheServerSideIsTriedThreeTimesThenReportedFailed() throws Exception {
+        sdk.server.respond(PATH + "/claim", 200, "{}");
+        sdk.server.respond(PATH + "/logs", 503, "{}");
+        sdk.server.respond(PATH + "/event", 200, "{}");
+
+        GleapCaptureLogs.getInstance().onCaptureRequest(logsRequest(null));
+        // Pushed again (a ping answer, a reconnect) while it waits for its retry: ignored, the
+        // logs are not collected and sent again.
+        GleapCaptureLogs.getInstance().onCaptureRequest(logsRequest(null));
+        assertEquals(1, sdk.server.requestsTo(PATH + "/logs").size());
+        assertTrue(sdk.server.requestsTo(PATH + "/event").isEmpty());
+
+        // The retry delays pass (posted to the main thread).
+        sdk.runMainThreadTasks();
+
+        assertEquals(GleapCaptureLogs.MAX_ATTEMPTS, sdk.server.requestsTo(PATH + "/logs").size());
+        JSONObject event = sdk.server.last(PATH + "/event").bodyJson();
+        assertEquals("failed", event.getString("type"));
+        assertTrue(event.getString("reason").contains("503"));
+
+        // Closed for this device: a later push is ignored as well.
+        GleapCaptureLogs.getInstance().onCaptureRequest(logsRequest(null));
+        sdk.runMainThreadTasks();
+        assertEquals(GleapCaptureLogs.MAX_ATTEMPTS, sdk.server.requestsTo(PATH + "/logs").size());
+        assertEquals(1, sdk.server.requestsTo(PATH + "/event").size());
+    }
+
+    @Test
+    public void aRetryThatSucceedsEndsTheRequest() throws Exception {
         sdk.server.respond(PATH + "/claim", 200, "{}");
         sdk.server.respond(PATH + "/logs", 503, "{}");
         sdk.server.respond(PATH + "/logs", 200, "{}");
 
         GleapCaptureLogs.getInstance().onCaptureRequest(logsRequest(null));
-        GleapCaptureLogs.getInstance().onCaptureRequest(logsRequest(null));
+        sdk.runMainThreadTasks();
 
         assertEquals(2, sdk.server.requestsTo(PATH + "/logs").size());
+        assertTrue(sdk.server.requestsTo(PATH + "/event").isEmpty());
     }
 
     @Test
@@ -251,7 +279,6 @@ public class GleapCaptureLogsTest {
 
     private static final class FakeSources implements GleapCaptureLogs.Sources {
         boolean consoleLogsEnabled = true;
-        boolean replaysEnabled = false;
         JSONObject metaData;
 
         FakeSources() {
@@ -311,18 +338,5 @@ public class GleapCaptureLogsTest {
             }
         }
 
-        @Override
-        public boolean replaysEnabled() {
-            return replaysEnabled;
-        }
-
-        @Override
-        public JSONObject replay() {
-            try {
-                return new JSONObject().put("interval", 5000).put("frames", new JSONArray());
-            } catch (Exception e) {
-                throw new AssertionError(e);
-            }
-        }
     }
 }

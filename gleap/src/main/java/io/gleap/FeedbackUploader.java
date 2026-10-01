@@ -157,53 +157,6 @@ class FeedbackUploader implements FeedbackPayloadBuilder.Uploads {
         return result;
     }
 
-    /**
-     * Uploads these replay frames (/uploads/sdksteps) for the logs of a capture request and
-     * returns their entries, oldest first. The replay itself is not cleared. Frames that cannot
-     * be written are left out, and no request is made without frames.
-     */
-    JSONArray uploadReplayFrames(ScreenshotReplay[] replays) throws IOException, JSONException {
-        JSONArray result = new JSONArray();
-        List<ScreenshotReplay> included = new LinkedList<>();
-        List<File> files = new LinkedList<>();
-        try {
-            for (ScreenshotReplay replay : replays) {
-                if (replay == null || replay.getScreenshot() == null) {
-                    continue;
-                }
-                File file = bitmapToFile(replay.getScreenshot());
-                if (file != null) {
-                    files.add(file);
-                    included.add(replay);
-                }
-            }
-            if (files.isEmpty()) {
-                return result;
-            }
-
-            GleapConfig config = GleapConfig.getInstance();
-            FormDataHttpsHelper multipart = new FormDataHttpsHelper(config.getApiUrl() + UPLOAD_IMAGE_MULTI_BACKEND_URL_POSTFIX, config.getSdkKey());
-            for (File file : files) {
-                multipart.addFilePart(file);
-            }
-            JSONArray fileUrls = new JSONObject(multipart.finishAndUpload()).getJSONArray("fileUrls");
-            for (int i = 0; i < fileUrls.length() && i < included.size(); i++) {
-                ScreenshotReplay replay = included.get(i);
-                JSONObject entry = new JSONObject();
-                entry.put("url", fileUrls.get(i));
-                entry.put("screenname", replay.getScreenName());
-                entry.put("date", DateUtil.dateToString(replay.getDate()));
-                entry.put("interactions", new JSONArray());
-                result.put(entry);
-            }
-        } finally {
-            for (File file : files) {
-                delete(file);
-            }
-        }
-        return result;
-    }
-
     // The PNGs are only needed for the upload: screenshots of the app must not stay on disk.
     private static void delete(File file) {
         if (file != null && file.exists() && !file.delete()) {
