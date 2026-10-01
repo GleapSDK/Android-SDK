@@ -150,9 +150,11 @@ final class GleapCaptureUi {
 
     /**
      * A secondary button (white 12 %, white text), e.g. Retake.
+     *
+     * @param icon one of the {@link Icon} kinds before the label, or -1 for none
      */
-    static Button secondaryButton(Context context, String label, float radiusDp) {
-        return new Button(context, label, -1, false, SECONDARY_COLOR, TEXT_COLOR, dp(context, radiusDp));
+    static Button secondaryButton(Context context, String label, int icon, float radiusDp) {
+        return new Button(context, label, icon, false, SECONDARY_COLOR, TEXT_COLOR, dp(context, radiusDp));
     }
 
     /**
@@ -490,6 +492,12 @@ final class GleapCaptureUi {
         static final int CLOSE = 3;
         static final int PLAY = 4;
         static final int SEND = 5;
+        static final int RETAKE = 6;
+
+        // The web SDK's icons (Lucide "send" and "rotate-ccw"), as SVG path data on a 24 x 24 grid.
+        private static final Path SEND_PATH = SvgPath.parse("M14.54 21.69a.5.5 0 0 0 .94-.03l6.5-19a.5.5 0 0 0-.64-.63"
+                + "l-19 6.5a.5.5 0 0 0-.02.93l7.93 3.18a2 2 0 0 1 1.11 1.11zM21.85 2.15l-10.94 10.94");
+        private static final Path RETAKE_PATH = SvgPath.parse("M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8M3 3v5h5");
 
         private final int kind;
         private final Paint stroke = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -573,16 +581,10 @@ final class GleapCaptureUi {
                     stroke.setStrokeWidth(1.8f);
                     break;
                 case SEND:
-                    path.reset();
-                    path.moveTo(4.2f, 4.6f);
-                    path.lineTo(20.6f, 12f);
-                    path.lineTo(4.2f, 19.4f);
-                    path.lineTo(6.6f, 12f);
-                    path.close();
-                    canvas.drawPath(path, fill);
-                    stroke.setStrokeWidth(1.4f);
-                    canvas.drawPath(path, stroke);
-                    stroke.setStrokeWidth(1.8f);
+                    canvas.drawPath(SEND_PATH, stroke);
+                    break;
+                case RETAKE:
+                    canvas.drawPath(RETAKE_PATH, stroke);
                     break;
                 default:
                     break;
@@ -632,6 +634,232 @@ final class GleapCaptureUi {
                     canvas.drawCircle(cx + column * spacing / 2, cy + row * spacing, radius, paint);
                 }
             }
+        }
+    }
+
+    /**
+     * Builds a {@link Path} from SVG path data: M, L, H, V, C, Q, A and Z, absolute and relative
+     * (what the capture icons use).
+     */
+    static final class SvgPath {
+        private final String data;
+        private int index;
+
+        private SvgPath(String data) {
+            this.data = data;
+        }
+
+        static Path parse(String data) {
+            Path path = new Path();
+            try {
+                new SvgPath(data).build(path);
+            } catch (Throwable error) {
+                GleapLog.w("Could not read an icon", error);
+            }
+            return path;
+        }
+
+        private void build(Path path) {
+            char command = 0;
+            float x = 0;
+            float y = 0;
+            float startX = 0;
+            float startY = 0;
+            while (true) {
+                skipSeparators();
+                if (index >= data.length()) {
+                    return;
+                }
+                char next = data.charAt(index);
+                if (Character.isLetter(next)) {
+                    command = next;
+                    index++;
+                } else if (command == 0) {
+                    return;
+                }
+                boolean relative = Character.isLowerCase(command);
+                float baseX = relative ? x : 0;
+                float baseY = relative ? y : 0;
+                switch (Character.toUpperCase(command)) {
+                    case 'M':
+                        x = baseX + number();
+                        y = baseY + number();
+                        path.moveTo(x, y);
+                        startX = x;
+                        startY = y;
+                        // Further pairs are lines.
+                        command = relative ? 'l' : 'L';
+                        break;
+                    case 'L':
+                        x = baseX + number();
+                        y = baseY + number();
+                        path.lineTo(x, y);
+                        break;
+                    case 'H':
+                        x = baseX + number();
+                        path.lineTo(x, y);
+                        break;
+                    case 'V':
+                        y = baseY + number();
+                        path.lineTo(x, y);
+                        break;
+                    case 'C': {
+                        float x1 = baseX + number();
+                        float y1 = baseY + number();
+                        float x2 = baseX + number();
+                        float y2 = baseY + number();
+                        x = baseX + number();
+                        y = baseY + number();
+                        path.cubicTo(x1, y1, x2, y2, x, y);
+                        break;
+                    }
+                    case 'Q': {
+                        float x1 = baseX + number();
+                        float y1 = baseY + number();
+                        x = baseX + number();
+                        y = baseY + number();
+                        path.quadTo(x1, y1, x, y);
+                        break;
+                    }
+                    case 'A': {
+                        float rx = number();
+                        float ry = number();
+                        float rotation = number();
+                        boolean largeArc = flag();
+                        boolean sweep = flag();
+                        float endX = baseX + number();
+                        float endY = baseY + number();
+                        arcTo(path, x, y, rx, ry, rotation, largeArc, sweep, endX, endY);
+                        x = endX;
+                        y = endY;
+                        break;
+                    }
+                    case 'Z':
+                        path.close();
+                        x = startX;
+                        y = startY;
+                        // Z takes no numbers: the next letter follows.
+                        command = 0;
+                        break;
+                    default:
+                        return;
+                }
+            }
+        }
+
+        private void skipSeparators() {
+            while (index < data.length()) {
+                char c = data.charAt(index);
+                if (c == ',' || Character.isWhitespace(c)) {
+                    index++;
+                } else {
+                    return;
+                }
+            }
+        }
+
+        private boolean flag() {
+            skipSeparators();
+            char c = data.charAt(index++);
+            return c == '1';
+        }
+
+        // A number: "-.64", ".5" (".5.5" is two numbers), "1e-3".
+        private float number() {
+            skipSeparators();
+            int start = index;
+            if (index < data.length() && (data.charAt(index) == '-' || data.charAt(index) == '+')) {
+                index++;
+            }
+            boolean dot = false;
+            while (index < data.length()) {
+                char c = data.charAt(index);
+                if (Character.isDigit(c)) {
+                    index++;
+                } else if (c == '.' && !dot) {
+                    dot = true;
+                    index++;
+                } else if ((c == 'e' || c == 'E') && index + 1 < data.length()) {
+                    index++;
+                    if (data.charAt(index) == '-' || data.charAt(index) == '+') {
+                        index++;
+                    }
+                } else {
+                    break;
+                }
+            }
+            return Float.parseFloat(data.substring(start, index));
+        }
+
+        // An elliptical arc (SVG implementation notes, F.6.5) as cubic curves of at most 90°.
+        private static void arcTo(Path path, float fromX, float fromY, float rx, float ry, float rotation,
+                                  boolean largeArc, boolean sweep, float toX, float toY) {
+            if (fromX == toX && fromY == toY) {
+                return;
+            }
+            if (rx == 0 || ry == 0) {
+                path.lineTo(toX, toY);
+                return;
+            }
+            double radiusX = Math.abs(rx);
+            double radiusY = Math.abs(ry);
+            double phi = Math.toRadians(rotation % 360);
+            double cos = Math.cos(phi);
+            double sin = Math.sin(phi);
+            double halfX = (fromX - toX) / 2.0;
+            double halfY = (fromY - toY) / 2.0;
+            double x1 = cos * halfX + sin * halfY;
+            double y1 = -sin * halfX + cos * halfY;
+            double lambda = (x1 * x1) / (radiusX * radiusX) + (y1 * y1) / (radiusY * radiusY);
+            if (lambda > 1) {
+                radiusX *= Math.sqrt(lambda);
+                radiusY *= Math.sqrt(lambda);
+            }
+            double rx2 = radiusX * radiusX;
+            double ry2 = radiusY * radiusY;
+            double numerator = rx2 * ry2 - rx2 * y1 * y1 - ry2 * x1 * x1;
+            double denominator = rx2 * y1 * y1 + ry2 * x1 * x1;
+            double coefficient = (largeArc == sweep ? -1 : 1) * Math.sqrt(Math.max(0, numerator / denominator));
+            double centerX1 = coefficient * radiusX * y1 / radiusY;
+            double centerY1 = -coefficient * radiusY * x1 / radiusX;
+            double centerX = cos * centerX1 - sin * centerY1 + (fromX + toX) / 2.0;
+            double centerY = sin * centerX1 + cos * centerY1 + (fromY + toY) / 2.0;
+            double ux = (x1 - centerX1) / radiusX;
+            double uy = (y1 - centerY1) / radiusY;
+            double vx = (-x1 - centerX1) / radiusX;
+            double vy = (-y1 - centerY1) / radiusY;
+            double start = Math.atan2(uy, ux);
+            double sweepAngle = Math.atan2(ux * vy - uy * vx, ux * vx + uy * vy);
+            if (!sweep && sweepAngle > 0) {
+                sweepAngle -= 2 * Math.PI;
+            } else if (sweep && sweepAngle < 0) {
+                sweepAngle += 2 * Math.PI;
+            }
+            int segments = Math.max(1, (int) Math.ceil(Math.abs(sweepAngle) / (Math.PI / 2) - 1e-9));
+            double step = sweepAngle / segments;
+            double handle = 4.0 / 3.0 * Math.tan(step / 4);
+            double angle = start;
+            for (int i = 0; i < segments; i++) {
+                double cos1 = Math.cos(angle);
+                double sin1 = Math.sin(angle);
+                double next = angle + step;
+                double cos2 = Math.cos(next);
+                double sin2 = Math.sin(next);
+                double[] c1 = point(cos1 - handle * sin1, sin1 + handle * cos1, radiusX, radiusY, cos, sin, centerX, centerY);
+                double[] c2 = point(cos2 + handle * sin2, sin2 - handle * cos2, radiusX, radiusY, cos, sin, centerX, centerY);
+                double[] end = i == segments - 1 ? new double[]{toX, toY}
+                        : point(cos2, sin2, radiusX, radiusY, cos, sin, centerX, centerY);
+                path.cubicTo((float) c1[0], (float) c1[1], (float) c2[0], (float) c2[1], (float) end[0], (float) end[1]);
+                angle = next;
+            }
+        }
+
+        // A point of the unit circle on the ellipse.
+        private static double[] point(double ux, double uy, double radiusX, double radiusY, double cos, double sin,
+                                      double centerX, double centerY) {
+            double x = radiusX * ux;
+            double y = radiusY * uy;
+            return new double[]{cos * x - sin * y + centerX, sin * x + cos * y + centerY};
         }
     }
 }

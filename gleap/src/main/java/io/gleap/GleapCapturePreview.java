@@ -386,7 +386,8 @@ final class GleapCapturePreview {
         buttons.setOrientation(LinearLayout.HORIZONTAL);
         buttons.setGravity(tablet ? Gravity.END | Gravity.CENTER_VERTICAL : Gravity.CENTER);
         int height = dp(context, 48);
-        retake = GleapCaptureUi.secondaryButton(context, request.label("previewRetake"), 24);
+        // "↺ Retake" and "Send ➤", like the web and iOS SDKs.
+        retake = GleapCaptureUi.secondaryButton(context, request.label("previewRetake"), GleapCaptureUi.Icon.RETAKE, 24);
         retake.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -395,7 +396,7 @@ final class GleapCapturePreview {
                 }
             }
         });
-        // "Send ➤": the icon after the label (before it right to left).
+        // The send icon after the label (before it right to left).
         send = GleapCaptureUi.button(context, request.label("previewSend"), GleapCaptureUi.Icon.SEND, true,
                 GleapCaptureUi.primaryFill(), 24);
         send.setOnClickListener(new View.OnClickListener() {
