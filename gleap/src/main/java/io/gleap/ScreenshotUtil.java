@@ -84,7 +84,10 @@ class ScreenshotUtil {
                     getImageCallback.getImage(bitmap != null ? getResizedBitmap(bitmap) : null);
                 }
             });
-        } else if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N) {
+        } else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            // Below API 26 there is no PixelCopy of a window: draw it. API 25 went to
+            // generateBitmap, which skips hardware accelerated windows (all of them by default),
+            // so hardware accelerated apps got no screenshot at all.
             bitmap = Bitmap.createBitmap(view.getWidth(),
                     view.getHeight(), Bitmap.Config.ARGB_8888);
             Canvas canvas = new Canvas(bitmap);
