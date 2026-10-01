@@ -61,6 +61,13 @@ public class MainApplication extends Application {
 
         Gleap.initialize(sdkKey, this);
 
+        // The widget callbacks: a capture closes and reopens the widget, which the app does not
+        // hear about (one widget session).
+        Gleap.getInstance().setWidgetOpenedCallback(() -> android.util.Log.i("GleapDemo", "widget opened"));
+        Gleap.getInstance().setWidgetClosedCallback(() -> android.util.Log.i("GleapDemo", "widget closed"));
+        Gleap.getInstance().setNotificationUnreadCountUpdatedCallback(count ->
+                android.util.Log.i("GleapDemo", "unread count " + count));
+
         // What a wrapper SDK does: hand over its buffered logs before a capture request's logs
         // are collected, then call done.
         Gleap.getInstance().setLogFlushHandler(done -> {

@@ -55,6 +55,7 @@ public class CaptureDemo extends AppCompatActivity {
 
         findViewById(R.id.capture_open_widget).setOnClickListener(view -> Gleap.getInstance().open());
         findViewById(R.id.capture_dialog).setOnClickListener(view -> showDialog());
+        findViewById(R.id.capture_close_widget).setOnClickListener(view -> Gleap.getInstance().close());
         findViewById(R.id.capture_next).setOnClickListener(view ->
                 startActivity(new Intent(CaptureDemo.this, CaptureDemo.class)));
         findViewById(R.id.capture_log).setOnClickListener(view -> {
