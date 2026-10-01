@@ -126,7 +126,7 @@ public class GleapCaptureTest {
         assertFalse(request.attachLogs);
         assertEquals("Stopp", request.label("barStop"));
         // Blank or missing labels fall back to English.
-        assertEquals("Start recording", request.label("barStart"));
+        assertEquals("Start", request.label("barStart"));
         assertEquals("Cancel", request.label("barCancel"));
 
         assertNull(GleapCaptureRequest.fromStart(new JSONObject(start.toString()).put("kind", "any")));

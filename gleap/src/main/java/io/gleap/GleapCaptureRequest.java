@@ -23,13 +23,16 @@ final class GleapCaptureRequest {
         ENGLISH.put("barCapture", "Capture");
         ENGLISH.put("barCancel", "Cancel");
         ENGLISH.put("barRecordHint", "Go to where the issue happens, then start recording.");
-        ENGLISH.put("barStart", "Start recording");
+        ENGLISH.put("barStart", "Start");
         ENGLISH.put("barStop", "Stop");
         ENGLISH.put("barRecording", "Recording");
+        ENGLISH.put("barDragHint", "Drag to move");
         ENGLISH.put("microphone", "Microphone");
         ENGLISH.put("previewTitle", "Send this recording?");
         ENGLISH.put("previewSend", "Send");
         ENGLISH.put("previewRetake", "Retake");
+        ENGLISH.put("previewPlay", "Play");
+        ENGLISH.put("previewPause", "Pause");
         ENGLISH.put("uploading", "Uploading…");
         ENGLISH.put("recordingInterrupted", "Recording stopped because the page changed.");
         ENGLISH.put("recordAgain", "Record again");

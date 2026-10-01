@@ -375,6 +375,8 @@ final class GleapCaptureCoordinator implements Application.ActivityLifecycleCall
                 bar.attach(activity);
                 break;
             case BAR:
+            case CAPTURING:
+            case STOPPING:
                 bar.attach(activity);
                 break;
             case RECORDING:
@@ -560,7 +562,8 @@ final class GleapCaptureCoordinator implements Application.ActivityLifecycleCall
             return;
         }
         setState(State.CAPTURING);
-        bar.detach();
+        // The bar stays (it is never part of a capture): Capture shows a spinner meanwhile.
+        bar.setBusy(true);
 
         final String requestId = request.id;
         final Date capturedAt = new Date();
@@ -723,7 +726,8 @@ final class GleapCaptureCoordinator implements Application.ActivityLifecycleCall
         main.removeCallbacks(timerTick);
         unregisterMemory();
         if (bar != null) {
-            bar.detach();
+            // Stop shows a spinner until the preview opens.
+            bar.setBusy(true);
         }
         main.postDelayed(stopWatchdog, STOP_TIMEOUT_MS);
         recorder.stop();
