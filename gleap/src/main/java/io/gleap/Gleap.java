@@ -940,12 +940,18 @@ public class Gleap implements iGleap {
      * widget closes, a small bar lets the customer go to the right screen, and the SDK captures
      * your app's windows once they tap Capture (or records them between Start and Stop, Android 8
      * and newer). Nothing is captured without that tap. While disabled the widget only offers to
-     * upload a file. Enabled by default; can be called at any time.
+     * upload a file. Enabled by default; can be called at any time: turned off while a capture
+     * runs, the capture stops, nothing of it is kept and the widget opens again.
      *
      * @param enabled false to turn in-app screenshots and recordings off
      */
     public void setCaptureEnabled(boolean enabled) {
-        GleapErrors.guard("setCaptureEnabled", () -> GleapCapture.setCaptureEnabled(enabled));
+        GleapErrors.guard("setCaptureEnabled", () -> {
+            GleapCapture.setCaptureEnabled(enabled);
+            if (!enabled) {
+                GleapMainThread.post(() -> GleapCaptureCoordinator.getInstance().stopForDisabledCapture());
+            }
+        });
     }
 
     /**

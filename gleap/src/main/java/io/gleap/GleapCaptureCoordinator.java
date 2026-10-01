@@ -55,6 +55,8 @@ final class GleapCaptureCoordinator implements Application.ActivityLifecycleCall
     private static final int JPEG_QUALITY = 85;
     private static final String RECORDING_NAME = "screen-recording.mp4";
     private static final String RECORDING_TYPE = "video/mp4";
+    // The reason reported when the app turns capture off while a capture runs.
+    private static final String CAPTURE_DISABLED = "capture-disabled";
 
     // How long the widget may take to open again after a capture before the app is told it closed.
     private static final long REOPEN_CHECK_MS = 8000;
@@ -126,6 +128,26 @@ final class GleapCaptureCoordinator implements Application.ActivityLifecycleCall
         widgetClosedForCapture = false;
         main.removeCallbacks(reopenCheck);
         return closed;
+    }
+
+    /**
+     * The app turned capture off (setCaptureEnabled(false)) while a screenshot or recording runs:
+     * it stops, nothing of it is kept (the encoder and its surface are released, the file
+     * deleted, an upload cancelled), and the widget opens again with the failure.
+     */
+    void stopForDisabledCapture() {
+        try {
+            if (request == null || state == State.IDLE) {
+                return;
+            }
+            String id = request.id;
+            discardRecording();
+            postEvent(id, "failed", CAPTURE_DISABLED);
+            queue(id, stateMessage(id, "failed", CAPTURE_DISABLED));
+            finishAndReopen();
+        } catch (Throwable error) {
+            GleapErrors.report(error, "stopForDisabledCapture");
+        }
     }
 
     /**
@@ -518,7 +540,7 @@ final class GleapCaptureCoordinator implements Application.ActivityLifecycleCall
             return;
         }
         if (!GleapCapture.isCaptureEnabled()) {
-            unsupported("Screen capture is turned off in this app.");
+            stopForDisabledCapture();
             return;
         }
         View decor = activity.getWindow() != null ? activity.getWindow().peekDecorView() : null;
@@ -630,7 +652,11 @@ final class GleapCaptureCoordinator implements Application.ActivityLifecycleCall
         if (state != State.BAR || request == null || !request.isRecording() || activity == null || activity.isFinishing()) {
             return;
         }
-        if (!GleapCapture.isCaptureEnabled() || !GleapCapture.isRecordingSupported()) {
+        if (!GleapCapture.isCaptureEnabled()) {
+            stopForDisabledCapture();
+            return;
+        }
+        if (!GleapCapture.isRecordingSupported()) {
             unsupported("Screen recording is not available.");
             return;
         }
