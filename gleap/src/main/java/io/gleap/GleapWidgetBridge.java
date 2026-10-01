@@ -43,9 +43,12 @@ final class GleapWidgetBridge {
                         case "ping":
                             sendConfigUpdate(activity);
                             sendSessionUpdate(activity);
+                            GleapCaptureCoordinator.getInstance().sendCapabilities(activity);
                             sendPrefillData(activity);
                             sendScreenshotUpdate(activity);
                             sendPendingActions(activity);
+                            // The result of a capture that ended while the widget was closed.
+                            GleapCaptureCoordinator.getInstance().deliverPending(activity);
 
                             GleapMainThread.postDelayed(new Runnable() {
                                 @Override
@@ -115,6 +118,15 @@ final class GleapWidgetBridge {
                             break;
                         case "send-feedback":
                             sendFeedback(gleapCallback);
+                            break;
+                        case "capture-start":
+                        case "capture-cancel":
+                        case "capture-done":
+                        case "capture-editor":
+                            // Only from the messenger page; nothing is captured before the
+                            // customer taps the SDK's own bar.
+                            GleapCaptureCoordinator.getInstance().onWidgetMessage(activity, command,
+                                    gleapCallback.optJSONObject("data"));
                             break;
                     }
                 } catch (Exception err) {

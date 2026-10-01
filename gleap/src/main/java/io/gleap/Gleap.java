@@ -2,6 +2,7 @@ package io.gleap;
 
 import android.app.Application;
 import android.net.Uri;
+import android.view.View;
 
 import androidx.annotation.Nullable;
 
@@ -934,6 +935,20 @@ public class Gleap implements iGleap {
     }
 
     /**
+     * Enables or disables screenshots and screen recordings for capture requests: when a
+     * workflow, an AI agent or a teammate asks the customer in the widget to show the issue, the
+     * widget closes, a small bar lets the customer go to the right screen, and the SDK captures
+     * your app's windows once they tap Capture (or records them between Start and Stop, Android 8
+     * and newer). Nothing is captured without that tap. While disabled the widget only offers to
+     * upload a file. Enabled by default; can be called at any time.
+     *
+     * @param enabled false to turn in-app screenshots and recordings off
+     */
+    public void setCaptureEnabled(boolean enabled) {
+        GleapErrors.guard("setCaptureEnabled", () -> GleapCapture.setCaptureEnabled(enabled));
+    }
+
+    /**
      * Enables or disables sending the app's logs for capture requests: a workflow or an AI agent
      * can ask for the logs of the app while it runs (no customer action), and screenshots and
      * recordings can bring the logs around them. The logs are what a ticket carries (console and
@@ -946,6 +961,29 @@ public class Gleap implements iGleap {
      */
     public void setRemoteLogCollectionEnabled(boolean enabled) {
         GleapErrors.guard("setRemoteLogCollectionEnabled", () -> GleapCapture.setRemoteLogCollectionEnabled(enabled));
+    }
+
+    /**
+     * Paints the view (and everything in it) black in the screenshots and screen recordings of
+     * capture requests, e.g. a view showing card or account details. Password fields and windows
+     * with {@code FLAG_SECURE} are always masked. The SDK keeps only a weak reference: a masked
+     * view that goes away needs no {@link #unmaskView(View)}. Views drawn by a cross-platform
+     * framework itself (e.g. Flutter widgets, Compose text fields) cannot be found this way:
+     * mask the view that hosts them.
+     *
+     * @param view the view to mask
+     */
+    public void maskView(View view) {
+        GleapErrors.guard("maskView", () -> GleapCapture.maskView(view));
+    }
+
+    /**
+     * Shows a view masked with {@link #maskView(View)} in captures again.
+     *
+     * @param view the masked view
+     */
+    public void unmaskView(View view) {
+        GleapErrors.guard("unmaskView", () -> GleapCapture.unmaskView(view));
     }
 
     /**

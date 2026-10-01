@@ -648,4 +648,32 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
             webView.evaluateJavascript("sendMessage(" + message + ");", null);
         }
     }
+
+    /**
+     * Whether the WebView shows the Gleap messenger (the widget url's scheme, host and port).
+     * Capture commands are only taken from it. Main thread only.
+     */
+    boolean isTrustedWidgetPage() {
+        try {
+            return webView != null && !isFinishing()
+                    && GleapCapture.sameOrigin(webView.getUrl(), GleapConfig.getInstance().getiFrameUrl());
+        } catch (Throwable error) {
+            return false;
+        }
+    }
+
+    /**
+     * Sends a message to the open widget, if one is open, answered its ping and shows the
+     * messenger. Main thread only.
+     *
+     * @return whether it was sent
+     */
+    static boolean deliverToOpenWidget(String message) {
+        GleapMainActivity activity = openInstance != null ? openInstance.get() : null;
+        if (activity == null || !activity.widgetPinged || !activity.isTrustedWidgetPage()) {
+            return false;
+        }
+        activity.sendMessage(message);
+        return true;
+    }
 }

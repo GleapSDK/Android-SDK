@@ -588,7 +588,8 @@ class GleapEventService {
         }
 
         if (data.has("a") && data.get("a") instanceof JSONArray) {
-            if (Gleap.getInstance().isOpened()) {
+            // Like while the widget is open, nothing pops up while the customer captures the app.
+            if (Gleap.getInstance().isOpened() || GleapCaptureCoordinator.isSessionActive()) {
                 return;
             }
 
