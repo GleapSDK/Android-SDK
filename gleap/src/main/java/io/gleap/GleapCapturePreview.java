@@ -51,6 +51,7 @@ final class GleapCapturePreview {
     }
 
     private static final long POSITION_TICK_MS = 100;
+    private static final int SHOW_RETRIES = 30;
 
     private final GleapCaptureRequest request;
     private final File video;
@@ -60,6 +61,7 @@ final class GleapCapturePreview {
     private final Handler main = new Handler(Looper.getMainLooper());
 
     private WeakReference<Activity> activity = new WeakReference<>(null);
+    private int showAttempt;
     private Dialog dialog;
     private VideoView videoView;
     private VideoFrame frame;
@@ -84,16 +86,33 @@ final class GleapCapturePreview {
         return dialog != null && activity.get() == candidate;
     }
 
-    void show(Activity target) {
+    void show(final Activity target) {
         dismiss();
         if (target == null || target.isFinishing()) {
             return;
         }
-        View decor = target.getWindow() != null ? target.getWindow().peekDecorView() : null;
-        if (decor == null || decor.getWindowToken() == null) {
-            return;
+        if (activity.get() != target) {
+            showAttempt = 0;
         }
         activity = new WeakReference<>(target);
+        View decor = target.getWindow() != null ? target.getWindow().peekDecorView() : null;
+        if (decor == null || decor.getWindowToken() == null) {
+            // The activity's window is not attached yet (e.g. right after a rotation): shortly.
+            if (showAttempt++ < SHOW_RETRIES) {
+                main.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (activity.get() == target && dialog == null) {
+                            show(target);
+                        }
+                    }
+                }, 100);
+            } else {
+                showAttempt = 0;
+            }
+            return;
+        }
+        showAttempt = 0;
         try {
             // Full screen and dark, whatever the app's theme.
             dialog = new Dialog(target, android.R.style.Theme_Material_NoActionBar);
