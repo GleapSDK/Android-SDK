@@ -146,7 +146,8 @@ final class GleapCaptureCoordinator implements Application.ActivityLifecycleCall
             discardRecording();
             postEvent(id, "failed", CAPTURE_DISABLED);
             queue(id, stateMessage(id, "failed", CAPTURE_DISABLED));
-            finishAndReopen();
+            // Captures are off: the widget opens without the screenshot it takes for tickets.
+            finishAndReopen(false);
         } catch (Throwable error) {
             GleapErrors.report(error, "stopForDisabledCapture");
         }
@@ -164,7 +165,11 @@ final class GleapCaptureCoordinator implements Application.ActivityLifecycleCall
     private final Runnable reopenCheck = new Runnable() {
         @Override
         public void run() {
-            tellAppWidgetClosed();
+            try {
+                tellAppWidgetClosed();
+            } catch (Throwable error) {
+                GleapErrors.report(error, "reopenCheck");
+            }
         }
     };
 
@@ -237,6 +242,7 @@ final class GleapCaptureCoordinator implements Application.ActivityLifecycleCall
                 widget.sendMessage(message[1]);
             }
             pending.clear();
+            main.removeCallbacks(expirePending);
         } catch (Throwable error) {
             GleapErrors.report(error, "deliverPending");
         }
@@ -330,12 +336,16 @@ final class GleapCaptureCoordinator implements Application.ActivityLifecycleCall
     private final Runnable hostCheck = new Runnable() {
         @Override
         public void run() {
-            if (state != State.WAITING) {
-                return;
-            }
-            Activity current = ActivityUtil.getCurrentActivity();
-            if (current != null && !ActivityUtil.isGleapActivity(current) && !current.isFinishing()) {
-                onHostShown(current);
+            try {
+                if (state != State.WAITING) {
+                    return;
+                }
+                Activity current = ActivityUtil.getCurrentActivity();
+                if (current != null && !ActivityUtil.isGleapActivity(current) && !current.isFinishing()) {
+                    onHostShown(current);
+                }
+            } catch (Throwable error) {
+                GleapErrors.report(error, "hostCheck");
             }
         }
     };
@@ -584,7 +594,11 @@ final class GleapCaptureCoordinator implements Application.ActivityLifecycleCall
                 main.post(new Runnable() {
                     @Override
                     public void run() {
-                        onScreenshotTaken(requestId, result, resultWidth, resultHeight, capturedAt);
+                        try {
+                            onScreenshotTaken(requestId, result, resultWidth, resultHeight, capturedAt);
+                        } catch (Throwable error) {
+                            GleapErrors.report(error, "onScreenshotTaken");
+                        }
                     }
                 });
             }
@@ -594,8 +608,12 @@ final class GleapCaptureCoordinator implements Application.ActivityLifecycleCall
     private final Runnable screenshotTimeout = new Runnable() {
         @Override
         public void run() {
-            if (state == State.CAPTURING) {
-                fail("The screenshot took too long.");
+            try {
+                if (state == State.CAPTURING) {
+                    fail("The screenshot took too long.");
+                }
+            } catch (Throwable error) {
+                GleapErrors.report(error, "screenshotTimeout");
             }
         }
     };
@@ -683,13 +701,17 @@ final class GleapCaptureCoordinator implements Application.ActivityLifecycleCall
     private final Runnable timerTick = new Runnable() {
         @Override
         public void run() {
-            if (state != State.RECORDING || recorder == null || request == null) {
-                return;
+            try {
+                if (state != State.RECORDING || recorder == null || request == null) {
+                    return;
+                }
+                if (bar != null) {
+                    bar.setRecordedTime(recorder.recordedMs(), request.maxDurationSec);
+                }
+                main.postDelayed(this, TIMER_TICK_MS);
+            } catch (Throwable error) {
+                GleapErrors.report(error, "timerTick");
             }
-            if (bar != null) {
-                bar.setRecordedTime(recorder.recordedMs(), request.maxDurationSec);
-            }
-            main.postDelayed(this, TIMER_TICK_MS);
         }
     };
 
@@ -853,9 +875,13 @@ final class GleapCaptureCoordinator implements Application.ActivityLifecycleCall
                                     main.post(new Runnable() {
                                         @Override
                                         public void run() {
-                                            if (generation == uploadGeneration && state == State.UPLOADING && preview != null) {
-                                                // The upload is most of the work; completing is the rest.
-                                                preview.setUploading(progress * 0.95f);
+                                            try {
+                                                if (generation == uploadGeneration && state == State.UPLOADING && preview != null) {
+                                                    // The upload is most of the work; completing is the rest.
+                                                    preview.setUploading(progress * 0.95f);
+                                                }
+                                            } catch (Throwable error) {
+                                                GleapErrors.report(error, "uploadProgress");
                                             }
                                         }
                                     });
@@ -877,7 +903,11 @@ final class GleapCaptureCoordinator implements Application.ActivityLifecycleCall
                 main.post(new Runnable() {
                     @Override
                     public void run() {
-                        onRecordingSent(generation, requestId, finalCompleted, finalStatus);
+                        try {
+                            onRecordingSent(generation, requestId, finalCompleted, finalStatus);
+                        } catch (Throwable error) {
+                            GleapErrors.report(error, "onRecordingSent");
+                        }
                     }
                 });
             }
@@ -1002,11 +1032,21 @@ final class GleapCaptureCoordinator implements Application.ActivityLifecycleCall
     }
 
     private void finishAndReopen() {
+        finishAndReopen(true);
+    }
+
+    /**
+     * @param withScreenshot the widget opens the usual way, with the screenshot it takes for
+     *                       tickets; false: without it
+     */
+    private void finishAndReopen(boolean withScreenshot) {
         String token = request != null ? request.ticketShareToken : null;
         endSession();
         // Back to the conversation; its page gets the pending messages after its ping.
         try {
-            if (token != null && !token.isEmpty()) {
+            if (!withScreenshot) {
+                GleapWidgetLauncher.openConversationWithoutScreenshot(token);
+            } else if (token != null && !token.isEmpty()) {
                 Gleap.getInstance().openConversation(token);
             } else {
                 Gleap.getInstance().open();
@@ -1105,7 +1145,20 @@ final class GleapCaptureCoordinator implements Application.ActivityLifecycleCall
         }
         pending.add(new String[]{requestId, message});
         pendingUntil = SystemClock.uptimeMillis() + PENDING_TTL_MS;
+        // Not delivered in time (the widget was not opened again): the messages (a screenshot is
+        // megabytes) are dropped.
+        main.removeCallbacks(expirePending);
+        main.postDelayed(expirePending, PENDING_TTL_MS);
     }
+
+    private final Runnable expirePending = new Runnable() {
+        @Override
+        public void run() {
+            if (SystemClock.uptimeMillis() >= pendingUntil) {
+                pending.clear();
+            }
+        }
+    };
 
     // Drops the pending messages of a request (null: all of them).
     private void removePending(String requestId) {

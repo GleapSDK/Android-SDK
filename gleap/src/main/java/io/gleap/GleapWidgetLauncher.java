@@ -84,6 +84,35 @@ final class GleapWidgetLauncher {
     }
 
     /**
+     * Opens the widget on a conversation (its home screen without a share token) without taking
+     * the screenshot for tickets first: after the app turned captures off.
+     */
+    static void openConversationWithoutScreenshot(final String shareToken) {
+        try {
+            GleapMainThread.postWithActivity(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        if (GleapDetectorUtil.isWidgetOpen() || !isGleapReady() || screenshotTaker == null) {
+                            return;
+                        }
+                        if (shareToken != null && !shareToken.isEmpty()) {
+                            GleapActionQueueHandler.getInstance().addActionMessage(new GleapAction("open-conversation",
+                                    new JSONObject().put("hideBackButton", false).put("shareToken", shareToken)));
+                        }
+                        GleapDetectorUtil.stopAllDetectors();
+                        screenshotTaker.openScreenshot(null, SurveyType.NONE);
+                    } catch (Error | Exception e) {
+                        GleapErrors.report(e, "openConversationWithoutScreenshot");
+                    }
+                }
+            });
+        } catch (Error | Exception e) {
+            GleapErrors.report(e, "openConversationWithoutScreenshot");
+        }
+    }
+
+    /**
      * Opens the widget without a command (its home screen, or a survey: the survey command is
      * queued by the caller). Only the home screen restarts the session when Gleap is not ready.
      */

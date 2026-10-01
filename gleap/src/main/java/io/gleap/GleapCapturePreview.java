@@ -6,7 +6,9 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.os.Build;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -186,6 +188,10 @@ final class GleapCapturePreview {
                 return true;
             }
         });
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            // The preview is silent: it never pauses the music the customer listens to.
+            view.setAudioFocusRequest(AudioManager.AUDIOFOCUS_NONE);
+        }
         view.setVideoPath(video.getAbsolutePath());
     }
 

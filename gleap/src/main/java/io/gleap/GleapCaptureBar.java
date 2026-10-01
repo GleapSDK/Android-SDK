@@ -94,6 +94,10 @@ final class GleapCaptureBar {
         if (target == null || target.isFinishing()) {
             return;
         }
+        if (activity.get() != target) {
+            // Another screen: it gets its own attempts.
+            attachAttempt = 0;
+        }
         activity = new WeakReference<>(target);
         View decor = target.getWindow() != null ? target.getWindow().peekDecorView() : null;
         if (decor == null || decor.getWindowToken() == null || decor.getWidth() <= 0) {
@@ -107,6 +111,9 @@ final class GleapCaptureBar {
                         }
                     }
                 }, 100);
+            } else {
+                // Given up on this window; the next attach (e.g. when the screen resumes) starts over.
+                attachAttempt = 0;
             }
             return;
         }
