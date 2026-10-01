@@ -14,6 +14,32 @@ class GleapDetectorUtil {
 
     public static void resumeAllDetectors() {
         widgetOpen = false;
+        if (GleapCaptureCoordinator.isSessionActive()) {
+            // The widget closed for a capture: the activation methods wait until it is done.
+            return;
+        }
+        for (GleapDetector detector : GleapConfig.getInstance().getGestureDetectors()) {
+            detector.resume();
+        }
+    }
+
+    /**
+     * Pauses the activation methods (and replays) while a capture runs, without marking the
+     * widget open.
+     */
+    static void pauseDetectorsForCapture() {
+        for (GleapDetector detector : GleapConfig.getInstance().getGestureDetectors()) {
+            detector.pause();
+        }
+    }
+
+    /**
+     * Resumes them after a capture, unless the widget is open.
+     */
+    static void resumeDetectorsAfterCapture() {
+        if (widgetOpen) {
+            return;
+        }
         for (GleapDetector detector : GleapConfig.getInstance().getGestureDetectors()) {
             detector.resume();
         }

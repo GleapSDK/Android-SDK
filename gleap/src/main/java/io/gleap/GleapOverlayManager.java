@@ -44,6 +44,9 @@ class GleapOverlayManager {
     private GleapModal modal;
     private JSONObject modalData;
     private int originalVisibility = 0;
+    // While a capture runs the overlay (button, notifications, banner, modal) is hidden: it is
+    // not part of the app the customer shows.
+    private boolean hiddenForCapture = false;
 
     private GleapOverlayManager() {
     }
@@ -88,6 +91,16 @@ class GleapOverlayManager {
     public void setInvisible() {
         if (button.container != null) {
             button.container.setVisibility(View.INVISIBLE);
+        }
+    }
+
+    /**
+     * Hides the whole overlay while a capture runs (main thread).
+     */
+    void setHiddenForCapture(boolean hidden) {
+        hiddenForCapture = hidden;
+        if (layout != null) {
+            layout.setVisibility(hidden ? View.INVISIBLE : View.VISIBLE);
         }
     }
 
@@ -311,6 +324,9 @@ class GleapOverlayManager {
             LayoutInflater inflater = activity.getLayoutInflater();
             this.layout = (ConstraintLayout) inflater.inflate(R.layout.activity_gleap_fab, null);
             this.layout.setLayoutParams(new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+            if (hiddenForCapture) {
+                this.layout.setVisibility(View.INVISIBLE);
+            }
             addLocalLayoutToActivity(activity);
         }
 

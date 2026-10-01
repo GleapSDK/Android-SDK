@@ -41,6 +41,8 @@ class ScreenshotTaker {
 
     public void openScreenshot(Bitmap imageFile, SurveyType type) {
         boolean opened = false;
+        // Opened again after a capture closed it: to the app it never closed.
+        boolean afterCapture = false;
         try {
             GleapOverlayManager.getInstance().setInvisible();
             Activity activity = ActivityUtil.getCurrentActivity();
@@ -82,14 +84,20 @@ class ScreenshotTaker {
 
                     GleapOverlayManager.getInstance().clearMessages();
 
-                    if(GleapCallbacks.getInstance().getWidgetOpenedCallback() != null) {
+                    afterCapture = GleapCaptureCoordinator.getInstance().takeWidgetClosedForCapture();
+                    final boolean reopenedAfterCapture = afterCapture;
+                    if(!afterCapture && GleapCallbacks.getInstance().getWidgetOpenedCallback() != null) {
                         GleapCallbacks.getInstance().getWidgetOpenedCallback().invoke();
                     }
 
                     GleapMainThread.post(new Runnable() {
                         @Override
                         public void run() {
-                            GleapOverlayManager.getInstance().setMessageCounter(0);
+                            // After a capture only a real change reaches the app (a message that
+                            // arrived meanwhile); the count was reset when the widget first opened.
+                            if (!reopenedAfterCapture || GleapOverlayManager.getInstance().messageCounter != 0) {
+                                GleapOverlayManager.getInstance().setMessageCounter(0);
+                            }
                         }
                     });
 
@@ -105,6 +113,10 @@ class ScreenshotTaker {
                 // paused, and show the feedback button again.
                 GleapDetectorUtil.resumeAllDetectors();
                 GleapOverlayManager.getInstance().setVisible();
+                if (afterCapture) {
+                    // The app still thinks the widget is open from before the capture.
+                    GleapCaptureCoordinator.getInstance().widgetNotReopened();
+                }
             }
         }
     }

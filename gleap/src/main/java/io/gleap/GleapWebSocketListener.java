@@ -41,9 +41,16 @@ public class GleapWebSocketListener extends WebSocketListener {
         String wsApiUrl = GleapConfig.getInstance().getWsApiUrl();
         String sdkKey = GleapConfig.getInstance().getSdkKey();
 
-        internallyConnect(wsApiUrl + "?gleapId=" + gleapSession.getId() + "&gleapHash=" + gleapSession.getHash() + "&apiKey=" + sdkKey + "&sdkVersion=" + BuildConfig.VERSION_NAME);
+        internallyConnect(wsApiUrl + "?gleapId=" + gleapSession.getId() + "&gleapHash=" + gleapSession.getHash() + "&apiKey=" + sdkKey + "&sdkVersion=" + BuildConfig.VERSION_NAME
+                + capsParameter());
 
         return true;
+    }
+
+    // What the SDK can capture for capture requests, e.g. "&caps=capture.screenshot,capture.logs".
+    static String capsParameter() {
+        String caps = GleapCapture.capsQueryValue(GleapCapture.currentCaps());
+        return caps.isEmpty() ? "" : "&caps=" + caps;
     }
 
     private void internallyConnect(String url) {
@@ -104,6 +111,9 @@ public class GleapWebSocketListener extends WebSocketListener {
             if (eventName != null && eventName.equalsIgnoreCase("update")) {
                 JSONObject data = jsonObject.getJSONObject("data");
                 GleapEventService.getInstance().processEventData(data);
+            } else if ("capture-request".equals(eventName)) {
+                // The server asks for the app's logs; handled whether the widget is open or not.
+                GleapCaptureLogs.getInstance().onCaptureRequest(jsonObject.optJSONObject("data"));
             }
         } catch (Exception exp) {}
     }

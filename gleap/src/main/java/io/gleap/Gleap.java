@@ -2,6 +2,7 @@ package io.gleap;
 
 import android.app.Application;
 import android.net.Uri;
+import android.view.View;
 
 import androidx.annotation.Nullable;
 
@@ -934,6 +935,75 @@ public class Gleap implements iGleap {
     }
 
     /**
+     * Enables or disables screenshots and screen recordings for capture requests: when a
+     * workflow, an AI agent or a teammate asks the customer in the widget to show the issue, the
+     * widget closes, a small bar lets the customer go to the right screen, and the SDK captures
+     * your app's windows once they tap Capture (or records them between Start and Stop, Android 8
+     * and newer). Nothing is captured without that tap. While disabled the widget only offers to
+     * upload a file. Enabled by default; can be called at any time: turned off while a capture
+     * runs, the capture stops, nothing of it is kept and the widget opens again.
+     *
+     * @param enabled false to turn in-app screenshots and recordings off
+     */
+    public void setCaptureEnabled(boolean enabled) {
+        GleapErrors.guard("setCaptureEnabled", () -> {
+            GleapCapture.setCaptureEnabled(enabled);
+            if (!enabled) {
+                GleapMainThread.post(() -> GleapCaptureCoordinator.getInstance().stopForDisabledCapture());
+            }
+        });
+    }
+
+    /**
+     * Enables or disables sending the app's logs for capture requests: a workflow or an AI agent
+     * can ask for the logs of the app while it runs (no customer action), and screenshots and
+     * recordings can bring the logs around them. The logs are what a ticket carries (console and
+     * network logs, custom data, env data, events; the replay only when it is asked for and
+     * replays are enabled) and the existing settings apply (e.g. {@link #disableConsoleLog()},
+     * {@link #setDisableEnvData(boolean)}). While disabled, log requests are answered as
+     * unsupported and captures are sent without logs. Enabled by default.
+     *
+     * @param enabled false to never send logs for capture requests
+     */
+    public void setRemoteLogCollectionEnabled(boolean enabled) {
+        GleapErrors.guard("setRemoteLogCollectionEnabled", () -> GleapCapture.setRemoteLogCollectionEnabled(enabled));
+    }
+
+    /**
+     * Paints the view (and everything in it) black in the screenshots and screen recordings of
+     * capture requests, e.g. a view showing card or account details. Password fields and windows
+     * with {@code FLAG_SECURE} are always masked. The SDK keeps only a weak reference: a masked
+     * view that goes away needs no {@link #unmaskView(View)}. Views drawn by a cross-platform
+     * framework itself (e.g. Flutter widgets, Compose text fields) cannot be found this way:
+     * mask the view that hosts them.
+     *
+     * @param view the view to mask
+     */
+    public void maskView(View view) {
+        GleapErrors.guard("maskView", () -> GleapCapture.maskView(view));
+    }
+
+    /**
+     * Shows a view masked with {@link #maskView(View)} in captures again.
+     *
+     * @param view the masked view
+     */
+    public void unmaskView(View view) {
+        GleapErrors.guard("unmaskView", () -> GleapCapture.unmaskView(view));
+    }
+
+    /**
+     * For wrapper SDKs (React Native, Flutter, Capacitor): called right before the logs for a
+     * capture request are collected, so the wrapper can hand over the logs it buffers itself
+     * (see {@link GleapLogFlushHandler}). The SDK waits at most 500 ms for it. null removes it.
+     *
+     * @param handler called on the main thread before the logs are collected
+     */
+    public void setLogFlushHandler(GleapLogFlushHandler handler) {
+        GleapErrors.guard("setLogFlushHandler", () -> GleapCapture.setLogFlushHandler(handler));
+    }
+
+    /**
      * This is called, when the config is received from the server. The config is loaded once per
      * process: a callback set after it was loaded is called once with the loaded config, posted
      * to the main thread. Calling {@link Gleap#initialize} again with the same SDK key hands the
@@ -1228,6 +1298,10 @@ public class Gleap implements iGleap {
                 public void run() {
                     if (GleapInitializer.getApplication() != null && GleapCallbacks.getInstance().getCallCloseCallback() != null && isOpened()) {
                         GleapCallbacks.getInstance().getCallCloseCallback().invoke();
+                    } else if (GleapCaptureCoordinator.isWidgetClosedForCapture()) {
+                        // The widget is closed for a capture, which to the app is still the open
+                        // widget: closing it ends the capture.
+                        GleapCaptureCoordinator.getInstance().closeByApp();
                     }
                 }
             });

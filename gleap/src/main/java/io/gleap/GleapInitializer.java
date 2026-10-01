@@ -62,6 +62,15 @@ final class GleapInitializer {
      */
     static void startLoading(OnHttpResponseListener configListener) {
         try {
+            // A recording left behind by a process that ended while it was recorded or sent.
+            final Application app = application;
+            GleapExecutor.SERIAL.execute(new Runnable() {
+                @Override
+                public void run() {
+                    GleapCapture.deleteCaptureFiles(app);
+                }
+            });
+
             new ConfigLoader(configListener).executeOnExecutor(GleapExecutor.SERIAL, GleapBug.getInstance());
 
             GleapBaseSessionService sessionLoader = new GleapBaseSessionService();

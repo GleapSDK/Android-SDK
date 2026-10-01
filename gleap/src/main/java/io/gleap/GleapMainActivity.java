@@ -68,6 +68,9 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
     private int lockedScrollY = 0;
     // The widget answered its first ping, so it listens for config updates.
     private boolean widgetPinged = false;
+    // Closed so the customer can capture the app: to the app the widget stays open (no
+    // WidgetClosedCallback), see GleapCaptureCoordinator.
+    private boolean closedForCapture = false;
 
     private final GleapWebPermissions webPermissions = new GleapWebPermissions(this);
     private final GleapFileChooser fileChooser = new GleapFileChooser();
@@ -133,6 +136,15 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
             }
             finish();
         }
+    }
+
+    /**
+     * Closes the widget for a capture: like {@link #closeMainGleapActivity()}, without telling
+     * the app.
+     */
+    void closeForCapture() {
+        closedForCapture = true;
+        closeMainGleapActivity();
     }
 
     @Override
@@ -462,13 +474,22 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
             GleapConfig.getInstance().setFileUploadCallback(null);
             if (!recreating) {
                 GleapDetectorUtil.resumeAllDetectors();
-                if (GleapCallbacks.getInstance().getWidgetClosedCallback() != null) {
+                if (!closedForCapture && GleapCallbacks.getInstance().getWidgetClosedCallback() != null) {
                     GleapCallbacks.getInstance().getWidgetClosedCallback().invoke();
                 }
 
                 GleapOverlayManager.getInstance().setShowFab(true);
                 GleapOverlayManager.getInstance().clearMessages();
                 isActive = false;
+                if (!closedForCapture) {
+                    // In-app messages held back during a capture show once the widget is closed.
+                    GleapMainThread.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            GleapEventService.getInstance().processDeferredActions();
+                        }
+                    });
+                }
             }
         } catch (Error | Exception ignore) {
         }
@@ -647,5 +668,33 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         if (webView != null) {
             webView.evaluateJavascript("sendMessage(" + message + ");", null);
         }
+    }
+
+    /**
+     * Whether the WebView shows the Gleap messenger (the widget url's scheme, host and port).
+     * Capture commands are only taken from it. Main thread only.
+     */
+    boolean isTrustedWidgetPage() {
+        try {
+            return webView != null && !isFinishing()
+                    && GleapCapture.sameOrigin(webView.getUrl(), GleapConfig.getInstance().getiFrameUrl());
+        } catch (Throwable error) {
+            return false;
+        }
+    }
+
+    /**
+     * Sends a message to the open widget, if one is open, answered its ping and shows the
+     * messenger. Main thread only.
+     *
+     * @return whether it was sent
+     */
+    static boolean deliverToOpenWidget(String message) {
+        GleapMainActivity activity = openInstance != null ? openInstance.get() : null;
+        if (activity == null || !activity.widgetPinged || !activity.isTrustedWidgetPage()) {
+            return false;
+        }
+        activity.sendMessage(message);
+        return true;
     }
 }

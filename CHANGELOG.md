@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+Capture requests ("show me the issue"): when a workflow, an AI agent or a teammate asks the customer for a screenshot or a screen recording in a conversation, the customer answers from the card in the widget and the SDK captures the app itself: the activity, its dialogs and bottom sheets and SurfaceView content such as maps or video, without MediaProjection, a foreground service or any new permission. A small dark bar appears over the app (the customer can drag it anywhere; it remembers where it was put) with Capture or Start, and while recording only a red dot, the time and a round Stop. Screenshots open in the widget's markup editor. Recordings are H.264 MP4 videos at 2 to 8 frames per second, up to 3 minutes, leave out the time the app spent in the background and are shown in a dark preview (Retake, Send) before they are uploaded. Password fields, card-number and one-time-code fields (Android 8+), windows with `FLAG_SECURE` and views passed to `Gleap.getInstance().maskView(View)` are blacked out in every screenshot and frame; a frame whose masks can't be worked out is dropped instead of being sent. In-app messages that arrive during a capture are shown after it. Every text in the bar and the preview comes from the widget's translations.
+Logs requests: workflows, AI agents and teammates can collect the app's console logs, network logs, custom data, environment data and events in the background, the same data a bug report carries. The SDK takes the request from its socket or the ping answer, uploads the logs once (gzipped) and tries a failing upload three times before reporting it failed.
+New: `setCaptureEnabled(boolean)` (off: the widget only offers a file upload, and a running capture stops), `setRemoteLogCollectionEnabled(boolean)` (off: logs requests are answered as unsupported and captures are sent without logs), `maskView(View)` / `unmaskView(View)` and `setLogFlushHandler(GleapLogFlushHandler)`, which the React Native, Flutter and Capacitor SDKs use to hand over their buffered logs first.
+Screenshots work again on Android 7.1 with hardware acceleration (the SDK returned no screenshot there). Attachment uploads are copied in chunks instead of reading whole files into memory.
+
 ## 19.0.0
 
 ### Added
