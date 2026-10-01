@@ -60,14 +60,37 @@ class FormDataHttpsHelper {
                 fileName + "\"" + this.crlf);
         request.writeBytes("Content-Type: " +
                 "" + URLConnection.guessContentTypeFromName(fileName) + this.crlf + this.crlf);
-        int size = uploadFile != null ? (int) uploadFile.length() : 0;
-        byte[] bytes = new byte[size];
-        try (BufferedInputStream buf = new BufferedInputStream(new FileInputStream(uploadFile))) {
-            buf.read(bytes, 0, bytes.length);
+        // Copied in chunks: the file is never held in memory as a whole (and a single read could
+        // return less than the whole file). A file that cannot be read leaves the part empty.
+        InputStream file = null;
+        try {
+            file = new BufferedInputStream(new FileInputStream(uploadFile));
         } catch (IOException e) {
             GleapLog.w("Could not read the attachment " + fileName, e);
         }
-        request.write(bytes);
+        if (file != null) {
+            try {
+                byte[] chunk = new byte[64 * 1024];
+                while (true) {
+                    int read;
+                    try {
+                        read = file.read(chunk);
+                    } catch (IOException e) {
+                        GleapLog.w("Could not read the attachment " + fileName, e);
+                        break;
+                    }
+                    if (read == -1) {
+                        break;
+                    }
+                    request.write(chunk, 0, read);
+                }
+            } finally {
+                try {
+                    file.close();
+                } catch (IOException ignore) {
+                }
+            }
+        }
         request.writeBytes(this.crlf);
     }
 
