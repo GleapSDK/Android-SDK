@@ -140,6 +140,8 @@ final class GleapFrameRecorder {
     private volatile boolean released;
     // Given up (the encoder did not finish in time): its result never reaches the listener.
     private volatile boolean abandoned;
+    // stop() queued finishing the file on the encoder thread (main thread only).
+    private boolean finishQueued;
     private boolean muxerStopped;
     private final MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
     // When each submitted frame was posted (µs, monotonic): the timestamps when the encoder's are off.
@@ -220,6 +222,7 @@ final class GleapFrameRecorder {
         final long duration = recordedMs;
         final Date endedAt = new Date();
         final Date started = startedAt;
+        finishQueued = true;
         encoderHandler.post(new Runnable() {
             @Override
             public void run() {
@@ -244,30 +247,20 @@ final class GleapFrameRecorder {
     }
 
     /**
-     * Gives up on a recording whose encoder did not finish in time (main thread): the encoder,
-     * its surface and the muxer are released on a thread of their own (never the main thread)
-     * and the file is deleted. No result follows.
+     * Gives up on a recording whose encoder did not finish in time (main thread): the file is
+     * deleted now and no result follows. The encoder, its surface and the muxer are released on the
+     * encoder thread when it gets to them: never on the main thread, and never while that thread
+     * may still use them (a release from another thread could crash in native code).
      */
     void abandon() {
         abandoned = true;
         running = false;
         main.removeCallbacks(tick);
-        Thread releaser = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    releaseEncoder();
-                    releaseMuxer();
-                    deleteFile();
-                    pool.clear();
-                } catch (Throwable ignore) {
-                }
-            }
-        }, "gleap-capture-release");
-        releaser.setDaemon(true);
-        releaser.start();
-        if (thread != null) {
-            thread.quitSafely();
+        // The muxer may still write to the file: deleted, its data is freed once it is closed.
+        deleteFile();
+        if (encoderHandler != null && !finishQueued) {
+            // Not stopped (nothing is queued to finish the file): released like a cancel.
+            cancel();
         }
     }
 
@@ -667,6 +660,9 @@ final class GleapFrameRecorder {
     private void drain(boolean endOfStream) {
         long deadline = SystemClock.uptimeMillis() + END_OF_STREAM_TIMEOUT_MS;
         while (true) {
+            if (abandoned) {
+                return;
+            }
             int index = codec.dequeueOutputBuffer(bufferInfo, endOfStream ? DRAIN_TIMEOUT_US : 0);
             if (index == MediaCodec.INFO_TRY_AGAIN_LATER) {
                 if (!endOfStream || SystemClock.uptimeMillis() > deadline) {
@@ -743,7 +739,7 @@ final class GleapFrameRecorder {
         boolean success = false;
         String error = null;
         try {
-            if (codec != null) {
+            if (codec != null && !abandoned) {
                 codec.signalEndOfInputStream();
                 drain(true);
             }
@@ -752,7 +748,9 @@ final class GleapFrameRecorder {
         }
         releaseEncoder();
         try {
-            if (muxer != null && muxerStarted && framesWritten > 0) {
+            if (abandoned) {
+                error = "The recording was given up.";
+            } else if (muxer != null && muxerStarted && framesWritten > 0) {
                 muxerStopped = true;
                 muxer.stop();
                 success = true;
