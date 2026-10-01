@@ -28,6 +28,8 @@ class GleapEventService {
     // One ping carries the oldest events up to these limits; the rest follows right after.
     static final int MAX_EVENTS_PER_PING = 100;
     static final int MAX_PING_BYTES = 256 * 1024;
+    // A ping answer bigger than this is not read for capture requests.
+    private static final int MAX_PING_ANSWER_BYTES = 64 * 1024;
 
     // Created with the class: getInstance() is called from several threads.
     private static volatile GleapEventService instance = new GleapEventService();
@@ -407,14 +409,56 @@ class GleapEventService {
             body.put("opened", Gleap.getInstance().isOpened());
             body.put("ws", true);
             body.put("sdkVersion", BuildConfig.VERSION_NAME);
+            // What the SDK can capture for capture requests (screenshot, recording, logs).
+            body.put("caps", GleapCapture.currentCapsJson());
             GleapHttp.writeJson(conn, body);
 
             int status = conn.getResponseCode();
             String retryAfter = conn.getHeaderField("Retry-After");
-            closeBody(conn, status);
+            if (GleapHttp.isSuccess(status)) {
+                readCaptureRequests(conn);
+            } else {
+                closeBody(conn, status);
+            }
             return new PingResponse(status, retryAfter);
         } finally {
             conn.disconnect();
+        }
+    }
+
+    // Without a WebSocket the log requests come with the ping answer: {"cr": [...]}.
+    private static void readCaptureRequests(HttpURLConnection conn) {
+        InputStream stream = null;
+        try {
+            stream = conn.getInputStream();
+            if (stream == null) {
+                return;
+            }
+            java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+            byte[] buffer = new byte[4096];
+            int read;
+            while ((read = stream.read(buffer)) != -1) {
+                out.write(buffer, 0, read);
+                if (out.size() > MAX_PING_ANSWER_BYTES) {
+                    return;
+                }
+            }
+            String text = new String(out.toByteArray(), java.nio.charset.StandardCharsets.UTF_8).trim();
+            if (!text.startsWith("{")) {
+                return;
+            }
+            JSONArray requests = new JSONObject(text).optJSONArray("cr");
+            if (requests != null && requests.length() > 0) {
+                GleapCaptureLogs.getInstance().onCaptureRequests(requests);
+            }
+        } catch (Exception ignore) {
+        } finally {
+            if (stream != null) {
+                try {
+                    stream.close();
+                } catch (Exception ignore) {
+                }
+            }
         }
     }
 

@@ -934,6 +934,32 @@ public class Gleap implements iGleap {
     }
 
     /**
+     * Enables or disables sending the app's logs for capture requests: a workflow or an AI agent
+     * can ask for the logs of the app while it runs (no customer action), and screenshots and
+     * recordings can bring the logs around them. The logs are what a ticket carries (console and
+     * network logs, custom data, env data, events; the replay only when it is asked for and
+     * replays are enabled) and the existing settings apply (e.g. {@link #disableConsoleLog()},
+     * {@link #setDisableEnvData(boolean)}). While disabled, log requests are answered as
+     * unsupported and captures are sent without logs. Enabled by default.
+     *
+     * @param enabled false to never send logs for capture requests
+     */
+    public void setRemoteLogCollectionEnabled(boolean enabled) {
+        GleapErrors.guard("setRemoteLogCollectionEnabled", () -> GleapCapture.setRemoteLogCollectionEnabled(enabled));
+    }
+
+    /**
+     * For wrapper SDKs (React Native, Flutter, Capacitor): called right before the logs for a
+     * capture request are collected, so the wrapper can hand over the logs it buffers itself
+     * (see {@link GleapLogFlushHandler}). The SDK waits at most 500 ms for it. null removes it.
+     *
+     * @param handler called on the main thread before the logs are collected
+     */
+    public void setLogFlushHandler(GleapLogFlushHandler handler) {
+        GleapErrors.guard("setLogFlushHandler", () -> GleapCapture.setLogFlushHandler(handler));
+    }
+
+    /**
      * This is called, when the config is received from the server. The config is loaded once per
      * process: a callback set after it was loaded is called once with the loaded config, posted
      * to the main thread. Calling {@link Gleap#initialize} again with the same SDK key hands the

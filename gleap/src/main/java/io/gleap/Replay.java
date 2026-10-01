@@ -29,7 +29,8 @@ class Replay {
     public void addScreenshot(Bitmap bitmap, String screenName) {
         try {
             if (screenshots.size() >= numberOfScreenshots) {
-                screenshots.getFirst().getScreenshot().recycle();
+                // Dropped, not recycled: the logs of a capture request may be uploading this
+                // frame on another thread right now. The garbage collector frees it.
                 screenshots.removeFirst();
             }
 
