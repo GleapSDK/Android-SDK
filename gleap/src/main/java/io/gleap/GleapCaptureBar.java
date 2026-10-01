@@ -847,6 +847,9 @@ final class GleapCaptureBar {
             timer = GleapCaptureUi.text(context, "", 15, GleapCaptureUi.TIMER_COLOR, true);
             timer.setSingleLine(true);
             timer.setFontFeatureSettings("tnum");
+            // "elapsed / limit" reads left to right in every language (right to left the bidi
+            // algorithm would swap the two times).
+            timer.setTextDirection(View.TEXT_DIRECTION_LTR);
             if (timeText == null) {
                 timeText = GleapCaptureGeometry.formatClock(0) + " / " + GleapCaptureGeometry.formatClock(request.maxDurationSec);
             }
