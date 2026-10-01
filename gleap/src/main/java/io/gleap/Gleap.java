@@ -1292,6 +1292,10 @@ public class Gleap implements iGleap {
                 public void run() {
                     if (GleapInitializer.getApplication() != null && GleapCallbacks.getInstance().getCallCloseCallback() != null && isOpened()) {
                         GleapCallbacks.getInstance().getCallCloseCallback().invoke();
+                    } else if (GleapCaptureCoordinator.isWidgetClosedForCapture()) {
+                        // The widget is closed for a capture, which to the app is still the open
+                        // widget: closing it ends the capture.
+                        GleapCaptureCoordinator.getInstance().closeByApp();
                     }
                 }
             });

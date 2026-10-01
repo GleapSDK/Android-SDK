@@ -56,8 +56,15 @@ final class GleapCaptureCoordinator implements Application.ActivityLifecycleCall
     private static final String RECORDING_NAME = "screen-recording.mp4";
     private static final String RECORDING_TYPE = "video/mp4";
 
+    // How long the widget may take to open again after a capture before the app is told it closed.
+    private static final long REOPEN_CHECK_MS = 8000;
+
     private static final GleapCaptureCoordinator instance = new GleapCaptureCoordinator();
     private static volatile boolean sessionActive;
+    // The widget was closed for a capture without telling the app (no WidgetClosedCallback): to
+    // the app it is one widget session until the widget opens again after the capture (no
+    // WidgetOpenedCallback either). If it does not open again, the app is told it closed.
+    private static volatile boolean widgetClosedForCapture;
 
     private enum State {
         IDLE,
@@ -104,6 +111,72 @@ final class GleapCaptureCoordinator implements Application.ActivityLifecycleCall
      */
     static boolean isSessionActive() {
         return sessionActive;
+    }
+
+    static boolean isWidgetClosedForCapture() {
+        return widgetClosedForCapture;
+    }
+
+    /**
+     * The widget opens (main thread): true when it opens again after a capture closed it, which
+     * the app does not hear about.
+     */
+    boolean takeWidgetClosedForCapture() {
+        boolean closed = widgetClosedForCapture;
+        widgetClosedForCapture = false;
+        main.removeCallbacks(reopenCheck);
+        return closed;
+    }
+
+    /**
+     * The widget could not be opened again after a capture: the app hears now that it closed.
+     */
+    void widgetNotReopened() {
+        widgetClosedForCapture = true;
+        tellAppWidgetClosed();
+    }
+
+    // The widget did not open again after the capture (e.g. no activity was shown).
+    private final Runnable reopenCheck = new Runnable() {
+        @Override
+        public void run() {
+            tellAppWidgetClosed();
+        }
+    };
+
+    // The app hears now that the widget closed (held back when it closed for the capture).
+    private void tellAppWidgetClosed() {
+        main.removeCallbacks(reopenCheck);
+        if (!widgetClosedForCapture) {
+            return;
+        }
+        widgetClosedForCapture = false;
+        try {
+            if (GleapCallbacks.getInstance().getWidgetClosedCallback() != null) {
+                GleapCallbacks.getInstance().getWidgetClosedCallback().invoke();
+            }
+        } catch (Throwable error) {
+            GleapErrors.report(error, "widgetClosed");
+        }
+    }
+
+    /**
+     * Gleap.close() while the widget is closed for a capture (to the app it is open): ends the
+     * capture without opening the widget again, and the app hears that the widget closed.
+     */
+    void closeByApp() {
+        try {
+            if (request != null && state != State.IDLE) {
+                String id = request.id;
+                discardRecording();
+                postEvent(id, "released", null);
+                queue(id, stateMessage(id, "cancelled", null));
+                endSession();
+            }
+        } catch (Throwable error) {
+            GleapErrors.report(error, "closeByApp");
+        }
+        tellAppWidgetClosed();
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -198,6 +271,7 @@ final class GleapCaptureCoordinator implements Application.ActivityLifecycleCall
 
         application = app;
         request = next;
+        main.removeCallbacks(reopenCheck);
         removePending(null);
         setState(State.WAITING);
         registerLifecycle();
@@ -206,8 +280,10 @@ final class GleapCaptureCoordinator implements Application.ActivityLifecycleCall
         bar = new GleapCaptureBar(next, next.isRecording() ? GleapCaptureBar.MODE_RECORD_READY : GleapCaptureBar.MODE_SCREENSHOT, barListener);
         sendNow(widget, stateMessage(next.id, "bar", null));
 
-        // The customer goes back to the app: the widget closes, the bar comes up.
-        widget.closeMainGleapActivity();
+        // The customer goes back to the app: the widget closes (the app is not told), the bar
+        // comes up.
+        widgetClosedForCapture = true;
+        widget.closeForCapture();
         main.postDelayed(hostCheck, HOST_CHECK_MS);
     }
 
@@ -883,6 +959,10 @@ final class GleapCaptureCoordinator implements Application.ActivityLifecycleCall
             }
         } catch (Throwable error) {
             GleapErrors.report(error, "reopenWidget");
+        }
+        if (widgetClosedForCapture) {
+            main.removeCallbacks(reopenCheck);
+            main.postDelayed(reopenCheck, REOPEN_CHECK_MS);
         }
     }
 

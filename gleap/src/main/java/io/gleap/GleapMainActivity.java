@@ -68,6 +68,9 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
     private int lockedScrollY = 0;
     // The widget answered its first ping, so it listens for config updates.
     private boolean widgetPinged = false;
+    // Closed so the customer can capture the app: to the app the widget stays open (no
+    // WidgetClosedCallback), see GleapCaptureCoordinator.
+    private boolean closedForCapture = false;
 
     private final GleapWebPermissions webPermissions = new GleapWebPermissions(this);
     private final GleapFileChooser fileChooser = new GleapFileChooser();
@@ -133,6 +136,15 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
             }
             finish();
         }
+    }
+
+    /**
+     * Closes the widget for a capture: like {@link #closeMainGleapActivity()}, without telling
+     * the app.
+     */
+    void closeForCapture() {
+        closedForCapture = true;
+        closeMainGleapActivity();
     }
 
     @Override
@@ -462,7 +474,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
             GleapConfig.getInstance().setFileUploadCallback(null);
             if (!recreating) {
                 GleapDetectorUtil.resumeAllDetectors();
-                if (GleapCallbacks.getInstance().getWidgetClosedCallback() != null) {
+                if (!closedForCapture && GleapCallbacks.getInstance().getWidgetClosedCallback() != null) {
                     GleapCallbacks.getInstance().getWidgetClosedCallback().invoke();
                 }
 
