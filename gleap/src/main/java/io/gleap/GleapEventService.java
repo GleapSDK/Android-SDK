@@ -33,7 +33,8 @@ class GleapEventService {
 
     // Created with the class: getInstance() is called from several threads.
     private static volatile GleapEventService instance = new GleapEventService();
-    private static GleapWebSocketListener webSocketListener;
+    // Written on the main thread, read by the pings.
+    private static volatile GleapWebSocketListener webSocketListener;
     private boolean disableInAppNotifications = false;
     private final GleapEventQueue eventQueue = new GleapEventQueue();
     private final GleapPingBackoff backoff = new GleapPingBackoff();
@@ -222,6 +223,11 @@ class GleapEventService {
         }
     }
 
+    static boolean isWebSocketConnected() {
+        GleapWebSocketListener listener = webSocketListener;
+        return listener != null && listener.isConnected();
+    }
+
     public void addEvent(JSONObject event) {
         eventQueue.add(event);
     }
@@ -407,7 +413,9 @@ class GleapEventService {
             body.put("events", events);
             body.put("time", PhoneMeta.calculateDurationInDouble());
             body.put("opened", Gleap.getInstance().isOpened());
-            body.put("ws", true);
+            // Whether the WebSocket is connected: with it the server pushes capture requests on
+            // the socket, without it the ping answer carries them ("cr").
+            body.put("ws", isWebSocketConnected());
             body.put("sdkVersion", BuildConfig.VERSION_NAME);
             // What the SDK can capture for capture requests (screenshot, recording, logs).
             body.put("caps", GleapCapture.currentCapsJson());

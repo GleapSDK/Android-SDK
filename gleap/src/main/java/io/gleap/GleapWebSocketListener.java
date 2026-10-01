@@ -25,6 +25,8 @@ public class GleapWebSocketListener extends WebSocketListener {
     private String currentUrl;
     // Written on the main thread, read on OkHttp's threads.
     private volatile boolean isDestroyed = false;
+    // The socket is open (onOpen until it closes or fails).
+    private volatile boolean connected = false;
     private final AtomicInteger failedAttempts = new AtomicInteger();
 
     public boolean connect() {
@@ -45,6 +47,14 @@ public class GleapWebSocketListener extends WebSocketListener {
                 + capsParameter());
 
         return true;
+    }
+
+    /**
+     * Whether the socket is open right now (the pings tell the server, which then pushes on the
+     * socket or answers the ping instead).
+     */
+    boolean isConnected() {
+        return connected && !isDestroyed;
     }
 
     // What the SDK can capture for capture requests, e.g. "&caps=capture.screenshot,capture.logs".
@@ -78,6 +88,7 @@ public class GleapWebSocketListener extends WebSocketListener {
      */
     public void destroy() {
         isDestroyed = true;
+        connected = false;
         if (webSocket != null) {
             webSocket.close(1000, "Goodbye");
         }
@@ -93,6 +104,7 @@ public class GleapWebSocketListener extends WebSocketListener {
         }
 
         failedAttempts.set(0);
+        connected = true;
 
         // Start event sending.
         GleapEventService.getInstance().start();
@@ -124,11 +136,13 @@ public class GleapWebSocketListener extends WebSocketListener {
     @Override
     public void onClosing(WebSocket webSocket, int code, String reason) {
         // The server closes: answer it, onClosed (or onFailure) follows.
+        connected = false;
         webSocket.close(1000, null);
     }
 
     @Override
     public void onClosed(WebSocket webSocket, int code, String reason) {
+        connected = false;
         // A clean close by the server (a deploy, an idle timeout): connect again, unless the SDK
         // closed it itself (destroy).
         if (!isDestroyed) {
@@ -138,6 +152,7 @@ public class GleapWebSocketListener extends WebSocketListener {
 
     @Override
     public void onFailure(WebSocket webSocket, Throwable t, Response response) {
+        connected = false;
         if (!isDestroyed) {
             reconnect();
         }

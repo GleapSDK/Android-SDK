@@ -255,7 +255,8 @@ public class GleapApiRequestsTest {
         assertEquals("hash-1", request.headers.get("gleap-hash"));
         JSONObject body = request.bodyJson();
         assertEquals("signup", body.getJSONArray("events").getJSONObject(0).getString("name"));
-        assertTrue(body.getBoolean("ws"));
+        // No WebSocket is connected here: the server answers the ping with what it would push.
+        assertFalse(body.getBoolean("ws"));
     }
 
     @Test
