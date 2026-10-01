@@ -185,8 +185,8 @@ final class GleapCapturePreview {
         applyState();
     }
 
-    // While uploading Send shows a spinner and the percentage and everything else waits; an error
-    // shows above the buttons and Send tries again.
+    // While uploading Send shows a spinner and the percentage, Retake and the video wait and x
+    // cancels the upload; an error shows above the buttons and Send tries again.
     private void applyState() {
         if (send == null) {
             return;
@@ -201,8 +201,8 @@ final class GleapCapturePreview {
             send.setText(request.label("previewSend"));
             send.setContentDescription(null);
         }
+        // x stays: it cancels the upload.
         GleapCaptureUi.setEnabled(retake, !uploading);
-        GleapCaptureUi.setEnabled(close, !uploading);
         if (frame != null) {
             frame.setEnabled(!uploading);
         }
@@ -333,9 +333,8 @@ final class GleapCapturePreview {
         close.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (!uploading) {
-                    listener.onCancelTapped();
-                }
+                // Also while uploading: the upload is cancelled.
+                listener.onCancelTapped();
             }
         });
         FrameLayout.LayoutParams closeParams = new FrameLayout.LayoutParams(closeSize, closeSize, Gravity.END | Gravity.CENTER_VERTICAL);
