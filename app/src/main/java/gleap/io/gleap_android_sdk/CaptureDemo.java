@@ -56,6 +56,15 @@ public class CaptureDemo extends AppCompatActivity {
         findViewById(R.id.capture_open_widget).setOnClickListener(view -> Gleap.getInstance().open());
         findViewById(R.id.capture_dialog).setOnClickListener(view -> showDialog());
         findViewById(R.id.capture_close_widget).setOnClickListener(view -> Gleap.getInstance().close());
+        findViewById(R.id.capture_secure_dialog).setOnClickListener(view -> showSecureDialog());
+
+        // What a wrapper that renders its own content does (Flutter): it hands the SDK the picture.
+        TextView bitmapSwitch = findViewById(R.id.capture_bitmap_switch);
+        bitmapSwitch.setOnClickListener(view -> {
+            appBitmap = !appBitmap;
+            Gleap.getInstance().setBitmapCallback(appBitmap ? () -> renderScreen() : null);
+            bitmapSwitch.setText(appBitmap ? "App bitmap callback: on" : "App bitmap callback: off");
+        });
         findViewById(R.id.capture_next).setOnClickListener(view ->
                 startActivity(new Intent(CaptureDemo.this, CaptureDemo.class)));
         findViewById(R.id.capture_log).setOnClickListener(view -> {
@@ -80,6 +89,29 @@ public class CaptureDemo extends AppCompatActivity {
     // Process-wide like the SDK's switches (a new screen starts with them on again).
     private static boolean captureEnabled = true;
     private static boolean remoteLogs = true;
+    private static boolean appBitmap = false;
+
+    // The screen drawn in software (no GL content), as a wrapper's own renderer would provide it.
+    private android.graphics.Bitmap renderScreen() {
+        android.view.View decor = getWindow().getDecorView();
+        android.graphics.Bitmap bitmap = android.graphics.Bitmap.createBitmap(
+                Math.max(1, decor.getWidth()), Math.max(1, decor.getHeight()), android.graphics.Bitmap.Config.ARGB_8888);
+        decor.draw(new android.graphics.Canvas(bitmap));
+        return bitmap;
+    }
+
+    // A dialog the app keeps out of screenshots (FLAG_SECURE).
+    private void showSecureDialog() {
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle("A secure dialog")
+                .setMessage("This window has FLAG_SECURE: it is black in captures.")
+                .setPositiveButton("Close", null)
+                .create();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE);
+        }
+        dialog.show();
+    }
 
     private void showDialog() {
         EditText secret = new EditText(this);

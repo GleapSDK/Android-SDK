@@ -84,6 +84,18 @@
             android:text="Show dialog" />
 
         <Button
+            android:id="@+id/capture_secure_dialog"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Show secure dialog" />
+
+        <Button
+            android:id="@+id/capture_bitmap_switch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="App bitmap callback: off" />
+
+        <Button
             android:id="@+id/capture_next"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
