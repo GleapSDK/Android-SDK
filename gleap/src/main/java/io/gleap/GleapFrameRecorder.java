@@ -814,8 +814,6 @@ final class GleapFrameRecorder {
     }
 
     private void deleteFile() {
-        if (file.exists() && !file.delete()) {
-            GleapLog.w("Could not delete the recording");
-        }
+        GleapCapture.deleteCaptureFile(file);
     }
 }

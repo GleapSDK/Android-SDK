@@ -14,6 +14,7 @@ import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -51,6 +52,8 @@ final class GleapCapture {
     private static final String PREFS = "gleap-capture";
     private static final String DEVICE_ID_KEY = "deviceId";
     private static final String CAPTURE_DIR = "gleap-capture";
+    // The recordings of the running capture (absolute paths): never deleted as leftovers.
+    private static final Set<String> filesInUse = Collections.synchronizedSet(new HashSet<String>());
 
     private static volatile boolean captureEnabled = true;
     private static volatile boolean remoteLogCollectionEnabled = true;
@@ -274,10 +277,13 @@ final class GleapCapture {
     }
 
     /**
-     * Where recordings are written while they are recorded, previewed and uploaded.
+     * Where recordings are written while they are recorded, previewed and uploaded: app storage
+     * the system never clears by itself (it may clear the cache when the device runs low on
+     * storage, also between Stop and Send). The SDK deletes every recording itself: when it is
+     * sent, retaken, cancelled or fails, and leftovers when the SDK starts.
      */
     static File captureDir(Context context) {
-        File dir = new File(context.getCacheDir(), CAPTURE_DIR);
+        File dir = new File(context.getNoBackupFilesDir(), CAPTURE_DIR);
         if (!dir.exists() && !dir.mkdirs()) {
             GleapLog.w("Could not create the capture directory");
         }
@@ -285,24 +291,62 @@ final class GleapCapture {
     }
 
     /**
-     * Deletes recordings left behind, e.g. by a process that died while it was recording.
+     * A recording of the running capture: kept until {@link #deleteCaptureFile} (the cleanup at
+     * start leaves it alone).
+     */
+    static void useCaptureFile(File file) {
+        if (file != null) {
+            filesInUse.add(file.getAbsolutePath());
+        }
+    }
+
+    /**
+     * Deletes a recording of the running capture (sent, retaken, cancelled, failed). Any thread.
+     */
+    static void deleteCaptureFile(File file) {
+        if (file == null) {
+            return;
+        }
+        filesInUse.remove(file.getAbsolutePath());
+        if (file.exists() && !file.delete()) {
+            GleapLog.w("Could not delete " + file.getName());
+        }
+    }
+
+    /**
+     * Deletes the recordings left behind, e.g. by a process that ended while it recorded or sent
+     * one (when the SDK starts).
      */
     static void deleteCaptureFiles(Context context) {
         try {
-            if (context == null) {
-                return;
-            }
-            File dir = new File(context.getCacheDir(), CAPTURE_DIR);
-            File[] files = dir.listFiles();
-            if (files == null) {
-                return;
-            }
-            for (File file : files) {
-                if (!file.delete()) {
-                    GleapLog.w("Could not delete " + file.getName());
-                }
+            if (context != null) {
+                deleteLeftovers(new File(context.getNoBackupFilesDir(), CAPTURE_DIR));
             }
         } catch (Throwable ignore) {
         }
+    }
+
+    /**
+     * Deletes the files in {@code dir} that are not a recording of the running capture.
+     *
+     * @return how many were deleted
+     */
+    static int deleteLeftovers(File dir) {
+        File[] files = dir != null ? dir.listFiles() : null;
+        if (files == null) {
+            return 0;
+        }
+        int deleted = 0;
+        for (File file : files) {
+            if (filesInUse.contains(file.getAbsolutePath())) {
+                continue;
+            }
+            if (file.delete()) {
+                deleted++;
+            } else {
+                GleapLog.w("Could not delete " + file.getName());
+            }
+        }
+        return deleted;
     }
 }

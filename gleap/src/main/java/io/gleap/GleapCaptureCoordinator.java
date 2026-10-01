@@ -685,9 +685,11 @@ final class GleapCaptureCoordinator implements Application.ActivityLifecycleCall
         }
         File file = new File(GleapCapture.captureDir(activity.getApplicationContext()),
                 "recording-" + request.id + "-" + System.currentTimeMillis() + ".mp4");
+        GleapCapture.useCaptureFile(file);
         GleapFrameRecorder next = new GleapFrameRecorder(file, request.maxDurationSec, null, recorderListener);
         if (!next.start(activity)) {
             // The screen is not laid out yet: the customer can tap again.
+            GleapCapture.deleteCaptureFile(file);
             return;
         }
         recorder = next;
@@ -1213,8 +1215,6 @@ final class GleapCaptureCoordinator implements Application.ActivityLifecycleCall
     }
 
     private static void delete(File file) {
-        if (file != null && file.exists() && !file.delete()) {
-            GleapLog.w("Could not delete " + file.getName());
-        }
+        GleapCapture.deleteCaptureFile(file);
     }
 }

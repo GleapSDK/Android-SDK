@@ -8,6 +8,7 @@ import static org.junit.Assert.assertTrue;
 import org.json.JSONObject;
 import org.junit.Test;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
 
@@ -132,5 +133,35 @@ public class GleapCaptureTest {
         assertNull(GleapCaptureRequest.fromStart(new JSONObject(start.toString()).put("kind", "any")));
         assertNull(GleapCaptureRequest.fromStart(new JSONObject(start.toString()).put("requestId", "../x")));
         assertNull(GleapCaptureRequest.fromStart(null));
+    }
+
+    @Test
+    public void leftoverRecordingsAreDeletedButNotTheRunningCapturesOne() throws Exception {
+        File dir = java.nio.file.Files.createTempDirectory("gleap-capture").toFile();
+        File leftover = new File(dir, "recording-old.mp4");
+        File current = new File(dir, "recording-new.mp4");
+        try {
+            assertTrue(leftover.createNewFile());
+            assertTrue(current.createNewFile());
+            GleapCapture.useCaptureFile(current);
+
+            // At start: what an earlier process left goes, the running capture's recording stays.
+            assertEquals(1, GleapCapture.deleteLeftovers(dir));
+            assertFalse(leftover.exists());
+            assertTrue(current.exists());
+
+            // Sent, retaken, cancelled or failed: it is deleted and no longer protected.
+            GleapCapture.deleteCaptureFile(current);
+            assertFalse(current.exists());
+            assertTrue(current.createNewFile());
+            assertEquals(1, GleapCapture.deleteLeftovers(dir));
+            assertFalse(current.exists());
+
+            assertEquals(0, GleapCapture.deleteLeftovers(new File(dir, "missing")));
+        } finally {
+            GleapCapture.deleteCaptureFile(current);
+            leftover.delete();
+            dir.delete();
+        }
     }
 }
