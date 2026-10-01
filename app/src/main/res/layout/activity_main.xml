@@ -91,6 +91,13 @@
             android:text="Custom Data" />
 
         <Button
+            android:id="@+id/capture"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Capture Demo" />
+
+        <Button
             android:id="@+id/network"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

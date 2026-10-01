@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFF"
+    android:fitsSystemWindows="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Capture demo"
+            android:textColor="#000000"
+            android:textSize="24sp" />
+
+        <TextView
+            android:id="@+id/capture_clock"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Clock"
+            android:textColor="#333333"
+            android:textSize="18sp" />
+
+        <android.opengl.GLSurfaceView
+            android:id="@+id/capture_gl"
+            android:layout_width="match_parent"
+            android:layout_height="160dp"
+            android:layout_marginTop="12dp" />
+
+        <EditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:hint="Name"
+            android:inputType="textPersonName"
+            android:text="Alice Example" />
+
+        <EditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Password"
+            android:inputType="textPassword"
+            android:text="hunter2hunter2" />
+
+        <TextView
+            android:id="@+id/capture_masked"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="#E8EAFF"
+            android:padding="12dp"
+            android:text="Card 4242 4242 4242 4242 (masked with Gleap.maskView)"
+            android:textColor="#000000" />
+
+        <ProgressBar
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginTop="8dp"
+            android:indeterminate="true" />
+
+        <Button
+            android:id="@+id/capture_open_widget"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Open widget" />
+
+        <Button
+            android:id="@+id/capture_dialog"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Show dialog" />
+
+        <Button
+            android:id="@+id/capture_next"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Next screen" />
+
+        <Button
+            android:id="@+id/capture_switch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Screen capture: on" />
+
+        <Button
+            android:id="@+id/capture_logs_switch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Remote logs: on" />
+
+        <Button
+            android:id="@+id/capture_log"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Log and track an event" />
+    </LinearLayout>
+</ScrollView>

@@ -18,6 +18,18 @@ import io.gleap.callbacks.RegisterPushMessageGroupCallback;
 import io.gleap.callbacks.UnRegisterPushMessageGroupCallback;
 
 public class MainApplication extends Application {
+    private static String systemProperty(String key) {
+        try {
+            Process process = new ProcessBuilder("getprop", key).start();
+            java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(process.getInputStream()));
+            String value = reader.readLine();
+            reader.close();
+            return value != null ? value.trim() : "";
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
     @Override
     public void onCreate() {
         super.onCreate();
@@ -27,10 +39,40 @@ public class MainApplication extends Application {
             @Override
             public void onError(Throwable error, String context) {
                 System.out.println(context);
+                if (error != null) {
+                    error.printStackTrace();
+                }
             }
         });
 
-        Gleap.initialize("ogWhNhuiZcGWrva5nlDS8l7a78OfaLlV", this);
+        String sdkKey = "ogWhNhuiZcGWrva5nlDS8l7a78OfaLlV";
+        // Debug builds only: every request goes to a local stub server instead of Gleap, e.g.
+        // adb shell setprop debug.gleap.stub http://10.0.2.2:8787 (then restart the app).
+        String stub = BuildConfig.DEBUG ? systemProperty("debug.gleap.stub") : "";
+        if (stub.startsWith("http://") || stub.startsWith("https://")) {
+            Gleap.getInstance().setApiUrl(stub);
+            Gleap.getInstance().setWSApiUrl(stub.replaceFirst("^http", "ws") + "/ws");
+            Gleap.getInstance().setFrameUrl(stub + "/widget/appnew");
+            Gleap.getInstance().setBannerUrl(stub + "/outbound");
+            Gleap.getInstance().setModalUrl(stub + "/outbound/modal");
+            Gleap.getInstance().setRealtimeHost(android.net.Uri.parse(stub).getAuthority());
+            sdkKey = "stub-sdk-key";
+        }
+
+        Gleap.initialize(sdkKey, this);
+
+        // What a wrapper SDK does: hand over its buffered logs before a capture request's logs
+        // are collected, then call done.
+        Gleap.getInstance().setLogFlushHandler(done -> {
+            try {
+                Gleap.getInstance().attachConsoleLogs(new org.json.JSONArray().put(new JSONObject()
+                        .put("date", "2026-09-30T00:00:00.000Z")
+                        .put("priority", "INFO")
+                        .put("log", "Flushed by the app's log flush handler")));
+            } catch (JSONException ignore) {
+            }
+            done.run();
+        });
         Gleap.getInstance().setTags(new String[] {
                 "Android",
                 "Tags",
