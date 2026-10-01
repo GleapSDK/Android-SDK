@@ -60,6 +60,8 @@ final class GleapCaptureCoordinator implements Application.ActivityLifecycleCall
 
     // How long the widget may take to open again after a capture before the app is told it closed.
     private static final long REOPEN_CHECK_MS = 8000;
+    // How long the encoder may take to finish a recording before the SDK gives up on it.
+    private static final long STOP_TIMEOUT_MS = 5000;
 
     private static final GleapCaptureCoordinator instance = new GleapCaptureCoordinator();
     private static volatile boolean sessionActive;
@@ -554,7 +556,7 @@ final class GleapCaptureCoordinator implements Application.ActivityLifecycleCall
         final Date capturedAt = new Date();
         float scale = GleapCaptureGeometry.scaleForLongEdge(decor.getWidth(), decor.getHeight(), GleapCaptureGeometry.SCREENSHOT_MAX_EDGE);
         main.postDelayed(screenshotTimeout, SCREENSHOT_TIMEOUT_MS);
-        GleapWindowCapture.capture(activity, scale, null, captureHandler(), null, new GleapWindowCapture.Callback() {
+        GleapWindowCapture.capture(activity, scale, null, captureHandler(), null, null, new GleapWindowCapture.Callback() {
             @Override
             public void onFrame(GleapWindowCapture.Frame frame) {
                 // On the capture thread: compose and encode.
@@ -701,13 +703,38 @@ final class GleapCaptureCoordinator implements Application.ActivityLifecycleCall
         if (bar != null) {
             bar.detach();
         }
+        main.postDelayed(stopWatchdog, STOP_TIMEOUT_MS);
         recorder.stop();
     }
 
+    // The encoder did not finish the recording in time: the SDK gives up on it (the encoder is
+    // released off the main thread), keeps nothing and opens the widget again with the failure.
+    private final Runnable stopWatchdog = new Runnable() {
+        @Override
+        public void run() {
+            try {
+                if (state != State.STOPPING || recorder == null) {
+                    return;
+                }
+                GleapFrameRecorder stuck = recorder;
+                recorder = null;
+                stuck.abandon();
+                fail("The recording could not be finished.");
+            } catch (Throwable error) {
+                GleapErrors.report(error, "stopWatchdog");
+            }
+        }
+    };
+
     private final GleapFrameRecorder.Listener recorderListener = new GleapFrameRecorder.Listener() {
         @Override
-        public void onRecordingFinished(GleapFrameRecorder.Result result) {
+        public void onRecordingFinished(GleapFrameRecorder source, GleapFrameRecorder.Result result) {
             try {
+                if (source != recorder) {
+                    // A recorder that was cancelled or given up on: nothing of it is kept.
+                    delete(result.file);
+                    return;
+                }
                 onRecordingFinishedInternal(result);
             } catch (Throwable error) {
                 GleapErrors.report(error, "onRecordingFinished");
@@ -716,6 +743,7 @@ final class GleapCaptureCoordinator implements Application.ActivityLifecycleCall
     };
 
     private void onRecordingFinishedInternal(GleapFrameRecorder.Result result) {
+        main.removeCallbacks(stopWatchdog);
         main.removeCallbacks(timerTick);
         unregisterMemory();
         if ((state != State.RECORDING && state != State.STOPPING) || request == null) {
@@ -994,6 +1022,7 @@ final class GleapCaptureCoordinator implements Application.ActivityLifecycleCall
 
     private void endSession() {
         main.removeCallbacks(hostCheck);
+        main.removeCallbacks(stopWatchdog);
         main.removeCallbacks(timerTick);
         main.removeCallbacks(screenshotTimeout);
         if (bar != null) {

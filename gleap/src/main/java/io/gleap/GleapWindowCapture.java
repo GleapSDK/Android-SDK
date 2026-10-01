@@ -29,6 +29,8 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.Executor;
@@ -55,10 +57,11 @@ import io.gleap.callbacks.GetBitmapCallback;
  * handler's thread.
  */
 final class GleapWindowCapture {
-    // Views scanned per window at most (for SurfaceViews and masked views).
-    private static final int MAX_SCANNED_VIEWS = 10000;
-    // Masks are a little bigger than the view, against rounding and a scroll between scan and copy.
-    private static final float MASK_PADDING_PX = 2f;
+    // Views scanned per window at most (for SurfaceViews and masked views). A bigger window
+    // cannot be checked for masks: its frame is dropped.
+    private static final int MAX_SCANNED_VIEWS = 50000;
+    // Masks are bigger than the view, against rounding and a scroll between the scan and the copy.
+    private static final float MASK_PADDING_DP = 8f;
 
     // Tests only: copy windows the way API 26-33 does (their Window) on API 34+ as well.
     static volatile boolean forceWindowCopy = false;
@@ -115,8 +118,10 @@ final class GleapWindowCapture {
         final int width;
         final int height;
         final List<Layer> layers = Collections.synchronizedList(new ArrayList<Layer>());
-        // What capturing cost on the main thread.
+        // What capturing cost on the main thread, including a redraw after a failed copy.
         volatile long mainThreadMs;
+        // The masks could not be worked out: the frame is dropped, never delivered.
+        volatile boolean failed;
 
         Frame(int areaWidth, int areaHeight, float scale) {
             this.areaWidth = areaWidth;
@@ -244,11 +249,13 @@ final class GleapWindowCapture {
         private final Frame frame;
         private final Handler handler;
         private final Callback callback;
+        private final BitmapPool pool;
 
-        Pending(Frame frame, Handler handler, Callback callback) {
+        Pending(Frame frame, Handler handler, Callback callback, BitmapPool pool) {
             this.frame = frame;
             this.handler = handler;
             this.callback = callback;
+            this.pool = pool;
         }
 
         void add() {
@@ -257,21 +264,40 @@ final class GleapWindowCapture {
 
         void done() {
             if (outstanding.decrementAndGet() == 0) {
-                deliver(handler, callback, frame);
+                if (frame.failed) {
+                    frame.release(pool);
+                    deliver(handler, callback, null);
+                } else {
+                    deliver(handler, callback, frame);
+                }
             }
         }
     }
 
     /**
+     * The mask rects of the previous recording frame, per view: a mask covers where the view is
+     * and where it was, since the copied pixels can be a frame older than the view's position
+     * (fast scrolling). Main thread only.
+     */
+    static final class MaskHistory {
+        private Map<View, RectF> previous = new WeakHashMap<>();
+        private float scale = -1f;
+    }
+
+    /**
      * Captures the activity's windows. Main thread only.
+     * <p>
+     * Every frame is masked (FLAG_SECURE windows, sensitive fields, masked views); when the masks
+     * cannot be worked out the frame is dropped (the callback gets null): no unmasked pixels.
      *
      * @param scale         frame pixels per window pixel (1 = full resolution)
      * @param excludedRoots the root views of windows to leave out (the SDK's own bar)
      * @param resultHandler where the copies finish and the frame is delivered (not the main thread)
      * @param pool          bitmaps to reuse, or null
+     * @param history       the masks of the previous frame of a recording, or null
      */
     static void capture(Activity activity, float scale, Set<View> excludedRoots, Handler resultHandler,
-                        BitmapPool pool, Callback callback) {
+                        BitmapPool pool, MaskHistory history, Callback callback) {
         long startedAt = SystemClock.uptimeMillis();
         View decor = null;
         try {
@@ -286,44 +312,44 @@ final class GleapWindowCapture {
         int[] origin = new int[2];
         decor.getLocationOnScreen(origin);
         Frame frame = new Frame(decor.getWidth(), decor.getHeight(), scale);
-
-        // A wrapper that renders its own content (Flutter) hands over its picture.
-        Bitmap hostBitmap = hostBitmap();
-        if (hostBitmap != null) {
-            Layer layer = new Layer(Layer.BITMAP, new RectF(0, 0, frame.width, frame.height), 1f);
-            layer.bitmap = hostBitmap;
-            layer.external = true;
-            frame.layers.add(layer);
-            // The app's picture covers the activity: the SDK's masks still apply on top of it.
-            try {
-                Set<View> masked = GleapCapture.maskedViews();
-                for (View root : windowRoots(activity, decor, excludedRoots)) {
-                    addMasks(root, origin, frame, masked);
-                }
-            } catch (Throwable error) {
-                GleapLog.w("Could not mask the app's picture", error);
-            }
-            frame.mainThreadMs = SystemClock.uptimeMillis() - startedAt;
-            deliver(resultHandler, callback, frame);
-            return;
-        }
-
-        Pending pending = new Pending(frame, resultHandler, callback);
+        Pending pending = new Pending(frame, resultHandler, callback, pool);
         try {
             Set<View> masked = GleapCapture.maskedViews();
             List<View> roots = windowRoots(activity, decor, excludedRoots);
-            for (View root : roots) {
-                addWindow(activity, decor, root, origin, frame, masked, pool, pending, resultHandler);
+            Map<View, RectF> masks = new WeakHashMap<>();
+            float padding = MASK_PADDING_DP * decor.getResources().getDisplayMetrics().density * scale;
+            // Below API 24 the content of a SurfaceView (Flutter) cannot be copied: a wrapper that
+            // renders its own content hands over its picture of the activity instead.
+            Bitmap hostBitmap = Build.VERSION.SDK_INT < Build.VERSION_CODES.N ? hostBitmap() : null;
+            if (hostBitmap != null) {
+                Layer layer = new Layer(Layer.BITMAP, new RectF(0, 0, frame.width, frame.height), 1f);
+                layer.bitmap = hostBitmap;
+                layer.external = true;
+                frame.layers.add(layer);
+                for (View root : roots) {
+                    addMasks(root, origin, frame, masked, padding, history, masks);
+                }
+            } else {
+                for (View root : roots) {
+                    addWindow(activity, decor, root, origin, frame, masked, padding, history, masks, pool, pending, resultHandler);
+                }
+            }
+            if (history != null) {
+                history.previous = masks;
+                history.scale = scale;
             }
         } catch (Throwable error) {
-            GleapLog.w("Could not capture every window", error);
+            // Without its masks the frame must not leave the device.
+            GleapLog.w("Could not mask a capture: the frame is dropped", error);
+            frame.failed = true;
         }
         frame.mainThreadMs = SystemClock.uptimeMillis() - startedAt;
         pending.done();
     }
 
     private static void addWindow(Activity activity, View decor, View root, int[] origin, Frame frame,
-                                  Set<View> masked, BitmapPool pool, Pending pending, Handler resultHandler) {
+                                  Set<View> masked, float padding, MaskHistory history, Map<View, RectF> masks,
+                                  BitmapPool pool, Pending pending, Handler resultHandler) {
         WindowManager.LayoutParams params = windowParams(root);
         int[] location = new int[2];
         root.getLocationOnScreen(location);
@@ -340,8 +366,8 @@ final class GleapWindowCapture {
         }
 
         List<SurfaceView> surfaces = new ArrayList<>();
-        List<View> masks = new ArrayList<>();
-        scan(root, masked, surfaces, masks);
+        List<View> sensitive = new ArrayList<>();
+        scan(root, masked, surfaces, sensitive);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             for (SurfaceView surface : surfaces) {
@@ -353,15 +379,15 @@ final class GleapWindowCapture {
         frame.layers.add(windowLayer);
         copyWindow(activity, decor, root, windowLayer, pool, pending, resultHandler);
 
-        addMaskLayers(masks, location, origin, frame);
+        addMaskLayers(sensitive, location, origin, frame, padding, history, masks);
     }
 
     /**
-     * Black boxes over a window's masked views and password fields, or over the whole window when
-     * it has FLAG_SECURE; for a picture the SDK did not take itself (GetBitmapCallback), which is
-     * drawn over the whole activity.
+     * Black boxes for a window over a picture the SDK did not take itself (GetBitmapCallback,
+     * drawn over the whole activity): its sensitive views, or all of it with FLAG_SECURE.
      */
-    private static void addMasks(View root, int[] origin, Frame frame, Set<View> masked) {
+    private static void addMasks(View root, int[] origin, Frame frame, Set<View> masked, float padding,
+                                 MaskHistory history, Map<View, RectF> masks) {
         WindowManager.LayoutParams params = windowParams(root);
         int[] location = new int[2];
         root.getLocationOnScreen(location);
@@ -371,25 +397,35 @@ final class GleapWindowCapture {
             return;
         }
         List<SurfaceView> surfaces = new ArrayList<>();
-        List<View> masks = new ArrayList<>();
-        scan(root, masked, surfaces, masks);
-        addMaskLayers(masks, location, origin, frame);
+        List<View> sensitive = new ArrayList<>();
+        scan(root, masked, surfaces, sensitive);
+        addMaskLayers(sensitive, location, origin, frame, padding, history, masks);
     }
 
-    // The visible part of each view, from window to frame coordinates, a little bigger.
-    private static void addMaskLayers(List<View> masks, int[] windowLocation, int[] origin, Frame frame) {
+    /**
+     * The visible part of each view, from window to frame coordinates, padded, joined with where
+     * the view was in the previous frame. Throws when a mask cannot be worked out (the frame is
+     * then dropped).
+     */
+    private static void addMaskLayers(List<View> views, int[] windowLocation, int[] origin, Frame frame, float padding,
+                                      MaskHistory history, Map<View, RectF> masks) {
         Rect visible = new Rect();
-        for (View view : masks) {
-            try {
-                if (!view.getGlobalVisibleRect(visible)) {
-                    continue;
-                }
-                RectF mask = scaled(visible.left + windowLocation[0] - origin[0], visible.top + windowLocation[1] - origin[1],
-                        visible.width(), visible.height(), frame.scale);
-                mask.inset(-MASK_PADDING_PX, -MASK_PADDING_PX);
-                frame.layers.add(new Layer(Layer.BLACK, mask, 1f));
-            } catch (Throwable ignore) {
+        for (View view : views) {
+            if (!view.getGlobalVisibleRect(visible)) {
+                // Nothing of it is on screen.
+                continue;
             }
+            RectF mask = scaled(visible.left + windowLocation[0] - origin[0], visible.top + windowLocation[1] - origin[1],
+                    visible.width(), visible.height(), frame.scale);
+            mask.inset(-padding, -padding);
+            masks.put(view, new RectF(mask));
+            if (history != null && history.scale == frame.scale) {
+                RectF previous = history.previous.get(view);
+                if (previous != null) {
+                    mask.union(previous);
+                }
+            }
+            frame.layers.add(new Layer(Layer.BLACK, mask, 1f));
         }
     }
 
@@ -485,9 +521,11 @@ final class GleapWindowCapture {
         GleapMainThread.post(new Runnable() {
             @Override
             public void run() {
+                long startedAt = SystemClock.uptimeMillis();
                 try {
                     drawWindow(root, layer, bitmap, scale, pool);
                 } finally {
+                    pending.frame.mainThreadMs += SystemClock.uptimeMillis() - startedAt;
                     pending.done();
                 }
             }
@@ -801,12 +839,15 @@ final class GleapWindowCapture {
         ArrayDeque<View> stack = new ArrayDeque<>();
         stack.push(root);
         int budget = MAX_SCANNED_VIEWS;
-        while (!stack.isEmpty() && budget-- > 0) {
+        while (!stack.isEmpty()) {
+            if (budget-- <= 0) {
+                throw new IllegalStateException("Too many views to check for masks");
+            }
             View view = stack.pop();
             if (view.getVisibility() != View.VISIBLE) {
                 continue;
             }
-            if (masked.contains(view) || isSecureText(view)) {
+            if (masked.contains(view) || isSensitive(view)) {
                 masks.add(view);
                 continue;
             }
@@ -826,17 +867,44 @@ final class GleapWindowCapture {
     }
 
     /**
-     * Password fields (text, number and web passwords, also while the password is shown).
+     * Fields painted black in every capture: passwords (text, number and web passwords, also
+     * while shown), and fields the app marked for autofill as a password, a payment card or a
+     * one-time code.
      */
-    static boolean isSecureText(View view) {
-        if (!(view instanceof TextView)) {
+    static boolean isSensitive(View view) {
+        if (view instanceof TextView) {
+            TextView text = (TextView) view;
+            if (isPasswordInputType(text.getInputType())
+                    || text.getTransformationMethod() instanceof PasswordTransformationMethod) {
+                return true;
+            }
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            String[] hints = view.getAutofillHints();
+            if (hints != null) {
+                for (String hint : hints) {
+                    if (isSensitiveAutofillHint(hint)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Autofill hints of passwords, payment cards and one-time codes (the framework's View
+     * AUTOFILL_HINT_* and androidx HintConstants names, e.g. password, newPassword,
+     * creditCardNumber, creditCardSecurityCode, creditCardExpirationDate, smsOTPCode).
+     */
+    static boolean isSensitiveAutofillHint(String hint) {
+        if (hint == null) {
             return false;
         }
-        TextView text = (TextView) view;
-        if (isPasswordInputType(text.getInputType())) {
-            return true;
-        }
-        return text.getTransformationMethod() instanceof PasswordTransformationMethod;
+        String value = hint.toLowerCase(Locale.ROOT).replace("_", "").replace("-", "");
+        return value.contains("password") || value.contains("creditcard") || value.contains("otp")
+                || value.contains("onetimecode") || value.contains("securitycode") || value.contains("cvc")
+                || value.contains("cvv") || value.equals("pin");
     }
 
     static boolean isPasswordInputType(int inputType) {

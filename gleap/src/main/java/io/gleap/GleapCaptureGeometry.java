@@ -99,6 +99,16 @@ final class GleapCaptureGeometry {
         return interval;
     }
 
+    /**
+     * When the next frame may start: the frame interval, or later when frames cost more than
+     * {@link #MAIN_THREAD_BUDGET} of the time on the main thread (frames are then skipped, also
+     * below 2 fps).
+     */
+    static long nextFrameDelay(long intervalMs, long mainThreadMs) {
+        long budgetDelay = (long) Math.ceil(Math.max(0, mainThreadMs) / MAIN_THREAD_BUDGET);
+        return Math.max(clampInterval(intervalMs), budgetDelay);
+    }
+
     private static long clampInterval(long intervalMs) {
         return Math.max(MIN_FRAME_INTERVAL_MS, Math.min(MAX_FRAME_INTERVAL_MS, intervalMs));
     }

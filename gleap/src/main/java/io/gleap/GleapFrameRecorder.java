@@ -43,8 +43,10 @@ final class GleapFrameRecorder {
     interface Listener {
         /**
          * The recording ended (main thread).
+         *
+         * @param recorder the recorder it came from (results of an earlier one are stale)
          */
-        void onRecordingFinished(Result result);
+        void onRecordingFinished(GleapFrameRecorder recorder, Result result);
     }
 
     static final class Result {
@@ -81,8 +83,10 @@ final class GleapFrameRecorder {
     // interval is only a backstop, so the two do not double up.
     private static final long KEY_FRAME_INTERVAL_US = 2000000L;
     private static final int ENCODER_KEY_FRAME_INTERVAL_SEC = 10;
-    // A frame whose copies never came back is given up after this long.
-    private static final long FRAME_WATCHDOG_MS = 3000;
+    // One frame at a time; a second one only when the first seems lost (its copies did not come
+    // back for this long), and never more: a stuck encoder never piles up frames.
+    private static final long FRAME_STALL_MS = 3000;
+    private static final int MAX_PENDING_FRAMES = 2;
     private static final long DRAIN_TIMEOUT_US = 10000;
     private static final long END_OF_STREAM_TIMEOUT_MS = 3000;
     // Encoder timestamps further off the clock than this are replaced by the SDK's own.
@@ -92,6 +96,7 @@ final class GleapFrameRecorder {
 
     private final Handler main = new Handler(Looper.getMainLooper());
     private final GleapWindowCapture.BitmapPool pool = new GleapWindowCapture.BitmapPool();
+    private final GleapWindowCapture.MaskHistory maskHistory = new GleapWindowCapture.MaskHistory();
     private final File file;
     private final long maxDurationMs;
     private final Listener listener;
@@ -106,9 +111,11 @@ final class GleapFrameRecorder {
     private long intervalMs = GleapCaptureGeometry.TARGET_FRAME_INTERVAL_MS;
     private long recordedMs;
     private long lastTickAt;
-    private int frameSequence;
-    private int frameInFlight = -1;
-    private long frameInFlightSince;
+    // Frames captured and not encoded yet, and when the last one was started.
+    private int framesPending;
+    private long lastFrameStartedAt;
+    // What the last finished frame cost on the main thread (including a redraw after a failed copy).
+    private long lastFrameMainThreadMs;
     private boolean keptUp = true;
     private Date startedAt;
     private volatile int outputWidth;
@@ -131,6 +138,9 @@ final class GleapFrameRecorder {
     private boolean keyFrameRequested;
     private int framesWritten;
     private volatile boolean released;
+    // Given up (the encoder did not finish in time): its result never reaches the listener.
+    private volatile boolean abandoned;
+    private boolean muxerStopped;
     private final MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
     // When each submitted frame was posted (µs, monotonic): the timestamps when the encoder's are off.
     private final ArrayDeque<Long> submittedAt = new ArrayDeque<>();
@@ -217,8 +227,12 @@ final class GleapFrameRecorder {
                 main.post(new Runnable() {
                     @Override
                     public void run() {
+                        if (abandoned) {
+                            deleteFile();
+                            return;
+                        }
                         try {
-                            listener.onRecordingFinished(result);
+                            listener.onRecordingFinished(GleapFrameRecorder.this, result);
                         } catch (Throwable error) {
                             GleapErrors.report(error, "onRecordingFinished");
                         }
@@ -227,6 +241,34 @@ final class GleapFrameRecorder {
             }
         });
         thread.quitSafely();
+    }
+
+    /**
+     * Gives up on a recording whose encoder did not finish in time (main thread): the encoder,
+     * its surface and the muxer are released on a thread of their own (never the main thread)
+     * and the file is deleted. No result follows.
+     */
+    void abandon() {
+        abandoned = true;
+        running = false;
+        main.removeCallbacks(tick);
+        Thread releaser = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    releaseEncoder();
+                    releaseMuxer();
+                    deleteFile();
+                    pool.clear();
+                } catch (Throwable ignore) {
+                }
+            }
+        }, "gleap-capture-release");
+        releaser.setDaemon(true);
+        releaser.start();
+        if (thread != null) {
+            thread.quitSafely();
+        }
     }
 
     /**
@@ -242,13 +284,7 @@ final class GleapFrameRecorder {
             @Override
             public void run() {
                 releaseEncoder();
-                if (muxer != null) {
-                    try {
-                        muxer.release();
-                    } catch (Throwable ignore) {
-                    }
-                    muxer = null;
-                }
+                releaseMuxer();
                 deleteFile();
                 pool.clear();
             }
@@ -303,30 +339,30 @@ final class GleapFrameRecorder {
             return;
         }
 
-        if (frameInFlight >= 0) {
-            if (now - frameInFlightSince < FRAME_WATCHDOG_MS) {
-                // The last frame is still being copied or encoded: skip this one.
-                keptUp = false;
-                main.postDelayed(tick, intervalMs);
-                return;
-            }
-            frameInFlight = -1;
+        if (framesPending > 0 && (now - lastFrameStartedAt < FRAME_STALL_MS || framesPending >= MAX_PENDING_FRAMES)) {
+            // The last frame is still being copied or encoded: skip this one.
+            keptUp = false;
+            main.postDelayed(tick, intervalMs);
+            return;
         }
 
-        final int sequence = ++frameSequence;
-        frameInFlight = sequence;
-        frameInFlightSince = now;
-        GleapWindowCapture.capture(current, captureScale(current), excludedRoots, encoderHandler, pool,
+        framesPending++;
+        lastFrameStartedAt = now;
+        GleapWindowCapture.capture(current, captureScale(current), excludedRoots, encoderHandler, pool, maskHistory,
                 new GleapWindowCapture.Callback() {
                     @Override
                     public void onFrame(GleapWindowCapture.Frame frame) {
-                        onFrameCaptured(sequence, frame);
+                        onFrameCaptured(frame);
                     }
                 });
-        long mainThreadMs = SystemClock.uptimeMillis() - now;
+        // What frames cost on the main thread: this one so far, or the last finished one with a
+        // redraw after a failed copy.
+        long mainThreadMs = Math.max(SystemClock.uptimeMillis() - now, lastFrameMainThreadMs);
         intervalMs = GleapCaptureGeometry.nextFrameInterval(intervalMs, mainThreadMs, keptUp);
         keptUp = true;
-        main.postDelayed(tick, intervalMs);
+        // Hard cap: frames never take more than 30 % of the main thread. Below 2 fps a costly
+        // frame pushes the next one further out (frames are skipped).
+        main.postDelayed(tick, GleapCaptureGeometry.nextFrameDelay(intervalMs, mainThreadMs));
     }
 
     // Frames are captured at the size they are encoded at.
@@ -361,7 +397,8 @@ final class GleapFrameRecorder {
     // ---------------------------------------------------------------------------------------------
     // Encoder thread
 
-    private void onFrameCaptured(final int sequence, GleapWindowCapture.Frame frame) {
+    private void onFrameCaptured(GleapWindowCapture.Frame frame) {
+        final long frameMainThreadMs = frame != null ? frame.mainThreadMs : -1;
         try {
             if (frame != null && !released && codec != null) {
                 encode(frame);
@@ -375,8 +412,9 @@ final class GleapFrameRecorder {
             main.post(new Runnable() {
                 @Override
                 public void run() {
-                    if (frameInFlight == sequence) {
-                        frameInFlight = -1;
+                    framesPending = Math.max(0, framesPending - 1);
+                    if (frameMainThreadMs >= 0) {
+                        lastFrameMainThreadMs = frameMainThreadMs;
                     }
                 }
             });
@@ -412,20 +450,14 @@ final class GleapFrameRecorder {
             @Override
             public void run() {
                 released = true;
-                if (muxer != null) {
-                    try {
-                        muxer.release();
-                    } catch (Throwable ignore) {
-                    }
-                    muxer = null;
-                }
+                releaseMuxer();
                 deleteFile();
                 pool.clear();
             }
         });
         thread.quitSafely();
         try {
-            listener.onRecordingFinished(new Result(file, false, 0, outputWidth, outputHeight, started, new Date(), error, false));
+            listener.onRecordingFinished(this, new Result(file, false, 0, outputWidth, outputHeight, started, new Date(), error, false));
         } catch (Throwable reportError) {
             GleapErrors.report(reportError, "onRecordingFinished");
         }
@@ -479,6 +511,7 @@ final class GleapFrameRecorder {
     }
 
     private boolean startEncoder(MediaCodec encoder, int areaWidth, int areaHeight) {
+        Surface surface = null;
         try {
             int[] size = encoderSize(encoder, areaWidth, areaHeight);
             MediaFormat format = MediaFormat.createVideoFormat(MIME_TYPE, size[0], size[1]);
@@ -487,7 +520,7 @@ final class GleapFrameRecorder {
             format.setInteger(MediaFormat.KEY_FRAME_RATE, FRAME_RATE);
             format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, ENCODER_KEY_FRAME_INTERVAL_SEC);
             encoder.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
-            Surface surface = encoder.createInputSurface();
+            surface = encoder.createInputSurface();
             encoder.start();
             inputSurface = surface;
             outputWidth = size[0];
@@ -495,6 +528,12 @@ final class GleapFrameRecorder {
             return true;
         } catch (Throwable error) {
             GleapLog.w("Could not configure the video encoder " + safeName(encoder), error);
+            if (surface != null) {
+                try {
+                    surface.release();
+                } catch (Throwable ignore) {
+                }
+            }
             try {
                 encoder.release();
             } catch (Throwable ignore) {
@@ -714,6 +753,7 @@ final class GleapFrameRecorder {
         releaseEncoder();
         try {
             if (muxer != null && muxerStarted && framesWritten > 0) {
+                muxerStopped = true;
                 muxer.stop();
                 success = true;
             } else {
@@ -723,13 +763,7 @@ final class GleapFrameRecorder {
             error = "The recording could not be finished.";
             GleapLog.w(error, stopError);
         }
-        if (muxer != null) {
-            try {
-                muxer.release();
-            } catch (Throwable ignore) {
-            }
-            muxer = null;
-        }
+        releaseMuxer();
         pool.clear();
         if (!success) {
             deleteFile();
@@ -757,6 +791,27 @@ final class GleapFrameRecorder {
             } catch (Throwable ignore) {
             }
             inputSurface = null;
+        }
+    }
+
+    // A started muxer is stopped before it is released (also without samples, where stop()
+    // throws): release() would stop it itself, throw, and leave the muxer unreleased.
+    private void releaseMuxer() {
+        MediaMuxer current = muxer;
+        muxer = null;
+        if (current == null) {
+            return;
+        }
+        if (muxerStarted && !muxerStopped) {
+            muxerStopped = true;
+            try {
+                current.stop();
+            } catch (Throwable ignore) {
+            }
+        }
+        try {
+            current.release();
+        } catch (Throwable ignore) {
         }
     }
 

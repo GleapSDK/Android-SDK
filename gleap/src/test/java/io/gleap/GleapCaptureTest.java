@@ -41,6 +41,27 @@ public class GleapCaptureTest {
     }
 
     @Test
+    public void passwordsPaymentCardsAndOneTimeCodesAreMasked() {
+        int text = android.text.InputType.TYPE_CLASS_TEXT;
+        int number = android.text.InputType.TYPE_CLASS_NUMBER;
+        assertTrue(GleapWindowCapture.isPasswordInputType(text | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD));
+        assertTrue(GleapWindowCapture.isPasswordInputType(text | android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD));
+        assertTrue(GleapWindowCapture.isPasswordInputType(text | android.text.InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD));
+        assertTrue(GleapWindowCapture.isPasswordInputType(number | android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD));
+        assertFalse(GleapWindowCapture.isPasswordInputType(text | android.text.InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS));
+        assertFalse(GleapWindowCapture.isPasswordInputType(number));
+
+        // Autofill hints: the framework's View.AUTOFILL_HINT_* and androidx HintConstants names.
+        for (String hint : new String[]{"password", "newPassword", "creditCardNumber", "creditCardSecurityCode",
+                "creditCardExpirationDate", "smsOTPCode", "2faAppOTPCode", "emailOTPCode", "one-time-code"}) {
+            assertTrue(hint, GleapWindowCapture.isSensitiveAutofillHint(hint));
+        }
+        for (String hint : new String[]{"emailAddress", "username", "phone", "postalCode", "name", null}) {
+            assertFalse(String.valueOf(hint), GleapWindowCapture.isSensitiveAutofillHint(hint));
+        }
+    }
+
+    @Test
     public void requestIdsStayInsideTheirPath() {
         assertTrue(GleapCapture.isValidRequestId("65f0c0ffee0123456789abcd"));
         assertFalse(GleapCapture.isValidRequestId("../../bugs/v2"));

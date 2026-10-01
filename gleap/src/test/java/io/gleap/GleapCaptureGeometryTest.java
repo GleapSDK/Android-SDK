@@ -91,6 +91,16 @@ public class GleapCaptureGeometryTest {
     }
 
     @Test
+    public void framesNeverTakeMoreThanAThirdOfTheMainThread() {
+        // Cheap frames: the interval decides.
+        assertEquals(250, GleapCaptureGeometry.nextFrameDelay(250, 10));
+        // At 2 fps a frame that costs 300 ms on the main thread pushes the next one to 1 s
+        // (frames are skipped): at most 30 % of the main thread.
+        assertEquals(1000, GleapCaptureGeometry.nextFrameDelay(500, 300));
+        assertTrue(GleapCaptureGeometry.nextFrameDelay(125, 100) >= 334);
+    }
+
+    @Test
     public void theTimerAndTheDurationLimit() {
         assertEquals("00:00", GleapCaptureGeometry.formatClock(0));
         assertEquals("01:05", GleapCaptureGeometry.formatClock(65));
