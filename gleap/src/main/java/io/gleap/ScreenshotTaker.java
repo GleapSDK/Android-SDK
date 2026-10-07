@@ -74,6 +74,7 @@ class ScreenshotTaker {
 
                     Intent intent = new Intent(activityToOpen, GleapMainActivity.class);
                     intent.putExtra("IS_SURVEY", type == SurveyType.SURVEY);
+                    intent.putExtra("IS_SURVEY_FULL", type == SurveyType.SURVEY_FULL);
                     intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
 
                     if (isSingleInstanceMode) {
