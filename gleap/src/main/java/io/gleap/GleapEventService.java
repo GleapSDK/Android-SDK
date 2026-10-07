@@ -694,14 +694,7 @@ class GleapEventService {
                             }
                         }
                     } else if (currentAction.getString("format").contains("survey")) {
-                        JSONObject jsonObject = new JSONObject();
-                        try {
-                            jsonObject.put("isSurvey", true);
-                            jsonObject.put("hideBackButton", true);
-                            jsonObject.put("format", currentAction.getString("format"));
-                            jsonObject.put("flow", currentAction.getString("actionType"));
-                        } catch (Exception ex) {
-                        }
+                        JSONObject jsonObject = surveyStartData(currentAction);
 
                         GleapMainThread.post(new Runnable() {
                             @Override
@@ -748,5 +741,37 @@ class GleapEventService {
                 }
             }
         }
+    }
+    /**
+     * The start-survey message data for a survey the server triggered, as the JavaScript SDK
+     * sends it: the flow and format, and for Surveys 2.0 the outbound action that delivered it
+     * (the response's source) and, for a resume reminder, the server's copy of the response so
+     * far ({@code resumeData}).
+     */
+    static JSONObject surveyStartData(JSONObject action) {
+        JSONObject data = new JSONObject();
+        try {
+            data.put("isSurvey", true);
+            data.put("hideBackButton", true);
+            data.put("format", action.optString("format", "survey"));
+            data.put("flow", action.optString("actionType", ""));
+
+            boolean resume = action.optBoolean("resume", false);
+            data.put("resume", resume);
+            JSONObject resumeData = action.optJSONObject("data");
+            if (resume && resumeData != null) {
+                data.put("resumeData", resumeData);
+            }
+
+            String outboundAction = action.optString("_id", "");
+            if (outboundAction.length() == 0) {
+                outboundAction = action.optString("id", "");
+            }
+            if (outboundAction.length() > 0) {
+                data.put("outboundAction", outboundAction);
+            }
+        } catch (Exception ignore) {
+        }
+        return data;
     }
 }
