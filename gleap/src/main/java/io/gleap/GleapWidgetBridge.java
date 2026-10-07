@@ -119,6 +119,24 @@ final class GleapWidgetBridge {
                         case "send-feedback":
                             sendFeedback(gleapCallback);
                             break;
+                        case "height-update":
+                            activity.onWidgetContent();
+                            break;
+                        case "survey-shown":
+                            activity.onWidgetContent();
+                            activity.onSurveyShown(gleapCallback.optJSONObject("data"));
+                            break;
+                        case "survey-legacy":
+                            activity.onSurveyLegacy();
+                            break;
+                        case "survey-answered":
+                        case "survey-completed":
+                        case "survey-closed":
+                        case "survey-step-viewed":
+                        case "sheet-viewport":
+                            // Surveys 2.0 lifecycle and shell layout: handled by the page;
+                            // completion reaches the app as notify-event outbound-sent.
+                            break;
                         case "capture-start":
                         case "capture-cancel":
                         case "capture-done":
@@ -225,8 +243,55 @@ final class GleapWidgetBridge {
                 if (GleapCallbacks.getInstance().getFeedbackFlowStartedCallback() != null) {
                     GleapCallbacks.getInstance().getFeedbackFlowStartedCallback().invoke(eventData.toString());
                 }
+            } else if (eventType.equals("outbound-sent")) {
+                surveyCompleted(eventData);
             }
         } catch (Exception ex) {
+        }
+    }
+
+    /**
+     * A Surveys 2.0 survey was completed. The messenger saves its answers itself (no
+     * send-feedback), so the callbacks and the outbound-&lt;id&gt;-submitted event a legacy survey
+     * gets after sending (see HttpHelper) come from here, in the legacy shape.
+     */
+    static void surveyCompleted(JSONObject eventData) {
+        if (eventData == null) {
+            return;
+        }
+        JSONObject formData = eventData.optJSONObject("formData");
+        if (formData == null) {
+            formData = new JSONObject();
+        }
+
+        try {
+            if (GleapCallbacks.getInstance().getFeedbackSentCallback() != null) {
+                GleapCallbacks.getInstance().getFeedbackSentCallback().invoke(formData);
+            }
+        } catch (Exception ignore) {
+        }
+
+        String outboundId = eventData.optString("outboundId", "");
+        if (outboundId.length() == 0) {
+            return;
+        }
+
+        try {
+            if (GleapCallbacks.getInstance().getOutboundSentCallback() != null) {
+                JSONObject sent = new JSONObject();
+                sent.put("outboundId", outboundId);
+                sent.putOpt("outbound", eventData.opt("outbound"));
+                sent.put("formData", formData);
+                sent.putOpt("responseId", eventData.opt("responseId"));
+                sent.putOpt("endingId", eventData.opt("endingId"));
+                GleapCallbacks.getInstance().getOutboundSentCallback().invoke(sent);
+            }
+        } catch (Exception ignore) {
+        }
+
+        try {
+            Gleap.getInstance().trackEvent("outbound-" + outboundId + "-submitted", formData);
+        } catch (Exception ignore) {
         }
     }
 
