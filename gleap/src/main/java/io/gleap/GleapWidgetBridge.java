@@ -10,7 +10,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.lang.ref.WeakReference;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import io.gleap.callbacks.GleapAgentToolResultCallback;
 
@@ -250,18 +252,35 @@ final class GleapWidgetBridge {
         }
     }
 
+    // Responses whose completion the app was told about (surveyCompleted runs on the main thread).
+    private static final Set<String> reportedSurveyResponses = new HashSet<>();
+
     /**
      * A Surveys 2.0 survey was completed. The messenger saves its answers itself (no
      * send-feedback), so the callbacks and the outbound-&lt;id&gt;-submitted event a legacy survey
-     * gets after sending (see HttpHelper) come from here, in the legacy shape.
+     * gets after sending (see HttpHelper) come from here, in the legacy shape: FeedbackWillBeSent
+     * and FeedbackSent get the answers by key, OutboundSent {outboundId, formData} plus what the
+     * messenger adds (outbound, surveyId, responseId, endingId, status). Once per response, also
+     * when the page reports it again.
      */
     static void surveyCompleted(JSONObject eventData) {
         if (eventData == null) {
             return;
         }
+        String responseId = eventData.optString("responseId", "");
+        if (responseId.length() > 0 && !reportedSurveyResponses.add(responseId)) {
+            return;
+        }
         JSONObject formData = eventData.optJSONObject("formData");
         if (formData == null) {
             formData = new JSONObject();
+        }
+
+        try {
+            if (GleapCallbacks.getInstance().getFeedbackWillBeSentCallback() != null) {
+                GleapCallbacks.getInstance().getFeedbackWillBeSentCallback().invoke(formData.toString());
+            }
+        } catch (Exception ignore) {
         }
 
         try {
@@ -278,12 +297,9 @@ final class GleapWidgetBridge {
 
         try {
             if (GleapCallbacks.getInstance().getOutboundSentCallback() != null) {
-                JSONObject sent = new JSONObject();
+                JSONObject sent = new JSONObject(eventData.toString());
                 sent.put("outboundId", outboundId);
-                sent.putOpt("outbound", eventData.opt("outbound"));
                 sent.put("formData", formData);
-                sent.putOpt("responseId", eventData.opt("responseId"));
-                sent.putOpt("endingId", eventData.opt("endingId"));
                 GleapCallbacks.getInstance().getOutboundSentCallback().invoke(sent);
             }
         } catch (Exception ignore) {
