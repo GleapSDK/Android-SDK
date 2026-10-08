@@ -234,6 +234,11 @@ public class GleapSessionProperties {
                 gleapSessionProperties.setValue(result.getDouble("value"));
             }
 
+            // The widget skips a survey's phone question for an identified contact with a phone.
+            if (result.has("phone") && !result.isNull("phone")) {
+                gleapSessionProperties.setPhone(result.getString("phone"));
+            }
+
             if (result.has("companyName")) {
                 gleapSessionProperties.setCompanyName(result.getString("companyName"));
             }

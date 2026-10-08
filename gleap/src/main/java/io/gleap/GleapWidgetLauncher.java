@@ -26,6 +26,9 @@ final class GleapWidgetLauncher {
     // Set once the remote config is loaded (see GleapInitializer).
     static ScreenshotTaker screenshotTaker;
     private static final AtomicBoolean sessionRecoveryInProgress = new AtomicBoolean(false);
+    // How long a survey waits for an identify of the app (see afterIdentify): 3 s at most.
+    private static final int IDENTIFY_WAIT_STEPS = 30;
+    private static final long IDENTIFY_WAIT_STEP_MS = 100;
 
     private GleapWidgetLauncher() {
     }
@@ -115,10 +118,11 @@ final class GleapWidgetLauncher {
     /**
      * Opens the widget without a command (its home screen, or a survey: the survey command is
      * queued by the caller). Only the home screen restarts the session when Gleap is not ready.
+     * A survey waits for an identify in flight first (see {@link #afterIdentify}).
      */
     static void openWithScreenshot(final SurveyType type, final Runnable retry) {
         try {
-            GleapMainThread.postWithActivity(new Runnable() {
+            final Runnable open = new Runnable() {
                 @Override
                 public void run() throws RuntimeException {
                     try {
@@ -137,10 +141,36 @@ final class GleapWidgetLauncher {
                         GleapErrors.report(e, "run");
                     }
                 }
+            };
+            GleapMainThread.postWithActivity(type == SurveyType.NONE ? open : new Runnable() {
+                @Override
+                public void run() {
+                    afterIdentify(open, IDENTIFY_WAIT_STEPS);
+                }
             });
         } catch (Error | Exception e) {
             GleapErrors.report(e, "run");
         }
+    }
+
+    /**
+     * Runs {@code open} once an identify of the app has settled, at most
+     * IDENTIFY_WAIT_STEPS * IDENTIFY_WAIT_STEP_MS later. A survey takes the contact from the
+     * session the widget gets when it loads (it skips the questions the identified contact
+     * already answered): started during {@code identifyContact} it would get the previous one.
+     */
+    private static void afterIdentify(final Runnable open, final int stepsLeft) {
+        GleapSessionController controller = GleapSessionController.getInstance();
+        if (stepsLeft <= 0 || controller == null || !controller.isIdentifyInFlight()) {
+            open.run();
+            return;
+        }
+        GleapMainThread.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                afterIdentify(open, stepsLeft - 1);
+            }
+        }, IDENTIFY_WAIT_STEP_MS);
     }
 
     /**

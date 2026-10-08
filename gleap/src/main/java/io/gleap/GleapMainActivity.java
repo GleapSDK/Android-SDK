@@ -392,7 +392,9 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         GleapMainThread.postDelayed(new Runnable() {
             @Override
             public void run() {
-                if (webView == null) {
+                // Closed meanwhile (e.g. a survey with nothing to ask closes right after
+                // the ping): no reveal of an empty page or the dim while it goes.
+                if (webView == null || isFinishing()) {
                     return;
                 }
                 webView.setVisibility(View.VISIBLE);
