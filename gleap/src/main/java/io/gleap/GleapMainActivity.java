@@ -6,7 +6,13 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.ColorFilter;
+import android.graphics.Paint;
+import android.graphics.PixelFormat;
+import android.graphics.Rect;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.net.http.SslError;
 import android.annotation.TargetApi;
@@ -38,7 +44,9 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 
 import org.json.JSONObject;
 
@@ -61,9 +69,24 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
     private String url = GleapConfig.getInstance().getiFrameUrl();
     private static String urlToOpenAfterClose = null;
     public static final int REQUEST_SELECT_FILE = 100;
-    private Runnable exitAfterFifteenSeconds;
+    // How long the widget may take to load before it gives up and closes.
+    private static final long LOAD_TIMEOUT_MS = 30000;
+    // The page's own dim behind a card survey (appnew.html: rgba(0,0,0,0.25) on its body).
+    private static final int SURVEY_DIM_COLOR = 0x40000000;
+    private Runnable exitIfNeverLoaded;
     private Handler handler;
+    // A card survey (the floating sheet over the dimmed app).
     private boolean isSurvey = false;
+    // A full-screen survey.
+    private boolean isFullSurvey = false;
+    // A full-screen Surveys 2.0 survey is showing: the page draws behind the system bars and
+    // pads itself by the insets it gets (safe-area-update).
+    private boolean surveyEdgeToEdge = false;
+    // The page reported content (a height or a shown survey): it loads, however slowly.
+    private boolean widgetContentSeen = false;
+    private FrameLayout webViewContainer;
+    private Insets systemBarInsets = Insets.NONE;
+    private Insets imeInsets = Insets.NONE;
     private boolean isImeVisible = false;
     private int lockedScrollY = 0;
     // The widget answered its first ping, so it listens for config updates.
@@ -162,22 +185,27 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
             if (getPackageManager().hasSystemFeature("android.software.webview")) {
                 webView = findViewById(R.id.gleap_webview);
-                setUpInsets((FrameLayout) findViewById(R.id.webview_container));
+                webViewContainer = findViewById(R.id.webview_container);
+                setUpInsets(webViewContainer);
 
-                exitAfterFifteenSeconds = new Runnable() {
+                // Only a page that never answered and never showed anything is given up on: a
+                // slow network may well take longer than a few seconds to load the messenger.
+                exitIfNeverLoaded = new Runnable() {
                     @Override
                     public void run() {
-                        if (webView.getVisibility() == View.INVISIBLE) {
+                        if (!widgetPinged && !widgetContentSeen && webView != null
+                                && webView.getVisibility() != View.VISIBLE) {
                             closeMainGleapActivity();
                         }
                     }
                 };
 
                 isSurvey = getIntent().getBooleanExtra("IS_SURVEY", false);
+                isFullSurvey = getIntent().getBooleanExtra("IS_SURVEY_FULL", false);
                 setUpLoader(savedInstanceState);
 
                 this.handler = new Handler(Looper.getMainLooper());
-                this.handler.postDelayed(exitAfterFifteenSeconds, 15000);
+                this.handler.postDelayed(exitIfNeverLoaded, LOAD_TIMEOUT_MS);
 
                 GleapCallbacks.getInstance().setCallCloseCallback(new CallCloseCallback() {
                     @Override
@@ -261,11 +289,23 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 (view, insets) -> {
                     Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
                     Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
+                    boolean changed = !bars.equals(systemBarInsets) || !ime.equals(imeInsets);
+                    systemBarInsets = bars;
+                    imeInsets = ime;
 
-                    int topInset = bars.top;
-                    int bottomInset = Math.max(bars.bottom, ime.bottom);
-
-                    view.setPadding(view.getPaddingLeft(), topInset, view.getPaddingRight(), bottomInset);
+                    if (surveyEdgeToEdge) {
+                        // Behind the system bars; only the keyboard takes room away.
+                        view.setPadding(view.getPaddingLeft(), 0, view.getPaddingRight(), ime.bottom);
+                        if (changed) {
+                            sendSafeAreaInsets();
+                        }
+                    } else {
+                        int topInset = bars.top;
+                        int bottomInset = Math.max(bars.bottom, ime.bottom);
+                        view.setPadding(view.getPaddingLeft(), topInset, view.getPaddingRight(), bottomInset);
+                    }
+                    // The card survey's dim bands follow the padding.
+                    view.invalidate();
 
                     if (Build.VERSION.SDK_INT >= 36) {
                         boolean nowImeVisible = ime.bottom > 0;
@@ -306,6 +346,11 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 loaderView.setVisibility(View.VISIBLE);
                 loaderView.setBackgroundColor(Color.parseColor("#66000000"));
             }
+            // Once the survey shows, the page dims the app itself; the container keeps clear of
+            // the status bar, the navigation bar and the keyboard, and those bands get the same
+            // dim (see revealWidget). The loader's darker dim stayed in them: two tones.
+            webViewContainer.setBackground(new InsetBandsDrawable(webViewContainer, SURVEY_DIM_COLOR));
+            webViewContainer.getBackground().setAlpha(0);
         } else {
             // Widget loader: mirror the messenger's home background so
             // the reveal is seamless (see GleapLoadingBackgroundView).
@@ -356,8 +401,167 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 // a layer — without it the "fade" pops in
                 // as a single-frame swap.
                 webView.animate().alpha(1f).setDuration(300).withLayer().start();
+                if (isSurvey) {
+                    revealSurveyDim();
+                }
             }
         }, 500);
+    }
+
+    /**
+     * Card surveys: the loader's dim gives way to the page's own, and the bands outside the web
+     * view (system bars, keyboard) get the same dim, so the whole screen is dimmed evenly.
+     */
+    private void revealSurveyDim() {
+        final View loaderView = findViewById(R.id.loader);
+        if (loaderView != null) {
+            loaderView.animate().alpha(0f).setDuration(300).withEndAction(new Runnable() {
+                @Override
+                public void run() {
+                    loaderView.setVisibility(View.GONE);
+                }
+            }).start();
+        }
+        if (webViewContainer != null && webViewContainer.getBackground() != null) {
+            webViewContainer.getBackground().setAlpha(255);
+            webViewContainer.invalidate();
+        }
+    }
+
+    /** The page reported content: it is loading, so the load timeout no longer applies. */
+    void onWidgetContent() {
+        widgetContentSeen = true;
+    }
+
+    /**
+     * A Surveys 2.0 survey is showing. Full screen, it paints its own backdrop: the page goes
+     * behind the status and navigation bars and pads its close button, question and bar by the
+     * insets (the bars showed the loader's header color over the pale survey page before).
+     */
+    void onSurveyShown(JSONObject data) {
+        if (!isFullSurvey || isSurvey || surveyEdgeToEdge) {
+            return;
+        }
+        if (data == null || !"full".equals(data.optString("format", ""))) {
+            return;
+        }
+        try {
+            surveyEdgeToEdge = true;
+            Window window = getWindow();
+            WindowCompat.setDecorFitsSystemWindows(window, false);
+            window.setStatusBarColor(Color.TRANSPARENT);
+            window.setNavigationBarColor(Color.TRANSPARENT);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                window.setStatusBarContrastEnforced(false);
+                window.setNavigationBarContrastEnforced(false);
+            }
+            // The survey's backdrop follows the widget's background (light or dark mode).
+            boolean light = isLightColor(GleapConfig.getInstance().getBackgroundColor());
+            WindowInsetsControllerCompat controller = new WindowInsetsControllerCompat(window, window.getDecorView());
+            controller.setAppearanceLightStatusBars(light);
+            controller.setAppearanceLightNavigationBars(light);
+            sendSafeAreaInsets();
+            ViewCompat.requestApplyInsets(webViewContainer);
+        } catch (Error | Exception error) {
+            GleapLog.w("Could not show the survey edge to edge", error);
+        }
+    }
+
+    /** The survey falls back to the legacy flow: back to the layout below the system bars. */
+    void onSurveyLegacy() {
+        if (!surveyEdgeToEdge) {
+            return;
+        }
+        surveyEdgeToEdge = false;
+        try {
+            sendSafeAreaInsets();
+            WindowCompat.setDecorFitsSystemWindows(getWindow(), true);
+            ViewCompat.requestApplyInsets(webViewContainer);
+        } catch (Error | Exception ignore) {
+        }
+    }
+
+    /**
+     * The insets the page pads itself by while it draws behind the system bars (CSS px; zero
+     * otherwise). The bottom one is 0 while the keyboard is up: the web view ends above it.
+     */
+    private void sendSafeAreaInsets() {
+        try {
+            float density = getResources().getDisplayMetrics().density;
+            Insets bars = surveyEdgeToEdge ? systemBarInsets : Insets.NONE;
+            JSONObject data = new JSONObject();
+            data.put("top", Math.round(bars.top / density));
+            data.put("right", Math.round(bars.right / density));
+            data.put("bottom", imeInsets.bottom > 0 ? 0 : Math.round(bars.bottom / density));
+            data.put("left", Math.round(bars.left / density));
+            sendMessage(GleapWidgetMessages.message("safe-area-update", data));
+        } catch (Error | Exception ignore) {
+        }
+    }
+
+    static boolean isLightColor(String color) {
+        try {
+            int value = Color.parseColor(color);
+            double luminance = (0.299 * Color.red(value) + 0.587 * Color.green(value) + 0.114 * Color.blue(value)) / 255.0;
+            return luminance > 0.5;
+        } catch (Exception ignore) {
+            return true;
+        }
+    }
+
+    /**
+     * Paints only a view's padding (the bands it keeps clear of the system bars and the
+     * keyboard), never behind its content.
+     */
+    static final class InsetBandsDrawable extends Drawable {
+        private final View view;
+        private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final int color;
+
+        InsetBandsDrawable(View view, int color) {
+            this.view = view;
+            this.color = color;
+            paint.setColor(color);
+        }
+
+        @Override
+        public void draw(@NonNull Canvas canvas) {
+            Rect bounds = getBounds();
+            int top = view.getPaddingTop();
+            int bottom = view.getPaddingBottom();
+            int left = view.getPaddingLeft();
+            int right = view.getPaddingRight();
+            if (top > 0) {
+                canvas.drawRect(bounds.left, bounds.top, bounds.right, bounds.top + top, paint);
+            }
+            if (bottom > 0) {
+                canvas.drawRect(bounds.left, bounds.bottom - bottom, bounds.right, bounds.bottom, paint);
+            }
+            if (left > 0) {
+                canvas.drawRect(bounds.left, bounds.top + top, bounds.left + left, bounds.bottom - bottom, paint);
+            }
+            if (right > 0) {
+                canvas.drawRect(bounds.right - right, bounds.top + top, bounds.right, bounds.bottom - bottom, paint);
+            }
+        }
+
+        @Override
+        public void setAlpha(int alpha) {
+            paint.setColor(color);
+            paint.setAlpha(Color.alpha(color) * alpha / 255);
+            invalidateSelf();
+        }
+
+        @Override
+        public void setColorFilter(ColorFilter colorFilter) {
+            paint.setColorFilter(colorFilter);
+            invalidateSelf();
+        }
+
+        @Override
+        public int getOpacity() {
+            return PixelFormat.TRANSLUCENT;
+        }
     }
 
     @Override
@@ -519,9 +723,9 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 GleapCallbacks.getInstance().setCallCloseCallback(null);
             }
 
-            if (this.exitAfterFifteenSeconds != null) {
-                this.handler.removeCallbacks(this.exitAfterFifteenSeconds);
-                this.exitAfterFifteenSeconds = null;
+            if (this.exitIfNeverLoaded != null) {
+                this.handler.removeCallbacks(this.exitIfNeverLoaded);
+                this.exitIfNeverLoaded = null;
             }
             this.handler = null;
 

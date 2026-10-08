@@ -33,6 +33,9 @@ final class GleapWidgetMessages {
         data.put("actions", jsonObject.getJSONObject("projectActions"));
         data.put("overrideLanguage", GleapConfig.getInstance().getLanguage());
         data.put("isApp", true);
+        // Surveys 2.0: this SDK fires the survey callbacks from notify-event outbound-sent
+        // (GleapWidgetBridge.surveyCompleted), so the messenger sends no legacy send-feedback.
+        data.put("surveyCallbacks", true);
         return data;
     }
 
