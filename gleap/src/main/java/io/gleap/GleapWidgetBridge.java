@@ -123,17 +123,22 @@ final class GleapWidgetBridge {
                             break;
                         case "height-update":
                             activity.onWidgetContent();
+                            activity.onSurveyContent(true);
                             break;
                         case "survey-shown":
                             activity.onWidgetContent();
                             activity.onSurveyShown(gleapCallback.optJSONObject("data"));
+                            activity.onSurveyContent(false);
                             break;
                         case "survey-legacy":
                             activity.onSurveyLegacy();
+                            activity.onSurveyContent(false);
+                            break;
+                        case "survey-closed":
+                            activity.onSurveyClosed();
                             break;
                         case "survey-answered":
                         case "survey-completed":
-                        case "survey-closed":
                         case "survey-step-viewed":
                         case "sheet-viewport":
                             // Surveys 2.0 lifecycle and shell layout: handled by the page;
