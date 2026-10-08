@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Identifies the session's contact (POST /sessions/identify) with the pending identify action.
@@ -21,9 +22,27 @@ import java.nio.charset.StandardCharsets;
  */
 public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
     private static final String URL_POSTFIX = "/sessions/identify";
+    // Identifies running now; see GleapSessionController#isIdentifyInFlight.
+    private static final AtomicInteger running = new AtomicInteger();
+
+    /**
+     * @return true while an identify runs (until its answer is applied)
+     */
+    static boolean isRunning() {
+        return running.get() > 0;
+    }
 
     @Override
     protected Integer doInBackground(Void... voids) {
+        running.incrementAndGet();
+        try {
+            return identify();
+        } finally {
+            running.decrementAndGet();
+        }
+    }
+
+    private Integer identify() {
         try {
             final GleapSessionController controller = GleapSessionController.getInstance();
             if (controller == null) {

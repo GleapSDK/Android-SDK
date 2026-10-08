@@ -74,6 +74,13 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
     // The page's own dim behind a card survey (appnew.html: rgba(0,0,0,0.25) on its body).
     private static final int SURVEY_DIM_COLOR = 0x40000000;
     private Runnable exitIfNeverLoaded;
+    // A survey shows nothing (no loader, dim or page) until the messenger has something to show
+    // (onSurveyContent), or the loader this long after it opened (as the JavaScript SDK): a
+    // survey with nothing to ask closes without a trace.
+    private static final long SURVEY_LOADER_DELAY_MS = 1200;
+    // The survey is held back as above; once shown it stays shown.
+    private boolean surveyHeld = false;
+    private Runnable showSurveyLoader;
     private Handler handler;
     // A card survey (the floating sheet over the dimmed app).
     private boolean isSurvey = false;
@@ -206,6 +213,9 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
                 this.handler = new Handler(Looper.getMainLooper());
                 this.handler.postDelayed(exitIfNeverLoaded, LOAD_TIMEOUT_MS);
+                if (isSurvey || isFullSurvey) {
+                    holdSurvey();
+                }
 
                 GleapCallbacks.getInstance().setCallCloseCallback(new CallCloseCallback() {
                     @Override
@@ -369,10 +379,73 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
     }
 
     /**
-     * The widget answered its first ping: fade it in over the loader.
+     * A survey: hides the loader until the messenger has something to show, or shows it after
+     * SURVEY_LOADER_DELAY_MS (and the page, as for any widget, once it answered the ping).
+     */
+    private void holdSurvey() {
+        surveyHeld = true;
+        findViewById(R.id.loader).setVisibility(View.GONE);
+        showSurveyLoader = new Runnable() {
+            @Override
+            public void run() {
+                if (!surveyHeld || isFinishing()) {
+                    return;
+                }
+                surveyHeld = false;
+                findViewById(R.id.loader).setVisibility(View.VISIBLE);
+                if (widgetPinged) {
+                    revealWidget();
+                }
+            }
+        };
+        handler.postDelayed(showSurveyLoader, SURVEY_LOADER_DELAY_MS);
+    }
+
+    /**
+     * The messenger has something to show: a card survey its height, a full-screen survey also
+     * survey-shown or survey-legacy. A held survey shows right away.
+     */
+    void onSurveyContent(boolean height) {
+        if (!(isSurvey || isFullSurvey) || (isSurvey && !height) || webView == null) {
+            return;
+        }
+        if (surveyHeld) {
+            surveyHeld = false;
+            if (handler != null) {
+                handler.removeCallbacks(showSurveyLoader);
+            }
+            findViewById(R.id.loading_indicator).setVisibility(View.GONE);
+            if (isFullSurvey) {
+                // The backdrop behind the page, as once the loader showed.
+                View loaderView = findViewById(R.id.loader);
+                loaderView.setAlpha(0f);
+                loaderView.setVisibility(View.VISIBLE);
+                loaderView.animate().alpha(1f).setDuration(300).start();
+            }
+        }
+        if (webView.getVisibility() != View.VISIBLE) {
+            showWebView();
+        }
+    }
+
+    /**
+     * The survey closed: a held one stays hidden until the widget closes.
+     */
+    void onSurveyClosed() {
+        if (surveyHeld && handler != null) {
+            handler.removeCallbacks(showSurveyLoader);
+        }
+    }
+
+    /**
+     * The widget answered its first ping: fade it in over the loader (a held survey waits, see
+     * holdSurvey).
      */
     void revealWidget() {
         widgetPinged = true;
+        if (surveyHeld) {
+            return;
+        }
         // Hide only the spinner and header — keep the
         // loader FrameLayout visible as an opaque backdrop
         // so the translucent window doesn't expose the host app.
@@ -392,20 +465,29 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         GleapMainThread.postDelayed(new Runnable() {
             @Override
             public void run() {
-                if (webView == null) {
-                    return;
-                }
-                webView.setVisibility(View.VISIBLE);
-                // withLayer(): a hardware-rendered WebView
-                // ignores view alpha unless it draws into
-                // a layer — without it the "fade" pops in
-                // as a single-frame swap.
-                webView.animate().alpha(1f).setDuration(300).withLayer().start();
-                if (isSurvey) {
-                    revealSurveyDim();
-                }
+                showWebView();
             }
         }, 500);
+    }
+
+    private void showWebView() {
+        // Closed meanwhile (e.g. a survey with nothing to ask closes right after
+        // the ping): no reveal of an empty page or the dim while it goes.
+        if (webView == null || isFinishing()) {
+            return;
+        }
+        if (webView.getVisibility() != View.VISIBLE) {
+            webView.setAlpha(0f);
+        }
+        webView.setVisibility(View.VISIBLE);
+        // withLayer(): a hardware-rendered WebView
+        // ignores view alpha unless it draws into
+        // a layer — without it the "fade" pops in
+        // as a single-frame swap.
+        webView.animate().alpha(1f).setDuration(300).withLayer().start();
+        if (isSurvey) {
+            revealSurveyDim();
+        }
     }
 
     /**
@@ -726,6 +808,10 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
             if (this.exitIfNeverLoaded != null) {
                 this.handler.removeCallbacks(this.exitIfNeverLoaded);
                 this.exitIfNeverLoaded = null;
+            }
+            if (this.showSurveyLoader != null) {
+                this.handler.removeCallbacks(this.showSurveyLoader);
+                this.showSurveyLoader = null;
             }
             this.handler = null;
 

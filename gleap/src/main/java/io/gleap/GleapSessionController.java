@@ -103,6 +103,14 @@ public class GleapSessionController {
     }
 
     /**
+     * Whether an identify is queued or running: until it settles, the session may still be the
+     * previous (e.g. guest) one.
+     */
+    boolean isIdentifyInFlight() {
+        return getPendingIdentificationAction() != null || GleapIdentifyService.isRunning();
+    }
+
+    /**
      * Taken by the identify service with the pending identify: true when it must be sent even
      * if the user data did not change.
      */
@@ -261,9 +269,8 @@ public class GleapSessionController {
         store.putString("userId", gleapUser.getUserId());
         store.putString("name", gleapUser.getName());
         store.putString("email", gleapUser.getEmail());
-        if (gleapUser.getPhone() != null) {
-            store.putString("phone", gleapUser.getPhone());
-        }
+        // Like the email: a session without a phone drops the one of a previous contact.
+        store.putString("phone", gleapUser.getPhone());
         if (gleapUser.getPlan() != null) {
             store.putString("plan", gleapUser.getPlan());
         }
@@ -388,7 +395,6 @@ public class GleapSessionController {
                 // registerPushMessageGroup(hash) below would no-op when the previous
                 // value happens to be cached here.
                 GleapSession session;
-                boolean fileAccessChanged;
                 synchronized (this) {
                     if (!isCurrentGeneration(generation)) {
                         GleapLog.i("Dropped a session answer from before the logout");
@@ -427,15 +433,14 @@ public class GleapSessionController {
                     }
                     gleapSession.setFileAccess(token, expiresAt);
                     gleapSession.setAuthenticatedFilesRequired(result.optBoolean("authenticatedFilesRequired", false));
-                    fileAccessChanged = !sameValue(token, previousToken);
                     session = gleapSession;
                 }
 
                 GleapFileAccess.onSessionAnswer(this, session, fromIdentify);
-                if (fileAccessChanged) {
-                    // An open widget gets the new file session right away.
-                    GleapMainActivity.refreshSession();
-                }
+                // An open widget gets the session right away: the identified contact (the
+                // messenger skips the survey questions it already knows the answer to), a
+                // new file session.
+                GleapMainActivity.refreshSession();
 
                 // Check if there are any other actions to complete.
                 executePendingUpdates();
