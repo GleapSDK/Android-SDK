@@ -1,5 +1,9 @@
 # Changelog
 
+## 19.2.1
+Surveys: questions asking for the email, name or phone of an identified contact are skipped (with the Surveys 2.0 "Skip when known" option). The contact's phone number is now read from the session (it was dropped before), and an open widget gets the new session after every `identify`, `updateContact` and `clearIdentity`. Surveys wait for an `identify` that is queued or running (at most 3 seconds) before they open, so they start with the identified contact.
+Surveys show nothing (no loader, dim or page) until the survey has something to show; after 1.2 seconds the loader appears as before. A survey with nothing left to ask closes without anything ever being visible. Other widget opens are unchanged.
+
 ## 19.2.0
 Surveys 2.0: `FeedbackWillBeSentCallback`, `FeedbackSentCallback` and `OutboundSentCallback` now fire when a Surveys 2.0 survey is completed (the survey saves its own answers and reports completion as `outbound-sent`; until now only `flow-started` was handled). `FeedbackSent` gets the answers, as for a sent legacy survey; `OutboundSent` gets `outboundId` and `formData` plus `outbound`, `surveyId`, `responseId`, `endingId` and `status: "completed"`. The `outbound-<id>-submitted` event is tracked as for legacy surveys, and a response is reported once per process even if the survey reports it again. The SDK announces `surveyCallbacks: true` in `config-update`, so the widget no longer sends it the legacy fallback. Callback answer values are Surveys 2.0 values (rating 1 to 5, priority as a choice id); migrated surveys keep their legacy field names.
 Server-triggered surveys (ping and WebSocket actions) now pass `resume`, `resumeData` and `outboundAction` to the survey, like the JavaScript SDK, so a resumed survey keeps its answers.
