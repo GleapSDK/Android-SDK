@@ -1,5 +1,8 @@
 # Changelog
 
+## 19.2.2
+No Android changes; released to keep the native SDK versions in sync (iOS 19.2.2 fixes a main-thread freeze when sending a report).
+
 ## 19.2.1
 Surveys: questions asking for the email, name or phone of an identified contact are skipped (with the Surveys 2.0 "Skip when known" option). The contact's phone number is now read from the session (it was dropped before), and an open widget gets the new session after every `identify`, `updateContact` and `clearIdentity`. Surveys wait for an `identify` that is queued or running (at most 3 seconds) before they open, so they start with the identified contact.
 Surveys show nothing (no loader, dim or page) until the survey has something to show; after 1.2 seconds the loader appears as before. A survey with nothing left to ask closes without anything ever being visible. Other widget opens are unchanged.
