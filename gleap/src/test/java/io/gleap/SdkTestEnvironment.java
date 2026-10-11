@@ -39,6 +39,7 @@ class SdkTestEnvironment {
         GleapCallbacks.resetForTesting();
         GleapBug.resetForTesting();
         GleapEventService.resetForTesting();
+        GleapWebSocketListener.resetAppStateForTesting();
         GleapConfig.getInstance().setSdkKey(SDK_KEY);
         GleapConfig.getInstance().setLanguage("en");
         GleapConfig.getInstance().setEnableConsoleLogsFromCode(false);

@@ -39,7 +39,8 @@ class GleapEventService {
 
     // Created with the class: getInstance() is called from several threads.
     private static volatile GleapEventService instance = new GleapEventService();
-    private static GleapWebSocketListener webSocketListener;
+    // The realtime socket; kept across session restarts and identifies, replaced after stop().
+    private static volatile GleapWebSocketListener webSocketListener;
     private boolean disableInAppNotifications = false;
     private final GleapEventQueue eventQueue = new GleapEventQueue();
     // {received at (elapsed ms), actions}: in-app messages held back during a capture. Guarded by itself.
@@ -159,11 +160,24 @@ class GleapEventService {
         this.disableInAppNotifications = disableInAppNotifications;
     }
 
+    /**
+     * Asks the realtime socket for the current session's channel. An open (or opening) socket for
+     * the same channel (gleapId, gleapHash, apiKey) is kept; otherwise one opens shortly (see
+     * {@link GleapWebSocketListener}).
+     */
     public void startWebSocketListener() {
-        clearWebsocketListener();
+        GleapWebSocketListener listener;
+        synchronized (GleapEventService.class) {
+            if (webSocketListener == null) {
+                webSocketListener = webSocketFactory.create();
+            }
+            listener = webSocketListener;
+        }
+        listener.connect();
+    }
 
-        webSocketListener = webSocketFactory.create();
-        webSocketListener.connect();
+    static GleapWebSocketListener currentWebSocketListener() {
+        return webSocketListener;
     }
 
     /**
@@ -205,6 +219,19 @@ class GleapEventService {
         }
     }
 
+    /**
+     * Starts the ping loop unless it runs: on every session start and identify, so queued events
+     * go out whether or not the realtime socket is (still) connected.
+     */
+    void ensureStarted() {
+        synchronized (this) {
+            if (running) {
+                return;
+            }
+        }
+        start();
+    }
+
     public void stop() {
         stop(true);
     }
@@ -224,9 +251,13 @@ class GleapEventService {
     }
 
     private void clearWebsocketListener() {
-        if (webSocketListener != null) {
-            webSocketListener.destroy();
+        GleapWebSocketListener listener;
+        synchronized (GleapEventService.class) {
+            listener = webSocketListener;
             webSocketListener = null;
+        }
+        if (listener != null) {
+            listener.destroy();
         }
     }
 
