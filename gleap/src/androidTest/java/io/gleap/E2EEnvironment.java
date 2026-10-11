@@ -72,6 +72,9 @@ final class E2EEnvironment {
             gleap.setLanguage("en");
 
             Gleap.initialize(E2EGleapServer.SDK_KEY, application);
+            // Instrumentation runs without an activity on screen; the realtime socket only
+            // connects in the foreground.
+            GleapWebSocketListener.setAppInBackground(false);
 
             waitUntil("the remote config is applied", new Condition() {
                 @Override

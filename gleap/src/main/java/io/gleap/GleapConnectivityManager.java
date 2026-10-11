@@ -6,17 +6,23 @@ import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.NetworkRequest;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Monitors network connectivity and re-triggers Gleap initialization
- * when the device regains internet after starting offline.
+ * when the device regains internet after starting offline. Also tells the realtime socket
+ * whether the device is online: it waits while offline and connects when the network is back,
+ * and a network handover (Wi-Fi / cellular) keeps a socket that is open.
  */
 class GleapConnectivityManager {
     private static GleapConnectivityManager instance;
     private ConnectivityManager.NetworkCallback networkCallback;
     private final AtomicBoolean isReconnecting = new AtomicBoolean(false);
     private long registeredAt = 0;
+    // The networks with internet access; the device is online while there is one.
+    private final Set<Network> availableNetworks = new HashSet<>();
 
     // Ignore onAvailable calls within 10s of registration to avoid
     // colliding with the initial ConfigLoader/session load.
@@ -53,17 +59,48 @@ class GleapConnectivityManager {
                     .build();
 
             registeredAt = System.currentTimeMillis();
+            synchronized (availableNetworks) {
+                availableNetworks.clear();
+            }
+            GleapWebSocketListener.setOnline(isOnlineNow(cm));
 
             networkCallback = new ConnectivityManager.NetworkCallback() {
                 @Override
                 public void onAvailable(Network network) {
+                    synchronized (availableNetworks) {
+                        availableNetworks.add(network);
+                    }
+                    GleapWebSocketListener.setOnline(true);
                     onNetworkAvailable();
+                }
+
+                @Override
+                public void onLost(Network network) {
+                    boolean online;
+                    synchronized (availableNetworks) {
+                        availableNetworks.remove(network);
+                        online = !availableNetworks.isEmpty();
+                    }
+                    if (!online) {
+                        GleapWebSocketListener.setOnline(false);
+                    }
                 }
             };
 
             cm.registerNetworkCallback(request, networkCallback);
         } catch (Exception ignore) {
             // SecurityException if permission missing, or other system errors.
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    private static boolean isOnlineNow(ConnectivityManager cm) {
+        try {
+            android.net.NetworkInfo info = cm.getActiveNetworkInfo();
+            return info != null && info.isConnected();
+        } catch (Exception ignore) {
+            // Unknown: assume online, the socket's backoff handles a failed connect.
+            return true;
         }
     }
 
@@ -116,7 +153,8 @@ class GleapConnectivityManager {
                         // Both loaded — connection was temporarily lost.
                         // An identify that could not get through runs again.
                         GleapSessionController.getInstance().executePendingUpdates();
-                        // Refresh the launcher UI and reconnect WebSocket.
+                        // Refresh the launcher UI. The WebSocket keeps an open socket (a network
+                        // handover) and connects when there is none.
                         GleapOverlayManager.getInstance().addLayoutToActivity(null);
                         GleapEventService.getInstance().startWebSocketListener();
                     }

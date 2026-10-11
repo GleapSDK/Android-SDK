@@ -449,9 +449,11 @@ public class GleapSessionController {
                 registerPushMessageGroup(hash);
 
                 if (restartEventServices) {
-                    // Restart event service.
-                    GleapEventService.getInstance().stop(false);
+                    // Queue the session start and keep the events flowing. The realtime socket
+                    // stays open when gleapId, gleapHash and apiKey are unchanged; otherwise it
+                    // is replaced (a session start followed by an identify opens one socket).
                     GleapEventService.getInstance().sessionStarted();
+                    GleapEventService.getInstance().ensureStarted();
                     GleapEventService.getInstance().startWebSocketListener();
                 }
 
