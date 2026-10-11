@@ -1,5 +1,8 @@
 # Changelog
 
+## 19.2.3
+No Android changes; released to keep the native SDK versions in sync (iOS 19.2.3 fixes how the realtime socket connects and closes).
+
 ## 19.2.2
 No Android changes; released to keep the native SDK versions in sync (iOS 19.2.2 fixes a main-thread freeze when sending a report).
 
