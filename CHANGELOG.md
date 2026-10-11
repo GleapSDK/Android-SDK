@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 19.2.4
 Realtime socket: fewer, longer-lived connections, like iOS 19.2.3. A network change (Wi-Fi / cellular handover) keeps a socket that is open, and the socket waits while the device is offline and connects right away (with a fresh backoff) when the network is back. A session start or identify keeps the open socket when gleapId, gleapHash and API key are unchanged, and a session start followed by an identify opens one socket (connects wait 1.5 s for the last request). After 10 seconds in the background the socket closes with 1001 (going away) and nothing reconnects until the app returns to the foreground; a process started in the background (a push, a job) opens no socket until an activity starts. The reconnect backoff (5 s up to 60 s, ±20 %) starts over only once a socket received a message or stayed open for 30 seconds, not as soon as it opens. All sockets share one OkHttp client. Queued events are still sent: the ping loop starts with the session and no longer waits for the socket.
 
 ## 19.2.3
