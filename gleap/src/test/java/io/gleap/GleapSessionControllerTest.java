@@ -190,4 +190,24 @@ public class GleapSessionControllerTest {
         assertEquals(3, restored.getSla(), 0);
         assertEquals("gold", restored.getCustomData().getString("tier"));
     }
+
+    @Test
+    public void storedSessionIsNotReadWhenTheControllerIsCreated() {
+        final int[] reads = {0};
+        InMemoryKeyValueStore counting = new InMemoryKeyValueStore() {
+            @Override
+            public String getString(String key, String defaultValue) {
+                reads[0]++;
+                return super.getString(key, defaultValue);
+            }
+        };
+        counting.values.put("session_id", "stored-id");
+        counting.values.put("session_hash", "stored-hash");
+
+        GleapSessionController created = new GleapSessionController(counting);
+
+        assertEquals(0, reads[0]);
+        assertEquals("stored-id", created.getUserSession().getId());
+        assertEquals("stored-hash", created.getUserSession().getHash());
+    }
 }
