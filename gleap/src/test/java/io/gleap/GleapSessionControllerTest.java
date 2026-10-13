@@ -15,6 +15,8 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import io.gleap.callbacks.GetActivityCallback;
 import io.gleap.callbacks.InitializationDoneCallback;
@@ -209,5 +211,57 @@ public class GleapSessionControllerTest {
         assertEquals(0, reads[0]);
         assertEquals("stored-id", created.getUserSession().getId());
         assertEquals("stored-hash", created.getUserSession().getHash());
+    }
+
+    @Test
+    public void queueingAnIdentifyDoesNotWaitForTheStoredStateToLoad() throws Exception {
+        final CountDownLatch loadStarted = new CountDownLatch(1);
+        final CountDownLatch releaseLoad = new CountDownLatch(1);
+        InMemoryKeyValueStore slow = new InMemoryKeyValueStore() {
+            @Override
+            public String getString(String key, String defaultValue) {
+                loadStarted.countDown();
+                try {
+                    releaseLoad.await(10, TimeUnit.SECONDS);
+                } catch (InterruptedException ignored) {
+                }
+                return super.getString(key, defaultValue);
+            }
+        };
+        slow.values.put("session_id", "stored-id");
+        slow.values.put("session_hash", "stored-hash");
+        final GleapSessionController slowController = new GleapSessionController(slow);
+
+        Thread loader = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                slowController.getUserSession();
+            }
+        });
+        loader.start();
+        try {
+            assertTrue(loadStarted.await(5, TimeUnit.SECONDS));
+
+            final CountDownLatch queued = new CountDownLatch(1);
+            final GleapSessionProperties identify = new GleapSessionProperties();
+            identify.setUserId("user-1");
+            Thread caller = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    slowController.setPendingIdentificationAction(identify);
+                    slowController.getPendingIdentificationAction();
+                    slowController.isIdentifyInFlight();
+                    queued.countDown();
+                }
+            });
+            caller.start();
+
+            assertTrue("queueing an identify waited for the load", queued.await(2, TimeUnit.SECONDS));
+            assertEquals(identify, slowController.getPendingIdentificationAction());
+        } finally {
+            releaseLoad.countDown();
+            loader.join(5000);
+        }
+        assertEquals("stored-id", slowController.getUserSession().getId());
     }
 }
