@@ -3,6 +3,7 @@ package io.gleap;
 import static io.gleap.GleapHelper.convertDpToPixel;
 
 import android.app.Activity;
+import android.graphics.Color;
 import android.net.http.SslError;
 import android.view.Gravity;
 import android.view.View;
@@ -37,6 +38,26 @@ class GleapBanner {
 
     private void generateComponent() {
         this.layout = getBannerComponent();
+    }
+
+    /**
+     * Floating banners float above the app; inline ones take the top of the screen.
+     */
+    public boolean isFloating() {
+        return bannerData != null && "floating".equalsIgnoreCase(bannerData.optString("format"));
+    }
+
+    /**
+     * The banner color set in the dashboard, or null.
+     */
+    public Integer getBannerColor() {
+        try {
+            String color = bannerData.getJSONObject("config").optString("bannerColor", "");
+            if (color.length() > 0) {
+                return Color.parseColor(color);
+            }
+        } catch (Exception ignore) {}
+        return null;
     }
 
     public LinearLayout getComponent() {
@@ -93,16 +114,7 @@ class GleapBanner {
                     webView.setWebViewClient(new GleapBanner.GleapWebViewClient());
                     webView.loadUrl(bannerUrl);
 
-                    boolean isFloating = false;
-                    try {
-                        if (bannerData.getString("format").equalsIgnoreCase("floating")) {
-                            isFloating = true;
-                        }
-                    } catch (JSONException e) {
-                        throw new RuntimeException(e);
-                    }
-
-                    if (isFloating) {
+                    if (isFloating()) {
                         CardView cardView = new CardView(parentActivity);
                         cardView.setBackgroundResource(R.drawable.rounded_corner);
                         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -240,6 +252,7 @@ class GleapBanner {
 
         private void showWebView() {
             GleapOverlayManager.animateViewInOut(getComponent(), true);
+            GleapOverlayManager.getInstance().reportShownBannerHeight();
         }
 
         private void sendBannerData() {

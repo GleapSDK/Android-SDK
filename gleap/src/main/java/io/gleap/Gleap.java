@@ -29,6 +29,7 @@ import io.gleap.callbacks.GetActivityCallback;
 import io.gleap.callbacks.GetBitmapCallback;
 import io.gleap.callbacks.InitializationDoneCallback;
 import io.gleap.callbacks.InitializedCallback;
+import io.gleap.callbacks.BannerHeightChangedCallback;
 import io.gleap.callbacks.NotificationUnreadCountUpdatedCallback;
 import io.gleap.callbacks.OutboundSentCallback;
 import io.gleap.callbacks.RegisterPushMessageGroupCallback;
@@ -752,6 +753,11 @@ public class Gleap implements iGleap {
         GleapErrors.guard("setNotificationUnreadCountUpdatedCallback", () -> GleapCallbacks.getInstance().setNotificationUnreadCountUpdatedCallback(notificationUnreadCountUpdatedCallback));
     }
 
+    @Override
+    public void setBannerHeightChangedCallback(BannerHeightChangedCallback bannerHeightChangedCallback) {
+        GleapErrors.guard("setBannerHeightChangedCallback", () -> GleapCallbacks.getInstance().setBannerHeightChangedCallback(bannerHeightChangedCallback));
+    }
+
     /**
      * Attach one key value pair to existing custom data.
      *
@@ -1283,6 +1289,11 @@ public class Gleap implements iGleap {
     @Override
     public boolean isOpened() {
         return GleapDetectorUtil.isWidgetOpen();
+    }
+
+    @Override
+    public int getBannerHeight() {
+        return GleapOverlayManager.getInstance().getBannerHeight();
     }
 
     /**
