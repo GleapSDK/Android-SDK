@@ -102,6 +102,19 @@ Until `setColorScheme` is called, the dashboard's color scheme applies. `auto` f
 
 `setColorScheme` only takes effect when "Adapt to dark / light mode" is enabled in the dashboard. While it is disabled, the widget always keeps the dashboard colors, whatever scheme the app sets.
 
+## Inline banners
+
+Inline banners (the banner style set in the Gleap dashboard) are shown at the top of the screen; in edge-to-edge apps they cover the status bar. To keep your content below them, listen for the banner height and pad your content by it (dp from the top of the content view, status bar included; 0 when no inline banner is shown, floating banners stay at 0). `Gleap.getInstance().getBannerHeight()` returns the current value.
+
+```java
+Gleap.getInstance().setBannerHeightChangedCallback(height -> {
+    int px = Math.round(height * getResources().getDisplayMetrics().density);
+    contentView.setPadding(0, px, 0, 0);
+});
+```
+
+Without it nothing changes: banners overlay the app as before.
+
 ## Authenticated conversation files
 
 When "Authenticated conversation files" is enabled for your project, conversation files can only be opened by the identified user. Identify the user with their user hash (identity verification) as usual:
