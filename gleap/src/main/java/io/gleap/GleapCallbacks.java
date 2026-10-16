@@ -15,6 +15,7 @@ import io.gleap.callbacks.GetActivityCallback;
 import io.gleap.callbacks.GetBitmapCallback;
 import io.gleap.callbacks.InitializationDoneCallback;
 import io.gleap.callbacks.InitializedCallback;
+import io.gleap.callbacks.BannerHeightChangedCallback;
 import io.gleap.callbacks.NotificationUnreadCountUpdatedCallback;
 import io.gleap.callbacks.OutboundSentCallback;
 import io.gleap.callbacks.RegisterPushMessageGroupCallback;
@@ -52,6 +53,7 @@ class GleapCallbacks {
     private WidgetClosedCallback widgetClosedCallback;
     private AiToolExecutedCallback aiToolExecutedCallback;
     private NotificationUnreadCountUpdatedCallback notificationUnreadCountUpdatedCallback;
+    private BannerHeightChangedCallback bannerHeightChangedCallback;
     private RegisterPushMessageGroupCallback registerPushMessageGroupCallback;
     private UnRegisterPushMessageGroupCallback unRegisterPushMessageGroupCallback;
     private GetActivityCallback getActivityCallback;
@@ -275,6 +277,14 @@ class GleapCallbacks {
 
     public void setNotificationUnreadCountUpdatedCallback(NotificationUnreadCountUpdatedCallback notificationUnreadCountUpdatedCallback) {
         this.notificationUnreadCountUpdatedCallback = notificationUnreadCountUpdatedCallback;
+    }
+
+    public BannerHeightChangedCallback getBannerHeightChangedCallback() {
+        return bannerHeightChangedCallback;
+    }
+
+    public void setBannerHeightChangedCallback(BannerHeightChangedCallback bannerHeightChangedCallback) {
+        this.bannerHeightChangedCallback = bannerHeightChangedCallback;
     }
 
     public RegisterPushMessageGroupCallback getRegisterPushMessageGroupCallback() {

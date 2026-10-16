@@ -21,6 +21,7 @@ import io.gleap.callbacks.FeedbackWillBeSentCallback;
 import io.gleap.callbacks.GetBitmapCallback;
 import io.gleap.callbacks.InitializationDoneCallback;
 import io.gleap.callbacks.InitializedCallback;
+import io.gleap.callbacks.BannerHeightChangedCallback;
 import io.gleap.callbacks.NotificationUnreadCountUpdatedCallback;
 import io.gleap.callbacks.OutboundSentCallback;
 import io.gleap.callbacks.RegisterPushMessageGroupCallback;
@@ -554,6 +555,15 @@ interface iGleap {
     void setNotificationUnreadCountUpdatedCallback(NotificationUnreadCountUpdatedCallback notificationUnreadCountUpdatedCallback);
 
     /**
+     * Called when the space an inline banner takes at the top of the screen changes: with its
+     * height in dp when it is shown or resized and with 0 when it closes. Floating banners report
+     * 0. Move your content down by this height to keep it uncovered.
+     *
+     * @param bannerHeightChangedCallback
+     */
+    void setBannerHeightChangedCallback(BannerHeightChangedCallback bannerHeightChangedCallback);
+
+    /**
      * Called right before a ticket (from the widget or a silent crash report) is sent, with its
      * form data as JSON text.
      *
@@ -729,6 +739,13 @@ interface iGleap {
      * @author Gleap
      */
     boolean isOpened();
+
+    /**
+     * The space the shown inline banner takes at the top of the screen, in dp (0 when none is
+     * shown). The same value the BannerHeightChangedCallback reports, for code that starts
+     * listening later.
+     */
+    int getBannerHeight();
 
 
     /**

@@ -39,6 +39,8 @@ class GleapOverlayManager {
     final GleapNotificationStack notifications = new GleapNotificationStack(this);
     private GleapBanner banner;
     private JSONObject bannerData;
+    // Last banner height (dp) the app was told about, so it only hears changes.
+    private int lastReportedBannerHeight = 0;
     int messageCounter = 0;
     boolean showFab = false;
     private GleapModal modal;
@@ -126,7 +128,70 @@ class GleapOverlayManager {
 
         if (clearData) {
             this.bannerData = null;
+            // Closed or replaced. A rebuild for another activity keeps the height: the banner
+            // comes back there.
+            reportBannerHeight(0);
         }
+    }
+
+    int getBannerHeight() {
+        return lastReportedBannerHeight;
+    }
+
+    private void reportBannerHeight(int height) {
+        if (height == lastReportedBannerHeight) {
+            return;
+        }
+        lastReportedBannerHeight = height;
+
+        try {
+            if (GleapCallbacks.getInstance().getBannerHeightChangedCallback() != null) {
+                GleapCallbacks.getInstance().getBannerHeightChangedCallback().invoke(height);
+            }
+        } catch (Exception ignore) {}
+    }
+
+    /**
+     * Tells the app how much of the top of the screen the shown banner covers: an inline
+     * banner's height, 0 for a floating one.
+     */
+    void reportShownBannerHeight() {
+        if (this.banner == null) {
+            return;
+        }
+
+        if (this.banner.isFloating()) {
+            reportBannerHeight(0);
+            return;
+        }
+
+        LinearLayout bannerLayout = this.banner.getComponent();
+        if (bannerLayout == null || bannerLayout.getVisibility() != View.VISIBLE || bannerLayout.getHeight() <= 0) {
+            return;
+        }
+
+        float density = bannerLayout.getResources().getDisplayMetrics().density;
+        reportBannerHeight(Math.round(bannerLayout.getHeight() / density));
+    }
+
+    /**
+     * In edge-to-edge apps the inline banner reaches up under the status bar in its own color,
+     * like on iOS, so the app's content can start right below it.
+     */
+    private void applyBannerTopInset() {
+        if (this.banner == null || this.banner.isFloating() || this.layout == null) {
+            return;
+        }
+
+        LinearLayout bannerLayout = this.banner.getComponent();
+        if (bannerLayout == null) {
+            return;
+        }
+
+        int topInset = this.layout.getPaddingTop();
+        this.layout.setClipToPadding(false);
+        bannerLayout.setPadding(0, topInset, 0, 0);
+        bannerLayout.setTranslationY(-topInset);
     }
 
     public void destroyModal(boolean clearData, boolean ignoreButton) {
@@ -192,6 +257,24 @@ class GleapOverlayManager {
 
                 // Add banner view.
                 layout.addView(bannerLayout);
+
+                if (!this.banner.isFloating()) {
+                    Integer bannerColor = this.banner.getBannerColor();
+                    if (bannerColor != null) {
+                        bannerLayout.setBackgroundColor(bannerColor);
+                    }
+                    applyBannerTopInset();
+                }
+
+                // Resizes (the banner page's height, the status bar) reach the app too.
+                bannerLayout.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
+                    @Override
+                    public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
+                        if (banner != null && banner.getComponent() == v) {
+                            reportShownBannerHeight();
+                        }
+                    }
+                });
             }
         }
     }
@@ -367,6 +450,7 @@ class GleapOverlayManager {
                         int topPadding = insets.getSystemWindowInsetTop();
                         int bottomPadding = insets.getSystemWindowInsetBottom();
                         v.setPadding(0, topPadding, 0, bottomPadding);
+                        applyBannerTopInset();
                         return insets.consumeSystemWindowInsets();
                     }
                 });
