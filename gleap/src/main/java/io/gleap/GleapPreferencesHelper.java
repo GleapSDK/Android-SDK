@@ -93,18 +93,29 @@ class GleapPreferencesHelper implements KeyValueStore {
     };
 
     private final SharedPreferences prefs;
-    // null: no usable key, values are stored as plain text.
-    private final ValueCipher cipher;
+    // Loaded on first use: the key lookup is a keystore call, which must not run when the SDK
+    // is initialized on the main thread. Null once resolved: no usable key, values are plain text.
+    private ValueCipher cipher;
+    private boolean cipherResolved;
 
     private static GleapPreferencesHelper instance;
 
     private GleapPreferencesHelper(Context context) {
-        this(context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE), keystoreCipher());
+        this.prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
     }
 
     GleapPreferencesHelper(SharedPreferences prefs, ValueCipher cipher) {
         this.prefs = prefs;
         this.cipher = cipher;
+        this.cipherResolved = true;
+    }
+
+    private synchronized ValueCipher cipher() {
+        if (!cipherResolved) {
+            cipher = keystoreCipher();
+            cipherResolved = true;
+        }
+        return cipher;
     }
 
     static synchronized GleapPreferencesHelper getInstance(Context context) {
@@ -120,6 +131,7 @@ class GleapPreferencesHelper implements KeyValueStore {
             prefs.edit().remove(key).apply();
             return;
         }
+        ValueCipher cipher = cipher();
         if (cipher != null) {
             try {
                 prefs.edit().putString(key, cipher.encrypt(value)).apply();
@@ -137,6 +149,7 @@ class GleapPreferencesHelper implements KeyValueStore {
         if (stored == null) {
             return defaultValue;
         }
+        ValueCipher cipher = cipher();
         if (cipher != null) {
             try {
                 return cipher.decrypt(stored);
