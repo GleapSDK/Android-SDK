@@ -106,6 +106,9 @@ final class GleapWidgetBridge {
                         case "close-widget":
                             activity.closeMainGleapActivity();
                             break;
+                        case "adopt-session":
+                            adoptSession(gleapCallback.optJSONObject("data"));
+                            break;
                         case "screenshot-updated":
                             updateScreenshot(gleapCallback);
                             break;
@@ -411,6 +414,22 @@ final class GleapWidgetBridge {
         } catch (Exception err) {
             GleapLog.w("Could not send the prefill data", err);
         }
+    }
+
+    /**
+     * adopt-session: the widget verified the guest as another contact and hands that contact's
+     * session over; the open widget gets it as the next session-update.
+     */
+    private static void adoptSession(JSONObject data) {
+        if (data == null) {
+            return;
+        }
+        String gleapId = data.optString("gleapId", "");
+        String gleapHash = data.optString("gleapHash", "");
+        if (gleapId.isEmpty() || gleapHash.isEmpty()) {
+            return;
+        }
+        new GleapAdoptSessionService(gleapId, gleapHash).execute();
     }
 
     static void sendSessionUpdate(GleapMainActivity activity) {

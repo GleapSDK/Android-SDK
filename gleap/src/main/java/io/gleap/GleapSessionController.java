@@ -123,6 +123,21 @@ public class GleapSessionController {
     }
 
     /**
+     * @return true when the app identified its own user (an identify sent or on its way, or a
+     * session that belongs to a user id); the widget never swaps such a session
+     */
+    boolean hasIdentifiedUser() {
+        synchronized (this) {
+            return hasUserId(lastIdentify) || hasUserId(pendingIdentificationAction)
+                    || hasUserId(gleapSessionProperties);
+        }
+    }
+
+    private static boolean hasUserId(GleapSessionProperties properties) {
+        return properties != null && properties.getUserId() != null && !properties.getUserId().isEmpty();
+    }
+
+    /**
      * @return true when the last identify has a user hash, i.e. can get a file session
      */
     boolean hasIdentifyHash() {

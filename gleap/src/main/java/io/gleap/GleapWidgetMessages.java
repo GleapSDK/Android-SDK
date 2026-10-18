@@ -93,6 +93,10 @@ final class GleapWidgetMessages {
             data.put("realtimeHost", realtimeHost);
         }
         data.put("sdkKey", GleapConfig.getInstance().getSdkKey());
+        // Lets the widget hand a verified contact's session over (adopt-session).
+        JSONObject capabilities = new JSONObject();
+        capabilities.put("adoptSession", true);
+        data.put("capabilities", capabilities);
         return data;
     }
 
