@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Rect;
+import android.graphics.RectF;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
@@ -34,7 +35,9 @@ class ScreenshotUtil {
      * Takes a screenshot of the current activity (or asks the app's GetBitmapCallback for one).
      * Once the session is loaded the callback always runs exactly once: with the screenshot, or
      * with null when none could be taken. Without a loaded session it does not run and the
-     * activation methods are resumed.
+     * activation methods are resumed. The views masked with {@link Gleap#maskView} and sensitive
+     * fields (passwords, card numbers, one-time codes) are painted black, as in the captures of
+     * capture requests; a screenshot whose masks cannot be worked out is not delivered (null).
      */
     public static void takeScreenshot(GetImageCallback getImageCallback) {
         GleapSessionController sessionController = GleapSessionController.getInstance();
@@ -49,7 +52,8 @@ class ScreenshotUtil {
             if (GleapCallbacks.getInstance().getGetBitmapCallback() != null) {
                 bitmap = GleapCallbacks.getInstance().getGetBitmapCallback().getBitmap();
                 if(bitmap != null) {
-                    callback.getImage(getResizedBitmap(bitmap));
+                    // The app's picture of the activity: the masks of its window go on top.
+                    callback.getImage(masked(getResizedBitmap(bitmap), currentRootView(), null));
                 } else {
                     takeNativeScreenshot(callback);
                 }
@@ -92,7 +96,8 @@ class ScreenshotUtil {
                     view.getHeight(), Bitmap.Config.ARGB_8888);
             Canvas canvas = new Canvas(bitmap);
             view.draw(canvas);
-            getImageCallback.getImage(getResizedBitmap(bitmap));
+            bitmap = masked(bitmap, view, null);
+            getImageCallback.getImage(bitmap != null ? getResizedBitmap(bitmap) : null);
         } else {
             bitmap = generateBitmap(ActivityUtil.getCurrentActivity());
             getImageCallback.getImage(bitmap != null ? getResizedBitmap(bitmap) : null);
@@ -121,6 +126,7 @@ class ScreenshotUtil {
                 Canvas canvas = new Canvas(bitmap);
                 canvas.translate(rootData.getFrame().left, rootData.getFrame().top);
                 rootData.getView().draw(canvas);
+                GleapWindowCapture.drawMasks(canvas, GleapWindowCapture.windowMasks(rootData.getView(), 1f, 1f));
             }
             return bitmap;
         } catch (Exception e) {
@@ -283,12 +289,15 @@ class ScreenshotUtil {
             @Override
             public void run() {
                 try {
+                    // Where the masked views are when the copy starts; where they are when it
+                    // finishes is added then (the view can scroll meanwhile).
+                    final List<RectF> masksAtRequest = GleapWindowCapture.windowMasks(view, 1f, 1f);
                     PixelCopy.request(window,
                             new Rect(location[0], location[1], location[0] + view.getWidth(), location[1] + view.getHeight()),
                             bitmap, new PixelCopy.OnPixelCopyFinishedListener() {
                                 @Override
                                 public void onPixelCopyFinished(int copyResult) {
-                                    imageTaken.invoke(copyResult == PixelCopy.SUCCESS ? bitmap : null);
+                                    imageTaken.invoke(copyResult == PixelCopy.SUCCESS ? masked(bitmap, view, masksAtRequest) : null);
                                 }
                             },
                             new Handler(Looper.getMainLooper())
@@ -299,6 +308,45 @@ class ScreenshotUtil {
                 }
             }
         });
+    }
+
+    private static View currentRootView() {
+        Activity activity = ActivityUtil.getCurrentActivity();
+        if (activity == null || activity.getWindow() == null) {
+            return null;
+        }
+        return activity.getWindow().getDecorView().getRootView();
+    }
+
+    /**
+     * The picture of the window of {@code root} (scaled to it) with the window's masks and
+     * {@code earlierMasks} painted black, on a mutable copy when the picture is immutable. Null
+     * without a picture, or when the masks cannot be worked out: no unmasked screenshot leaves
+     * the device. Main thread.
+     */
+    private static Bitmap masked(Bitmap bitmap, View root, List<RectF> earlierMasks) {
+        if (bitmap == null) {
+            return null;
+        }
+        try {
+            if (root == null || root.getWidth() <= 0 || root.getHeight() <= 0) {
+                throw new IllegalStateException("No window to find the masks in");
+            }
+            List<RectF> masks = GleapWindowCapture.windowMasks(root,
+                    bitmap.getWidth() / (float) root.getWidth(), bitmap.getHeight() / (float) root.getHeight());
+            if (earlierMasks != null) {
+                masks.addAll(earlierMasks);
+            }
+            if (masks.isEmpty()) {
+                return bitmap;
+            }
+            Bitmap target = bitmap.isMutable() ? bitmap : bitmap.copy(Bitmap.Config.ARGB_8888, true);
+            GleapWindowCapture.drawMasks(new Canvas(target), masks);
+            return target;
+        } catch (Throwable error) {
+            GleapLog.w("Could not mask a screenshot: it is left out", error);
+            return null;
+        }
     }
 
     public interface GetImageCallback {

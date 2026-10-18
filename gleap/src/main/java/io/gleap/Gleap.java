@@ -1261,6 +1261,13 @@ public class Gleap implements iGleap {
                 GleapConfig.getInstance().setPrioritizedActivationMethods(Arrays.asList(activationMethods));
                 GleapDetectorUtil.clearAllDetectors();
                 List<GleapDetector> detectorList = GleapDetectorUtil.initDetectors(application, activationMethods);
+                // The detectors cleared above include the app replays: they go on, as after the
+                // config loaded (an activation method is no reason to stop them).
+                if (GleapConfig.getInstance().getPlainConfig() != null && GleapConfig.getInstance().isEnableReplays()) {
+                    ReplaysDetector replaysDetector = new ReplaysDetector(application);
+                    replaysDetector.initialize();
+                    detectorList.add(replaysDetector);
+                }
                 GleapConfig.getInstance().setGestureDetectors(detectorList);
                 GleapDetectorUtil.resumeAllDetectors();
             }
