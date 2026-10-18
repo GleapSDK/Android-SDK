@@ -429,6 +429,50 @@ final class GleapWindowCapture {
         }
     }
 
+    /**
+     * The black boxes of a picture of one window alone (the screenshots of bug reports and the
+     * frames of app replays): its masked views ({@link Gleap#maskView}) and sensitive fields,
+     * padded, or all of it when the window has FLAG_SECURE. In the picture's pixels, which are
+     * the window's pixels times {@code scaleX} / {@code scaleY}. Main thread. Throws when the
+     * masks cannot be worked out: the picture must then not be used.
+     */
+    static List<RectF> windowMasks(View root, float scaleX, float scaleY) {
+        List<RectF> masks = new ArrayList<>();
+        WindowManager.LayoutParams params = windowParams(root);
+        if (params != null && (params.flags & WindowManager.LayoutParams.FLAG_SECURE) != 0) {
+            masks.add(new RectF(0, 0, root.getWidth() * scaleX, root.getHeight() * scaleY));
+            return masks;
+        }
+        List<SurfaceView> surfaces = new ArrayList<>();
+        List<View> sensitive = new ArrayList<>();
+        scan(root, GleapCapture.maskedViews(), surfaces, sensitive);
+        float padding = MASK_PADDING_DP * root.getResources().getDisplayMetrics().density;
+        Rect visible = new Rect();
+        for (View view : sensitive) {
+            // In the coordinates of the window's root view.
+            if (!view.getGlobalVisibleRect(visible)) {
+                continue;
+            }
+            masks.add(new RectF((visible.left - padding) * scaleX, (visible.top - padding) * scaleY,
+                    (visible.right + padding) * scaleX, (visible.bottom + padding) * scaleY));
+        }
+        return masks;
+    }
+
+    /**
+     * Paints the masks black on the canvas.
+     */
+    static void drawMasks(Canvas canvas, List<RectF> masks) {
+        if (masks == null || masks.isEmpty()) {
+            return;
+        }
+        Paint black = new Paint();
+        black.setColor(Color.BLACK);
+        for (RectF mask : masks) {
+            canvas.drawRect(mask, black);
+        }
+    }
+
     private static RectF scaled(float left, float top, float width, float height, float scale) {
         return new RectF(left * scale, top * scale, (left + width) * scale, (top + height) * scale);
     }
