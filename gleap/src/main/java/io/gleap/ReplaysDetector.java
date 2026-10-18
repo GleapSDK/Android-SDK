@@ -9,6 +9,7 @@ import android.os.Looper;
 class ReplaysDetector extends GleapDetector {
     private Replay replay;
     private Handler handler;
+    private volatile boolean active = false;
 
     /**
      * Abstract class for Detectors. All implemented detectors must extend
@@ -29,16 +30,21 @@ class ReplaysDetector extends GleapDetector {
 
     @Override
     public void resume() {
+        // One frame loop at a time: a resume while it already runs does not start a second one.
+        handler.removeCallbacks(runnableCode);
+        active = true;
         handler.post(runnableCode);
     }
 
     @Override
     public void pause() {
+        active = false;
         handler.removeCallbacks(runnableCode);
     }
 
     @Override
     public void unregister() {
+        active = false;
         handler.removeCallbacks(runnableCode);
     }
 
@@ -59,7 +65,13 @@ class ReplaysDetector extends GleapDetector {
                                     if (bitmap != null) {
                                         replay.addScreenshot(bitmap, screenName);
                                     }
-                                    handler.postDelayed(runnableCode, replay.getInterval());
+                                    // A frame still being taken when the detector was paused or
+                                    // replaced (setActivationMethods) arrives late: it must not
+                                    // restart the loop or run a second one beside the new one.
+                                    if (active) {
+                                        handler.removeCallbacks(runnableCode);
+                                        handler.postDelayed(runnableCode, replay.getInterval());
+                                    }
                                 }
                             });
                         }
