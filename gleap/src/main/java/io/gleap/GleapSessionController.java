@@ -11,6 +11,11 @@ public class GleapSessionController {
     private static volatile GleapSessionController instance;
     private GleapSessionProperties gleapSessionProperties;
     private volatile GleapSession gleapSession;
+    // The stored session and user are read on first use (see ensureStateLoaded).
+    private volatile boolean stateLoaded = false;
+    // Only guards the load. Not `this`: the load is slow, and the many methods that lock the
+    // controller (e.g. setPendingIdentificationAction) must not wait for it.
+    private final Object stateLoadLock = new Object();
     private GleapSessionProperties pendingIdentificationAction;
     private GleapSessionProperties pendingUpdateAction;
     private volatile boolean isSessionLoaded = false;
@@ -32,22 +37,45 @@ public class GleapSessionController {
 
     GleapSessionController(KeyValueStore store) {
         this.store = store;
+    }
 
-        // Load existing session.
-        String id = store.getString("session_id", "");
-        String hash = store.getString("session_hash", "");
-        if (!id.equals("") && !hash.equals("")) {
-            gleapSession = new GleapSession(id, hash);
+    /**
+     * Loads the stored session and user. Reading them decrypts every value with the keystore key
+     * (a binder call each), so the constructor, which runs on the app's main thread, leaves it
+     * to the first caller and {@link #initialize} warms it up on the SDK's own thread. Every method
+     * that writes the session or the user calls this first, so a load never overwrites a write.
+     * The load takes only {@code stateLoadLock}, never the controller's monitor, so it can be
+     * awaited while holding it.
+     */
+    private void ensureStateLoaded() {
+        if (stateLoaded) {
+            return;
         }
-
-        // Load existing session properties.
-        this.gleapSessionProperties = getStoredGleapUser();
+        synchronized (stateLoadLock) {
+            if (stateLoaded) {
+                return;
+            }
+            String id = store.getString("session_id", "");
+            String hash = store.getString("session_hash", "");
+            if (!id.equals("") && !hash.equals("")) {
+                gleapSession = new GleapSession(id, hash);
+            }
+            this.gleapSessionProperties = getStoredGleapUser();
+            stateLoaded = true;
+        }
     }
 
     public static GleapSessionController initialize(Application application) {
         synchronized (GleapSessionController.class) {
             if (instance == null) {
                 instance = new GleapSessionController(application);
+                final GleapSessionController controller = instance;
+                GleapExecutor.SERIAL.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        controller.ensureStateLoaded();
+                    }
+                });
             }
             return instance;
         }
@@ -151,6 +179,7 @@ public class GleapSessionController {
      * project requires a file session and the current session has no valid one.
      */
     boolean needsFileAccessIdentify(GleapSessionProperties identify) {
+        ensureStateLoaded();
         GleapSession session = gleapSession;
         return identify != null && identify.getHash() != null && !identify.getHash().isEmpty()
                 && session != null && session.isAuthenticatedFilesRequired()
@@ -204,6 +233,7 @@ public class GleapSessionController {
     }
 
     public void clearUserSession() {
+        ensureStateLoaded();
         synchronized (this) {
             identityGeneration.incrementAndGet();
             // Revoke the file session before the session that holds it is dropped.
@@ -259,6 +289,7 @@ public class GleapSessionController {
     }
 
     public void mergeUserSession(String id, String hash) {
+        ensureStateLoaded();
         if (gleapSession == null) {
             gleapSession = new GleapSession(id, hash);
         } else {
@@ -270,10 +301,12 @@ public class GleapSessionController {
     }
 
     public GleapSession getUserSession() {
+        ensureStateLoaded();
         return gleapSession;
     }
 
     public void setGleapUserSession(GleapSessionProperties gleapUser) {
+        ensureStateLoaded();
         this.gleapSessionProperties = gleapUser;
 
         if (gleapUser == null) {
@@ -410,6 +443,7 @@ public class GleapSessionController {
                 // registerPushMessageGroup(hash) below would no-op when the previous
                 // value happens to be cached here.
                 GleapSession session;
+                ensureStateLoaded();
                 synchronized (this) {
                     if (!isCurrentGeneration(generation)) {
                         GleapLog.i("Dropped a session answer from before the logout");
@@ -492,6 +526,7 @@ public class GleapSessionController {
     }
 
     public GleapSessionProperties getGleapUserSession() {
+        ensureStateLoaded();
         return gleapSessionProperties;
     }
 
