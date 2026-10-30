@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.ColorFilter;
@@ -96,6 +97,9 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
     private Insets imeInsets = Insets.NONE;
     private boolean isImeVisible = false;
     private int lockedScrollY = 0;
+    // The system draws this window edge to edge and never resizes it for the keyboard: only the
+    // insets padding makes room for it (see usesKeyboardPaddingOnly).
+    private boolean keyboardPaddingOnly = false;
     // The widget answered its first ping, so it listens for config updates.
     private boolean widgetPinged = false;
     // Closed so the customer can capture the app: to the app the widget stays open (no
@@ -262,11 +266,12 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
     private void setUpWindow() {
         this.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        keyboardPaddingOnly = usesKeyboardPaddingOnly();
         try {
-            if (Build.VERSION.SDK_INT >= 36) {
-                // Android 16+: ADJUST_NOTHING so the system doesn't resize/pan the
-                // translucent activity when the keyboard opens – we handle IME insets
-                // ourselves via the WindowInsetsListener below.
+            if (keyboardPaddingOnly) {
+                // Edge to edge: ADJUST_NOTHING so the system doesn't pan the translucent
+                // activity on top of our padding when the keyboard opens – we handle IME
+                // insets ourselves via the WindowInsetsListener below.
                 getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
             } else {
                 getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
@@ -277,8 +282,8 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
         } catch (Exception ex) {
         }
 
-        if (Build.VERSION.SDK_INT >= 36) {
-            // Prevent Android 16's DecorView auto-scroll (ViewRootImpl.scrollToRectOrFocus)
+        if (keyboardPaddingOnly) {
+            // Prevent the DecorView auto-scroll (ViewRootImpl.scrollToRectOrFocus)
             // which pans the translucent activity upward when the keyboard opens,
             // exposing the host app underneath.
             final View decorView = getWindow().getDecorView();
@@ -291,7 +296,32 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
     }
 
     /**
-     * Pads the WebView container by the system bars and the keyboard; on Android 16+ also keeps
+     * Whether the system lays this window out edge to edge: Android 16+, and Android 15 when the
+     * app targets 35+ and did not opt out. It then never resizes the window for the keyboard,
+     * so ADJUST_RESIZE only pans the window on top of our padding (form pushed far too high).
+     */
+    private boolean usesKeyboardPaddingOnly() {
+        if (Build.VERSION.SDK_INT >= 36) {
+            return true;
+        }
+        if (Build.VERSION.SDK_INT < 35 || getApplicationInfo().targetSdkVersion < 35) {
+            return false;
+        }
+        try {
+            TypedArray attrs = getTheme().obtainStyledAttributes(
+                    new int[]{android.R.attr.windowOptOutEdgeToEdgeEnforcement});
+            try {
+                return !attrs.getBoolean(0, false);
+            } finally {
+                attrs.recycle();
+            }
+        } catch (Exception ignore) {
+            return true;
+        }
+    }
+
+    /**
+     * Pads the WebView container by the system bars and the keyboard; edge to edge it also keeps
      * the page from scrolling when the keyboard opens.
      */
     private void setUpInsets(FrameLayout webViewContainer) {
@@ -317,7 +347,7 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                     // The card survey's dim bands follow the padding.
                     view.invalidate();
 
-                    if (Build.VERSION.SDK_INT >= 36) {
+                    if (keyboardPaddingOnly) {
                         boolean nowImeVisible = ime.bottom > 0;
                         if (nowImeVisible && !isImeVisible) {
                             isImeVisible = true;
