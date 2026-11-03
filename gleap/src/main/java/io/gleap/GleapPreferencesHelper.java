@@ -114,6 +114,49 @@ class GleapPreferencesHelper implements KeyValueStore {
         return instance;
     }
 
+    /**
+     * The store, opened on first use instead of now: loading the keystore key and every encrypt
+     * or decrypt is a call into the Android Keystore, which can take seconds on a slow or busy
+     * device, so nothing of it may run on the thread that calls {@code Gleap.initialize}.
+     */
+    static KeyValueStore lazy(final Context context) {
+        return new KeyValueStore() {
+            private KeyValueStore store() {
+                return getInstance(context);
+            }
+
+            @Override
+            public void putString(String key, String value) {
+                store().putString(key, value);
+            }
+
+            @Override
+            public String getString(String key, String defaultValue) {
+                return store().getString(key, defaultValue);
+            }
+
+            @Override
+            public void putFloat(String key, float value) {
+                store().putFloat(key, value);
+            }
+
+            @Override
+            public float getFloat(String key, float defaultValue) {
+                return store().getFloat(key, defaultValue);
+            }
+
+            @Override
+            public void remove(String key) {
+                store().remove(key);
+            }
+
+            @Override
+            public void clear() {
+                store().clear();
+            }
+        };
+    }
+
     @Override
     public void putString(String key, String value) {
         if (value == null) {

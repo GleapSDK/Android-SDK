@@ -1458,7 +1458,12 @@ public class Gleap implements iGleap {
     @Override
     public boolean isUserIdentified() {
         try {
-            GleapSessionProperties gleapUser = GleapSessionController.getInstance().getStoredGleapUser();
+            // The user as loaded (no keystore reads on the caller's thread); until the stored
+            // state is loaded, the store is read as before.
+            GleapSessionProperties gleapUser = GleapSessionController.getInstance().getGleapUserSession();
+            if (gleapUser == null) {
+                gleapUser = GleapSessionController.getInstance().getStoredGleapUser();
+            }
             if (gleapUser != null && gleapUser.getUserId() != null && !gleapUser.getUserId().equals("")) {
                 return true;
             }

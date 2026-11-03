@@ -85,6 +85,69 @@ public class GleapSessionControllerTest {
     }
 
     @Test
+    public void theStoredStateIsReadOnlyByTheDeferredLoad() {
+        final List<String> reads = new ArrayList<>();
+        InMemoryKeyValueStore recording = new InMemoryKeyValueStore() {
+            @Override
+            public String getString(String key, String defaultValue) {
+                reads.add(key);
+                return super.getString(key, defaultValue);
+            }
+        };
+        recording.putString("session_id", "id-1");
+        recording.putString("session_hash", "hash-1");
+        recording.putString("userId", "user-1");
+        recording.putString("email", "ada@example.com");
+
+        // Created the way Gleap.initialize does: nothing is read on the caller's thread.
+        GleapSessionController deferred = new GleapSessionController(recording, false);
+        assertTrue(reads.isEmpty());
+        assertNull(deferred.getUserSession());
+        assertNull(deferred.getGleapUserSession());
+        assertFalse(deferred.hasIdentifiedUser());
+
+        deferred.loadStoredState();
+        assertFalse(reads.isEmpty());
+        assertEquals("id-1", deferred.getUserSession().getId());
+        assertEquals("hash-1", deferred.getUserSession().getHash());
+        assertEquals("user-1", deferred.getGleapUserSession().getUserId());
+        assertEquals("ada@example.com", deferred.getGleapUserSession().getEmail());
+        assertTrue(deferred.hasIdentifiedUser());
+    }
+
+    @Test
+    public void aLogoutDuringTheDeferredLoadWins() {
+        // The app logs out (clearIdentity) while the stored values are still being decrypted:
+        // the load must not bring the cleared session or user back.
+        final GleapSessionController[] holder = new GleapSessionController[1];
+        InMemoryKeyValueStore logoutWhileReading = new InMemoryKeyValueStore() {
+            private boolean loggedOut;
+
+            @Override
+            public String getString(String key, String defaultValue) {
+                String value = super.getString(key, defaultValue);
+                if (!loggedOut) {
+                    loggedOut = true;
+                    holder[0].clearUserSession();
+                }
+                return value;
+            }
+        };
+        logoutWhileReading.putString("session_id", "id-1");
+        logoutWhileReading.putString("session_hash", "hash-1");
+        logoutWhileReading.putString("userId", "user-1");
+        GleapSessionController deferred = new GleapSessionController(logoutWhileReading, false);
+        holder[0] = deferred;
+
+        deferred.loadStoredState();
+
+        assertNull(deferred.getUserSession());
+        assertNull(deferred.getGleapUserSession());
+        assertFalse(deferred.hasIdentifiedUser());
+        assertTrue(logoutWhileReading.values.isEmpty());
+    }
+
+    @Test
     public void aSessionResultIsKeptAndPersisted() throws Exception {
         controller.processSessionActionResult(session("id-1", "hash-1")
                 .put("userId", "user-1").put("name", "Ada").put("email", "ada@example.com"), false, false);

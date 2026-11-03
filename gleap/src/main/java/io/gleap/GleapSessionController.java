@@ -27,29 +27,68 @@ public class GleapSessionController {
     private final AtomicInteger identityGeneration = new AtomicInteger();
 
     private GleapSessionController(Application application) {
-        this(GleapPreferencesHelper.getInstance(application));
+        // The stored state is loaded on Gleap's request thread (see initialize), not here.
+        this(GleapPreferencesHelper.lazy(application), false);
     }
 
     GleapSessionController(KeyValueStore store) {
-        this.store = store;
-
-        // Load existing session.
-        String id = store.getString("session_id", "");
-        String hash = store.getString("session_hash", "");
-        if (!id.equals("") && !hash.equals("")) {
-            gleapSession = new GleapSession(id, hash);
-        }
-
-        // Load existing session properties.
-        this.gleapSessionProperties = getStoredGleapUser();
+        this(store, true);
     }
 
+    GleapSessionController(KeyValueStore store, boolean loadStoredStateNow) {
+        this.store = store;
+        if (loadStoredStateNow) {
+            loadStoredState();
+        }
+    }
+
+    /**
+     * Starts the controller. The stored session and user are read on Gleap's request thread,
+     * first in line: every value is decrypted through the Android Keystore, which is slow on
+     * low-end or busy devices and blocked the thread that called {@code Gleap.initialize} (an
+     * ANR when the app's startup waits for it). The session start, identify and the other
+     * requests are queued behind it on the same thread, so they see the stored state.
+     */
     public static GleapSessionController initialize(Application application) {
         synchronized (GleapSessionController.class) {
             if (instance == null) {
-                instance = new GleapSessionController(application);
+                final GleapSessionController controller = new GleapSessionController(application);
+                instance = controller;
+                GleapExecutor.SERIAL.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            controller.loadStoredState();
+                        } catch (Error | Exception error) {
+                            GleapErrors.report(error, "loadStoredState");
+                        }
+                    }
+                });
             }
             return instance;
+        }
+    }
+
+    /**
+     * Reads the session and the identified user of the previous app start from the store. The
+     * reads run outside the lock (they decrypt through the keystore); a logout meanwhile wins,
+     * so a cleared session is never brought back.
+     */
+    void loadStoredState() {
+        int generation = currentGeneration();
+
+        String id = store.getString("session_id", "");
+        String hash = store.getString("session_hash", "");
+        GleapSessionProperties storedUser = getStoredGleapUser();
+
+        synchronized (this) {
+            if (!isCurrentGeneration(generation)) {
+                return;
+            }
+            if (!id.equals("") && !hash.equals("")) {
+                gleapSession = new GleapSession(id, hash);
+            }
+            gleapSessionProperties = storedUser;
         }
     }
 
