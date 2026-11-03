@@ -1,5 +1,8 @@
 # Changelog
 
+## 19.3.2
+`Gleap.initialize` no longer blocks on the Android Keystore. The stored session and identified user were read in the constructor of the session controller, on the thread that called `Gleap.initialize`: the keystore key plus one decrypt per stored value, each a call into the Android Keystore, which can take seconds on low-end or busy devices and showed up as a startup ANR in apps whose startup waits for `Gleap.initialize`. The stored state is now loaded on Gleap's own request thread, first in line, so the session start, identify and every other request still see it; `Gleap.initialize` returns right away. A logout during that load wins (a cleared session is never brought back), and `isUserIdentified()` reads the loaded user instead of decrypting the store on the caller's thread. Calling `identifyUser`, `log` or `open*` right after `Gleap.initialize` stays safe: they queue until the session is ready.
+
 ## 19.3.1
 The widget can switch the user to another contact after the "Verify email" workflow step confirmed their email (`adopt-session`). The SDK first asks the server to confirm the handed-over session, adopts it only when the server answers with that session, and never replaces a user your app identified. The session update to the widget now announces this capability. No public API changes.
 
