@@ -115,6 +115,25 @@ Gleap.getInstance().setBannerHeightChangedCallback(height -> {
 
 Without it nothing changes: banners overlay the app as before.
 
+## Customer identity (JWT)
+
+Sign the user in with one HS256 JWT your backend signs with an identity key (Settings → Security → Customer identity). The token's `userId` names the user; everything else on the contact comes from the token. The SDK keeps it in memory only. See [Customer identity](https://docs.gleap.ai/documentation/guides/customer-identity).
+
+```java
+// After login and on every app start of a logged-in user
+Gleap.getInstance().setUserJwt(token);
+
+// Called when the token has expired or is about to; pass null when it failed
+Gleap.getInstance().setUserJwtProvider(callback ->
+    myBackend.fetchGleapToken(token -> callback.onToken(token))
+);
+
+// Optional: tokens API tools may use to call your backend as this user (a null value removes one)
+Map<String, String> tokens = new HashMap<>();
+tokens.put("backend", accessToken);
+Gleap.getInstance().setAuthTokens(tokens);
+```
+
 ## Authenticated conversation files
 
 When "Authenticated conversation files" is enabled for your project, conversation files can only be opened by the identified user. Identify the user with their user hash (identity verification) as usual:

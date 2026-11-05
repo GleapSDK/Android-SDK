@@ -256,11 +256,35 @@ public class GleapSessionController {
             pendingIdentificationAction = null;
             lastIdentify = null;
             forceNextIdentify = false;
+            // The identity token goes with lastIdentify and the session properties; the auth
+            // tokens go too. The JWT provider stays.
+            GleapAuthTokens.getInstance().clear();
             pendingUpdateAction = null;
             gleapSessionProperties = null;
             gleapSession = null;
             isSessionLoaded = false;
         }
+    }
+
+    /**
+     * Queues {@code identify} again, now with a token from the JWT provider (or the checked old
+     * one): only while nothing changed since {@code sentHash} was sent (no logout, no other
+     * identify of the app, none queued). With a fresh token it also becomes the last identify.
+     */
+    void resendIdentify(GleapSessionProperties identify, String sentHash, int generation, boolean forced,
+                        boolean tokenRenewed) {
+        synchronized (this) {
+            if (!isCurrentGeneration(generation) || pendingIdentificationAction != null
+                    || lastIdentify == null || !sameValue(lastIdentify.getHash(), sentHash)) {
+                return;
+            }
+            pendingIdentificationAction = identify;
+            if (tokenRenewed) {
+                lastIdentify = identify.withUserJwt(null);
+            }
+            forceNextIdentify = forceNextIdentify || forced;
+        }
+        executePendingUpdates();
     }
 
     /**
@@ -339,7 +363,8 @@ public class GleapSessionController {
         }
         store.putFloat("value", (float) gleapUser.getValue());
         store.putFloat("sla", (float) gleapUser.getSla());
-        if (gleapUser.getHash() != null && !gleapUser.getHash().equals("")) {
+        // An identity token (JWT) is kept in memory only.
+        if (gleapUser.getHash() != null && !gleapUser.getHash().equals("") && !GleapUserJwt.isUserJwt(gleapUser.getHash())) {
             store.putString("hash", gleapUser.getHash());
         }
         if (gleapUser.getCustomData() != null) {
@@ -424,6 +449,17 @@ public class GleapSessionController {
      */
     void processSessionActionResult(JSONObject result, boolean restartEventServices, boolean sendInitDelegate,
                                     int generation, boolean fromIdentify) {
+        processSessionActionResult(result, restartEventServices, sendInitDelegate, generation, fromIdentify, null);
+    }
+
+    /**
+     * {@link #processSessionActionResult(JSONObject, boolean, boolean, int, boolean)};
+     * {@code sentHash} is the user hash the identify carried. An identity token (JWT) the server
+     * accepted is kept with the session properties (in memory only), so the same token is not
+     * sent again while a new one is.
+     */
+    void processSessionActionResult(JSONObject result, boolean restartEventServices, boolean sendInitDelegate,
+                                    int generation, boolean fromIdentify, String sentHash) {
         if (result == null) {
             return;
         }
@@ -463,6 +499,7 @@ public class GleapSessionController {
                     // The file session before this answer.
                     String previousId = gleapSession != null ? gleapSession.getId() : null;
                     String previousUserId = this.gleapSessionProperties != null ? this.gleapSessionProperties.getUserId() : null;
+                    String previousUserJwt = this.gleapSessionProperties != null ? this.gleapSessionProperties.getHash() : null;
                     String previousToken = gleapSession != null ? gleapSession.getFileAccessToken() : null;
                     String previousExpiresAt = gleapSession != null ? gleapSession.getFileAccessExpiresAt() : null;
 
@@ -473,6 +510,12 @@ public class GleapSessionController {
                     // Update current session in session controller.
                     GleapSessionProperties gleapSessionProperties = GleapSessionProperties.fromJSONObject(result);
                     setGleapUserSession(gleapSessionProperties);
+                    // The accepted identity token, in memory only (set after it was stored).
+                    String userJwt = fromIdentify ? sentHash
+                            : (id.equals(previousId) && sameValue(gleapSessionProperties.getUserId(), previousUserId) ? previousUserJwt : null);
+                    if (GleapUserJwt.isUserJwt(userJwt)) {
+                        gleapSessionProperties.setHash(userJwt);
+                    }
 
                     // Only a verified identify answers with a file session. Other answers (session
                     // start, contact updates) keep the one we have, but never across an identity

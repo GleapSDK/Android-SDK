@@ -19,11 +19,24 @@ import java.util.concurrent.atomic.AtomicInteger;
  * cannot get through (offline, timeouts, rate limits, server errors) the session is kept and the
  * identify stays pending: it runs again with the next session load or when the network comes
  * back.
+ * <p>
+ * An identity token (JWT) refused with {@code token_expired} or {@code token_invalid} keeps the
+ * session and the user: an expired one is renewed through the JWT provider and the identify sent
+ * once more. A token that expires within 5 minutes is renewed before it is sent again.
  */
 public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
     private static final String URL_POSTFIX = "/sessions/identify";
     // Identifies running now; see GleapSessionController#isIdentifyInFlight.
     private static final AtomicInteger running = new AtomicInteger();
+
+    // Outcomes of the identify request.
+    static final int ACCEPTED = 0;
+    static final int REJECTED = 1;
+    static final int TOKEN_EXPIRED = 2;
+    static final int TOKEN_INVALID = 3;
+
+    // A signed identify landed: the auth tokens follow once this identify stopped running.
+    private boolean sendAuthTokens;
 
     /**
      * @return true while an identify runs (until its answer is applied)
@@ -35,11 +48,16 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
     @Override
     protected Integer doInBackground(Void... voids) {
         running.incrementAndGet();
+        Integer result;
         try {
-            return identify();
+            result = identify();
         } finally {
             running.decrementAndGet();
         }
+        if (sendAuthTokens) {
+            GleapAuthTokens.getInstance().sendIfNeeded();
+        }
+        return result;
     }
 
     private Integer identify() {
@@ -77,6 +95,11 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                 return 200;
             }
 
+            // An identity token about to expire is renewed through the JWT provider first.
+            if (!pendingAction.jwtFreshnessChecked && renewBeforeSend(controller, pendingAction, generation, forced)) {
+                return 200;
+            }
+
             // Get payload to send.
             JSONObject jsonObject = pendingAction.getJSONPayload();
             
@@ -91,15 +114,23 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
 
             final GleapSession session = gleapSession;
             final JSONObject payload = jsonObject;
-            final boolean[] rejected = {false};
+            final String sentHash = pendingAction.getHash();
+            final int[] outcome = {ACCEPTED};
             boolean answered = GleapRetry.withBackoff("Identify request", Exception.class, new GleapRetry.Attempt() {
                 @Override
                 public void run() throws Exception {
-                    rejected[0] = !performIdentifyRequest(session, payload, generation);
+                    outcome[0] = performIdentifyRequest(session, payload, generation, sentHash);
                 }
             });
 
-            if (answered && rejected[0]) {
+            if (answered && outcome[0] == ACCEPTED) {
+                sendAuthTokens = sentHash != null && !sentHash.isEmpty();
+            } else if (answered && outcome[0] == TOKEN_EXPIRED) {
+                renewExpiredToken(controller, pendingAction, generation, forced);
+            } else if (answered && outcome[0] == TOKEN_INVALID) {
+                // The session and the user stay (contract §3).
+                GleapLog.w("The identity token was refused (token_invalid): check the signing key and the userId claim.");
+            } else if (answered && outcome[0] == REJECTED) {
                 // The API rejected the identify (e.g. an invalid user hash): start over without
                 // the stored session and user.
                 controller.clearRejectedIdentity(generation);
@@ -113,22 +144,82 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
     }
 
     /**
-     * @return false when the API rejected the identify
+     * When the identify carries an identity token that expires within 5 minutes and a JWT
+     * provider is set: asks the provider and queues the identify again with the fresh token (or
+     * the old one when the provider failed).
+     *
+     * @return true when the identify waits for the provider
+     */
+    private static boolean renewBeforeSend(final GleapSessionController controller, final GleapSessionProperties identify,
+                                           final int generation, final boolean forced) {
+        final GleapUserJwtProviderGate gate = GleapUserJwtProviderGate.getInstance();
+        final String sentHash = identify.getHash();
+        if (!gate.hasProvider() || !GleapUserJwt.expiresWithin(sentHash, GleapUserJwt.REFRESH_WINDOW_MS, System.currentTimeMillis())) {
+            return false;
+        }
+        gate.requestToken(new GleapUserJwtProviderGate.TokenCallback() {
+            @Override
+            public void onResult(String token) {
+                GleapSessionProperties next = identify.withUserJwt(token);
+                next.jwtFreshnessChecked = true;
+                controller.resendIdentify(next, sentHash, generation, forced, token != null);
+            }
+        });
+        return true;
+    }
+
+    /**
+     * token_expired: asks the JWT provider once and sends the identify again with the new
+     * token. Without a provider (or after the one retry) only a warning; the session stays.
+     */
+    private static void renewExpiredToken(final GleapSessionController controller, final GleapSessionProperties identify,
+                                          final int generation, final boolean forced) {
+        final GleapUserJwtProviderGate gate = GleapUserJwtProviderGate.getInstance();
+        final String sentHash = identify.getHash();
+        if (!gate.hasProvider() || identify.jwtRetried) {
+            GleapLog.w("The identity token has expired. Pass a fresh one to Gleap.getInstance().setUserJwt, or set setUserJwtProvider.");
+            return;
+        }
+        gate.requestToken(new GleapUserJwtProviderGate.TokenCallback() {
+            @Override
+            public void onResult(String token) {
+                if (token == null) {
+                    return;
+                }
+                GleapSessionProperties next = identify.withUserJwt(token);
+                next.jwtRetried = true;
+                next.jwtFreshnessChecked = true;
+                controller.resendIdentify(next, sentHash, generation, forced, true);
+            }
+        });
+    }
+
+    /**
+     * @return {@link #ACCEPTED}, {@link #REJECTED} (the API rejected the identify), or
+     * {@link #TOKEN_EXPIRED} / {@link #TOKEN_INVALID} (an identity token refused with 401)
      * @throws Exception when the identify did not get through; it is retried
      */
-    private boolean performIdentifyRequest(GleapSession gleapSession, JSONObject jsonObject, int generation) throws Exception {
+    private int performIdentifyRequest(GleapSession gleapSession, JSONObject jsonObject, int generation, String sentHash) throws Exception {
         HttpURLConnection conn = GleapHttp.openSessionPost(URL_POSTFIX, gleapSession);
         GleapHttp.writeJson(conn, jsonObject);
 
         int status = conn.getResponseCode();
         if (status >= 200 && status < 300) {
             JSONObject result = GleapHttp.readLastJsonLine(conn.getInputStream());
-            GleapSessionController.getInstance().processSessionActionResult(result, true, false, generation, true);
-            return true;
+            GleapSessionController.getInstance().processSessionActionResult(result, true, false, generation, true, sentHash);
+            return ACCEPTED;
         }
 
-        if (isRejection(status, readErrorBody(conn))) {
-            return false;
+        String errorBody = readErrorBody(conn);
+        String refusal = GleapUserJwt.refusalCode(status, errorBody);
+        if ("token_expired".equals(refusal)) {
+            return TOKEN_EXPIRED;
+        }
+        if ("token_invalid".equals(refusal)) {
+            return TOKEN_INVALID;
+        }
+        if (isRejection(status, errorBody)) {
+            return REJECTED;
         }
         throw new IOException("Identify answered with HTTP " + status);
     }

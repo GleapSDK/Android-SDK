@@ -550,6 +550,64 @@ public class Gleap implements iGleap {
         }
     }
 
+    /**
+     * Identifies the user with an identity token (HS256 JWT signed by your backend). The token
+     * is the whole identify: its {@code userId} (or {@code user_id}) claim names the user, every
+     * other claim lands on the contact as signed data. Kept in memory only.
+     *
+     * @param token the identity token (JWT) from your backend
+     */
+    @Override
+    public void setUserJwt(String token) {
+        try {
+            String userId = GleapUserJwt.userIdOf(token);
+            if (userId == null) {
+                GleapLog.w("setUserJwt expects a JWT (three base64url parts, at most 4096 characters) whose payload has a userId (or user_id). Nothing was sent.");
+                return;
+            }
+            if (GleapSessionController.getInstance() != null) {
+                // The token is the whole identify: no contact fields are sent next to it.
+                GleapSessionProperties identify = new GleapSessionProperties(userId);
+                identify.setHash(token);
+                identify.jwtOnly = true;
+                GleapSessionController.getInstance().setPendingIdentificationAction(identify);
+                GleapSessionController.getInstance().executePendingUpdates();
+            }
+        } catch (Error | Exception exception) {
+            handleError(exception, "setUserJwt");
+        }
+    }
+
+    /**
+     * Sets the provider that fetches a fresh identity token when the current one expired or is
+     * about to. One call at a time, 10 s timeout, 30 s pause after a failure.
+     *
+     * @param provider fetches the token and passes it to {@code callback.onToken(token)}
+     */
+    @Override
+    public void setUserJwtProvider(GleapUserJwtProvider provider) {
+        try {
+            GleapUserJwtProviderGate.getInstance().setProvider(provider);
+        } catch (Error | Exception exception) {
+            handleError(exception, "setUserJwtProvider");
+        }
+    }
+
+    /**
+     * Stores per-user tokens for your API tools on the signed contact
+     * ({@code {{session.authTokens.<name>}}}). A null value removes a token. Kept in memory only.
+     *
+     * @param tokens the tokens by name
+     */
+    @Override
+    public void setAuthTokens(java.util.Map<String, String> tokens) {
+        try {
+            GleapAuthTokens.getInstance().set(tokens);
+        } catch (Error | Exception exception) {
+            handleError(exception, "setAuthTokens");
+        }
+    }
+
     @Override
     public void updateContact(GleapSessionProperties gleapSessionProperties) {
         try {
@@ -563,7 +621,7 @@ public class Gleap implements iGleap {
     }
 
     /**
-     * Clears a user session.
+     * Clears a user session, its identity token and auth tokens. The JWT provider stays set.
      *
      * @author Gleap
      */
