@@ -117,7 +117,9 @@ Without it nothing changes: banners overlay the app as before.
 
 ## Customer identity (JWT)
 
-Sign the user in with one HS256 JWT your backend signs with an identity key (Settings → Security → Customer identity). The token's `userId` names the user; everything else on the contact comes from the token. The SDK keeps it in memory only. See [Customer identity](https://docs.gleap.ai/documentation/guides/customer-identity).
+### Signed identity (recommended)
+
+Your backend signs an HS256 JWT with an identity key from Settings → Security → Identity keys (put the key id in the `kid` header; the secret never leaves your server). The `userId` claim is required. Optional claims: `email`, `name`, `company` (`{ id, name }`), `plan`, and provider ids such as `stripeCustomerId`. Set `exp` to at most one hour. Everything in the token lands on the contact as signed data the app cannot change. Pass the token to the SDK after login and on every app start of a logged-in user; `setUserJwt` keeps it in memory only. `setUserJwtProvider` fetches a fresh token when it expires, and `setAuthTokens` hands Kai your own API tokens for this user. See [Customer identity](https://docs.gleap.ai/documentation/guides/customer-identity).
 
 ```java
 // After login and on every app start of a logged-in user
@@ -134,14 +136,18 @@ tokens.put("backend", accessToken);
 Gleap.getInstance().setAuthTokens(tokens);
 ```
 
-## Authenticated conversation files
+### Legacy user hash
 
-When "Authenticated conversation files" is enabled for your project, conversation files can only be opened by the identified user. Identify the user with their user hash (identity verification) as usual:
+Instead of a token you can still identify with a user hash: the HMAC-SHA256 of the user id, created on your server with the project's identity verification secret. It is accepted while "Accept legacy user hash" stays on in the project's security settings.
 
-```
+```java
 GleapSessionProperties props = new GleapSessionProperties("user-id", "Name", "email@example.com", "USER_HASH");
 Gleap.getInstance().identifyUser("user-id", props);
 ```
+
+## Authenticated conversation files
+
+When "Authenticated conversation files" is enabled for your project, conversation files can only be opened by a user with a signed identity. Identify the user with `Gleap.getInstance().setUserJwt(token)` (or the legacy user hash) on every app start.
 
 The SDK then receives a short-lived file session (15 minutes), which it keeps in memory only (never on disk), passes to the widget and refreshes before it expires. `clearIdentity` revokes it.
 
