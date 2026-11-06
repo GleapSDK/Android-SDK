@@ -1,9 +1,14 @@
 package io.gleap;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * Identity tokens ({@link Gleap#setUserJwt(String)}): HS256 JWTs signed by the app's backend.
@@ -113,6 +118,82 @@ final class GleapUserJwt {
     }
 
     /**
+     * @return true for an identify refused because the project enforces identity verification and
+     * the identify had no valid signature (HTTP 401 whose body names {@code signature_required})
+     */
+    static boolean isSignatureRequired(int status, String body) {
+        return status == 401 && body != null && body.contains("signature_required");
+    }
+
+    /**
+     * What the token says, for "was this identify sent already": its {@code kid} and its claims
+     * without iat/exp/nbf/jti, as JSON with sorted keys. A token re-minted for the same user and
+     * data gives the same value; a changed claim or key does not.
+     *
+     * @return null when the token is not a JWT
+     */
+    static String identityFingerprint(String token) {
+        JSONObject payload = payloadOf(token);
+        if (payload == null) {
+            return null;
+        }
+        JSONObject header = segmentOf(token, 0);
+        StringBuilder out = new StringBuilder("{\"kid\":");
+        canonical(header != null ? header.opt("kid") : null, out);
+        out.append(",\"claims\":");
+        JSONObject claims = new JSONObject();
+        Iterator<String> keys = payload.keys();
+        while (keys.hasNext()) {
+            String key = keys.next();
+            if (!key.equals("iat") && !key.equals("exp") && !key.equals("nbf") && !key.equals("jti")) {
+                try {
+                    claims.put(key, payload.opt(key));
+                } catch (Exception ignored) {
+                }
+            }
+        }
+        canonical(claims, out);
+        return out.append('}').toString();
+    }
+
+    private static void canonical(Object value, StringBuilder out) {
+        if (value instanceof JSONObject) {
+            JSONObject object = (JSONObject) value;
+            List<String> keys = new ArrayList<>();
+            Iterator<String> it = object.keys();
+            while (it.hasNext()) {
+                keys.add(it.next());
+            }
+            Collections.sort(keys);
+            out.append('{');
+            for (int i = 0; i < keys.size(); i++) {
+                if (i > 0) {
+                    out.append(',');
+                }
+                out.append(JSONObject.quote(keys.get(i))).append(':');
+                canonical(object.opt(keys.get(i)), out);
+            }
+            out.append('}');
+        } else if (value instanceof JSONArray) {
+            JSONArray array = (JSONArray) value;
+            out.append('[');
+            for (int i = 0; i < array.length(); i++) {
+                if (i > 0) {
+                    out.append(',');
+                }
+                canonical(array.opt(i), out);
+            }
+            out.append(']');
+        } else if (value == null || value == JSONObject.NULL) {
+            out.append("null");
+        } else if (value instanceof String) {
+            out.append(JSONObject.quote((String) value));
+        } else {
+            out.append(String.valueOf(value));
+        }
+    }
+
+    /**
      * @return true for an identify refused because the session belongs to another user (HTTP
      * 400 whose body names {@code identity_mismatch})
      */
@@ -121,12 +202,16 @@ final class GleapUserJwt {
     }
 
     private static JSONObject payloadOf(String token) {
+        return segmentOf(token, 1);
+    }
+
+    /** The decoded JSON object of the token's header (0) or payload (1). */
+    private static JSONObject segmentOf(String token, int index) {
         if (!isUserJwt(token)) {
             return null;
         }
-        int start = token.indexOf('.') + 1;
-        int end = token.indexOf('.', start);
-        byte[] bytes = decodeBase64Url(token.substring(start, end));
+        String[] segments = token.split("\\.");
+        byte[] bytes = decodeBase64Url(segments[index]);
         if (bytes == null) {
             return null;
         }

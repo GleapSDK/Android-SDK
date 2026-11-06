@@ -30,6 +30,8 @@ public class GleapSessionController {
     // it expires. Sent as Gleap-Grant only with that session's id.
     private volatile String grant;
     private volatile String grantSessionId;
+    // True while the store holds a grant, so an answer without one removes nothing it never wrote.
+    private volatile boolean grantStored;
     private volatile long grantExpiresAtMs;
     // Bumped whenever the grant changes: only the latest scheduled renewal runs.
     private final AtomicInteger grantRenewal = new AtomicInteger();
@@ -93,6 +95,7 @@ public class GleapSessionController {
         String hash = store.getString("session_hash", "");
         String storedGrant = store.getString("grant", "");
         String storedGrantSessionId = store.getString("grant_session_id", "");
+        grantStored = !storedGrant.isEmpty();
         GleapSessionProperties storedUser = getStoredGleapUser();
 
         synchronized (this) {
@@ -265,6 +268,7 @@ public class GleapSessionController {
             // Revoke the file session before the session that holds it is dropped.
             GleapFileAccess.onLogout(gleapSession != null ? gleapSession.getFileAccessToken() : null);
             store.clear();
+            grantStored = false;
 
             if (gleapSession != null) {
                 unregisterPushMessageGroup(gleapSession.getHash());
@@ -310,6 +314,7 @@ public class GleapSessionController {
                 gleapSession.setFileAccess(null, null);
             }
             store.clear();
+            grantStored = false;
             setGrantInMemory(null, null);
             gleapSessionProperties = null;
             gleapSession = null;
@@ -385,11 +390,15 @@ public class GleapSessionController {
             setGrantInMemory(null, null);
         }
         if (grant == null) {
-            store.remove("grant");
-            store.remove("grant_session_id");
+            if (grantStored) {
+                store.remove("grant");
+                store.remove("grant_session_id");
+                grantStored = false;
+            }
         } else if (!grant.equals(before)) {
             store.putString("grant", grant);
             store.putString("grant_session_id", grantSessionId);
+            grantStored = true;
         }
         return !sameValue(before, grant);
     }

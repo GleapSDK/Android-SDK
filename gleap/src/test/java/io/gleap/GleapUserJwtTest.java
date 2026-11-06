@@ -75,15 +75,25 @@ public class GleapUserJwtTest {
     }
 
     @Test
-    public void aNewTokenMakesAnUnchangedIdentifyDifferent() {
-        String first = jwt("{\"userId\":\"user-1\",\"exp\":1}");
-        String second = jwt("{\"userId\":\"user-1\",\"exp\":2}");
+    public void signatureRequiredIsRecognised() {
+        assertTrue(GleapUserJwt.isSignatureRequired(401, "{\"details\":{\"value\":\"signature_required\"}}"));
+        assertFalse(GleapUserJwt.isSignatureRequired(401, "{\"details\":{\"value\":\"token_invalid\"}}"));
+        assertFalse(GleapUserJwt.isSignatureRequired(400, "signature_required"));
+    }
+
+    @Test
+    public void aTokenSayingSomethingNewMakesAnUnchangedIdentifyDifferent() {
+        String first = jwt("{\"userId\":\"user-1\",\"plan\":\"pro\",\"iat\":0,\"exp\":1}");
+        String reminted = jwt("{\"exp\":2,\"plan\":\"pro\",\"userId\":\"user-1\",\"iat\":1,\"jti\":\"n2\"}");
+        String changed = jwt("{\"userId\":\"user-1\",\"plan\":\"enterprise\",\"exp\":2}");
         GleapSessionProperties sent = new GleapSessionProperties("user-1", "Ada", null, first);
 
         GleapSessionProperties same = new GleapSessionProperties("user-1", "Ada", null, first);
-        GleapSessionProperties renewed = new GleapSessionProperties("user-1", "Ada", null, second);
+        GleapSessionProperties renewed = new GleapSessionProperties("user-1", "Ada", null, reminted);
+        GleapSessionProperties other = new GleapSessionProperties("user-1", "Ada", null, changed);
         assertTrue(sent.equals(same));
-        assertFalse(sent.equals(renewed));
+        assertTrue("a token re-minted with the same claims is the same identify", sent.equals(renewed));
+        assertFalse(sent.equals(other));
 
         // A legacy hash is still not compared.
         GleapSessionProperties legacy = new GleapSessionProperties("user-1", "Ada", null, "hash-a");

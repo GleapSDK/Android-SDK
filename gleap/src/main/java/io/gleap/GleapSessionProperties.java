@@ -324,10 +324,15 @@ public class GleapSessionProperties {
             return false;
         }
 
-        // An identity token (JWT) is part of the identify: a new token is sent again even when
-        // nothing else changed. (A legacy hash is not compared, as before.)
-        if (GleapUserJwt.isUserJwt(other.getHash()) && !other.getHash().equals(this.getHash())) {
-            return false;
+        // An identity token (JWT) is part of the identify: a token that says something new (another
+        // claim or key) is sent again even when nothing else changed. Compared by what it says, so
+        // a token re-minted per app start for the same user and data is not sent again. (A legacy
+        // hash is not compared, as before.)
+        if (GleapUserJwt.isUserJwt(other.getHash())) {
+            String otherFingerprint = GleapUserJwt.identityFingerprint(other.getHash());
+            if (otherFingerprint == null || !otherFingerprint.equals(GleapUserJwt.identityFingerprint(this.getHash()))) {
+                return false;
+            }
         }
 
         // setUserJwt sends no contact fields: the user id and the token are all there is.

@@ -236,6 +236,9 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
             return IDENTITY_MISMATCH;
         }
         if (isRejection(status, errorBody)) {
+            if (GleapUserJwt.isSignatureRequired(status, errorBody)) {
+                GleapLog.w("Gleap: this project enforces identity verification and the identify had no valid signature (signature_required). Pass a token from your backend to setUserJwt.");
+            }
             return REJECTED;
         }
         throw new IOException("Identify answered with HTTP " + status);

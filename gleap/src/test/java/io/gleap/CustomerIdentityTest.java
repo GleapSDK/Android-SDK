@@ -106,12 +106,18 @@ public class CustomerIdentityTest {
     @Test
     public void theSameTokenIsSentOnceAndANewTokenAgain() throws Exception {
         String first = token(inSeconds(3600));
-        String second = token(inSeconds(7200));
+        String reminted = token(inSeconds(7200));
+        String second = GleapUserJwtTest.jwt("{\"userId\":\"user-1\",\"name\":\"Ada Lovelace\",\"exp\":" + inSeconds(7200) + "}");
         sdk.server.respond("/sessions/identify", 200, IDENTIFY_ANSWER);
 
         Gleap.getInstance().setUserJwt(first);
         new GleapIdentifyService().doInBackground();
         Gleap.getInstance().setUserJwt(first);
+        new GleapIdentifyService().doInBackground();
+        assertEquals(1, sdk.server.requestsTo("/sessions/identify").size());
+
+        // Re-minted with the same claims (a new exp): not sent again.
+        Gleap.getInstance().setUserJwt(reminted);
         new GleapIdentifyService().doInBackground();
         assertEquals(1, sdk.server.requestsTo("/sessions/identify").size());
 
