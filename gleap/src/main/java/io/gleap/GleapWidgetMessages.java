@@ -41,7 +41,8 @@ final class GleapWidgetMessages {
 
     /**
      * session-update: the session the widget authenticates with (and its file session, when
-     * there is one), the identified user and the API and realtime hosts of the region.
+     * there is one, and its grant), the identified user and the API and realtime hosts of the
+     * region.
      */
     static JSONObject sessionUpdate() throws JSONException {
         GleapSession gleapSession = GleapSessionController.getInstance().getUserSession();
@@ -93,6 +94,9 @@ final class GleapWidgetMessages {
             data.put("realtimeHost", realtimeHost);
         }
         data.put("sdkKey", GleapConfig.getInstance().getSdkKey());
+        // The grant of a signed identify: the messenger sends it as Gleap-Grant on its requests.
+        String grant = GleapSessionController.getInstance().getGrant(gleapSession.getId());
+        data.put("grant", grant != null ? grant : JSONObject.NULL);
         // Lets the widget hand a verified contact's session over (adopt-session).
         JSONObject capabilities = new JSONObject();
         capabilities.put("adoptSession", true);

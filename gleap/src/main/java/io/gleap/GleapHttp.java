@@ -79,6 +79,7 @@ final class GleapHttp {
         if (session != null && session.getHash() != null && !session.getHash().isEmpty()) {
             conn.setRequestProperty("Gleap-Hash", session.getHash());
         }
+        addGrantHeader(conn, session);
         return conn;
     }
 
@@ -104,6 +105,22 @@ final class GleapHttp {
         if (session != null) {
             conn.setRequestProperty("gleap-id", session.getId());
             conn.setRequestProperty("gleap-hash", session.getHash());
+        }
+        addGrantHeader(conn, session);
+    }
+
+    /**
+     * Gleap-Grant: the grant a signed identify issued to this session, if any. A grant is never
+     * sent with another session's id.
+     */
+    static void addGrantHeader(HttpURLConnection conn, GleapSession session) {
+        GleapSessionController controller = GleapSessionController.getInstance();
+        if (session == null || controller == null) {
+            return;
+        }
+        String grant = controller.getGrant(session.getId());
+        if (grant != null) {
+            conn.setRequestProperty("Gleap-Grant", grant);
         }
     }
 

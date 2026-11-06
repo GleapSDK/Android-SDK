@@ -608,6 +608,20 @@ public class Gleap implements iGleap {
         }
     }
 
+    /**
+     * Caps how long a signed session lasts (milliseconds); 0 uses the project's maximum.
+     *
+     * @param milliseconds the session duration in milliseconds
+     */
+    @Override
+    public void setSessionDuration(long milliseconds) {
+        try {
+            GleapConfig.getInstance().setSessionDuration(milliseconds);
+        } catch (Error | Exception exception) {
+            handleError(exception, "setSessionDuration");
+        }
+    }
+
     @Override
     public void updateContact(GleapSessionProperties gleapSessionProperties) {
         try {

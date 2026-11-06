@@ -345,6 +345,16 @@ interface iGleap {
     void setAuthTokens(java.util.Map<String, String> tokens);
 
     /**
+     * Caps how long a signed session lasts: the grant a signed identify returns expires after
+     * this many milliseconds, or at the project's session maximum when that is shorter. Sent with
+     * every identify; set it before {@link #setUserJwt(String)}. Pass 0 to use the project's
+     * maximum.
+     *
+     * @param milliseconds the session duration in milliseconds
+     */
+    void setSessionDuration(long milliseconds);
+
+    /**
      * Clears a user session, its identity token and auth tokens. The JWT provider stays set.
      *
      * @author Gleap

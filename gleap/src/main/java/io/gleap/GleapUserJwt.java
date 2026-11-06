@@ -112,6 +112,14 @@ final class GleapUserJwt {
         return null;
     }
 
+    /**
+     * @return true for an identify refused because the session belongs to another user (HTTP
+     * 400 whose body names {@code identity_mismatch})
+     */
+    static boolean isIdentityMismatch(int status, String body) {
+        return status == 400 && body != null && body.contains("identity_mismatch");
+    }
+
     private static JSONObject payloadOf(String token) {
         if (!isUserJwt(token)) {
             return null;

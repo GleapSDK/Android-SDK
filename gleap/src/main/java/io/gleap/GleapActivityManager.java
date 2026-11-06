@@ -75,6 +75,10 @@ class GleapActivityManager {
 
                     // The file session's refresh timer does not run while the device sleeps.
                     GleapFileAccess.refreshIfExpiring();
+                    // Likewise the grant of a signed session.
+                    if (GleapSessionController.getInstance() != null) {
+                        GleapSessionController.getInstance().refreshGrantIfExpiring();
+                    }
 
                     // Process open push notification action.
                     GleapMainThread.postDelayed(new Runnable() {

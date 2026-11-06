@@ -25,6 +25,18 @@ public class GleapSessionController {
     // Counts the logouts (clearUserSession). A request started before a logout neither applies
     // its result nor acts on its failure: it must not bring the cleared session or user back.
     private final AtomicInteger identityGeneration = new AtomicInteger();
+    // The grant a signed identify returned (identity.grant), the session it was issued to and
+    // its expiry (ms, 0 = unknown). Kept in the store too, so an app restart stays signed until
+    // it expires. Sent as Gleap-Grant only with that session's id.
+    private volatile String grant;
+    private volatile String grantSessionId;
+    private volatile long grantExpiresAtMs;
+    // Bumped whenever the grant changes: only the latest scheduled renewal runs.
+    private final AtomicInteger grantRenewal = new AtomicInteger();
+    private long lastGrantRenewalMs;
+    // A grant is renewed (the last signed identify sent again) this long before it expires.
+    static final long GRANT_RENEW_MARGIN_MS = 5 * 60 * 1000;
+    private static final long GRANT_RENEW_MIN_INTERVAL_MS = 60 * 1000;
 
     private GleapSessionController(Application application) {
         // The stored state is loaded on Gleap's request thread (see initialize), not here.
@@ -79,6 +91,8 @@ public class GleapSessionController {
 
         String id = store.getString("session_id", "");
         String hash = store.getString("session_hash", "");
+        String storedGrant = store.getString("grant", "");
+        String storedGrantSessionId = store.getString("grant_session_id", "");
         GleapSessionProperties storedUser = getStoredGleapUser();
 
         synchronized (this) {
@@ -89,6 +103,9 @@ public class GleapSessionController {
                 gleapSession = new GleapSession(id, hash);
             }
             gleapSessionProperties = storedUser;
+            if (!storedGrant.isEmpty() && storedGrantSessionId.equals(id) && grant == null) {
+                setGrantInMemory(storedGrant, storedGrantSessionId);
+            }
         }
     }
 
@@ -263,7 +280,160 @@ public class GleapSessionController {
             gleapSessionProperties = null;
             gleapSession = null;
             isSessionLoaded = false;
+            // The grant goes with the session (store.clear removed the stored copy).
+            setGrantInMemory(null, null);
         }
+    }
+
+    /**
+     * The server answered identity_mismatch (the session belongs to another user): drops the
+     * local session, its grant and the stored user, starts a fresh visitor session and sends
+     * {@code identify} once more on it; the server merges that visitor into the token's
+     * contact. The identify, the JWT provider and the auth tokens stay. A second mismatch
+     * starts over as a guest. Nothing happens when the app logged out meanwhile.
+     */
+    void restartForIdentify(GleapSessionProperties identify, int generation) {
+        synchronized (this) {
+            if (!isCurrentGeneration(generation)) {
+                return;
+            }
+            if (identify.identityMismatchRetried) {
+                GleapLog.w("The identity was refused twice (identity_mismatch). Starting over as a guest.");
+                clearUserSession();
+                setSessionLoaded(true);
+                return;
+            }
+            identityGeneration.incrementAndGet();
+            GleapFileAccess.onLogout(gleapSession != null ? gleapSession.getFileAccessToken() : null);
+            if (gleapSession != null) {
+                unregisterPushMessageGroup(gleapSession.getHash());
+                gleapSession.setFileAccess(null, null);
+            }
+            store.clear();
+            setGrantInMemory(null, null);
+            gleapSessionProperties = null;
+            gleapSession = null;
+            isSessionLoaded = false;
+            pendingUpdateAction = null;
+            GleapSessionProperties retry = identify.withUserJwt(null);
+            retry.identityMismatchRetried = true;
+            retry.jwtRetried = identify.jwtRetried;
+            // A newer identify the app queued meanwhile is sent instead.
+            if (pendingIdentificationAction == null) {
+                pendingIdentificationAction = retry;
+            }
+            forceNextIdentify = true;
+        }
+        // The fresh session's answer sends the identify queued above.
+        GleapMainThread.post(new Runnable() {
+            @Override
+            public void run() {
+                new GleapBaseSessionService().executeOnExecutor(GleapExecutor.SERIAL);
+            }
+        });
+    }
+
+    /**
+     * @return the grant issued to {@code sessionId}, or null. An expired grant is still sent:
+     * the server may extend it once, otherwise it treats the request as unsigned.
+     */
+    String getGrant(String sessionId) {
+        String current = grant;
+        return current != null && sessionId != null && sessionId.equals(grantSessionId) ? current : null;
+    }
+
+    /**
+     * @return true when {@code sessionId} has a grant that expires within {@code marginMs}
+     */
+    boolean grantExpiresWithin(String sessionId, long marginMs) {
+        return getGrant(sessionId) != null && grantExpiresAtMs > 0
+                && grantExpiresAtMs - System.currentTimeMillis() < marginMs;
+    }
+
+    private void setGrantInMemory(String value, String sessionId) {
+        if (value == null || value.isEmpty() || sessionId == null || sessionId.isEmpty()) {
+            grant = null;
+            grantSessionId = null;
+            grantExpiresAtMs = 0;
+        } else {
+            Long exp = GleapUserJwt.expirationOf(value);
+            grant = value;
+            grantSessionId = sessionId;
+            grantExpiresAtMs = exp != null ? exp * 1000 : 0;
+        }
+        grantRenewal.incrementAndGet();
+    }
+
+    /**
+     * Takes the grant from a session answer for session {@code id}: {@code identity.grant} is
+     * stored, an {@code identity} without one drops it (an unsigned identify ends the signed
+     * session), an answer without {@code identity} keeps it while it is the same session.
+     *
+     * @return true when the grant changed
+     */
+    private boolean applyGrant(JSONObject result, String id) {
+        String before = grant;
+        JSONObject identity = result.optJSONObject("identity");
+        if (identity != null) {
+            Object value = identity.opt("grant");
+            if (value instanceof String && !((String) value).isEmpty()) {
+                setGrantInMemory((String) value, id);
+            } else {
+                setGrantInMemory(null, null);
+            }
+        } else if (grant != null && !id.equals(grantSessionId)) {
+            setGrantInMemory(null, null);
+        }
+        if (grant == null) {
+            store.remove("grant");
+            store.remove("grant_session_id");
+        } else if (!grant.equals(before)) {
+            store.putString("grant", grant);
+            store.putString("grant_session_id", grantSessionId);
+        }
+        return !sameValue(before, grant);
+    }
+
+    /**
+     * Schedules the grant's renewal (the last signed identify sent again) shortly before it
+     * expires.
+     */
+    private void scheduleGrantRenewal() {
+        final int schedule = grantRenewal.get();
+        if (grant == null || grantExpiresAtMs <= 0) {
+            return;
+        }
+        long delay = grantExpiresAtMs - GRANT_RENEW_MARGIN_MS - System.currentTimeMillis();
+        GleapMainThread.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (grantRenewal.get() == schedule) {
+                    refreshGrantIfExpiring();
+                }
+            }
+        }, Math.max(0, delay));
+    }
+
+    /**
+     * Sends the last signed identify again (through the JWT provider when its token is about to
+     * expire) when the current session's grant has expired or expires within 5 minutes; at most
+     * once a minute. Also run when the app comes to the foreground: timers do not run while the
+     * device sleeps.
+     */
+    void refreshGrantIfExpiring() {
+        GleapSession session = gleapSession;
+        if (session == null || !grantExpiresWithin(session.getId(), GRANT_RENEW_MARGIN_MS)) {
+            return;
+        }
+        synchronized (this) {
+            long now = System.currentTimeMillis();
+            if (now - lastGrantRenewalMs < GRANT_RENEW_MIN_INTERVAL_MS) {
+                return;
+            }
+            lastGrantRenewalMs = now;
+        }
+        // The same forced resend of the last signed identify that refreshes the file session.
+        refreshFileAccess();
     }
 
     /**
@@ -531,6 +701,10 @@ public class GleapSessionController {
                     gleapSession.setFileAccess(token, expiresAt);
                     gleapSession.setAuthenticatedFilesRequired(result.optBoolean("authenticatedFilesRequired", false));
                     session = gleapSession;
+
+                    // The grant of a signed identify.
+                    applyGrant(result, id);
+                    scheduleGrantRenewal();
                 }
 
                 GleapFileAccess.onSessionAnswer(this, session, fromIdentify);

@@ -23,6 +23,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  * An identity token (JWT) refused with {@code token_expired} or {@code token_invalid} keeps the
  * session and the user: an expired one is renewed through the JWT provider and the identify sent
  * once more. A token that expires within 5 minutes is renewed before it is sent again.
+ * <p>
+ * {@code identity_mismatch} (the session belongs to another user) drops the local session and
+ * sends the identify once more on a fresh visitor session. A signed identify's answer carries the
+ * grant ({@code identity.grant}), which {@link GleapSessionController} keeps.
  */
 public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
     private static final String URL_POSTFIX = "/sessions/identify";
@@ -34,6 +38,7 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
     static final int REJECTED = 1;
     static final int TOKEN_EXPIRED = 2;
     static final int TOKEN_INVALID = 3;
+    static final int IDENTITY_MISMATCH = 4;
 
     // A signed identify landed: the auth tokens follow once this identify stopped running.
     private boolean sendAuthTokens;
@@ -106,6 +111,11 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
             // Add platform and deviceType
             jsonObject.put("platform", "android");
             jsonObject.put("deviceType", GleapHelper.getDeviceType());
+            // setSessionDuration: caps the grant's lifetime (ms).
+            long sessionDuration = GleapConfig.getInstance().getSessionDuration();
+            if (sessionDuration > 0) {
+                jsonObject.put("sessionDuration", sessionDuration);
+            }
 
             // Check if we do have an userId.
             if (!jsonObject.has( "userId")) {
@@ -127,6 +137,10 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
                 sendAuthTokens = sentHash != null && !sentHash.isEmpty();
             } else if (answered && outcome[0] == TOKEN_EXPIRED) {
                 renewExpiredToken(controller, pendingAction, generation, forced);
+            } else if (answered && outcome[0] == IDENTITY_MISMATCH) {
+                // Another user's session (spec §1.3): drop it and identify once more as a fresh
+                // visitor.
+                controller.restartForIdentify(pendingAction, generation);
             } else if (answered && outcome[0] == TOKEN_INVALID) {
                 // The session and the user stay (contract §3).
                 GleapLog.w("The identity token was refused (token_invalid): check the signing key and the userId claim.");
@@ -217,6 +231,9 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
         }
         if ("token_invalid".equals(refusal)) {
             return TOKEN_INVALID;
+        }
+        if (GleapUserJwt.isIdentityMismatch(status, errorBody)) {
+            return IDENTITY_MISMATCH;
         }
         if (isRejection(status, errorBody)) {
             return REJECTED;

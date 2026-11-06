@@ -26,6 +26,8 @@ public class GleapSessionProperties {
     boolean jwtRetried;
     // The token's expiry was checked (and the provider asked) for this send.
     boolean jwtFreshnessChecked;
+    // The identify was already sent again on a fresh visitor session (identity_mismatch).
+    boolean identityMismatchRetried;
 
     /**
      * Create a gleap user. This can be used to identify the user.

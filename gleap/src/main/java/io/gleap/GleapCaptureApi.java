@@ -133,6 +133,7 @@ final class GleapCaptureApi {
                 conn.setRequestProperty("Gleap-Id", session.getId());
                 conn.setRequestProperty("Gleap-Hash", session.getHash());
             }
+            GleapHttp.addGrantHeader(conn, session);
             conn.setFixedLengthStreamingMode(body.length);
             try (OutputStream os = conn.getOutputStream()) {
                 os.write(body);
@@ -202,6 +203,11 @@ final class GleapCaptureApi {
         if (session != null) {
             request.header("gleap-id", session.getId());
             request.header("gleap-hash", session.getHash());
+            GleapSessionController controller = GleapSessionController.getInstance();
+            String grant = controller != null ? controller.getGrant(session.getId()) : null;
+            if (grant != null) {
+                request.header("Gleap-Grant", grant);
+            }
         }
 
         OkHttpClient client = uploadClient();
