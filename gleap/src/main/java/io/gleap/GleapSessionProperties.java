@@ -28,6 +28,9 @@ public class GleapSessionProperties {
     boolean jwtFreshnessChecked;
     // The identify was already sent again on a fresh visitor session (identity_mismatch).
     boolean identityMismatchRetried;
+    // Sent unchanged only to get the grant of a session the server already identified (a
+    // project that switched to Signed): a refusal keeps that session.
+    boolean signedGrantOnly;
 
     /**
      * Create a gleap user. This can be used to identify the user.

@@ -186,4 +186,30 @@ public class GleapUserJwtProviderGateTest {
         scheduler.runPosted();
         assertEquals(token, second.tokens.get(0));
     }
+
+    @Test
+    public void anExpiredOrRefusedTokenFailsAndPauses() {
+        String expired = GleapUserJwtTest.jwt("{\"userId\":\"user-1\",\"exp\":" + (System.currentTimeMillis() / 1000 - 1) + "}");
+        Results first = new Results();
+        gate.requestToken(first);
+        scheduler.runPosted();
+        pending.onToken(expired);
+        assertNull(first.tokens.get(0));
+
+        scheduler.now += 30000;
+        gate.rememberRefusedToken(token);
+        Results second = new Results();
+        gate.requestToken(second);
+        scheduler.runPosted();
+        pending.onToken(token);
+        assertNull("the token the server just refused", second.tokens.get(0));
+
+        scheduler.now += 30000;
+        String fresh = GleapUserJwtTest.jwt("{\"userId\":\"user-1\",\"n\":2}");
+        Results third = new Results();
+        gate.requestToken(third);
+        scheduler.runPosted();
+        pending.onToken(fresh);
+        assertEquals(fresh, third.tokens.get(0));
+    }
 }

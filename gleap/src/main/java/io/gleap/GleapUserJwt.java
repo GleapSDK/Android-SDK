@@ -92,6 +92,15 @@ final class GleapUserJwt {
     }
 
     /**
+     * @return the payload's {@code iat} (seconds since 1970), or null without one
+     */
+    static Long issuedAtOf(String token) {
+        JSONObject payload = payloadOf(token);
+        Object iat = payload != null ? payload.opt("iat") : null;
+        return iat instanceof Number ? ((Number) iat).longValue() : null;
+    }
+
+    /**
      * @return true when the token carries an {@code exp} less than {@code windowMs} after
      * {@code nowMs}
      */

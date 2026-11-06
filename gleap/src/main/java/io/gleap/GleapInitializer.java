@@ -50,6 +50,8 @@ final class GleapInitializer {
             GleapThemeHelper.getInstance().start(app);
             initialized = true;
             GleapSessionController.initialize(app);
+            // A token from setUserJwt before initialize (queued behind the stored session).
+            Gleap.sendPendingUserJwt();
             new Gleap.GleapListener();
             GleapConnectivityManager.getInstance().register(app.getApplicationContext());
         } catch (Error | Exception error) {

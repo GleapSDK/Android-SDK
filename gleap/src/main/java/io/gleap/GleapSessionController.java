@@ -33,9 +33,20 @@ public class GleapSessionController {
     // True while the store holds a grant, so an answer without one removes nothing it never wrote.
     private volatile boolean grantStored;
     private volatile long grantExpiresAtMs;
+    // How long before its expiry the grant is renewed: 5 minutes, at most half its lifetime.
+    private volatile long grantRenewMarginMs = GRANT_RENEW_MARGIN_MS;
     // Bumped whenever the grant changes: only the latest scheduled renewal runs.
     private final AtomicInteger grantRenewal = new AtomicInteger();
     private long lastGrantRenewalMs;
+    // The renewal posted to the main thread (one at a time).
+    private Runnable grantRenewalTask;
+    // identity.mode of the last session answer that carried identity ("signed" or null);
+    // Classic projects send no identity.
+    private volatile String identityMode;
+    // The session a signed identify was sent for while it had no grant (memory only): a
+    // returning user on a project that switched to Signed gets one identify per app start and
+    // session, never a loop.
+    private String signedGrantRequestedFor;
     // A grant is renewed (the last signed identify sent again) this long before it expires.
     static final long GRANT_RENEW_MARGIN_MS = 5 * 60 * 1000;
     private static final long GRANT_RENEW_MIN_INTERVAL_MS = 60 * 1000;
@@ -284,6 +295,7 @@ public class GleapSessionController {
             gleapSessionProperties = null;
             gleapSession = null;
             isSessionLoaded = false;
+            identityMode = null;
             // The grant goes with the session (store.clear removed the stored copy).
             setGrantInMemory(null, null);
         }
@@ -316,6 +328,7 @@ public class GleapSessionController {
             store.clear();
             grantStored = false;
             setGrantInMemory(null, null);
+            identityMode = null;
             gleapSessionProperties = null;
             gleapSession = null;
             isSessionLoaded = false;
@@ -352,7 +365,40 @@ public class GleapSessionController {
      */
     boolean grantExpiresWithin(String sessionId, long marginMs) {
         return getGrant(sessionId) != null && grantExpiresAtMs > 0
-                && grantExpiresAtMs - System.currentTimeMillis() < marginMs;
+                && grantExpiresAtMs - System.currentTimeMillis() < Math.min(marginMs, grantRenewMarginMs);
+    }
+
+    /**
+     * True when the project runs Signed ({@code identity.mode}), session {@code sessionId}
+     * belongs to {@code userId} and has no grant, and no signed identify was sent for it yet in
+     * this app start.
+     */
+    private boolean signedGrantMissing(String sessionId, String userId) {
+        synchronized (this) {
+            return "signed".equals(identityMode) && sessionId != null && !sessionId.isEmpty()
+                    && userId != null && !userId.isEmpty()
+                    && !sessionId.equals(signedGrantRequestedFor) && getGrant(sessionId) == null;
+        }
+    }
+
+    /**
+     * Taken by the identify service before it sends (or skips as unchanged) {@code identify}
+     * with a user hash: true when the identified session has no grant on a Signed project and
+     * this identify is the one attempt to get it. Marks the session, so it is asked once.
+     */
+    boolean claimSignedGrantRequest(GleapSessionProperties identify) {
+        synchronized (this) {
+            GleapSession session = gleapSession;
+            if (identify == null || identify.getHash() == null || identify.getHash().isEmpty() || session == null) {
+                return false;
+            }
+            String sessionUserId = gleapSessionProperties != null ? gleapSessionProperties.getUserId() : null;
+            if (!signedGrantMissing(session.getId(), sessionUserId)) {
+                return false;
+            }
+            signedGrantRequestedFor = session.getId();
+            return true;
+        }
     }
 
     private void setGrantInMemory(String value, String sessionId) {
@@ -362,9 +408,14 @@ public class GleapSessionController {
             grantExpiresAtMs = 0;
         } else {
             Long exp = GleapUserJwt.expirationOf(value);
+            Long iat = GleapUserJwt.issuedAtOf(value);
             grant = value;
             grantSessionId = sessionId;
             grantExpiresAtMs = exp != null ? exp * 1000 : 0;
+            // A short session is renewed at half its lifetime, not the moment it arrives.
+            long issuedAtMs = iat != null ? iat * 1000 : System.currentTimeMillis();
+            long lifetimeMs = grantExpiresAtMs > 0 ? grantExpiresAtMs - issuedAtMs : 0;
+            grantRenewMarginMs = lifetimeMs > 0 ? Math.min(GRANT_RENEW_MARGIN_MS, lifetimeMs / 2) : GRANT_RENEW_MARGIN_MS;
         }
         grantRenewal.incrementAndGet();
     }
@@ -380,6 +431,8 @@ public class GleapSessionController {
         String before = grant;
         JSONObject identity = result.optJSONObject("identity");
         if (identity != null) {
+            Object mode = identity.opt("mode");
+            identityMode = mode instanceof String ? (String) mode : null;
             Object value = identity.opt("grant");
             if (value instanceof String && !((String) value).isEmpty()) {
                 setGrantInMemory((String) value, id);
@@ -408,19 +461,33 @@ public class GleapSessionController {
      * expires.
      */
     private void scheduleGrantRenewal() {
+        // min(5 minutes, half the grant's lifetime) before it expires.
+        postGrantRenewal(grantExpiresAtMs - grantRenewMarginMs - System.currentTimeMillis(), true);
+    }
+
+    /**
+     * Posts the renewal check in {@code delayMs}, replacing the one posted before.
+     */
+    private void postGrantRenewal(long delayMs, final boolean rearm) {
         final int schedule = grantRenewal.get();
-        if (grant == null || grantExpiresAtMs <= 0) {
-            return;
-        }
-        long delay = grantExpiresAtMs - GRANT_RENEW_MARGIN_MS - System.currentTimeMillis();
-        GleapMainThread.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                if (grantRenewal.get() == schedule) {
-                    refreshGrantIfExpiring();
-                }
+        Runnable task;
+        synchronized (this) {
+            GleapMainThread.removeCallbacks(grantRenewalTask);
+            grantRenewalTask = null;
+            if (grant == null || grantExpiresAtMs <= 0) {
+                return;
             }
-        }, Math.max(0, delay));
+            task = new Runnable() {
+                @Override
+                public void run() {
+                    if (grantRenewal.get() == schedule) {
+                        refreshGrantIfExpiring(rearm);
+                    }
+                }
+            };
+            grantRenewalTask = task;
+        }
+        GleapMainThread.postDelayed(task, Math.max(0, delayMs));
     }
 
     /**
@@ -430,16 +497,33 @@ public class GleapSessionController {
      * device sleeps.
      */
     void refreshGrantIfExpiring() {
+        refreshGrantIfExpiring(true);
+    }
+
+    /**
+     * {@link #refreshGrantIfExpiring()}; {@code rearm}: when the once-a-minute limit holds it
+     * back, check again once the minute is over (a short grant renewed at half its lifetime
+     * would lapse otherwise). That second check does not re-arm.
+     */
+    private void refreshGrantIfExpiring(boolean rearm) {
         GleapSession session = gleapSession;
         if (session == null || !grantExpiresWithin(session.getId(), GRANT_RENEW_MARGIN_MS)) {
             return;
         }
+        long waitMs = 0;
         synchronized (this) {
             long now = System.currentTimeMillis();
             if (now - lastGrantRenewalMs < GRANT_RENEW_MIN_INTERVAL_MS) {
-                return;
+                waitMs = GRANT_RENEW_MIN_INTERVAL_MS - (now - lastGrantRenewalMs);
+            } else {
+                lastGrantRenewalMs = now;
             }
-            lastGrantRenewalMs = now;
+        }
+        if (waitMs > 0) {
+            if (rearm) {
+                postGrantRenewal(waitMs + 1000, false);
+            }
+            return;
         }
         // The same forced resend of the last signed identify that refreshes the file session.
         refreshFileAccess();
@@ -714,6 +798,29 @@ public class GleapSessionController {
                     // The grant of a signed identify.
                     applyGrant(result, id);
                     scheduleGrantRenewal();
+
+                    // A returning user on a project that switched to Signed: the session is
+                    // identified but has no grant, and the app's identify of this start (or
+                    // the hash kept from the last one) would be skipped as unchanged. It is
+                    // queued once; the identify service sends it (see claimSignedGrantRequest).
+                    if (!fromIdentify && pendingIdentificationAction == null && !GleapIdentifyService.isRunning()
+                            && signedGrantMissing(id, gleapSessionProperties.getUserId())) {
+                        GleapSessionProperties held = null;
+                        if (lastIdentify != null && lastIdentify.getHash() != null && !lastIdentify.getHash().isEmpty()
+                                && gleapSessionProperties.getUserId().equals(lastIdentify.getUserId())) {
+                            held = lastIdentify;
+                        } else if (previousUserJwt != null && !previousUserJwt.isEmpty()
+                                && gleapSessionProperties.getUserId().equals(previousUserId)) {
+                            held = gleapSessionProperties.withUserJwt(null);
+                            held.setHash(previousUserJwt);
+                            if (lastIdentify == null) {
+                                lastIdentify = held;
+                            }
+                        }
+                        if (held != null) {
+                            pendingIdentificationAction = held;
+                        }
+                    }
                 }
 
                 GleapFileAccess.onSessionAnswer(this, session, fromIdentify);

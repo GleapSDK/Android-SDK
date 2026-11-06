@@ -6,7 +6,8 @@ import java.util.List;
 /**
  * Asks the app's {@link GleapUserJwtProvider} for a fresh identity token: one call at a time
  * (later requests wait for the running one), given up after 10 seconds, and after a failure
- * (null, not a JWT with a user id, an exception or the timeout) no new call for 30 seconds.
+ * (null, not a JWT with a user id, an expired token, the token the server just refused, an
+ * exception or the timeout) no new call for 30 seconds.
  * The provider stays set across {@code clearIdentity}.
  */
 final class GleapUserJwtProviderGate {
@@ -58,6 +59,8 @@ final class GleapUserJwtProviderGate {
     private int call;
     private boolean failed;
     private long failedAt;
+    // The last token the server refused (memory only).
+    private String refusedToken;
 
     GleapUserJwtProviderGate(Clock clock, Scheduler scheduler) {
         this.clock = clock;
@@ -85,6 +88,16 @@ final class GleapUserJwtProviderGate {
 
     synchronized boolean isInFlight() {
         return waiting != null;
+    }
+
+    /**
+     * The server refused {@code token} (token_expired / token_invalid): the provider handing
+     * back this exact token counts as a failure.
+     */
+    synchronized void rememberRefusedToken(String token) {
+        if (GleapUserJwt.isUserJwt(token)) {
+            refusedToken = token;
+        }
     }
 
     /**
@@ -148,6 +161,13 @@ final class GleapUserJwtProviderGate {
             waiting = null;
             if (failure == null && GleapUserJwt.userIdOf(token) == null) {
                 failure = "it did not return a JWT with a userId";
+            }
+            Long exp = failure == null ? GleapUserJwt.expirationOf(token) : null;
+            if (exp != null && exp * 1000 <= System.currentTimeMillis()) {
+                failure = "it returned an expired token";
+            }
+            if (failure == null && token != null && token.equals(refusedToken)) {
+                failure = "it returned the token the server just refused";
             }
             failed = failure != null;
             failedAt = clock.elapsedMillis();

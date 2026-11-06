@@ -88,17 +88,26 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
 
             // Reset the pending contact identification action.
             controller.setPendingIdentificationAction(null);
-            final boolean forced = controller.takeForcedIdentify();
+            boolean forced = controller.takeForcedIdentify();
 
             // Verify if we need to run the identify call - check if already same data. Sent
             // anyway to get or refresh the file session of authenticated conversation files
             // (checked against the session as it is now, e.g. after the session start).
             GleapSessionProperties oldProps = controller.getGleapUserSession();
-            if (!forced && !controller.needsFileAccessIdentify(pendingAction)
-                    && oldProps != null && oldProps.equals(pendingAction)) {
+            // A project that switched to Signed: an identified session without a grant gets the
+            // held hash or token once, even unchanged (marked, so it never loops).
+            boolean signedGrant = controller.claimSignedGrantRequest(pendingAction);
+            boolean needsFileAccess = controller.needsFileAccessIdentify(pendingAction);
+            boolean unchanged = oldProps != null && oldProps.equals(pendingAction);
+            if (!forced && !needsFileAccess && !signedGrant && unchanged) {
                 // Old equals new, nothing to do.
                 return 200;
             }
+            if (signedGrant && !forced && !needsFileAccess && unchanged) {
+                pendingAction.signedGrantOnly = true;
+            }
+            // A resend (fresh token, no network) must not be skipped as unchanged.
+            forced = forced || signedGrant;
 
             // An identity token about to expire is renewed through the JWT provider first.
             if (!pendingAction.jwtFreshnessChecked && renewBeforeSend(controller, pendingAction, generation, forced)) {
@@ -136,14 +145,19 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
             if (answered && outcome[0] == ACCEPTED) {
                 sendAuthTokens = sentHash != null && !sentHash.isEmpty();
             } else if (answered && outcome[0] == TOKEN_EXPIRED) {
+                GleapUserJwtProviderGate.getInstance().rememberRefusedToken(sentHash);
                 renewExpiredToken(controller, pendingAction, generation, forced);
             } else if (answered && outcome[0] == IDENTITY_MISMATCH) {
                 // Another user's session (spec §1.3): drop it and identify once more as a fresh
                 // visitor.
                 controller.restartForIdentify(pendingAction, generation);
             } else if (answered && outcome[0] == TOKEN_INVALID) {
+                GleapUserJwtProviderGate.getInstance().rememberRefusedToken(sentHash);
                 // The session and the user stay (contract §3).
                 GleapLog.w("The identity token was refused (token_invalid): check the signing key and the userId claim.");
+            } else if (answered && outcome[0] == REJECTED && pendingAction.signedGrantOnly) {
+                // Only asked for the grant of a session the server already identified: it stays.
+                GleapLog.w("The signed identify for this session was refused; the session stays unsigned. Pass a token from your backend to setUserJwt.");
             } else if (answered && outcome[0] == REJECTED) {
                 // The API rejected the identify (e.g. an invalid user hash): start over without
                 // the stored session and user.
@@ -176,6 +190,7 @@ public class GleapIdentifyService extends AsyncTask<Void, Void, Integer> {
             public void onResult(String token) {
                 GleapSessionProperties next = identify.withUserJwt(token);
                 next.jwtFreshnessChecked = true;
+                next.signedGrantOnly = identify.signedGrantOnly;
                 controller.resendIdentify(next, sentHash, generation, forced, token != null);
             }
         });

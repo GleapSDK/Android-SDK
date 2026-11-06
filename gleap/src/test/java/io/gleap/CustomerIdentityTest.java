@@ -199,12 +199,14 @@ public class CustomerIdentityTest {
         scheduler.runPosted();
         new GleapIdentifyService().doInBackground();   // sends the fresh token: refused as expired
         scheduler.runPosted();
-        new GleapIdentifyService().doInBackground();   // the one retry: refused again
+        // The one retry: the provider hands back the token the server just refused, which
+        // counts as a failure, so it is not sent again.
+        new GleapIdentifyService().doInBackground();
         scheduler.runPosted();
         new GleapIdentifyService().doInBackground();
 
         assertEquals(2, calls[0]);
-        assertEquals(2, sdk.server.requestsTo("/sessions/identify").size());
+        assertEquals(1, sdk.server.requestsTo("/sessions/identify").size());
         assertEquals("id-1", sdk.controller.getUserSession().getId());
     }
 

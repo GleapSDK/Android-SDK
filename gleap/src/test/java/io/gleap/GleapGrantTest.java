@@ -137,4 +137,76 @@ public class GleapGrantTest {
         JSONObject body = sdk.server.last("/sessions/identify").bodyJson();
         assertEquals(3_600_000L, body.getLong("sessionDuration"));
     }
+
+    private static String signedWithoutGrant(String id) {
+        return "{\"gleapId\":\"" + id + "\",\"gleapHash\":\"hash-" + id + "\",\"userId\":\"user-1\","
+                + "\"identity\":{\"signed\":false,\"grant\":null,\"mode\":\"signed\"}}";
+    }
+
+    @Test
+    public void aReturningUserOnASignedProjectSendsTheHeldHashOnce() throws Exception {
+        // The last app start identified user-1 with a legacy hash (kept in the store).
+        sdk.store.putString("userId", "user-1");
+        sdk.store.putString("hash", "legacy-hash");
+        sdk.controller = new GleapSessionController(sdk.store);
+        GleapSessionController.setInstanceForTesting(sdk.controller);
+        sdk.server.respond("/sessions", 200, signedWithoutGrant("id-1"));
+        sdk.server.respond("/sessions/identify", 200, signedAnswer("id-1", grant("id-1")));
+
+        new GleapBaseSessionService().doInBackground();
+        new GleapIdentifyService().doInBackground();
+
+        List<FakeGleapServer.Request> identifies = sdk.server.requestsTo("/sessions/identify");
+        assertEquals(1, identifies.size());
+        assertEquals("legacy-hash", identifies.get(0).bodyJson().getString("userHash"));
+        assertTrue(sdk.controller.getGrant("id-1") != null);
+    }
+
+    @Test
+    public void theSignedIdentifyIsSentOncePerSessionNeverInALoop() throws Exception {
+        sdk.server.respond("/sessions", 200, signedWithoutGrant("id-1"));
+        // The server keeps answering without a grant.
+        sdk.server.respond("/sessions/identify", 200, signedWithoutGrant("id-1"));
+        GleapSessionProperties identify = new GleapSessionProperties("user-1");
+        identify.setHash("legacy-hash");
+        sdk.controller.setPendingIdentificationAction(identify);
+        new GleapBaseSessionService().doInBackground();
+        new GleapIdentifyService().doInBackground();
+
+        // The app identifies again, unchanged; another session load.
+        GleapSessionProperties again = new GleapSessionProperties("user-1");
+        again.setHash("legacy-hash");
+        sdk.controller.setPendingIdentificationAction(again);
+        new GleapIdentifyService().doInBackground();
+        new GleapBaseSessionService().doInBackground();
+        new GleapIdentifyService().doInBackground();
+
+        assertEquals(1, sdk.server.requestsTo("/sessions/identify").size());
+    }
+
+    @Test
+    public void aClassicProjectSkipsTheUnchangedIdentify() throws Exception {
+        sdk.server.respond("/sessions", 200, "{\"gleapId\":\"id-1\",\"gleapHash\":\"hash-id-1\",\"userId\":\"user-1\"}");
+        GleapSessionProperties identify = new GleapSessionProperties("user-1");
+        identify.setHash("legacy-hash");
+        new GleapBaseSessionService().doInBackground();
+        sdk.controller.setPendingIdentificationAction(identify);
+        new GleapIdentifyService().doInBackground();
+
+        assertEquals(0, sdk.server.requestsTo("/sessions/identify").size());
+    }
+
+    @Test
+    public void setUserJwtBeforeInitializeIsSentOnceTheSdkStarts() throws Exception {
+        String token = token();
+        GleapSessionController.setInstanceForTesting(null);
+        Gleap.getInstance().setUserJwt(token);
+        GleapSessionController.setInstanceForTesting(sdk.controller);
+        sdk.server.respond("/sessions/identify", 200, signedAnswer("id-2", grant("id-2")));
+
+        Gleap.sendPendingUserJwt();
+        new GleapIdentifyService().doInBackground();
+
+        assertEquals(token, sdk.server.last("/sessions/identify").bodyJson().getString("userHash"));
+    }
 }
