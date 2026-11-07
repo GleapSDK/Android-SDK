@@ -64,7 +64,7 @@ import io.gleap.Gleap
 Gleap.initialize("YOUR_PROJECT_ID", this)
 ```
 
-Your Project ID is in the [Gleap dashboard](https://app.gleap.io) under **Settings → Project → General**. It used to be called "SDK key" or "API key": the value is the same, so existing keys keep working.
+Your Project ID is in the [Gleap dashboard](https://app.gleap.ai) under **Settings → Project → General**. It used to be called "SDK key" or "API key": the value is the same, so existing keys keep working.
 
 ## Data regions
 
