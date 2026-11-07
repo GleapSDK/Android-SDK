@@ -28,7 +28,7 @@ final class GleapInitializer {
 
     static void initialize(String sdkKey, Application app) {
         if (sdkKey == null || sdkKey.trim().isEmpty()) {
-            GleapErrors.report(new IllegalArgumentException("Gleap SDK key is missing or empty."), "initialize");
+            GleapErrors.report(new IllegalArgumentException("Gleap Project ID is missing or empty."), "initialize");
             return;
         }
 
