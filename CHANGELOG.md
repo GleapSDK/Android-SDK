@@ -1,5 +1,8 @@
 # Changelog
 
+## 19.5.1
+Documentation only: README, package description and doc comments name the Project ID (Settings → Project → General) and sign users in with `setUserJwt`. No code changes.
+
 ## 19.5.0
 Project ID: the key the SDK is initialized with is now called the Project ID everywhere (SDK docs, README, dashboard). The value is the same, so every existing key keeps working and nothing has to change. `Gleap.initialize(String projectId, Application application)` keeps its signature; only the parameter name and its Javadoc changed. Log lines say "Project ID" instead of "SDK key" / "API key".
 
