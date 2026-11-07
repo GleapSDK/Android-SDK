@@ -44,7 +44,7 @@ class ConfigLoader extends AsyncTask<GleapBug, Void, JSONObject> {
     protected JSONObject doInBackground(GleapBug... gleapBugs) {
         String sdkKey = GleapConfig.getInstance().getSdkKey();
         if (sdkKey == null || sdkKey.trim().isEmpty()) {
-            GleapLog.e("SDK key is missing in ConfigLoader");
+            GleapLog.e("Project ID is missing in ConfigLoader");
             return new JSONObject();
         }
 
@@ -111,7 +111,7 @@ class ConfigLoader extends AsyncTask<GleapBug, Void, JSONObject> {
                         GleapCallbacks.getInstance().deliverConfigLoaded(result.getJSONObject("flowConfig"));
                         GleapCallbacks.getInstance().deliverInitialized();
                     } else {
-                        GleapErrors.report(new Exception("Config could not be loaded. Incorrect API key."), "Gleap config loader");
+                        GleapErrors.report(new Exception("Config could not be loaded. Incorrect Project ID."), "Gleap config loader");
                     }
                 }
 

@@ -45,7 +45,7 @@ public class MainApplication extends Application {
             }
         });
 
-        String sdkKey = "ogWhNhuiZcGWrva5nlDS8l7a78OfaLlV";
+        String projectId = "ogWhNhuiZcGWrva5nlDS8l7a78OfaLlV";
         // Debug builds only: every request goes to a local stub server instead of Gleap, e.g.
         // adb shell setprop debug.gleap.stub http://10.0.2.2:8787 (then restart the app).
         String stub = BuildConfig.DEBUG ? systemProperty("debug.gleap.stub") : "";
@@ -56,10 +56,10 @@ public class MainApplication extends Application {
             Gleap.getInstance().setBannerUrl(stub + "/outbound");
             Gleap.getInstance().setModalUrl(stub + "/outbound/modal");
             Gleap.getInstance().setRealtimeHost(android.net.Uri.parse(stub).getAuthority());
-            sdkKey = "stub-sdk-key";
+            projectId = "stub-sdk-key";
         }
 
-        Gleap.initialize(sdkKey, this);
+        Gleap.initialize(projectId, this);
 
         // The widget callbacks: a capture closes and reopens the widget, which the app does not
         // hear about (one widget session).

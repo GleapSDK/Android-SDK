@@ -47,6 +47,10 @@ public class GleapSessionController {
     // returning user on a project that switched to Signed gets one identify per app start and
     // session, never a loop.
     private String signedGrantRequestedFor;
+    // The same answer when no token or hash is at hand (setUserJwt's token lives in memory only,
+    // so an app restart has none) but a JWT provider is set: the provider is asked once per app
+    // start for a token to identify with. Reset on logout.
+    private boolean signedModeProviderAsked;
     // A grant is renewed (the last signed identify sent again) this long before it expires.
     static final long GRANT_RENEW_MARGIN_MS = 5 * 60 * 1000;
     private static final long GRANT_RENEW_MIN_INTERVAL_MS = 60 * 1000;
@@ -296,6 +300,7 @@ public class GleapSessionController {
             gleapSession = null;
             isSessionLoaded = false;
             identityMode = null;
+            signedModeProviderAsked = false;
             // The grant goes with the session (store.clear removed the stored copy).
             setGrantInMemory(null, null);
         }
@@ -399,6 +404,62 @@ public class GleapSessionController {
             signedGrantRequestedFor = session.getId();
             return true;
         }
+    }
+
+    /**
+     * Signed mode on an identified session without a grant, and no token or hash at hand to send
+     * for one (an app restart after setUserJwt: the token lives in memory only). Holds the lock.
+     */
+    private boolean signedModeWithoutHeldToken() {
+        synchronized (this) {
+            GleapSession session = gleapSession;
+            GleapSessionProperties user = gleapSessionProperties;
+            if (session == null || user == null || !signedGrantMissing(session.getId(), user.getUserId())) {
+                return false;
+            }
+            // A held token or hash goes out as the held identify instead (see processSessionActionResult).
+            boolean heldIdentify = lastIdentify != null && lastIdentify.getHash() != null && !lastIdentify.getHash().isEmpty();
+            boolean heldHash = user.getHash() != null && !user.getHash().isEmpty();
+            return !heldIdentify && !heldHash;
+        }
+    }
+
+    /**
+     * Restores a signed session from the JWT provider alone: when the session answer says the
+     * project runs Signed, the identified session has no grant and no token or hash is at hand,
+     * the provider is asked once per app start and its token is sent through
+     * {@link Gleap#setUserJwt(String)}, like a token from the app (that identify is the one
+     * signed identify of this session, see {@link #claimSignedGrantRequest}). The provider's
+     * rules apply (one call at a time, 10 s timeout, 30 s pause after a failure); a null token
+     * sends nothing. A logout, an identify of the app or a grant arriving meanwhile drops the
+     * token. Also run when the provider is set after the session answer.
+     */
+    void identifyWithProviderForSignedModeIfNeeded() {
+        final int generation;
+        synchronized (this) {
+            if (signedModeProviderAsked || !isSessionLoaded || pendingIdentificationAction != null
+                    || GleapIdentifyService.isRunning() || !GleapUserJwtProviderGate.getInstance().hasProvider()
+                    || !signedModeWithoutHeldToken()) {
+                return;
+            }
+            signedModeProviderAsked = true;
+            generation = currentGeneration();
+        }
+        GleapUserJwtProviderGate.getInstance().requestToken(new GleapUserJwtProviderGate.TokenCallback() {
+            @Override
+            public void onResult(String token) {
+                if (token == null) {
+                    return;
+                }
+                synchronized (GleapSessionController.this) {
+                    if (!isCurrentGeneration(generation) || pendingIdentificationAction != null
+                            || GleapIdentifyService.isRunning() || !signedModeWithoutHeldToken()) {
+                        return;
+                    }
+                }
+                Gleap.getInstance().setUserJwt(token);
+            }
+        });
     }
 
     private void setGrantInMemory(String value, String sessionId) {

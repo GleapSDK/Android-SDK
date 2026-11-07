@@ -76,6 +76,12 @@ class GleapBaseSessionService extends AsyncTask<Void, Void, Integer> {
             JSONObject result = GleapHttp.readLastJsonLine(conn.getInputStream());
             if (GleapSessionController.getInstance() != null) {
                 GleapSessionController.getInstance().processSessionActionResult(result, true, true, generation);
+                // Signed mode without a grant and no token or hash to send: the JWT provider is asked for one.
+                try {
+                    GleapSessionController.getInstance().identifyWithProviderForSignedModeIfNeeded();
+                } catch (Error | Exception error) {
+                    GleapErrors.report(error, "identifyWithProviderForSignedMode");
+                }
             }
         } catch (Exception e) {
             if (GleapSessionController.getInstance() != null) {

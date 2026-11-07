@@ -53,10 +53,10 @@ import io.gleap.Gleap;
 The last step is to initialize the Gleap SDK by adding the following Code to the ```onCreate``` method:
 
 ```
-Gleap.initialize("YOUR_API_KEY", this);
+Gleap.initialize("YOUR_PROJECT_ID", this);
 ```
 
-(Your API key can be found in the project settings within Gleap)
+Your Project ID is shown in the Gleap dashboard on the SDK install page and under Settings → Project. It used to be called "SDK key" or "API key": the value is the same, so existing keys keep working.
 
 ## Data regions
 
@@ -64,7 +64,7 @@ Gleap projects are hosted in the EU by default. If your project lives in the US 
 
 ```
 Gleap.getInstance().setRegion("us");
-Gleap.initialize("YOUR_API_KEY", this);
+Gleap.initialize("YOUR_PROJECT_ID", this);
 ```
 
 `setRegion` accepts `"eu"` (default) or `"us"` (case-insensitive) and sets all regional hosts at once. Unknown values are ignored with a warning.
@@ -119,13 +119,14 @@ Without it nothing changes: banners overlay the app as before.
 
 ### Signed identity (recommended)
 
-Your backend signs an HS256 JWT with an identity key from Settings → Security → Identity keys (put the key id in the `kid` header; the secret never leaves your server). The `userId` claim is required. Optional claims: `email`, `name`, `company` (`{ id, name }`), `plan`, and provider ids such as `stripeCustomerId`. Set `exp` to at most one hour. Everything in the token lands on the contact as signed data the app cannot change. Pass the token to the SDK after login and on every app start of a logged-in user; `setUserJwt` keeps it in memory only. `setUserJwtProvider` fetches a fresh token when it expires, and `setAuthTokens` hands Kai your own API tokens for this user. See [Customer identity](https://docs.gleap.ai/documentation/guides/customer-identity).
+Your backend signs an HS256 JWT with an identity key from Settings → Security → Identity keys (put the key id in the `kid` header; the secret never leaves your server). The `userId` claim is required. Optional claims: `email`, `name`, `company` (`{ id, name }`), `plan`, and provider ids such as `stripeCustomerId`. Set `exp` to at most one hour. Everything in the token lands on the contact as signed data the app cannot change. Pass the token to the SDK after login and on every app start of a logged-in user; `setUserJwt` keeps it in memory only. `setUserJwtProvider` fetches a fresh token when it expires, and also signs the session again after an app restart: when the server reports Signed mode without a valid grant and no token was passed to `setUserJwt`, the provider is asked once per app start and its token is sent like one passed to `setUserJwt` (a null token sends nothing). The provider can be set before or after `Gleap.initialize`. `setAuthTokens` hands Kai your own API tokens for this user. See [Customer identity](https://docs.gleap.ai/documentation/guides/customer-identity).
 
 ```java
 // After login and on every app start of a logged-in user
 Gleap.getInstance().setUserJwt(token);
 
-// Called when the token has expired or is about to; pass null when it failed
+// Called when the token has expired or is about to, and once per app start to restore a
+// signed session when no token was passed; pass null when it failed
 Gleap.getInstance().setUserJwtProvider(callback ->
     myBackend.fetchGleapToken(token -> callback.onToken(token))
 );

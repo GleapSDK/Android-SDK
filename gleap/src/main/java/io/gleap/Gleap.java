@@ -62,11 +62,13 @@ public class Gleap implements iGleap {
     /**
      * Auto-configures the Gleap SDK from the remote config.
      *
-     * @param sdkKey      The SDK key, which can be found on dashboard.Gleap.io
+     * @param projectId   The Project ID of your Gleap project (formerly called "SDK key" or "API
+     *                    key"; existing keys keep working unchanged). Find it in the Gleap
+     *                    dashboard under Settings → Project or on the SDK install page.
      * @param application used to have context and access to take screenshot
      */
-    public static void initialize(String sdkKey, Application application) {
-        GleapInitializer.initialize(sdkKey, application);
+    public static void initialize(String projectId, Application application) {
+        GleapInitializer.initialize(projectId, application);
     }
 
     public void processOpenPushActions() {
@@ -619,7 +621,11 @@ public class Gleap implements iGleap {
 
     /**
      * Sets the provider that fetches a fresh identity token when the current one expired or is
-     * about to. One call at a time, 10 s timeout, 30 s pause after a failure.
+     * about to, and once per app start to sign the session again when the server reports Signed
+     * mode without a valid grant and no token was passed to {@link #setUserJwt(String)} (the
+     * token is kept in memory only, so an app restart has none). One call at a time, 10 s
+     * timeout, 30 s pause after a failure. Can be set before or after
+     * {@link #initialize(String, Application)}.
      *
      * @param provider fetches the token and passes it to {@code callback.onToken(token)}
      */
@@ -627,6 +633,11 @@ public class Gleap implements iGleap {
     public void setUserJwtProvider(GleapUserJwtProvider provider) {
         try {
             GleapUserJwtProviderGate.getInstance().setProvider(provider);
+            // Set after the session answer arrived: a signed session can still be restored.
+            GleapSessionController controller = GleapSessionController.getInstance();
+            if (provider != null && controller != null) {
+                controller.identifyWithProviderForSignedModeIfNeeded();
+            }
         } catch (Error | Exception exception) {
             handleError(exception, "setUserJwtProvider");
         }
@@ -1125,7 +1136,7 @@ public class Gleap implements iGleap {
     /**
      * This is called, when the config is received from the server. The config is loaded once per
      * process: a callback set after it was loaded is called once with the loaded config, posted
-     * to the main thread. Calling {@link Gleap#initialize} again with the same SDK key hands the
+     * to the main thread. Calling {@link Gleap#initialize} again with the same Project ID hands the
      * loaded config to the set callback again, like on iOS.
      *
      * @param configLoadedCallback callback which is called
@@ -1138,7 +1149,7 @@ public class Gleap implements iGleap {
     /**
      * This is called, when Gleap got initialized (the config was received from the server). A
      * callback set after that is called once, posted to the main thread. Calling
-     * {@link Gleap#initialize} again with the same SDK key calls the set callback again, like on
+     * {@link Gleap#initialize} again with the same Project ID calls the set callback again, like on
      * iOS.
      *
      * @param initializedCallback callback which is called

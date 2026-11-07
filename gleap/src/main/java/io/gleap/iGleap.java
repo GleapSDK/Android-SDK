@@ -323,10 +323,14 @@ interface iGleap {
      * Sets the provider that fetches a fresh identity token from your backend. Gleap calls it
      * when the server answers that the token expired (and retries once with the new token), and
      * before it sends the identify again (file session refresh, replay) when the token expires
-     * within 5 minutes. One call at a time; a call without an answer within 10 seconds counts as
-     * failed, and after a failure Gleap waits 30 seconds before it asks again. Pass null to
-     * {@code callback.onToken} when fetching failed. {@link #clearIdentity()} keeps the provider;
-     * pass null here to remove it.
+     * within 5 minutes. It is also asked once per app start to sign the session again when the
+     * server reports Signed mode without a valid grant and no token was passed to
+     * {@link #setUserJwt(String)} (the token is kept in memory only, so an app restart has none);
+     * its token is then sent like one passed to setUserJwt. One call at a time; a call without an
+     * answer within 10 seconds counts as failed, and after a failure Gleap waits 30 seconds before
+     * it asks again. Pass null to {@code callback.onToken} when fetching failed (nothing is sent).
+     * Can be set before or after {@code Gleap.initialize}. {@link #clearIdentity()} keeps the
+     * provider; pass null here to remove it.
      *
      * @param provider fetches the token and passes it to {@code callback.onToken(token)}
      */
@@ -653,7 +657,7 @@ interface iGleap {
     /**
      * This is called, when the config is received from the server. The config is loaded once per
      * process: a callback set after it was loaded is called once with the loaded config, posted
-     * to the main thread. Calling {@link Gleap#initialize} again with the same SDK key hands the
+     * to the main thread. Calling {@link Gleap#initialize} again with the same Project ID hands the
      * loaded config to the set callback again, like on iOS.
      *
      * @param configLoadedCallback callback which is called
@@ -663,7 +667,7 @@ interface iGleap {
     /**
      * This is called, when Gleap got initialized (the config was received from the server). A
      * callback set after that is called once, posted to the main thread. Calling
-     * {@link Gleap#initialize} again with the same SDK key calls the set callback again, like on
+     * {@link Gleap#initialize} again with the same Project ID calls the set callback again, like on
      * iOS.
      *
      * @param initializedCallback callback which is called
