@@ -28,7 +28,7 @@ dependencies {
 dependencies {
 ...
 
-implementation group: 'io.gleap', name: 'gleap-android-sdk', version: '19.5.0'
+implementation group: 'io.gleap', name: 'gleap-android-sdk', version: '19.5.1'
 }
 ```
 
