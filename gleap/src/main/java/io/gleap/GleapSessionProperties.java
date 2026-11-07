@@ -34,14 +34,12 @@ public class GleapSessionProperties {
 
     /**
      * Create a gleap user. This can be used to identify the user.
-     * The hash is as HMAC hash. This hash is created with your secret.
      */
     public GleapSessionProperties() {
     }
 
     /**
      * Create a gleap user. This can be used to identify the user.
-     * The hash is as HMAC hash. This hash is created with your secret.
      * @param userId id of the user
      */
     public GleapSessionProperties(String userId) {
@@ -50,7 +48,6 @@ public class GleapSessionProperties {
 
     /**
      * Create a gleap user. This can be used to identify the user.
-     * The hash is as HMAC hash. This hash is created with your secret.
      * @param name Name of the user
      * @param email Email of the user
      */
@@ -65,6 +62,16 @@ public class GleapSessionProperties {
         this.email = email;
     }
 
+    /**
+     * Create a gleap user with a user hash. The user hash is kept for older integrations, which
+     * keep working; to sign users in, use {@link Gleap#setUserJwt(String)}. See
+     * https://docs.gleap.ai/en/articles/16752008-upgrade-to-identity-tokens
+     *
+     * @param userId id of the user
+     * @param name   name of the user
+     * @param email  email of the user
+     * @param hash   the user hash of older integrations
+     */
     public GleapSessionProperties(String userId, String name, String email, String hash) {
         this.userId = userId;
         this.name = name;

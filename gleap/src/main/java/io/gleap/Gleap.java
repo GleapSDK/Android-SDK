@@ -64,7 +64,7 @@ public class Gleap implements iGleap {
      *
      * @param projectId   The Project ID of your Gleap project (formerly called "SDK key" or "API
      *                    key"; existing keys keep working unchanged). Find it in the Gleap
-     *                    dashboard under Settings → Project or on the SDK install page.
+     *                    dashboard under Settings → Project → General.
      * @param application used to have context and access to take screenshot
      */
     public static void initialize(String projectId, Application application) {
@@ -104,9 +104,9 @@ public class Gleap implements iGleap {
     /**
      * Opens the conversation of a protected file from an emailed file link (authenticated
      * conversation files). The email links to your app's URL with a {@code gleapFile} query
-     * parameter; pass that URL here when your app handles it (e.g. as an App Link), and identify
-     * the user with their user hash as usual. Once the SDK has a file session (from a verified
-     * identify), it asks the API for the file's conversation and opens it if the identified user
+     * parameter; pass that URL here when your app handles it (e.g. as an App Link), and sign the
+     * user in with {@link #setUserJwt(String)} as usual. Once the SDK has a file session (from a
+     * signed identify), it asks the API for the file's conversation and opens it if the identified user
      * may see it; otherwise the link is dropped silently. A logout drops a link that was not
      * opened yet.
      *
@@ -455,7 +455,8 @@ public class Gleap implements iGleap {
     }
 
     /**
-     * Updates a session's user data.
+     * Updates a session's user data. Without an identity token the contact is unsigned; to sign
+     * the user in, use {@link #setUserJwt(String)}.
      *
      * @param id Id of the user.
      * @author Gleap
@@ -476,7 +477,8 @@ public class Gleap implements iGleap {
     }
 
     /**
-     * Updates a session's user data.
+     * Updates a session's user data. Without an identity token the contact is unsigned; to sign
+     * the user in, use {@link #setUserJwt(String)}.
      *
      * @param id                     Id of the user.
      * @param gleapSessionProperties The updated user data.
@@ -514,7 +516,8 @@ public class Gleap implements iGleap {
     }
 
     /**
-     * Identifies a contact.
+     * Identifies a contact. Without an identity token the contact is unsigned; to sign the user
+     * in, use {@link #setUserJwt(String)}.
      *
      * @param id Id of the user.
      * @author Gleap
@@ -535,7 +538,8 @@ public class Gleap implements iGleap {
     }
 
     /**
-     * Identifies a contact with data.
+     * Identifies a contact with data. Without an identity token the contact is unsigned; to sign
+     * the user in, use {@link #setUserJwt(String)}.
      *
      * @param id                     Id of the user.
      * @param gleapSessionProperties The updated user data.
@@ -557,8 +561,11 @@ public class Gleap implements iGleap {
     /**
      * Identifies the user with an identity token (HS256 JWT signed by your backend). The token
      * is the whole identify: its {@code userId} (or {@code user_id}) claim names the user, every
-     * other claim lands on the contact as signed data. Kept in memory only. Called before
-     * {@link #initialize(String, Application)}, the token is sent once the SDK starts.
+     * other claim lands on the contact as signed data; no separate identify call is needed. Call
+     * it after login and on every app start of a logged-in user. Your backend signs the token with
+     * an identity key (Settings → Security → Customer identity → Identity keys). Kept in memory
+     * only. Called before {@link #initialize(String, Application)}, the token is sent once the SDK
+     * starts. See https://docs.gleap.ai/en/articles/709-customer-identity
      *
      * @param token the identity token (JWT) from your backend
      */
@@ -685,7 +692,8 @@ public class Gleap implements iGleap {
     }
 
     /**
-     * Clears a user session, its identity token and auth tokens. The JWT provider stays set.
+     * Clears a user session, its identity token and auth tokens; call it on logout. The JWT
+     * provider stays set.
      *
      * @author Gleap
      */
