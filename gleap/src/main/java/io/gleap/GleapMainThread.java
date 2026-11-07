@@ -37,6 +37,16 @@ final class GleapMainThread {
     }
 
     /**
+     * Drops {@code runnable} if it was posted and has not run yet.
+     */
+    static void removeCallbacks(Runnable runnable) {
+        if (runnable == null || testExecutor != null) {
+            return;
+        }
+        handler().removeCallbacks(runnable);
+    }
+
+    /**
      * Runs right away when called on the main thread, posts otherwise (like
      * {@link Activity#runOnUiThread(Runnable)}).
      */

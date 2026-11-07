@@ -156,6 +156,17 @@ class GleapConfig {
         this.realtimeHost = region.getRealtimeHost();
     }
 
+    // Gleap.setSessionDuration (ms); 0 leaves the project's session maximum.
+    private volatile long sessionDuration;
+
+    long getSessionDuration() {
+        return sessionDuration;
+    }
+
+    void setSessionDuration(long sessionDuration) {
+        this.sessionDuration = Math.max(0, sessionDuration);
+    }
+
     public String getLanguage() {
         return language;
     }

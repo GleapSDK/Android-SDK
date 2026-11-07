@@ -307,7 +307,55 @@ interface iGleap {
     void setDisableEnvData(boolean disableEnvData);
 
     /**
-     * Clears a user session.
+     * Identifies the user with an identity token: an HS256 JWT your backend signs with an
+     * identity key. The token is the whole identify: its {@code userId} (or {@code user_id})
+     * claim names the user and every other claim lands on the contact as signed data; no other
+     * contact field is sent. Call it after login and on every app start. The token is kept in
+     * memory only and sent again whenever it changes. A token that is not a JWT (three base64url
+     * parts), has no user id or is longer than 4096 characters is refused with a log line and
+     * nothing is sent.
+     *
+     * @param token the identity token (JWT) from your backend
+     */
+    void setUserJwt(String token);
+
+    /**
+     * Sets the provider that fetches a fresh identity token from your backend. Gleap calls it
+     * when the server answers that the token expired (and retries once with the new token), and
+     * before it sends the identify again (file session refresh, replay) when the token expires
+     * within 5 minutes. One call at a time; a call without an answer within 10 seconds counts as
+     * failed, and after a failure Gleap waits 30 seconds before it asks again. Pass null to
+     * {@code callback.onToken} when fetching failed. {@link #clearIdentity()} keeps the provider;
+     * pass null here to remove it.
+     *
+     * @param provider fetches the token and passes it to {@code callback.onToken(token)}
+     */
+    void setUserJwtProvider(GleapUserJwtProvider provider);
+
+    /**
+     * Stores per-user tokens on the signed contact that your API tools may send to your backend
+     * on this user's behalf ({@code {{session.authTokens.<name>}}}). Each call replaces the named
+     * tokens; a null value removes a token. Names start with a letter and use letters, digits,
+     * {@code _} and {@code -} (at most 40 characters). Needs a signed identity
+     * ({@link #setUserJwt(String)}). Kept in memory only and sent again after the next signed
+     * identify on a new session; {@link #clearIdentity()} drops them.
+     *
+     * @param tokens the tokens by name; a null value removes one
+     */
+    void setAuthTokens(java.util.Map<String, String> tokens);
+
+    /**
+     * Caps how long a signed session lasts: the grant a signed identify returns expires after
+     * this many milliseconds, or at the project's session maximum when that is shorter. Sent with
+     * every identify; set it before {@link #setUserJwt(String)}. Pass 0 to use the project's
+     * maximum.
+     *
+     * @param milliseconds the session duration in milliseconds
+     */
+    void setSessionDuration(long milliseconds);
+
+    /**
+     * Clears a user session, its identity token and auth tokens. The JWT provider stays set.
      *
      * @author Gleap
      */

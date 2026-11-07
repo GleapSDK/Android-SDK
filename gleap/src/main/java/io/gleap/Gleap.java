@@ -44,6 +44,8 @@ public class Gleap implements iGleap {
     public static JSONArray blacklist = new JSONArray();
     public static JSONArray propsToIgnore = new JSONArray();
     public static boolean internalCloseWidgetOnExternalLinkOpen = false;
+    // setUserJwt before initialize: sent once the SDK starts (memory only).
+    private static volatile String pendingUserJwt;
 
     private Gleap() {
     }
@@ -550,6 +552,115 @@ public class Gleap implements iGleap {
         }
     }
 
+    /**
+     * Identifies the user with an identity token (HS256 JWT signed by your backend). The token
+     * is the whole identify: its {@code userId} (or {@code user_id}) claim names the user, every
+     * other claim lands on the contact as signed data. Kept in memory only. Called before
+     * {@link #initialize(String, Application)}, the token is sent once the SDK starts.
+     *
+     * @param token the identity token (JWT) from your backend
+     */
+    @Override
+    public void setUserJwt(String token) {
+        try {
+            String userId = GleapUserJwt.userIdOf(token);
+            if (userId == null) {
+                GleapLog.w("setUserJwt expects a JWT (three base64url parts, at most 4096 characters) whose payload has a userId (or user_id). Nothing was sent.");
+                return;
+            }
+            GleapSessionController controller = GleapSessionController.getInstance();
+            if (controller == null) {
+                // Before initialize: kept and sent once the SDK starts (like iOS and JS).
+                synchronized (Gleap.class) {
+                    pendingUserJwt = token;
+                }
+                GleapLog.i("setUserJwt was called before Gleap.initialize: the token is sent once the SDK starts.");
+                return;
+            }
+            identifyWithUserJwt(controller, userId, token);
+        } catch (Error | Exception exception) {
+            handleError(exception, "setUserJwt");
+        }
+    }
+
+    private static void identifyWithUserJwt(GleapSessionController controller, String userId, String token) {
+        // The token is the whole identify: no contact fields are sent next to it.
+        GleapSessionProperties identify = new GleapSessionProperties(userId);
+        identify.setHash(token);
+        identify.jwtOnly = true;
+        controller.setPendingIdentificationAction(identify);
+        controller.executePendingUpdates();
+    }
+
+    /**
+     * Sends the token setUserJwt kept before initialize. Called by the initializer once the
+     * session controller exists.
+     */
+    static void sendPendingUserJwt() {
+        String token;
+        synchronized (Gleap.class) {
+            token = pendingUserJwt;
+            pendingUserJwt = null;
+        }
+        GleapSessionController controller = GleapSessionController.getInstance();
+        String userId = GleapUserJwt.userIdOf(token);
+        if (token == null || controller == null || userId == null) {
+            return;
+        }
+        identifyWithUserJwt(controller, userId, token);
+    }
+
+    // clearIdentity and tests.
+    static void clearPendingUserJwt() {
+        synchronized (Gleap.class) {
+            pendingUserJwt = null;
+        }
+    }
+
+    /**
+     * Sets the provider that fetches a fresh identity token when the current one expired or is
+     * about to. One call at a time, 10 s timeout, 30 s pause after a failure.
+     *
+     * @param provider fetches the token and passes it to {@code callback.onToken(token)}
+     */
+    @Override
+    public void setUserJwtProvider(GleapUserJwtProvider provider) {
+        try {
+            GleapUserJwtProviderGate.getInstance().setProvider(provider);
+        } catch (Error | Exception exception) {
+            handleError(exception, "setUserJwtProvider");
+        }
+    }
+
+    /**
+     * Stores per-user tokens for your API tools on the signed contact
+     * ({@code {{session.authTokens.<name>}}}). A null value removes a token. Kept in memory only.
+     *
+     * @param tokens the tokens by name
+     */
+    @Override
+    public void setAuthTokens(java.util.Map<String, String> tokens) {
+        try {
+            GleapAuthTokens.getInstance().set(tokens);
+        } catch (Error | Exception exception) {
+            handleError(exception, "setAuthTokens");
+        }
+    }
+
+    /**
+     * Caps how long a signed session lasts (milliseconds); 0 uses the project's maximum.
+     *
+     * @param milliseconds the session duration in milliseconds
+     */
+    @Override
+    public void setSessionDuration(long milliseconds) {
+        try {
+            GleapConfig.getInstance().setSessionDuration(milliseconds);
+        } catch (Error | Exception exception) {
+            handleError(exception, "setSessionDuration");
+        }
+    }
+
     @Override
     public void updateContact(GleapSessionProperties gleapSessionProperties) {
         try {
@@ -563,13 +674,15 @@ public class Gleap implements iGleap {
     }
 
     /**
-     * Clears a user session.
+     * Clears a user session, its identity token and auth tokens. The JWT provider stays set.
      *
      * @author Gleap
      */
     @Override
     public void clearIdentity() {
         try {
+            // A token kept from before initialize goes too.
+            clearPendingUserJwt();
             if (GleapSessionController.getInstance() != null) {
                 GleapSessionController.getInstance().clearUserSession();
             }

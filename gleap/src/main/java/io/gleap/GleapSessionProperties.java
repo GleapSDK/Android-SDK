@@ -20,6 +20,17 @@ public class GleapSessionProperties {
     private String companyName;
     private double sla;
     private JSONObject customData;
+    // setUserJwt: the token is the whole identify; only the user id and the token are compared.
+    boolean jwtOnly;
+    // The identify was already retried with a token from the JWT provider (token_expired).
+    boolean jwtRetried;
+    // The token's expiry was checked (and the provider asked) for this send.
+    boolean jwtFreshnessChecked;
+    // The identify was already sent again on a fresh visitor session (identity_mismatch).
+    boolean identityMismatchRetried;
+    // Sent unchanged only to get the grant of a session the server already identified (a
+    // project that switched to Signed): a refusal keeps that session.
+    boolean signedGrantOnly;
 
     /**
      * Create a gleap user. This can be used to identify the user.
@@ -157,6 +168,35 @@ public class GleapSessionProperties {
         this.customData = customData;
     }
 
+    /**
+     * A copy (in memory, for a resend) with {@code token} as user hash and its user id; the
+     * retry and freshness marks are not copied.
+     */
+    GleapSessionProperties withUserJwt(String token) {
+        GleapSessionProperties copy = new GleapSessionProperties();
+        copy.userId = userId;
+        copy.name = name;
+        copy.email = email;
+        copy.hash = hash;
+        copy.value = value;
+        copy.avatar = avatar;
+        copy.phone = phone;
+        copy.plan = plan;
+        copy.companyId = companyId;
+        copy.companyName = companyName;
+        copy.sla = sla;
+        copy.customData = customData;
+        copy.jwtOnly = jwtOnly;
+        if (token != null) {
+            copy.hash = token;
+            String tokenUserId = GleapUserJwt.userIdOf(token);
+            if (tokenUserId != null) {
+                copy.userId = tokenUserId;
+            }
+        }
+        return copy;
+    }
+
     public JSONObject getJSONPayload() {
         JSONObject jsonObject = new JSONObject();
 
@@ -285,6 +325,22 @@ public class GleapSessionProperties {
 
         if (this.userId == null || !this.userId.equals(other.userId)) {
             return false;
+        }
+
+        // An identity token (JWT) is part of the identify: a token that says something new (another
+        // claim or key) is sent again even when nothing else changed. Compared by what it says, so
+        // a token re-minted per app start for the same user and data is not sent again. (A legacy
+        // hash is not compared, as before.)
+        if (GleapUserJwt.isUserJwt(other.getHash())) {
+            String otherFingerprint = GleapUserJwt.identityFingerprint(other.getHash());
+            if (otherFingerprint == null || !otherFingerprint.equals(GleapUserJwt.identityFingerprint(this.getHash()))) {
+                return false;
+            }
+        }
+
+        // setUserJwt sends no contact fields: the user id and the token are all there is.
+        if (other.jwtOnly) {
+            return true;
         }
 
         if (this.getName() != null && other.getName() != null && !this.getName().equals(other.getName())) {
