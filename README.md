@@ -4,11 +4,11 @@
 
 Add AI-native customer support, live chat, in-app bug reporting, a help center and surveys to your Android apps with [Gleap](https://www.gleap.ai). Gleap is an Intercom alternative for software teams that connects customer conversations and feedback with product development.
 
-[SDK documentation](https://docs.gleap.ai/documentation/android/README) · [Website](https://www.gleap.ai) · [Plans and pricing](https://www.gleap.ai/pricing)
+[SDK documentation](https://docs.gleap.ai/en/articles/466-android-sdk-setup) · [Website](https://www.gleap.ai) · [Plans and pricing](https://www.gleap.ai/pricing)
 
 ## Docs & Examples
 
-Checkout our [documentation](https://docs.gleap.ai/documentation/android/README) for full reference.
+Checkout our [documentation](https://docs.gleap.ai/en/articles/466-android-sdk-setup) for full reference.
 
 ## Installation with Maven
 
@@ -28,7 +28,7 @@ dependencies {
 dependencies {
 ...
 
-implementation group: 'io.gleap', name: 'gleap-android-sdk', version: '19.0.0'
+implementation group: 'io.gleap', name: 'gleap-android-sdk', version: '19.5.0'
 }
 ```
 
@@ -44,7 +44,7 @@ Open your MainApplication
 
 Import the Gleap SDK by adding the following import below your other imports.
 
-```
+```java
 import io.gleap.Gleap;
 ```
 
@@ -52,11 +52,19 @@ import io.gleap.Gleap;
 
 The last step is to initialize the Gleap SDK by adding the following Code to the ```onCreate``` method:
 
-```
+```java
 Gleap.initialize("YOUR_PROJECT_ID", this);
 ```
 
-Your Project ID is shown in the Gleap dashboard on the SDK install page and under Settings → Project. It used to be called "SDK key" or "API key": the value is the same, so existing keys keep working.
+In Kotlin:
+
+```kotlin
+import io.gleap.Gleap
+
+Gleap.initialize("YOUR_PROJECT_ID", this)
+```
+
+Your Project ID is in the [Gleap dashboard](https://app.gleap.io) under **Settings → Project → General**. It used to be called "SDK key" or "API key": the value is the same, so existing keys keep working.
 
 ## Data regions
 
@@ -117,16 +125,16 @@ Without it nothing changes: banners overlay the app as before.
 
 ## Customer identity (JWT)
 
-### Signed identity (recommended)
+Sign users in with an identity token. Your backend signs a short HS256 JWT with an identity key from **Settings → Security → Customer identity → Identity keys** (put the key id in the `kid` header; the secret never leaves your server). The `userId` claim is required. Optional claims: `email`, `name`, `company` (`{ id, name }`), `plan`, and provider ids such as `stripeCustomerId`. Set `exp` to at most one hour. Everything in the token lands on the contact as signed data the app cannot change.
 
-Your backend signs an HS256 JWT with an identity key from Settings → Security → Identity keys (put the key id in the `kid` header; the secret never leaves your server). The `userId` claim is required. Optional claims: `email`, `name`, `company` (`{ id, name }`), `plan`, and provider ids such as `stripeCustomerId`. Set `exp` to at most one hour. Everything in the token lands on the contact as signed data the app cannot change. Pass the token to the SDK after login and on every app start of a logged-in user; `setUserJwt` keeps it in memory only. `setUserJwtProvider` fetches a fresh token when it expires, and also signs the session again after an app restart: when the server reports Signed mode without a valid grant and no token was passed to `setUserJwt`, the provider is asked once per app start and its token is sent like one passed to `setUserJwt` (a null token sends nothing). The provider can be set before or after `Gleap.initialize`. `setAuthTokens` hands Kai your own API tokens for this user. See [Customer identity](https://docs.gleap.ai/documentation/guides/customer-identity).
+Pass the token to `setUserJwt` after login and on every app start of a logged-in user; no separate identify call is needed. `setUserJwt` keeps the token in memory only. `setUserJwtProvider` (optional) fetches a fresh token when it expires, and also signs the session again after an app restart: when the server reports Signed mode without a valid grant and no token was passed to `setUserJwt`, the provider is asked once per app start and its token is sent like one passed to `setUserJwt` (a null token sends nothing). The provider can be set before or after `Gleap.initialize`. Call `clearIdentity` on logout. `setAuthTokens` hands Kai your own API tokens for this user. See [Android user identity](https://docs.gleap.ai/en/articles/467-android-sdk-user-identity) and [Customer identity](https://docs.gleap.ai/en/articles/709-customer-identity).
 
 ```java
-// After login and on every app start of a logged-in user
+// After login and on every app start of a logged-in user (token from your backend)
 Gleap.getInstance().setUserJwt(token);
 
-// Called when the token has expired or is about to, and once per app start to restore a
-// signed session when no token was passed; pass null when it failed
+// Optional: called when the token has expired or is about to, and once per app start to restore
+// a signed session when no token was passed; pass null when it failed
 Gleap.getInstance().setUserJwtProvider(callback ->
     myBackend.fetchGleapToken(token -> callback.onToken(token))
 );
@@ -135,20 +143,16 @@ Gleap.getInstance().setUserJwtProvider(callback ->
 Map<String, String> tokens = new HashMap<>();
 tokens.put("backend", accessToken);
 Gleap.getInstance().setAuthTokens(tokens);
+
+// On logout
+Gleap.getInstance().clearIdentity();
 ```
 
-### Legacy user hash
-
-Instead of a token you can still identify with a user hash: the HMAC-SHA256 of the user id, created on your server with the project's identity verification secret. It is accepted while "Accept legacy user hash" stays on in the project's security settings.
-
-```java
-GleapSessionProperties props = new GleapSessionProperties("user-id", "Name", "email@example.com", "USER_HASH");
-Gleap.getInstance().identifyUser("user-id", props);
-```
+`identifyContact(userId, properties)` without a token creates an unsigned contact. Older integrations that pass a user hash to identify keep working; see [Upgrade to identity tokens](https://docs.gleap.ai/en/articles/16752008-upgrade-to-identity-tokens).
 
 ## Authenticated conversation files
 
-When "Authenticated conversation files" is enabled for your project, conversation files can only be opened by a user with a signed identity. Identify the user with `Gleap.getInstance().setUserJwt(token)` (or the legacy user hash) on every app start.
+When "Authenticated conversation files" is enabled for your project, conversation files can only be opened by a user with a signed identity. Identify the user with `Gleap.getInstance().setUserJwt(token)` on every app start.
 
 The SDK then receives a short-lived file session (15 minutes), which it keeps in memory only (never on disk), passes to the widget and refreshes before it expires. `clearIdentity` revokes it.
 

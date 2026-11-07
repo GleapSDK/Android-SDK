@@ -76,15 +76,18 @@ public class IdentifyUser extends AppCompatActivity {
         findViewById(R.id.btn_identify3).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                GleapSessionProperties gleapSessionProperties = new GleapSessionProperties("12", "Test User", "test@email.com", "f60d2a8960f5e2711159d72b67695014a05aa576023d77056bb27e7d7a96b4a6");
-                Gleap.getInstance().identifyUser("1234", gleapSessionProperties);
+                // Sign the user in with an identity token: an HS256 JWT your backend signs with an
+                // identity key (Settings → Security → Customer identity → Identity keys). Call it
+                // after login and on every app start of a logged-in user.
+                String token = "TOKEN_FROM_YOUR_BACKEND"; // placeholder: the identity token from your backend
+                Gleap.getInstance().setUserJwt(token);
             }
         });
 
         findViewById(R.id.btn_identify_error).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                GleapSessionProperties gleapSessionProperties = new GleapSessionProperties(null, null, null, null);
+                GleapSessionProperties gleapSessionProperties = new GleapSessionProperties(null, null, null);
                 Gleap.getInstance().identifyUser(null, gleapSessionProperties);
             }
         });

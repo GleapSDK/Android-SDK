@@ -47,8 +47,8 @@ interface iGleap {
     /**
      * Opens the conversation of a protected file from an emailed file link (authenticated
      * conversation files). The email links to your app's URL with a {@code gleapFile} query
-     * parameter; pass that URL here when your app handles it (e.g. as an App Link), and identify
-     * the user with their user hash as usual. Once the SDK has a file session, it opens the
+     * parameter; pass that URL here when your app handles it (e.g. as an App Link), and sign the
+     * user in with {@link #setUserJwt(String)} as usual. Once the SDK has a file session, it opens the
      * file's conversation if the identified user may see it; otherwise nothing happens.
      *
      * @param url the link that was opened, e.g. {@code https://app.example.com/?gleapFile=<file id>}
@@ -247,7 +247,8 @@ interface iGleap {
     void identifyUser(String id, GleapSessionProperties gleapSessionProperties, JSONObject customData);
 
     /**
-     * Identifies a contact.
+     * Identifies a contact. Without an identity token the contact is unsigned; to sign the user
+     * in, use {@link #setUserJwt(String)}.
      *
      * @param id The updated user data.
      * @author Gleap
@@ -255,7 +256,8 @@ interface iGleap {
     void identifyContact(String id);
 
     /**
-     * Identifies a contact with data.
+     * Identifies a contact with data. Without an identity token the contact is unsigned; to sign
+     * the user in, use {@link #setUserJwt(String)}.
      *
      * @param gleapSessionProperties The updated user data.
      * @author Gleap
@@ -308,12 +310,14 @@ interface iGleap {
 
     /**
      * Identifies the user with an identity token: an HS256 JWT your backend signs with an
-     * identity key. The token is the whole identify: its {@code userId} (or {@code user_id})
-     * claim names the user and every other claim lands on the contact as signed data; no other
-     * contact field is sent. Call it after login and on every app start. The token is kept in
+     * identity key (Settings → Security → Customer identity → Identity keys). The token is the
+     * whole identify: its {@code userId} (or {@code user_id}) claim names the user and every other
+     * claim lands on the contact as signed data; no other contact field is sent and no separate
+     * identify call is needed. Call it after login and on every app start of a logged-in user;
+     * call {@link #clearIdentity()} on logout. The token is kept in
      * memory only and sent again whenever it changes. A token that is not a JWT (three base64url
      * parts), has no user id or is longer than 4096 characters is refused with a log line and
-     * nothing is sent.
+     * nothing is sent. See https://docs.gleap.ai/en/articles/709-customer-identity
      *
      * @param token the identity token (JWT) from your backend
      */
@@ -359,7 +363,8 @@ interface iGleap {
     void setSessionDuration(long milliseconds);
 
     /**
-     * Clears a user session, its identity token and auth tokens. The JWT provider stays set.
+     * Clears a user session, its identity token and auth tokens; call it on logout. The JWT
+     * provider stays set.
      *
      * @author Gleap
      */
