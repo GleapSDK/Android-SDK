@@ -19,10 +19,11 @@ import java.util.Set;
  */
 final class GleapExternalLinks {
     // Schemes that reach the app's own data (file:, content:), run script (javascript:,
-    // data:) or describe arbitrary intents (intent:). http(s), mailto, tel, gleap: and other
-    // app schemes stay allowed: help-center links may deep-link into the app.
+    // data:) or describe arbitrary intents (intent:), and blob: URLs, which only exist inside
+    // their page (as an app link they closed the widget). http(s), mailto, tel, gleap: and
+    // other app schemes stay allowed: help-center links may deep-link into the app.
     private static final Set<String> BLOCKED_SCHEMES =
-            new HashSet<>(Arrays.asList("intent", "file", "content", "javascript", "data"));
+            new HashSet<>(Arrays.asList("intent", "file", "content", "javascript", "data", "blob"));
 
     private GleapExternalLinks() {
     }

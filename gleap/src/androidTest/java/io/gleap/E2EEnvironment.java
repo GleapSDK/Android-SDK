@@ -37,6 +37,10 @@ final class E2EEnvironment {
     private static E2EGleapServer server;
     private static boolean started;
 
+    static E2EGleapServer server() {
+        return server;
+    }
+
     interface Condition {
         boolean check() throws Exception;
     }

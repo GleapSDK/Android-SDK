@@ -1,6 +1,8 @@
 package io.gleap;
 
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
+import android.content.ClipData;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
@@ -51,6 +53,7 @@ import androidx.core.view.WindowInsetsControllerCompat;
 
 import org.json.JSONObject;
 
+import java.io.File;
 import java.lang.ref.WeakReference;
 
 import gleap.io.gleap.R;
@@ -108,6 +111,8 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
 
     private final GleapWebPermissions webPermissions = new GleapWebPermissions(this);
     private final GleapFileChooser fileChooser = new GleapFileChooser();
+    // Opens the conversation's protected files; created on first use.
+    private GleapProtectedFiles protectedFiles;
 
     // Register the ActivityResultLaunchers at the class level
     private final ActivityResultLauncher<Intent> imagePickerLauncher = registerForActivityResult(
@@ -934,6 +939,10 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
     private class GleapWebViewClient extends WebViewClient {
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, String url) {
+            // A protected file needs the file session: a browser only gets a 403.
+            if (protectedFiles().open(url, null)) {
+                return true;
+            }
             return GleapExternalLinks.openOutside(GleapMainActivity.this, url, GleapConfig.getInstance().getiFrameUrl());
         }
 
@@ -976,6 +985,46 @@ public class GleapMainActivity extends AppCompatActivity implements OnHttpRespon
                 alertDialog.show();
             } catch (Exception ex) {
             }
+        }
+    }
+
+    /**
+     * Opens the conversation's protected files (open-protected-file and links to them). Main
+     * thread only.
+     */
+    GleapProtectedFiles protectedFiles() {
+        if (protectedFiles == null) {
+            protectedFiles = new GleapProtectedFiles(getCacheDir(), new GleapProtectedFiles.Viewer() {
+                @Override
+                public void show(File file, String mimeType) {
+                    showProtectedFile(file, mimeType);
+                }
+            });
+        }
+        return protectedFiles;
+    }
+
+    /**
+     * Hands a downloaded protected file to the app that views its type (read access to this one
+     * file only), or to the share sheet (save to Files or Drive, send) when no app views it.
+     */
+    private void showProtectedFile(File file, String mimeType) {
+        if (isFinishing()) {
+            return;
+        }
+        Uri uri = GleapFileProvider.getUriForFile(this, GleapFileProvider.authority(this), file);
+        Intent view = new Intent(Intent.ACTION_VIEW)
+                .setDataAndType(uri, mimeType)
+                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        try {
+            startActivity(view);
+        } catch (ActivityNotFoundException noViewer) {
+            Intent send = new Intent(Intent.ACTION_SEND)
+                    .setType(mimeType)
+                    .putExtra(Intent.EXTRA_STREAM, uri)
+                    .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            send.setClipData(ClipData.newRawUri(file.getName(), uri));
+            startActivity(Intent.createChooser(send, file.getName()));
         }
     }
 

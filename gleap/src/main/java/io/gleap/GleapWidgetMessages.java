@@ -97,9 +97,11 @@ final class GleapWidgetMessages {
         // The grant of a signed identify: the messenger sends it as Gleap-Grant on its requests.
         String grant = GleapSessionController.getInstance().getGrant(gleapSession.getId());
         data.put("grant", grant != null ? grant : JSONObject.NULL);
-        // Lets the widget hand a verified contact's session over (adopt-session).
+        // Lets the widget hand a verified contact's session over (adopt-session) and have the
+        // app open a protected conversation file (open-protected-file).
         JSONObject capabilities = new JSONObject();
         capabilities.put("adoptSession", true);
+        capabilities.put("openProtectedFile", true);
         data.put("capabilities", capabilities);
         return data;
     }

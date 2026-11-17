@@ -118,6 +118,9 @@ final class GleapWidgetBridge {
                         case "open-url":
                             openExternalURL(activity, gleapCallback);
                             break;
+                        case "open-protected-file":
+                            openProtectedFile(activity, gleapCallback.optJSONObject("data"));
+                            break;
                         case "notify-event":
                             notifyEvent(gleapCallback);
                             break;
@@ -232,6 +235,10 @@ final class GleapWidgetBridge {
                     GleapLog.w("Blocked a link with a disallowed scheme");
                     return;
                 }
+                // A protected conversation file needs the file session: a browser only gets a 403.
+                if (activity.protectedFiles().open(url, null)) {
+                    return;
+                }
                 if (Gleap.internalCloseWidgetOnExternalLinkOpen) {
                     GleapMainActivity.setUrlToOpenAfterClose(url);
                     activity.closeMainGleapActivity();
@@ -241,6 +248,18 @@ final class GleapWidgetBridge {
             }
         } catch (Exception e) {
         }
+    }
+
+    /**
+     * open-protected-file: the widget asks the app to download a protected conversation file
+     * with the file session and open it ({@code {url, name}}).
+     */
+    private static void openProtectedFile(GleapMainActivity activity, JSONObject data) {
+        if (data == null) {
+            return;
+        }
+        String name = data.optString("name", "");
+        activity.protectedFiles().open(data.optString("url", ""), name.isEmpty() ? null : name);
     }
 
     private static void notifyEvent(JSONObject object) {
@@ -437,6 +456,8 @@ final class GleapWidgetBridge {
             activity.sendMessage(GleapWidgetMessages.message("session-update", GleapWidgetMessages.sessionUpdate()));
         } catch (Exception exception) {
         }
+        // A file waiting for a renewed file session.
+        activity.protectedFiles().sessionChanged();
     }
 
     private static void sendScreenshotUpdate(GleapMainActivity activity) {

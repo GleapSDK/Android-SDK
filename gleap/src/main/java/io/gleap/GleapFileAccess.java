@@ -239,6 +239,8 @@ final class GleapFileAccess {
         synchronized (GleapFileAccess.class) {
             pendingFileId = null;
         }
+        // The protected files the user opened go with them.
+        GleapProtectedFiles.deleteDownloads();
         if (token == null || token.isEmpty()) {
             return;
         }
