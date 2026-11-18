@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The protected conversation files the SDK downloaded (GleapProtectedFiles), shared read-only
+     with the app that opens them. -->
+<paths>
+    <cache-path name="gleap_files" path="gleap-files/" />
+</paths>

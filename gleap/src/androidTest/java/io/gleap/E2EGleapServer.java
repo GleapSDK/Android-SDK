@@ -28,11 +28,16 @@ import okhttp3.mockwebserver.RecordedRequest;
  */
 final class E2EGleapServer {
     static final String SDK_KEY = "e2e-fake-sdk-key";
+    // A protected conversation file (GET /af/<id>): served only with this file session.
+    static final String FILE_SESSION = "e2e-file-session-0123456789abcdefghijklmnopq";
+    static final String PROTECTED_FILE_BODY = "%PDF-1.4 e2e protected file";
 
     private final MockWebServer server = new MockWebServer();
     // The bodies of the tickets (POST /bugs/v2) received so far.
     private final List<JSONObject> tickets = new CopyOnWriteArrayList<>();
     final AtomicInteger webSocketOpens = new AtomicInteger();
+    // The requests for protected files (GET /af/<id>) received so far.
+    final List<RecordedRequest> fileRequests = new CopyOnWriteArrayList<>();
 
     private final AtomicInteger sequence = new AtomicInteger();
     private final AtomicInteger sessionCounter = new AtomicInteger();
@@ -137,6 +142,15 @@ final class E2EGleapServer {
         if (path.equals("/bugs/v2")) {
             tickets.add(new JSONObject(new String(body, StandardCharsets.UTF_8)));
             return json(201, new JSONObject().put("shareToken", "e2e-share-" + number));
+        }
+        if (path.startsWith("/af/")) {
+            fileRequests.add(request);
+            if (!FILE_SESSION.equals(request.getHeader("X-File-Session"))) {
+                return new MockResponse().setResponseCode(403);
+            }
+            return new MockResponse().setResponseCode(200)
+                    .setHeader("Content-Type", "application/pdf")
+                    .setBody(PROTECTED_FILE_BODY);
         }
         if (path.startsWith("/widget/")) {
             return new MockResponse().setResponseCode(200)

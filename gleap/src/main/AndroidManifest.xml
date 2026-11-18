@@ -9,6 +9,17 @@
             android:name="io.gleap.GleapMainActivity"
             android:configChanges="orientation|screenSize|uiMode"
             android:theme="@style/AppTheme.TranslucentBG" />
+
+        <!-- Protected conversation files open in the app that views them (GleapProtectedFiles). -->
+        <provider
+            android:name="io.gleap.GleapFileProvider"
+            android:authorities="${applicationId}.gleap.files"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/gleap_file_paths" />
+        </provider>
     </application>
 
 </manifest>

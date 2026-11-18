@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+Protected conversation files open in the app. Projects with authenticated conversation files serve them from `files.gleap.io/af/<id>` (`files.us.gleap.ai` in the US), readable only with the session's file session. The Messenger asks the app to open such a file (`open-protected-file`, offered only to SDKs whose `session-update` announces `capabilities.openProtectedFile`): the SDK downloads it on a thread of its own with the file session as its only credential (no other header, no cache, no redirect, and only from the files host of the configured region), keeps it in the app's cache (`gleap-files/`) and starts the app that views its type with a read-only content URI of the SDK's own `io.gleap.GleapFileProvider` (authority `<applicationId>.gleap.files`, merged into your manifest); when no app views the type, the share sheet opens instead (save to Files or Drive, send). Only the latest file is kept; `clearIdentity` deletes it. A file opened while the file session is renewing (after the app was in the background) opens once the renewal is answered. Links in the Messenger to a protected file (`open-url`, a tapped link) open the same way instead of in the browser, where they were refused; `blob:` URLs are never opened (as an app link they closed the Messenger). Apps without protected files see no change.
+
 ## 19.5.1
 Documentation only: README, package description and doc comments name the Project ID (Settings → Project → General) and sign users in with `setUserJwt`. No code changes.
 
