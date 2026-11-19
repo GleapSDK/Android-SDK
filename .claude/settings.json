@@ -1,0 +1,97 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(**/.env*)",
+      "Read(**/local.properties)",
+      "Read(**/*.jks)",
+      "Read(**/*.keystore)",
+      "Read(**/*.gpg)",
+      "Read(~/.gradle/gradle.properties)",
+      "Read(~/.gnupg/**)",
+      "Bash(cat ~/.gradle/gradle.properties*)",
+      "Bash(cat .env*)",
+      "Bash(cat *local.properties*)",
+      "Bash(./gradlew *publish*)",
+      "Bash(./gradlew *Publish*)",
+      "Bash(./gradlew *MavenCentral*)",
+      "Bash(./gradlew *signMavenPublication*)",
+      "Bash(git tag *)",
+      "Bash(git push --tags*)",
+      "Bash(git push * --tags*)",
+      "Bash(git push *refs/tags*)",
+      "Bash(gh release *)",
+      "Bash(gh workflow run *)",
+      "Bash(gpg *)"
+    ],
+    "allow": [
+      "Read",
+      "Glob",
+      "Grep",
+      "WebFetch",
+      "WebSearch",
+      "TodoWrite",
+      "Agent",
+      "mcp__context7__*",
+      "Bash(git status*)",
+      "Bash(git log*)",
+      "Bash(git diff*)",
+      "Bash(git branch*)",
+      "Bash(git show*)",
+      "Bash(git rev-parse*)",
+      "Bash(git fetch*)",
+      "Bash(git remote -v*)",
+      "Bash(git blame*)",
+      "Bash(git merge-base*)",
+      "Bash(ls*)",
+      "Bash(pwd)",
+      "Bash(cat *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(wc *)",
+      "Bash(find *)",
+      "Bash(which *)",
+      "Bash(unzip -l *)",
+      "Bash(javap *)",
+      "Bash(/usr/libexec/java_home*)",
+      "Bash(./gradlew :gleap:testDebugUnitTest*)",
+      "Bash(./gradlew :gleap:compileDebug*)",
+      "Bash(./gradlew :gleap:lintDebug*)",
+      "Bash(./gradlew :gleap:assembleDebug)",
+      "Bash(./gradlew :gleap:assembleRelease)",
+      "Bash(./gradlew :gleap:dependencies*)",
+      "Bash(./gradlew :app:assembleDebug)",
+      "Bash(./gradlew :app:compileDebugJavaWithJavac)",
+      "Bash(./gradlew tasks*)",
+      "Bash(./gradlew --version)",
+      "Bash(sh quality/lint-new.sh*)",
+      "Bash(sh .githooks/install.sh)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/check-edited-file.sh",
+            "timeout": 180,
+            "statusMessage": "Compiling the edited file's source set..."
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/check-before-stop.sh",
+            "timeout": 900,
+            "statusMessage": "quality/lint-new.sh, the unit tests and the sample app..."
+          }
+        ]
+      }
+    ]
+  }
+}

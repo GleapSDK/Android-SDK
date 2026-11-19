@@ -1,0 +1,57 @@
+name: Quality
+
+# quality/lint-new.sh on what a PR adds compared with where it left the base: Android Lint beyond the baseline,
+# Checkstyle on added lines, and the public API against the base's build. Old code may stay as it is but must not get
+# worse; new code keeps .claude/rules/code-conventions.md.
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The PR's own commit, not the merge commit, and the history to find the fork point.
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: 17
+
+      # v5 on purpose: v6 moved caching into a proprietary component with separate terms of use.
+      - uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
+
+      # The base branch's quality/ (script, configs, lint baseline, API list) judges the PR, so a PR cannot switch a
+      # check off or grow the baseline with its own edits. The first PR that adds quality/ has no such copy and runs
+      # its own. Build files still run as the PR has them: a change to them is flagged for review.
+      - name: Check what the PR adds
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          gate=quality
+          if git cat-file -e "origin/$BASE_REF:quality/lint-new.sh" 2>/dev/null; then
+            mkdir -p "$RUNNER_TEMP/gate"
+            git archive "origin/$BASE_REF" quality | tar -x -C "$RUNNER_TEMP/gate"
+            gate="$RUNNER_TEMP/gate/quality"
+          fi
+          changed="$(git diff --name-only "$(git merge-base "origin/$BASE_REF" HEAD)" HEAD -- quality .claude/hooks .claude/settings.json .githooks .github/workflows build.gradle settings.gradle gradle.properties gradle gleap/build.gradle app/build.gradle)"
+          if [ -n "$changed" ]; then
+            echo "::warning title=This PR changes the checks or the build::Review these on purpose; checks in quality/ apply only after the merge: $(echo $changed)"
+          fi
+          set +e
+          sh "$gate/lint-new.sh" --base "origin/$BASE_REF" --api >"$RUNNER_TEMP/lint-new.txt" 2>&1
+          code=$?
+          cat "$RUNNER_TEMP/lint-new.txt"
+          { echo '```'; cat "$RUNNER_TEMP/lint-new.txt"; echo '```'; } >>"$GITHUB_STEP_SUMMARY"
+          exit "$code"

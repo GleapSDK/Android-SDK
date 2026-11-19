@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Android Lint for quality/lint-new.sh (applied by quality.init.gradle). Every other check runs at its default and
+     fails as an error once it finds something that is not in lint-baseline.xml. -->
+<lint>
+    <!-- Their findings change with time, not with the code: a new library release, a new Android version. Versions and
+         the target SDK are moved in changes of their own. -->
+    <issue id="GradleDependency" severity="ignore" />
+    <issue id="NewerVersionAvailable" severity="ignore" />
+    <issue id="AndroidGradlePluginVersion" severity="ignore" />
+    <issue id="OldTargetApi" severity="ignore" />
+    <issue id="ExpiredTargetSdkVersion" severity="ignore" />
+    <issue id="ExpiringTargetSdkVersion" severity="ignore" />
+</lint>

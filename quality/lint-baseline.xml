@@ -1,0 +1,3193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<issues format="6" by="lint 8.8.0" type="baseline" client="gradle" dependencies="false" name="AGP (8.8.0)" variant="all" version="8.8.0">
+
+    <issue
+        id="DefaultLocale"
+        message="Implicitly using the default locale is a common source of bugs: Use `toLowerCase(Locale)` instead. For strings meant to be internal use `Locale.ROOT`, otherwise `Locale.getDefault()`."
+        errorLine1="        return Locale.getDefault().toLanguageTag().toLowerCase();"
+        errorLine2="                                                   ~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapConfig.java"
+            line="93"
+            column="52"/>
+    </issue>
+
+    <issue
+        id="DiscouragedPrivateApi"
+        message="Reflective access to mActivities, which is not part of the public SDK and therefore likely to change in future Android releases"
+        errorLine1="            Field activitiesField = activityThreadClass.getDeclaredField(&quot;mActivities&quot;);"
+        errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/ActivityUtil.java"
+            line="35"
+            column="37"/>
+    </issue>
+
+    <issue
+        id="DiscouragedPrivateApi"
+        message="Reflective access to mViews, which is not part of the public SDK and therefore likely to change in future Android releases"
+        errorLine1="                field = globalClass.getDeclaredField(&quot;mViews&quot;);"
+        errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapWindowCapture.java"
+            line="790"
+            column="25"/>
+    </issue>
+
+    <issue
+        id="InlinedApi"
+        message="Field requires API level 23 (current min is 21): `android.security.keystore.KeyProperties#KEY_ALGORITHM_AES`"
+        errorLine1="        KeyGenerator keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, ANDROID_KEYSTORE);"
+        errorLine2="                                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapPreferencesHelper.java"
+            line="242"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 23 (current min is 21): `android.view.View#setOnScrollChangeListener`"
+        errorLine1="            decorView.setOnScrollChangeListener((v, scrollX, scrollY, oldScrollX, oldScrollY) -> {"
+        errorLine2="                      ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapMainActivity.java"
+            line="295"
+            column="23"/>
+    </issue>
+
+    <issue
+        id="PrivateApi"
+        message="Accessing internal APIs via reflection is not supported and may not work on all devices or in the future"
+        errorLine1="            Class activityThreadClass = Class.forName(&quot;android.app.ActivityThread&quot;);"
+        errorLine2="                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/ActivityUtil.java"
+            line="33"
+            column="41"/>
+    </issue>
+
+    <issue
+        id="PrivateApi"
+        message="Accessing internal APIs via reflection is not supported and may not work on all devices or in the future"
+        errorLine1="                Class&lt;?> globalClass = Class.forName(&quot;android.view.WindowManagerGlobal&quot;);"
+        errorLine2="                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapWindowCapture.java"
+            line="788"
+            column="40"/>
+    </issue>
+
+    <issue
+        id="InflateParams"
+        message="Avoid passing `null` as the view root (needed to resolve layout parameters on the inflated layout&apos;s root element)"
+        errorLine1="            this.layout = (ConstraintLayout) inflater.inflate(R.layout.activity_gleap_fab, null);"
+        errorLine2="                                                                                           ~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapOverlayManager.java"
+            line="408"
+            column="92"/>
+    </issue>
+
+    <issue
+        id="SetJavaScriptEnabled"
+        message="Using `setJavaScriptEnabled` can introduce XSS vulnerabilities into your application, review carefully"
+        errorLine1="                    settings.setJavaScriptEnabled(true);"
+        errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapBanner.java"
+            line="105"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="SetJavaScriptEnabled"
+        message="Using `setJavaScriptEnabled` can introduce XSS vulnerabilities into your application, review carefully"
+        errorLine1="        settings.setJavaScriptEnabled(true);"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapMainActivity.java"
+            line="865"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="SetJavaScriptEnabled"
+        message="Using `setJavaScriptEnabled` can introduce XSS vulnerabilities into your application, review carefully"
+        errorLine1="        s.setJavaScriptEnabled(true);"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapModal.java"
+            line="123"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="DrawAllocation"
+        message="Avoid object allocations during draw/layout operations (preallocate and reuse instead)"
+        errorLine1="                    setTouchDelegate(new TouchDelegate(new Rect(stopTarget), stopButton));"
+        errorLine2="                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapCaptureBar.java"
+            line="1015"
+            column="38"/>
+    </issue>
+
+    <issue
+        id="DrawAllocation"
+        message="Avoid object allocations during draw/layout operations (preallocate and reuse instead)"
+        errorLine1="                    setTouchDelegate(new TouchDelegate(new Rect(stopTarget), stopButton));"
+        errorLine2="                                                       ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapCaptureBar.java"
+            line="1015"
+            column="56"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 21"
+        errorLine1="        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapModal.java"
+            line="140"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="Unnecessary; `SDK_INT` is always >= 21"
+        errorLine1="            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {"
+        errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapOverlayManager.java"
+            line="446"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="ObsoleteSdkInt"
+        message="This folder configuration (`v21`) is unnecessary; `minSdkVersion` is 21. Merge all the resources in this folder into `values`.">
+        <location
+            file="src/main/res/values-v21"/>
+    </issue>
+
+    <issue
+        id="StaticFieldLeak"
+        message="This field leaks a context object"
+        errorLine1="    private final Context context;"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/HttpHelper.java"
+            line="61"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="Overdraw"
+        message="Possible overdraw: Root element paints background `@color/gleap_transparent_background` with a theme that also paints a background (inferred theme is `@android:style/Theme.Holo`)"
+        errorLine1="    android:background=&quot;@color/gleap_transparent_background&quot;"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/layout/activity_gleap_fab.xml"
+            line="5"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="Overdraw"
+        message="Possible overdraw: Root element paints background `#00000000` with a theme that also paints a background (inferred theme is `@style/AppTheme_TranslucentBG`)"
+        errorLine1="    android:background=&quot;#00000000&quot;"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/res/layout/activity_gleap_main.xml"
+            line="7"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="IconLocation"
+        message="Found bitmap drawable `res/drawable/close.png` in densityless folder">
+        <location
+            file="src/main/res/drawable/close.png"/>
+    </issue>
+
+    <issue
+        id="IconLocation"
+        message="Found bitmap drawable `res/drawable/close_white.png` in densityless folder">
+        <location
+            file="src/main/res/drawable/close_white.png"/>
+    </issue>
+
+    <issue
+        id="ViewConstructor"
+        message="Custom view `Button` is missing constructor used by tools: `(Context)` or `(Context,AttributeSet)` or `(Context,AttributeSet,int)`"
+        errorLine1="    static final class Button extends LinearLayout implements Busy {"
+        errorLine2="                       ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapCaptureUi.java"
+            line="235"
+            column="24"/>
+    </issue>
+
+    <issue
+        id="ViewConstructor"
+        message="Custom view `CircleButton` is missing constructor used by tools: `(Context)` or `(Context,AttributeSet)` or `(Context,AttributeSet,int)`"
+        errorLine1="    static final class CircleButton extends AppCompatImageView implements Busy {"
+        errorLine2="                       ~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapCaptureUi.java"
+            line="362"
+            column="24"/>
+    </issue>
+
+    <issue
+        id="RtlHardcoded"
+        message="Use &quot;`Gravity.END`&quot; instead of &quot;`Gravity.RIGHT`&quot; to ensure correct behavior in right-to-left locales"
+        errorLine1="                    notificationContainerLayout.setGravity(Gravity.RIGHT);"
+        errorLine2="                                                                   ~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapNotificationStack.java"
+            line="100"
+            column="68"/>
+    </issue>
+
+    <issue
+        id="RtlHardcoded"
+        message="Use &quot;`Gravity.END`&quot; instead of &quot;`Gravity.RIGHT`&quot; to ensure correct behavior in right-to-left locales"
+        errorLine1="                    notificationContainerLayout.setGravity(Gravity.RIGHT);"
+        errorLine2="                                                                   ~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapNotificationStack.java"
+            line="107"
+            column="68"/>
+    </issue>
+
+    <issue
+        id="RtlHardcoded"
+        message="Use &quot;`Gravity.END`&quot; instead of &quot;`Gravity.RIGHT`&quot; to ensure correct behavior in right-to-left locales"
+        errorLine1="                    notificationContainerLayout.setGravity(Gravity.RIGHT);"
+        errorLine2="                                                                   ~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapNotificationStack.java"
+            line="111"
+            column="68"/>
+    </issue>
+
+    <issue
+        id="RtlHardcoded"
+        message="Use &quot;`Gravity.START`&quot; instead of &quot;`Gravity.LEFT`&quot; to ensure correct behavior in right-to-left locales"
+        errorLine1="                    notificationContainerLayout.setGravity(Gravity.LEFT);"
+        errorLine2="                                                                   ~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapNotificationStack.java"
+            line="153"
+            column="68"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    void aiToolExecuted(JSONObject jsonObject);"
+        errorLine2="                        ~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/callbacks/AiToolExecutedCallback.java"
+            line="6"
+            column="25"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    void configLoaded(JSONObject jsonObject);"
+        errorLine2="                      ~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/callbacks/ConfigLoadedCallback.java"
+            line="6"
+            column="23"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    void invoke(String message, String shareToken);"
+        errorLine2="                ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/callbacks/CustomActionCallback.java"
+            line="7"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    void invoke(String message, String shareToken);"
+        errorLine2="                                ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/callbacks/CustomActionCallback.java"
+            line="7"
+            column="33"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    void invoke(String url);"
+        errorLine2="                ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/callbacks/CustomLinkHandlerCallback.java"
+            line="4"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    void onError(Throwable error, String context);"
+        errorLine2="                 ~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/callbacks/ErrorCallback.java"
+            line="14"
+            column="18"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    void onError(Throwable error, String context);"
+        errorLine2="                                  ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/callbacks/ErrorCallback.java"
+            line="14"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    void invoke(String message);"
+        errorLine2="                ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/callbacks/FeedbackFlowClosedCallback.java"
+            line="4"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    void invoke(String message);"
+        errorLine2="                ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/callbacks/FeedbackFlowStartedCallback.java"
+            line="4"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    void invoke(String message);"
+        errorLine2="                ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/callbacks/FeedbackSendingFailedCallback.java"
+            line="4"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    void invoke(JSONObject jsonObject);"
+        errorLine2="                ~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/callbacks/FeedbackSentCallback.java"
+            line="6"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    void invoke(String message);"
+        errorLine2="                ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/callbacks/FeedbackWillBeSentCallback.java"
+            line="4"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    Activity getActivity();"
+        errorLine2="    ~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/callbacks/GetActivityCallback.java"
+            line="6"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    Bitmap getBitmap();"
+        errorLine2="    ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/callbacks/GetBitmapCallback.java"
+            line="6"
+            column="5"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public static JSONArray blacklist = new JSONArray();"
+        errorLine2="                  ~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="44"
+            column="19"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public static JSONArray propsToIgnore = new JSONArray();"
+        errorLine2="                  ~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="45"
+            column="19"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public static Gleap getInstance() {"
+        errorLine2="                  ~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="58"
+            column="19"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public static void initialize(String projectId, Application application) {"
+        errorLine2="                                  ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="70"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public static void initialize(String projectId, Application application) {"
+        errorLine2="                                                    ~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="70"
+            column="53"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void handlePushNotification(JSONObject notificationData) {"
+        errorLine2="                                       ~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="79"
+            column="40"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void openConversation(String shareToken) {"
+        errorLine2="                                 ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="98"
+            column="34"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public boolean openProtectedFileFromUrl(String url) {"
+        errorLine2="                                            ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="117"
+            column="45"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    protected void open(SurveyType type) {"
+        errorLine2="                        ~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="148"
+            column="25"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void openChecklist(String checklistId) {"
+        errorLine2="                              ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="165"
+            column="31"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void openChecklist(String checklistId, boolean showBackButton) {"
+        errorLine2="                              ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="170"
+            column="31"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void startChecklist(String outboundId) {"
+        errorLine2="                               ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="177"
+            column="32"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void startChecklist(String outboundId, boolean showBackButton) {"
+        errorLine2="                               ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="182"
+            column="32"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void startBot(String botId) {"
+        errorLine2="                         ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="221"
+            column="26"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void startBot(String botId, boolean showBackButton) {"
+        errorLine2="                         ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="226"
+            column="26"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void openNewsArticle(String articleId) {"
+        errorLine2="                                ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="232"
+            column="33"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void openNewsArticle(String articleId, boolean showBackButton) {"
+        errorLine2="                                ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="236"
+            column="33"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void startClassicForm(String formId) {"
+        errorLine2="                                 ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="246"
+            column="34"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void startClassicForm(String formId, Boolean showBackButton) {"
+        errorLine2="                                 ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="251"
+            column="34"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void startClassicForm(String formId, Boolean showBackButton) {"
+        errorLine2="                                                ~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="251"
+            column="49"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void startFeedbackFlow(String feedbackFlow) {"
+        errorLine2="                                  ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="260"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void startFeedbackFlow(String feedbackFlow, Boolean showBackButton) {"
+        errorLine2="                                  ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="265"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void startFeedbackFlow(String feedbackFlow, Boolean showBackButton) {"
+        errorLine2="                                                       ~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="265"
+            column="56"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void showSurvey(String surveyId) {"
+        errorLine2="                           ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="282"
+            column="28"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void showSurvey(String surveyId, SurveyType surveyType) {"
+        errorLine2="                           ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="298"
+            column="28"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void showSurvey(String surveyId, SurveyType surveyType) {"
+        errorLine2="                                            ~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="298"
+            column="45"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void openHelpCenter(Boolean showBackButton) {"
+        errorLine2="                               ~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="319"
+            column="32"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void askAI(String question) {"
+        errorLine2="                      ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="327"
+            column="23"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void askAI(String question, Boolean showBackButton) {"
+        errorLine2="                      ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="332"
+            column="23"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void askAI(String question, Boolean showBackButton) {"
+        errorLine2="                                       ~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="332"
+            column="40"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void openHelpCenterArticle(String articleId) {"
+        errorLine2="                                      ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="340"
+            column="39"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void openHelpCenterArticle(String articleId, Boolean showBackButton) {"
+        errorLine2="                                      ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="345"
+            column="39"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void openHelpCenterArticle(String articleId, Boolean showBackButton) {"
+        errorLine2="                                                        ~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="345"
+            column="57"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setNetworkLogPropsToIgnore(String[] propsToIgnore) {"
+        errorLine2="                                           ~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="364"
+            column="44"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setEnvDataPropsToIgnore(String[] envDataPropsToIgnore) {"
+        errorLine2="                                        ~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="376"
+            column="41"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setNetworkLogsBlacklist(String[] blacklist) {"
+        errorLine2="                                        ~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="400"
+            column="41"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void openHelpCenterCollection(String collectionId) {"
+        errorLine2="                                         ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="422"
+            column="42"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void openHelpCenterCollection(String collectionId, Boolean showBackButton) {"
+        errorLine2="                                         ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="427"
+            column="42"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void openHelpCenterCollection(String collectionId, Boolean showBackButton) {"
+        errorLine2="                                                              ~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="427"
+            column="63"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void searchHelpCenter(String term) {"
+        errorLine2="                                 ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="435"
+            column="34"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void searchHelpCenter(String term, Boolean showBackButton) {"
+        errorLine2="                                 ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="440"
+            column="34"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void searchHelpCenter(String term, Boolean showBackButton) {"
+        errorLine2="                                              ~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="440"
+            column="47"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void sendSilentCrashReport(String description, SEVERITY severity) {"
+        errorLine2="                                      ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="448"
+            column="39"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void sendSilentCrashReport(String description, SEVERITY severity) {"
+        errorLine2="                                                          ~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="448"
+            column="59"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void sendSilentCrashReport(String description, SEVERITY severity, JSONObject excludeData) {"
+        errorLine2="                                      ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="453"
+            column="39"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void sendSilentCrashReport(String description, SEVERITY severity, JSONObject excludeData) {"
+        errorLine2="                                                          ~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="453"
+            column="59"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void sendSilentCrashReport(String description, SEVERITY severity, JSONObject excludeData) {"
+        errorLine2="                                                                             ~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="453"
+            column="78"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void identifyUser(String id) {"
+        errorLine2="                             ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="465"
+            column="30"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void identifyUser(String id, GleapSessionProperties gleapSessionProperties) {"
+        errorLine2="                             ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="488"
+            column="30"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void identifyUser(String id, GleapSessionProperties gleapSessionProperties) {"
+        errorLine2="                                        ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="488"
+            column="41"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void identifyUser(String id, GleapSessionProperties gleapSessionProperties, JSONObject customData) {"
+        errorLine2="                             ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="501"
+            column="30"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void identifyUser(String id, GleapSessionProperties gleapSessionProperties, JSONObject customData) {"
+        errorLine2="                                        ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="501"
+            column="41"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void identifyUser(String id, GleapSessionProperties gleapSessionProperties, JSONObject customData) {"
+        errorLine2="                                                                                       ~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="501"
+            column="88"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void identifyContact(String id) {"
+        errorLine2="                                ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="526"
+            column="33"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void identifyContact(String id, GleapSessionProperties gleapSessionProperties) {"
+        errorLine2="                                ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="549"
+            column="33"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void identifyContact(String id, GleapSessionProperties gleapSessionProperties) {"
+        errorLine2="                                           ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="549"
+            column="44"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setUserJwt(String token) {"
+        errorLine2="                           ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="573"
+            column="28"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setUserJwtProvider(GleapUserJwtProvider provider) {"
+        errorLine2="                                   ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="640"
+            column="36"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setAuthTokens(java.util.Map&lt;String, String> tokens) {"
+        errorLine2="                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="660"
+            column="31"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void updateContact(GleapSessionProperties gleapSessionProperties) {"
+        errorLine2="                              ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="683"
+            column="31"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setRegion(String region) {"
+        errorLine2="                          ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="748"
+            column="27"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setApiUrl(String apiUrl) {"
+        errorLine2="                          ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="771"
+            column="27"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setWSApiUrl(String wsApiUrl) {"
+        errorLine2="                            ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="776"
+            column="29"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setFrameUrl(String frameUrl) {"
+        errorLine2="                            ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="787"
+            column="29"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setRealtimeHost(String realtimeHost) {"
+        errorLine2="                                ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="798"
+            column="33"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setBannerUrl(String bannerUrl) {"
+        errorLine2="                             ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="809"
+            column="30"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setModalUrl(String modalUrl) {"
+        errorLine2="                            ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="820"
+            column="29"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setLanguage(String language) {"
+        errorLine2="                            ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="838"
+            column="29"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setAiToolExecutedCallback(AiToolExecutedCallback aiToolExecutedCallback) {"
+        errorLine2="                                          ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="868"
+            column="43"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setWidgetOpenedCallback(WidgetOpenedCallback widgetOpenedCallback) {"
+        errorLine2="                                        ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="873"
+            column="41"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setWidgetClosedCallback(WidgetClosedCallback widgetClosedCallback) {"
+        errorLine2="                                        ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="878"
+            column="41"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="            NotificationUnreadCountUpdatedCallback notificationUnreadCountUpdatedCallback) {"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="884"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setBannerHeightChangedCallback(BannerHeightChangedCallback bannerHeightChangedCallback) {"
+        errorLine2="                                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="889"
+            column="48"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setCustomData(String key, String value) {"
+        errorLine2="                              ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="901"
+            column="31"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setCustomData(String key, String value) {"
+        errorLine2="                                          ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="901"
+            column="43"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void registerAgentTool(String name, GleapAgentToolHandler handler) {"
+        errorLine2="                                  ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="906"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void registerAgentTool(String name, GleapAgentToolHandler handler) {"
+        errorLine2="                                               ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="906"
+            column="48"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setTicketAttribute(String key, Object value) {"
+        errorLine2="                                   ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="918"
+            column="36"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setTicketAttribute(String key, Object value) {"
+        errorLine2="                                               ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="918"
+            column="48"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setTicketAttribute(String key, int value) {"
+        errorLine2="                                   ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="930"
+            column="36"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setTicketAttribute(String key, double value) {"
+        errorLine2="                                   ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="942"
+            column="36"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setTicketAttribute(String key, long value) {"
+        errorLine2="                                   ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="954"
+            column="36"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setTicketAttribute(String key, boolean value) {"
+        errorLine2="                                   ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="966"
+            column="36"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void unsetTicketAttribute(String key) {"
+        errorLine2="                                     ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="977"
+            column="38"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void attachCustomData(JSONObject data) {"
+        errorLine2="                                 ~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="998"
+            column="34"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void removeCustomDataForKey(String key) {"
+        errorLine2="                                       ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1009"
+            column="40"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setFeedbackWillBeSentCallback(FeedbackWillBeSentCallback feedbackWillBeSentCallback) {"
+        errorLine2="                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1028"
+            column="47"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setFeedbackSentCallback(FeedbackSentCallback feedbackSentCallback) {"
+        errorLine2="                                        ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1039"
+            column="41"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setOutboundSentCallback(OutboundSentCallback outboundSentCallback) {"
+        errorLine2="                                        ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1049"
+            column="41"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setFeedbackSendingFailedCallback(FeedbackSendingFailedCallback feedbackSendingFailedCallback) {"
+        errorLine2="                                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1060"
+            column="50"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setBitmapCallback(GetBitmapCallback getBitmapCallback) {"
+        errorLine2="                                  ~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1071"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void maskView(View view) {"
+        errorLine2="                         ~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1120"
+            column="26"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void unmaskView(View view) {"
+        errorLine2="                           ~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1129"
+            column="28"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setLogFlushHandler(GleapLogFlushHandler handler) {"
+        errorLine2="                                   ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1140"
+            column="36"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setConfigLoadedCallback(ConfigLoadedCallback configLoadedCallback) {"
+        errorLine2="                                        ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1153"
+            column="41"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setInitializedCallback(InitializedCallback initializedCallback) {"
+        errorLine2="                                       ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1166"
+            column="40"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setFeedbackFlowStartedCallback(FeedbackFlowStartedCallback feedbackFlowStartedCallback) {"
+        errorLine2="                                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1171"
+            column="48"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setInitializationDoneCallback(InitializationDoneCallback initializationDoneCallback) {"
+        errorLine2="                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1176"
+            column="47"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void attachNetworkLogs(Networklog[] networklogs) {"
+        errorLine2="                                  ~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1192"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void attachNetworkLogs(JSONArray networkLogs) {"
+        errorLine2="                                  ~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1213"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void attachConsoleLogs(JSONArray consoleLogs) {"
+        errorLine2="                                  ~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1229"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void logNetwork(String urlConnection, RequestType requestType, int status,"
+        errorLine2="                           ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1248"
+            column="28"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void logNetwork(String urlConnection, RequestType requestType, int status,"
+        errorLine2="                                                 ~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1248"
+            column="50"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="                           int duration, JSONObject request, JSONObject response) {"
+        errorLine2="                                         ~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1249"
+            column="42"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="                           int duration, JSONObject request, JSONObject response) {"
+        errorLine2="                                                             ~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1249"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void logNetwork(HttpsURLConnection urlConnection, JSONObject request, JSONObject response) {"
+        errorLine2="                           ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1262"
+            column="28"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void logNetwork(HttpsURLConnection urlConnection, JSONObject request, JSONObject response) {"
+        errorLine2="                                                             ~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1262"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void logNetwork(HttpsURLConnection urlConnection, JSONObject request, JSONObject response) {"
+        errorLine2="                                                                                 ~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1262"
+            column="82"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void logNetwork(HttpsURLConnection urlConnection, String request, String response) {"
+        errorLine2="                           ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1275"
+            column="28"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void logNetwork(HttpsURLConnection urlConnection, String request, String response) {"
+        errorLine2="                                                             ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1275"
+            column="62"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void logNetwork(HttpsURLConnection urlConnection, String request, String response) {"
+        errorLine2="                                                                             ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1275"
+            column="78"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void registerCustomAction(CustomActionCallback customAction) {"
+        errorLine2="                                     ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1286"
+            column="38"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void registerCustomLinkHandler(CustomLinkHandlerCallback customLinkHandler) {"
+        errorLine2="                                          ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1291"
+            column="43"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void handleLink(String url) {"
+        errorLine2="                           ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1296"
+            column="28"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void handleGleapLink(String href) {"
+        errorLine2="                                ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1300"
+            column="33"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setApplicationType(APPLICATIONTYPE applicationType) {"
+        errorLine2="                                   ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1310"
+            column="36"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="        public void onTaskComplete(JSONObject httpResponse) {"
+        errorLine2="                                   ~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1339"
+            column="36"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void trackEvent(String name) {"
+        errorLine2="                           ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1351"
+            column="28"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void trackEvent(String name, JSONObject data) {"
+        errorLine2="                           ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1363"
+            column="28"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void trackEvent(String name, JSONObject data) {"
+        errorLine2="                                        ~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1363"
+            column="41"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void addAttachment(File attachment) {"
+        errorLine2="                              ~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1374"
+            column="31"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setActivationMethods(GleapActivationMethod[] activationMethods) {"
+        errorLine2="                                     ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1389"
+            column="38"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void preFillForm(JSONObject data) {"
+        errorLine2="                            ~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1411"
+            column="29"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void log(String msg) {"
+        errorLine2="                    ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1463"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void log(String msg, GleapLogLevel gleapLogLevel) {"
+        errorLine2="                    ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1474"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void log(String msg, GleapLogLevel gleapLogLevel) {"
+        errorLine2="                                ~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1474"
+            column="33"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setColorScheme(String colorScheme) {"
+        errorLine2="                               ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1524"
+            column="32"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setColorScheme(String colorScheme, @Nullable String lightBackgroundColor, @Nullable String darkBackgroundColor) {"
+        errorLine2="                               ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1539"
+            column="32"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setTags(String[] tags) {"
+        errorLine2="                        ~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1548"
+            column="25"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setGetActivityCallback(GetActivityCallback getActivityCallback) {"
+        errorLine2="                                       ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1557"
+            column="40"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public GleapSessionProperties getIdentity() {"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1580"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setRegisterPushMessageGroupCallback(RegisterPushMessageGroupCallback callback) {"
+        errorLine2="                                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1609"
+            column="53"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setUnRegisterPushMessageGroupCallback(UnRegisterPushMessageGroupCallback callback) {"
+        errorLine2="                                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1614"
+            column="55"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void finishImageUpload(Uri[] uris) {"
+        errorLine2="                                  ~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1618"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void handleError(Throwable error, String context) {"
+        errorLine2="                            ~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1630"
+            column="29"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void handleError(Throwable error, String context) {"
+        errorLine2="                                             ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1630"
+            column="46"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void showModal(JSONObject data) {"
+        errorLine2="                          ~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1650"
+            column="27"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setErrorCallback(ErrorCallback errorCallback) {"
+        errorLine2="                                 ~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Gleap.java"
+            line="1668"
+            column="34"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    void execute(JSONObject params, GleapAgentToolResultCallback callback);"
+        errorLine2="                 ~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/callbacks/GleapAgentToolHandler.java"
+            line="6"
+            column="18"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    void execute(JSONObject params, GleapAgentToolResultCallback callback);"
+        errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/callbacks/GleapAgentToolHandler.java"
+            line="6"
+            column="37"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    void onResult(Object result);"
+        errorLine2="                  ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/callbacks/GleapAgentToolResultCallback.java"
+            line="4"
+            column="19"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public GleapAlreadyInitialisedException(String s) {"
+        errorLine2="                                            ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapAlreadyInitialisedException.java"
+            line="8"
+            column="45"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public static int convertPixelsToDp(float px, Context context){"
+        errorLine2="                                                  ~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapHelper.java"
+            line="14"
+            column="51"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public static int convertDpToPixel(float dp, Context context){"
+        errorLine2="                                                 ~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapHelper.java"
+            line="25"
+            column="50"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public static String getDeviceType() {"
+        errorLine2="                  ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapHelper.java"
+            line="34"
+            column="19"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    void onFlushRequested(Runnable done);"
+        errorLine2="                          ~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapLogFlushHandler.java"
+            line="18"
+            column="27"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public static WeakReference&lt;Activity> callerActivity;"
+        errorLine2="                  ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapMainActivity.java"
+            line="68"
+            column="19"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    protected void onCreate(Bundle savedInstanceState) {"
+        errorLine2="                            ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapMainActivity.java"
+            line="190"
+            column="29"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    protected void onSaveInstanceState(Bundle outState) {"
+        errorLine2="                                       ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapMainActivity.java"
+            line="769"
+            column="40"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    protected void onRestoreInstanceState(Bundle savedInstanceState) {"
+        errorLine2="                                          ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapMainActivity.java"
+            line="778"
+            column="43"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void askForPermission(String origin, String androidPermission, String webkitPermission, int requestCode) {"
+        errorLine2="                                 ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapMainActivity.java"
+            line="909"
+            column="34"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void askForPermission(String origin, String androidPermission, String webkitPermission, int requestCode) {"
+        errorLine2="                                                ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapMainActivity.java"
+            line="909"
+            column="49"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void askForPermission(String origin, String androidPermission, String webkitPermission, int requestCode) {"
+        errorLine2="                                                                          ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapMainActivity.java"
+            line="909"
+            column="75"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void onTaskComplete(JSONObject response) {"
+        errorLine2="                               ~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapMainActivity.java"
+            line="921"
+            column="32"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void sendMessage(String message) {"
+        errorLine2="                            ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapMainActivity.java"
+            line="1036"
+            column="29"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public GleapNotInitialisedException(String s) {"
+        errorLine2="                                        ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapNotInitialisedException.java"
+            line="8"
+            column="41"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public Response intercept(Chain chain) throws IOException {"
+        errorLine2="           ~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapOkHttpInterceptor.java"
+            line="68"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public Response intercept(Chain chain) throws IOException {"
+        errorLine2="                              ~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapOkHttpInterceptor.java"
+            line="68"
+            column="31"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public static GleapSessionController initialize(Application application) {"
+        errorLine2="                  ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionController.java"
+            line="81"
+            column="19"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public static GleapSessionController initialize(Application application) {"
+        errorLine2="                                                    ~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionController.java"
+            line="81"
+            column="53"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public GleapSessionProperties getPendingUpdateAction() {"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionController.java"
+            line="156"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setPendingUpdateAction(GleapSessionProperties pendingUpdateAction) {"
+        errorLine2="                                       ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionController.java"
+            line="160"
+            column="40"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public GleapSessionProperties getPendingIdentificationAction() {"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionController.java"
+            line="164"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setPendingIdentificationAction(GleapSessionProperties pendingIdentificationAction) {"
+        errorLine2="                                               ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionController.java"
+            line="170"
+            column="48"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public static GleapSessionController getInstance() {"
+        errorLine2="                  ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionController.java"
+            line="262"
+            column="19"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void mergeUserSession(String id, String hash) {"
+        errorLine2="                                 ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionController.java"
+            line="648"
+            column="34"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void mergeUserSession(String id, String hash) {"
+        errorLine2="                                            ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionController.java"
+            line="648"
+            column="45"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public GleapSession getUserSession() {"
+        errorLine2="           ~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionController.java"
+            line="659"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setGleapUserSession(GleapSessionProperties gleapUser) {"
+        errorLine2="                                    ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionController.java"
+            line="663"
+            column="37"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public GleapSessionProperties getStoredGleapUser() {"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionController.java"
+            line="699"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void processSessionActionResult(JSONObject result, boolean restartEventServices, boolean sendInitDelegate) {"
+        errorLine2="                                           ~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionController.java"
+            line="757"
+            column="44"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public GleapSessionProperties getGleapUserSession() {"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionController.java"
+            line="927"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void registerPushMessageGroup(String userHash) {"
+        errorLine2="                                         ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionController.java"
+            line="939"
+            column="42"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void unregisterPushMessageGroup(String userHash) {"
+        errorLine2="                                           ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionController.java"
+            line="958"
+            column="44"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public GleapSessionProperties(String userId) {"
+        errorLine2="                                  ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionProperties.java"
+            line="45"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public GleapSessionProperties(String name, String email) {"
+        errorLine2="                                  ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionProperties.java"
+            line="54"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public GleapSessionProperties(String name, String email) {"
+        errorLine2="                                               ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionProperties.java"
+            line="54"
+            column="48"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public GleapSessionProperties(String userId, String name, String email) {"
+        errorLine2="                                  ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionProperties.java"
+            line="59"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public GleapSessionProperties(String userId, String name, String email) {"
+        errorLine2="                                                 ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionProperties.java"
+            line="59"
+            column="50"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public GleapSessionProperties(String userId, String name, String email) {"
+        errorLine2="                                                              ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionProperties.java"
+            line="59"
+            column="63"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public GleapSessionProperties(String userId, String name, String email, String hash) {"
+        errorLine2="                                  ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionProperties.java"
+            line="75"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public GleapSessionProperties(String userId, String name, String email, String hash) {"
+        errorLine2="                                                 ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionProperties.java"
+            line="75"
+            column="50"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public GleapSessionProperties(String userId, String name, String email, String hash) {"
+        errorLine2="                                                              ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionProperties.java"
+            line="75"
+            column="63"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public GleapSessionProperties(String userId, String name, String email, String hash) {"
+        errorLine2="                                                                            ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionProperties.java"
+            line="75"
+            column="77"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public String getUserId() {"
+        errorLine2="           ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionProperties.java"
+            line="82"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setUserId(String userId) {"
+        errorLine2="                          ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionProperties.java"
+            line="86"
+            column="27"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public String getName() {"
+        errorLine2="           ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionProperties.java"
+            line="90"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setName(String name) {"
+        errorLine2="                        ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionProperties.java"
+            line="94"
+            column="25"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public String getEmail() {"
+        errorLine2="           ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionProperties.java"
+            line="98"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setEmail(String email) {"
+        errorLine2="                         ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionProperties.java"
+            line="102"
+            column="26"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public String getHash() {"
+        errorLine2="           ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionProperties.java"
+            line="106"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setHash(String hash) {"
+        errorLine2="                        ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionProperties.java"
+            line="110"
+            column="25"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public String getPhone() {"
+        errorLine2="           ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionProperties.java"
+            line="122"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setPhone(String phone) {"
+        errorLine2="                         ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionProperties.java"
+            line="126"
+            column="26"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public String getPlan() {"
+        errorLine2="           ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionProperties.java"
+            line="130"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setPlan(String plan) {"
+        errorLine2="                        ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionProperties.java"
+            line="134"
+            column="25"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public String getCompanyId() {"
+        errorLine2="           ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionProperties.java"
+            line="138"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setCompanyId(String companyId) {"
+        errorLine2="                             ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionProperties.java"
+            line="142"
+            column="30"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public String getCompanyName() {"
+        errorLine2="           ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionProperties.java"
+            line="154"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setCompanyName(String companyName) {"
+        errorLine2="                               ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionProperties.java"
+            line="158"
+            column="32"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public String getAvatar() {"
+        errorLine2="           ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionProperties.java"
+            line="162"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setAvatar(String avatar) {"
+        errorLine2="                          ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionProperties.java"
+            line="166"
+            column="27"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public JSONObject getCustomData() {"
+        errorLine2="           ~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionProperties.java"
+            line="170"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setCustomData(JSONObject customData) {"
+        errorLine2="                              ~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionProperties.java"
+            line="174"
+            column="31"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public JSONObject getJSONPayload() {"
+        errorLine2="           ~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionProperties.java"
+            line="207"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public static GleapSessionProperties fromJSONObject(JSONObject result) {"
+        errorLine2="                  ~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionProperties.java"
+            line="260"
+            column="19"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public static GleapSessionProperties fromJSONObject(JSONObject result) {"
+        errorLine2="                                                        ~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapSessionProperties.java"
+            line="260"
+            column="57"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    void fetchToken(Callback callback);"
+        errorLine2="                    ~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapUserJwtProvider.java"
+            line="16"
+            column="21"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="        void onToken(String token);"
+        errorLine2="                     ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapUserJwtProvider.java"
+            line="25"
+            column="22"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void onOpen(WebSocket webSocket, Response response) {"
+        errorLine2="                       ~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapWebSocketListener.java"
+            line="189"
+            column="24"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void onOpen(WebSocket webSocket, Response response) {"
+        errorLine2="                                            ~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapWebSocketListener.java"
+            line="189"
+            column="45"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void onMessage(WebSocket webSocket, String text) {"
+        errorLine2="                          ~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapWebSocketListener.java"
+            line="202"
+            column="27"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void onMessage(WebSocket webSocket, String text) {"
+        errorLine2="                                               ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapWebSocketListener.java"
+            line="202"
+            column="48"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void onMessage(WebSocket webSocket, ByteString bytes) {}"
+        errorLine2="                          ~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapWebSocketListener.java"
+            line="225"
+            column="27"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void onMessage(WebSocket webSocket, ByteString bytes) {}"
+        errorLine2="                                               ~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapWebSocketListener.java"
+            line="225"
+            column="48"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void onClosing(WebSocket webSocket, int code, String reason) {"
+        errorLine2="                          ~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapWebSocketListener.java"
+            line="228"
+            column="27"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void onClosing(WebSocket webSocket, int code, String reason) {"
+        errorLine2="                                                         ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapWebSocketListener.java"
+            line="228"
+            column="58"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void onClosed(WebSocket webSocket, int code, String reason) {"
+        errorLine2="                         ~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapWebSocketListener.java"
+            line="234"
+            column="26"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void onClosed(WebSocket webSocket, int code, String reason) {"
+        errorLine2="                                                        ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapWebSocketListener.java"
+            line="234"
+            column="57"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void onFailure(WebSocket webSocket, Throwable t, Response response) {"
+        errorLine2="                          ~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapWebSocketListener.java"
+            line="241"
+            column="27"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void onFailure(WebSocket webSocket, Throwable t, Response response) {"
+        errorLine2="                                               ~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapWebSocketListener.java"
+            line="241"
+            column="48"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void onFailure(WebSocket webSocket, Throwable t, Response response) {"
+        errorLine2="                                                            ~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapWebSocketListener.java"
+            line="241"
+            column="61"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public GleapWebViewMessage(String name, JSONObject objMessage) {"
+        errorLine2="                               ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapWebViewMessage.java"
+            line="9"
+            column="32"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public GleapWebViewMessage(String name, JSONObject objMessage) {"
+        errorLine2="                                            ~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapWebViewMessage.java"
+            line="9"
+            column="45"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public String getMessage() {"
+        errorLine2="           ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/GleapWebViewMessage.java"
+            line="23"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public synchronized Networklog[] getNetworklogs() {"
+        errorLine2="                        ~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/NetworkBuffer.java"
+            line="25"
+            column="25"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public synchronized void addNetworkLog(Networklog networklog) {"
+        errorLine2="                                           ~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/NetworkBuffer.java"
+            line="32"
+            column="44"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void attachNetworkLogs(Networklog[] networklogs) {"
+        errorLine2="                                  ~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/NetworkBuffer.java"
+            line="45"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public Networklog(String url, RequestType requestType, int status, int duration, JSONObject request, JSONObject response) {"
+        errorLine2="                      ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Networklog.java"
+            line="57"
+            column="23"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public Networklog(String url, RequestType requestType, int status, int duration, JSONObject request, JSONObject response) {"
+        errorLine2="                                  ~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Networklog.java"
+            line="57"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public Networklog(String url, RequestType requestType, int status, int duration, JSONObject request, JSONObject response) {"
+        errorLine2="                                                                                     ~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Networklog.java"
+            line="57"
+            column="86"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public Networklog(String url, RequestType requestType, int status, int duration, JSONObject request, JSONObject response) {"
+        errorLine2="                                                                                                         ~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Networklog.java"
+            line="57"
+            column="106"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public JSONObject toJSON() {"
+        errorLine2="           ~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Networklog.java"
+            line="145"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public static JSONArray mergeMultiJsonArray(JSONArray... arrays) {"
+        errorLine2="                  ~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Networklog.java"
+            line="156"
+            column="19"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public static JSONArray mergeMultiJsonArray(JSONArray... arrays) {"
+        errorLine2="                                                ~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/Networklog.java"
+            line="156"
+            column="49"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public OpenPushAction(String type, String id) {"
+        errorLine2="                          ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/OpenPushAction.java"
+            line="8"
+            column="27"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public OpenPushAction(String type, String id) {"
+        errorLine2="                                       ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/OpenPushAction.java"
+            line="8"
+            column="40"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public String getType() {"
+        errorLine2="           ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/OpenPushAction.java"
+            line="14"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setType(String type) {"
+        errorLine2="                        ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/OpenPushAction.java"
+            line="19"
+            column="25"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public String getId() {"
+        errorLine2="           ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/OpenPushAction.java"
+            line="24"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setId(String id) {"
+        errorLine2="                      ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/OpenPushAction.java"
+            line="29"
+            column="23"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    void invoke(JSONObject jsonObject);"
+        errorLine2="                ~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/callbacks/OutboundSentCallback.java"
+            line="6"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public PixelCopyTask(View view, Window window, int timer) {"
+        errorLine2="                         ~~~~">
+        <location
+            file="src/main/java/io/gleap/PixelCopyTask.java"
+            line="17"
+            column="26"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public PixelCopyTask(View view, Window window, int timer) {"
+        errorLine2="                                    ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/PixelCopyTask.java"
+            line="17"
+            column="37"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public static PrefillHelper getInstancen() {"
+        errorLine2="                  ~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/PrefillHelper.java"
+            line="10"
+            column="19"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public void setPrefillData(JSONObject jsonObject) {"
+        errorLine2="                               ~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/PrefillHelper.java"
+            line="14"
+            column="32"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    public JSONObject getPreFillData() {"
+        errorLine2="           ~~~~~~~~~~">
+        <location
+            file="src/main/java/io/gleap/PrefillHelper.java"
+            line="18"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    void invoke(String pushMessageGroup);"
+        errorLine2="                ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/callbacks/RegisterPushMessageGroupCallback.java"
+            line="4"
+            column="17"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="        void getImage(Bitmap bitmap);"
+        errorLine2="                      ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/ScreenshotUtil.java"
+            line="305"
+            column="23"/>
+    </issue>
+
+    <issue
+        id="UnknownNullness"
+        message="Unknown nullability; explicitly declare as `@Nullable` or `@NonNull` to improve Kotlin interoperability; see https://developer.android.com/kotlin/interop#nullability_annotations"
+        errorLine1="    void invoke(String pushMessageGroup);"
+        errorLine2="                ~~~~~~">
+        <location
+            file="src/main/java/io/gleap/callbacks/UnRegisterPushMessageGroupCallback.java"
+            line="4"
+            column="17"/>
+    </issue>
+
+</issues>

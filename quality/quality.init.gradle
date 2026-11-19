@@ -1,0 +1,76 @@
+// The checks of quality/lint-new.sh, added to :gleap only for the Gradle runs that pass this file with -I. No build
+// file changes: a normal build, a release included, never sees any of this. The files next to this one configure it.
+def qualityDir = buildscript.sourceFile.parentFile
+// Checkstyle 13 and later need JDK 21; CI and the release run on JDK 17.
+def checkstyleVersion = '12.3.1'
+def japicmpVersion = '0.27.0'
+
+allprojects {
+    plugins.withId('com.android.library') {
+        // finalizeDsl runs after the module's own android {} block, which would win otherwise.
+        androidComponents.finalizeDsl { android ->
+            android.lint {
+                lintConfig = new File(qualityDir, 'lint.xml')
+                checkDependencies = false
+                // Kotlin interop for the public API: null annotations, lambdas last, no Kotlin keywords as names.
+                enable 'Interoperability'
+                // Lint reports every finding (build/reports/lint-results-debug.xml) and lint-new.sh compares them with
+                // lint-baseline.xml itself. Lint's own baseline matches by issue, message and file only, so a new
+                // finding whose message repeats in that file would be reported at an old line.
+                abortOnError = false
+                // -PqualityLintBaseline writes lint-baseline.xml when it is missing (AGENTS.md, Traps: an AGP upgrade
+                // regenerates it). Lint writes a missing baseline only in a run that may abort.
+                if (project.hasProperty('qualityLintBaseline')) {
+                    baseline = new File(qualityDir, 'lint-baseline.xml')
+                    abortOnError = true
+                }
+            }
+        }
+
+        configurations {
+            qualityCheckstyle
+            qualityJapicmp
+        }
+        dependencies {
+            qualityCheckstyle "com.puppycrawl.tools:checkstyle:${checkstyleVersion}"
+            qualityJapicmp "com.github.siom79.japicmp:japicmp:${japicmpVersion}:jar-with-dependencies@jar"
+        }
+
+        // Checkstyle on the files in -PqualityFiles (comma-separated paths). The script keeps only the findings on lines
+        // the branch added, so the task itself never fails.
+        tasks.register('qualityCheckstyle', Checkstyle) {
+            checkstyleClasspath = configurations.qualityCheckstyle
+            classpath = files()
+            configFile = new File(qualityDir, 'checkstyle.xml')
+            configDirectory = qualityDir
+            source = files(((findProperty('qualityFiles') ?: '') as String).split(',').findAll { it })
+            ignoreFailures = true
+            showViolations = false
+            maxHeapSize = '512m'
+            reports {
+                xml.required = true
+                xml.outputLocation = layout.buildDirectory.file('reports/checkstyle/quality.xml')
+                html.required = false
+            }
+        }
+
+        // japicmp on two classes.jar files (-PqualityApiOld, -PqualityApiNew). qualityApiBreaks fails on an incompatible
+        // change to the classes in public-api.txt; qualityApiReport lists those in the other public classes.
+        def apiClasses = new File(qualityDir, 'public-api.txt').readLines()
+                .collect { it.replaceAll('#.*', '').trim() }
+                .findAll { it }
+                .join(';')
+        def japicmp = { name, List<String> extra ->
+            tasks.register(name, JavaExec) {
+                classpath = configurations.qualityJapicmp
+                mainClass = 'japicmp.JApiCmp'
+                args '--old', findProperty('qualityApiOld') ?: '', '--new', findProperty('qualityApiNew') ?: '',
+                        '-a', 'protected', '--only-modified', '--ignore-missing-classes'
+                args extra
+            }
+        }
+        japicmp('qualityApiBreaks', ['--include', apiClasses,
+                                     '--error-on-binary-incompatibility', '--error-on-source-incompatibility'])
+        japicmp('qualityApiReport', ['--include', 'io.gleap.*', '--exclude', apiClasses])
+    }
+}

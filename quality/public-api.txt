@@ -1,0 +1,17 @@
+# The public API: what apps and the Flutter and React Native SDKs build against. `quality/lint-new.sh --api` fails on
+# a binary or source incompatible change to these classes (japicmp, wildcards allowed). Every other public class in
+# io.gleap is public for technical reasons only (AGENTS.md, Public API): its changes are listed, not failed.
+io.gleap.Gleap
+io.gleap.callbacks.*
+io.gleap.APPLICATIONTYPE
+io.gleap.GleapActivationMethod
+io.gleap.GleapLogFlushHandler
+io.gleap.GleapLogLevel
+io.gleap.GleapSessionProperties
+io.gleap.GleapUserJwtProvider
+io.gleap.PrefillHelper
+io.gleap.SurveyType
+# Types in the signatures of Gleap's public methods.
+io.gleap.Gleap$SEVERITY
+io.gleap.Networklog
+io.gleap.RequestType

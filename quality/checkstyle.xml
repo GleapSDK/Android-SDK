@@ -1,0 +1,62 @@
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN" "https://checkstyle.org/dtds/configuration_1_3.dtd">
+<!-- The mechanical part of .claude/rules/code-conventions.md. quality/lint-new.sh runs it on the Java files a branch
+     changes and reports only findings on lines the branch added or changed: old code is not judged. -->
+<module name="Checker">
+    <property name="charset" value="UTF-8"/>
+
+    <!-- New files stay under 700 lines. -->
+    <module name="FileLength">
+        <property name="max" value="700"/>
+    </module>
+
+    <!-- Tests are public by JUnit's rules, not because they are API. -->
+    <module name="SuppressionSingleFilter">
+        <property name="checks" value="MissingJavadoc"/>
+        <property name="files" value="[/\\]src[/\\](test|androidTest)[/\\]"/>
+    </module>
+    <!-- The one place that writes to logcat. -->
+    <module name="SuppressionSingleFilter">
+        <property name="checks" value="IllegalImport"/>
+        <property name="files" value="[/\\]GleapLog\.java$"/>
+    </module>
+
+    <module name="TreeWalker">
+        <module name="MethodLength">
+            <property name="max" value="80"/>
+            <property name="countEmpty" value="false"/>
+        </module>
+        <!-- More than four: pass one object. Overrides keep the signature they implement. -->
+        <module name="ParameterNumber">
+            <property name="max" value="4"/>
+            <property name="ignoreOverriddenMethods" value="true"/>
+        </module>
+
+        <!-- One job, one system (code-conventions.md): GleapLog for logcat, GleapExecutor for background work. -->
+        <module name="IllegalImport">
+            <property name="illegalClasses" value="android.util.Log, android.os.AsyncTask"/>
+        </module>
+        <module name="RegexpSinglelineJava">
+            <property name="format" value="\.printStackTrace\(\)|System\.(out|err)\.print"/>
+            <property name="message" value="Write to logcat through GleapLog, never to stdout or stderr."/>
+            <property name="ignoreComments" value="true"/>
+        </module>
+
+        <!-- Public types and methods are documented: in a public class they are what an app sees in its IDE. -->
+        <module name="MissingJavadocType">
+            <property name="scope" value="public"/>
+        </module>
+        <module name="MissingJavadocMethod">
+            <property name="scope" value="public"/>
+            <property name="allowMissingPropertyJavadoc" value="true"/>
+            <property name="tokens" value="METHOD_DEF, CTOR_DEF"/>
+        </module>
+
+        <!-- An empty catch says why in a comment inside it. -->
+        <module name="EmptyCatchBlock"/>
+        <module name="EqualsHashCode"/>
+        <module name="StringLiteralEquality"/>
+        <module name="MissingSwitchDefault"/>
+        <module name="FallThrough"/>
+    </module>
+</module>
